@@ -3,6 +3,7 @@ from .utils import Config
 from .nodes import Node
 from .element import Element
 import torch
+from .solver import Solver
 
 class Structure():
     """
@@ -39,8 +40,15 @@ class Structure():
                     },
                 }
         """
-        self.init_nodes(variable["nodes"])
-        self.init_elems(variable["materials"], variable["connectivity"])
+        self.init_nodes(variable["nodes"]) # load all nodes
+        self.init_elems(variable["materials"], variable["connectivity"]) # load all elements
+        ## i might need to think about the placement of force vector and  fdof vector
+
+        self.fdof = variable["free_dofs"]
+        self.force = variable["loads"]
+
+        ## solver, need to think how it should work
+        self.solver = Solver(self.nodes, variable["connectivity"])
 
     def init_nodes(self, nodes) -> None:
         self.nodes = []
@@ -70,4 +78,3 @@ class Structure():
     def check_constraints(self) -> None:
         "Check if only moments are passed or there exists a non-unique solution."
         pass
-        

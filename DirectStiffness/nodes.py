@@ -8,4 +8,4 @@ class Node():
         return f"Node ID: {self.id}"
     def __repr__(self):
         "Give more information about the object for development purpose."
-        return f"Node(id={self.id}, x={self.x}, y={self.y})"
+        return f"Node(ID={self.id}, x={self.x}, y={self.y})"
