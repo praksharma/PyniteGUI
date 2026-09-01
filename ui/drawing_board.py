@@ -1,11 +1,21 @@
 import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 import numpy as np
 import matplotlib.patches as patches
 from matplotlib.backend_bases import MouseButton
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from tkinter import *
+
+root = Tk()
+root.state("zoomed")    
+root.title("Direct Stiffness")
+
+
 
 points = []
 grid = 0.1
-fig, ax = plt.subplots()
+fig = Figure()
+ax = fig.add_subplot(111)
 ax.set_xticks(np.arange(0, 1.01, grid))
 ax.set_yticks(np.arange(0, 1.01, grid))
 ax.grid(True)
@@ -63,6 +73,6 @@ def on_move(event):
 fig.canvas.mpl_connect('motion_notify_event', on_move)
 fig.canvas.mpl_connect('button_press_event', on_click)
 
-
-
-plt.show()
+canvas = FigureCanvasTkAgg(fig, master=root)
+canvas.get_tk_widget().pack(fill="both", expand=True)
+root.mainloop()
