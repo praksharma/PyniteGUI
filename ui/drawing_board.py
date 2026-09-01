@@ -10,15 +10,16 @@ root = Tk()
 root.state("zoomed")    
 root.title("Direct Stiffness")
 
-
-
+# some params
 points = []
-grid = 0.1
+grid = 0.1 # snapping unit
+# Empty figure with just grid
 fig = Figure()
 ax = fig.add_subplot(111)
 ax.set_xticks(np.arange(0, 1.01, grid))
 ax.set_yticks(np.arange(0, 1.01, grid))
 ax.grid(True)
+# Fix the x,y lim. else it will keep zooming-in to the view.
 ax.set_xlim(0, 1.0)
 ax.set_ylim(0, 1.0)
 ax.set_aspect('equal')
@@ -41,7 +42,6 @@ def on_click(event):
         (x1, y1), (x2, y2) = points
         if (x1, y1) == (x2, y2):
             print("Not a line. You selected the same coordinate twice.")
-
         else:
             ax.plot([x1, x2], [y1, y2], 'k-')
             fig.canvas.draw_idle()
@@ -61,6 +61,7 @@ def on_move(event):
     x = round(event.xdata / grid) * grid
     y = round(event.ydata / grid) * grid
 
+    # size of the rectangle is grid/5.
     rectangle_offset = grid / 5
     hover_square = patches.Rectangle(
         (x - rectangle_offset/2, y - rectangle_offset/2),
