@@ -35,13 +35,17 @@ def on_click(event):
     y = round(event.ydata / grid) * grid
     points.append((x, y))
     
-
+    # need two point to create a line
+    # flush everything else
     if len(points) == 2:
         (x1, y1), (x2, y2) = points
-        ax.plot([x1, x2], [y1, y2], 'k-')
-        fig.canvas.draw_idle()
+        if (x1, y1) == (x2, y2):
+            print("Not a line. You selected the same coordinate twice.")
 
-        # add_element((x1, y1), (x2, y2))
+        else:
+            ax.plot([x1, x2], [y1, y2], 'k-')
+            fig.canvas.draw_idle()
+
         points.clear()
 
 hover_square = None
