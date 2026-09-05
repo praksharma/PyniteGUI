@@ -9,8 +9,8 @@ def set_tool(tool_type, tool, tool_button):
         print("DEBUG: shape selected.")
         tool_button.config(text = f"{tool_type}: {tool}")
 
-def add_shapes_menu(root):
-    shapes_button = ttk.Menubutton(root, text="Shapes")
+def add_shapes_menu(frame):
+    shapes_button = ttk.Menubutton(frame, text="Shapes")
     shapes_menu = Menu(shapes_button, tearoff=True)
 
     shapes_menu.add_command(
@@ -24,4 +24,4 @@ def add_shapes_menu(root):
     )
 
     shapes_button["menu"] = shapes_menu
-    shapes_button.pack(side="top")
+    shapes_button.grid(row=1, column=0)

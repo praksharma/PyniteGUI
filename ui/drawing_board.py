@@ -156,12 +156,12 @@ if __name__ == "__main__":
     grid = 0.1
     fig, ax = drawing_board_init()
 
-    # Add shape menu
-    add_shapes_menu(root)
-
-    # Add second row with a frame
+    # Add a frame
     top_frame = Frame(root)
     top_frame.pack(side="top")
+
+    # Add shape menu
+    add_shapes_menu(top_frame)
     # Add grid changing button
     add_grid_change_button(top_frame)
 
