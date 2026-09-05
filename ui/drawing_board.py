@@ -148,6 +148,18 @@ if __name__ == "__main__":
     root = Tk()
     root.state("zoomed")    
     root.title("Direct Stiffness")
+    # add tabs
+    notebook = ttk.Notebook(root)
+
+    #### ADD TABS #######
+    materials_tab = ttk.Frame(notebook)
+    sections_tab = ttk.Frame(notebook)
+    structure_tab = ttk.Frame(notebook)
+
+    notebook.add(materials_tab, text="Materials")
+    notebook.add(sections_tab, text="Section")
+    notebook.add(structure_tab, text="Structure")
+    notebook.pack(fill="both", expand= True)
 
     # Initialise pynite model
     model = init_pynite_model()
@@ -157,7 +169,7 @@ if __name__ == "__main__":
     fig, ax = drawing_board_init()
 
     # Add a frame
-    top_frame = Frame(root)
+    top_frame = Frame(structure_tab)
     top_frame.pack(side="top")
 
     # Add shape menu
@@ -174,6 +186,6 @@ if __name__ == "__main__":
     fig.canvas.mpl_connect('button_press_event', lambda event:
                         on_click_tool_selection(event, fig, ax, grid, model))
 
-    canvas = FigureCanvasTkAgg(fig, master=root)
+    canvas = FigureCanvasTkAgg(fig, master=structure_tab)
     canvas.get_tk_widget().pack(fill="both", expand=True)
     root.mainloop()
