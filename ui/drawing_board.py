@@ -141,7 +141,7 @@ def add_grid_change_button(frame):
     new_grid_value = grid_box.get()
     print(new_grid_value)
     ## FIX: TypeError: arange() not supported for inputs with DType <class 'numpy.dtypes.StrDType'>.
-    button_grid = Button(frame, text = "Change",)# command=drawing_board_init(new_grid_value))
+    button_grid = Button(frame, text = "Change", command = lambda: drawing_board_init(new_grid_value))
     button_grid.grid(row=0, column=3)
 
 if __name__ == "__main__":
@@ -152,13 +152,13 @@ if __name__ == "__main__":
     notebook = ttk.Notebook(root)
 
     #### ADD TABS #######
+    structure_tab = ttk.Frame(notebook)
     materials_tab = ttk.Frame(notebook)
     sections_tab = ttk.Frame(notebook)
-    structure_tab = ttk.Frame(notebook)
 
+    notebook.add(structure_tab, text="Structure")
     notebook.add(materials_tab, text="Materials")
     notebook.add(sections_tab, text="Section")
-    notebook.add(structure_tab, text="Structure")
     notebook.pack(fill="both", expand= True)
 
     # Initialise pynite model
