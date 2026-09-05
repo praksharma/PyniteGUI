@@ -1,3 +1,7 @@
-Analyse frames using direct stiffness method with Pytorch tensors.
+A tkinter based frontend for PyNite, for FEM structural analysis.
 
-TODO: in solver need to put things in numpy array and think about connectivity matrix
+Run the ui 
+
+```python
+python -m ui.drawing_board
+```
