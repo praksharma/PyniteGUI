@@ -1,0 +1,21 @@
+[project]
+name = "pynitegui"
+version = "0.1.0"
+description = "A tkinter based frontend for PyNite, for FEM structural analysis."
+readme = "README.md"
+authors = [
+    { name = "Prakhar" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.11.1",
+    "numpy>=2.5.3",
+    "pynitefea>=3.0.0",
+]
+
+[project.scripts]
+pynitegui = "pynitegui:main"
+
+[build-system]
+requires = ["uv_build>=0.12.10,<0.13.0"]
+build-backend = "uv_build"

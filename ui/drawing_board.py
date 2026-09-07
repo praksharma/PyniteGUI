@@ -1,8 +1,4 @@
-# import matplotlib.pyplot as plt
-# from matplotlib.figure import Figure
-# import numpy as np
-# import matplotlib.patches as patches
-# from matplotlib.backend_bases import MouseButton
+import platform
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkinter import *
 from tkinter import ttk
@@ -146,7 +142,12 @@ def add_grid_change_button(frame):
 
 if __name__ == "__main__":
     root = Tk()
-    root.state("zoomed")    
+    if platform.system() == "Linux":
+        root.attributes("-zoomed", True)
+    else:
+        root.state("zoomed")
+
+
     root.title("Direct Stiffness")
     # add tabs
     notebook = ttk.Notebook(root)
