@@ -6,7 +6,7 @@ from .layout.base import Layout
 from .utils.figure_setup import drawing_board_init
 from .triggers.on_move_triggers import on_move_snapping
 from .triggers.on_click_triggers import on_click_tool_selection
-from .tools.shapes import add_shapes_menu
+from .layout.tools.shapes import add_shapes_menu
 
 from Pynite import FEModel3D
 
@@ -123,23 +123,6 @@ def pynite_post_implementation(model):
 
     model.analyze_linear(log=True, check_stability=True, check_statics=True)
 
-
-
-# def add_grid_change_button(frame, fig, ax):
-#     """
-#     Add a button to change the grid size.
-#     """
-
-#     grid_label = Label(frame, text="Grid: ")
-#     grid_label.grid(row=0, column=0)
-
-#     grid_box = Entry(frame)
-#     grid_box.insert(0, "0.1")  # default value
-#     grid_box.grid(row=0, column=1)
-
-#     button_grid = Button(frame, text = "Change", command = lambda: change_grid(float(grid_box.get()), fig, ax))
-#     button_grid.grid(row=0, column=3)
-
 if __name__ == "__main__":
     root = Tk()
     if platform.system() == "Linux":
@@ -154,20 +137,12 @@ if __name__ == "__main__":
     model = init_pynite_model()
 
     # load drawing board
+    # move settign like grid, max_lim and min_lim to a class
     grid = 0.1
     fig, ax = drawing_board_init()
 
-    # Add a frame
-    top_frame = Frame(layout.structure_tab)
-    top_frame.pack(side="top")
+    layout.top_frame_analysis_button(layout.structure_tab_top_frame, command = lambda: pynite_post_implementation(model))
 
-    # Add shape menu
-    add_shapes_menu(top_frame)
-    # Add grid changing button
-    # add_grid_change_button(top_frame, fig, ax)
-
-    button_post_analysis = Button(top_frame, text = "Run analysis", command = lambda: pynite_post_implementation(model))
-    button_post_analysis.grid(row=0, column=4)
 
     # figure triggers
     fig.canvas.mpl_connect('motion_notify_event', lambda event: 

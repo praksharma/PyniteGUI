@@ -1,5 +1,5 @@
 from tkinter import ttk
-from tkinter import *
+from tkinter import Menu
 
 
 def set_tool(tool_type, tool, tool_button):

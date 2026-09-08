@@ -1,4 +1,5 @@
 from tkinter import ttk
+from .structure_tab import create_top_frame, top_frame_shape_button, top_frame_analysis_button
 
 class Layout():
     def __init__(self, root) -> None:
@@ -19,3 +20,8 @@ class Layout():
         self.notebook.add(self.materials_tab, text="Materials")
         self.notebook.add(self.sections_tab, text="Section")
         self.notebook.pack(fill="both", expand= True)
+
+        # init tab 1
+        self.structure_tab_top_frame = create_top_frame(self.structure_tab)
+        top_frame_shape_button(self.structure_tab_top_frame)
+        self.top_frame_analysis_button = top_frame_analysis_button
