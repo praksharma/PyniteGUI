@@ -1,12 +1,11 @@
 import platform
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from tkinter import *
+from tkinter import Tk
 
 from .layout.base import Layout
 from .utils.figure_setup import drawing_board_init
 from .triggers.on_move_triggers import on_move_snapping
 from .triggers.on_click_triggers import on_click_tool_selection
-from .layout.tools.shapes import add_shapes_menu
 
 from Pynite import FEModel3D
 
