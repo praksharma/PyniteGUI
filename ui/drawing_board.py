@@ -1,8 +1,8 @@
 import platform
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkinter import *
-from tkinter import ttk
 
+from .layout.base import Layout
 from .utils.figure_setup import drawing_board_init
 from .triggers.on_move_triggers import on_move_snapping
 from .triggers.on_click_triggers import on_click_tool_selection
@@ -123,22 +123,22 @@ def pynite_post_implementation(model):
 
     model.analyze_linear(log=True, check_stability=True, check_statics=True)
 
-def add_grid_change_button(frame):
-    """
-    Add a button to change the grid size.
-    NEED TO FIX THIS.
-    """
 
-    grid_label = Label(frame, text="Grid: ")
-    grid_label.grid(row=0, column=0)
 
-    grid_box = Entry(frame)
-    grid_box.grid(row=0, column=1)
-    new_grid_value = grid_box.get()
-    print(new_grid_value)
-    ## FIX: TypeError: arange() not supported for inputs with DType <class 'numpy.dtypes.StrDType'>.
-    button_grid = Button(frame, text = "Change", command = lambda: drawing_board_init(new_grid_value))
-    button_grid.grid(row=0, column=3)
+# def add_grid_change_button(frame, fig, ax):
+#     """
+#     Add a button to change the grid size.
+#     """
+
+#     grid_label = Label(frame, text="Grid: ")
+#     grid_label.grid(row=0, column=0)
+
+#     grid_box = Entry(frame)
+#     grid_box.insert(0, "0.1")  # default value
+#     grid_box.grid(row=0, column=1)
+
+#     button_grid = Button(frame, text = "Change", command = lambda: change_grid(float(grid_box.get()), fig, ax))
+#     button_grid.grid(row=0, column=3)
 
 if __name__ == "__main__":
     root = Tk()
@@ -147,20 +147,8 @@ if __name__ == "__main__":
     else:
         root.state("zoomed")
 
-
-    root.title("Direct Stiffness")
-    # add tabs
-    notebook = ttk.Notebook(root)
-
-    #### ADD TABS #######
-    structure_tab = ttk.Frame(notebook)
-    materials_tab = ttk.Frame(notebook)
-    sections_tab = ttk.Frame(notebook)
-
-    notebook.add(structure_tab, text="Structure")
-    notebook.add(materials_tab, text="Materials")
-    notebook.add(sections_tab, text="Section")
-    notebook.pack(fill="both", expand= True)
+    # create the base class for layout
+    layout = Layout(root)
 
     # Initialise pynite model
     model = init_pynite_model()
@@ -170,13 +158,13 @@ if __name__ == "__main__":
     fig, ax = drawing_board_init()
 
     # Add a frame
-    top_frame = Frame(structure_tab)
+    top_frame = Frame(layout.structure_tab)
     top_frame.pack(side="top")
 
     # Add shape menu
     add_shapes_menu(top_frame)
     # Add grid changing button
-    add_grid_change_button(top_frame)
+    # add_grid_change_button(top_frame, fig, ax)
 
     button_post_analysis = Button(top_frame, text = "Run analysis", command = lambda: pynite_post_implementation(model))
     button_post_analysis.grid(row=0, column=4)
@@ -187,6 +175,6 @@ if __name__ == "__main__":
     fig.canvas.mpl_connect('button_press_event', lambda event:
                         on_click_tool_selection(event, fig, ax, grid, model))
 
-    canvas = FigureCanvasTkAgg(fig, master=structure_tab)
+    canvas = FigureCanvasTkAgg(fig, master=layout.structure_tab)
     canvas.get_tk_widget().pack(fill="both", expand=True)
     root.mainloop()

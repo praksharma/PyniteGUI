@@ -2,9 +2,10 @@ import matplotlib.pyplot as plt
 from matplotlib.figure import Figure
 import numpy as np
 
-def drawing_board_init(grid: float = 0.1,
-                       min_lim : float = 0,
-                       max_lim : float = 1.0
+def drawing_board_init(
+                    grid: float = 0.1,
+                    min_lim : float = 0,
+                    max_lim : float = 1.0,
                        ):
     """
     Draws a square drawing board with dimensions min_lim and max_lim
@@ -24,3 +25,16 @@ def drawing_board_init(grid: float = 0.1,
     ax.set_aspect('equal')
 
     return fig, ax
+
+def change_grid(new_grid_float,
+                fig,
+                ax):
+    """
+    Depreciated fucntion to change grid dynamically.
+    Introduces a number of problems and slows down the applciation unnecessrily.
+    """    
+
+    ax.set_xticks(np.arange(0, 1 + new_grid_float, new_grid_float))
+    ax.set_yticks(np.arange(0, 1 + new_grid_float, new_grid_float))
+
+    fig.canvas.draw_idle()
