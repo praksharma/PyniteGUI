@@ -1,2 +1,4 @@
 def main() -> None:
-    print("Hello from pynitegui!")
+    from .qt.app import main as launch
+
+    launch()
