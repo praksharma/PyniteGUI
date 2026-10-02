@@ -11,8 +11,7 @@ uv sync
 uv run pynitegui
 ```
 
-The main application uses PySide6 / Qt Widgets. The original Tkinter prototype
-is still available with `uv run python -m ui.drawing_board`.
+The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
 
 ## Workflow
 
@@ -67,20 +66,19 @@ and concentrated moments include both sides of each discontinuity.
   background analysis, and a consistent light application theme.
 - `src/pynitegui/qt/diagrams.py`: whole-frame SFD/BMD views, member detail plots,
   and sampling on both sides of force and moment discontinuities.
-- `ui/`: original Tkinter prototype.
+- `tests/`: project, solver, diagram, and Qt interaction regression tests.
 
 ## Development
 
-Run the focused project, solver, diagram, and Qt interaction tests:
+Run the project, solver, diagram, and Qt interaction tests:
 
 ```sh
-uv run python -m unittest discover -s tests -p "test_qt*.py"
+uv run python -m unittest discover -s tests
 ```
 
 The Qt interaction tests run offscreen. The suite covers project persistence,
 undo/redo, result invalidation, analytical beam checks, portal-frame diagrams,
-inclined/reversed members, and point-force/moment jumps. Files elsewhere in
-`tests/` include older experiments and are not part of this focused suite.
+inclined/reversed members, and point-force/moment jumps.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

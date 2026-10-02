@@ -1,7 +1,7 @@
 [project]
 name = "pynitegui"
 version = "0.1.0"
-description = "A tkinter based frontend for PyNite, for FEM structural analysis."
+description = "A Qt desktop editor for 2D frame analysis with PyNite."
 readme = "README.md"
 authors = [
     { name = "Prakhar" }

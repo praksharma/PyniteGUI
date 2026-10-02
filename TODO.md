@@ -44,11 +44,11 @@ items are not promises of a particular release date.
 - [ ] Add benchmark tests for multi-storey frames and varied support/load setups.
 - [ ] Test installation and desktop rendering on Windows and macOS.
 - [ ] Package standalone desktop releases.
-- [ ] Decide whether to retire the Tkinter prototype and DirectStiffness experiments.
 - [ ] Evaluate 3D modelling and its viewport separately after the 2D workflow matures.
 
 ## Completed Foundation
 
+- [x] Remove the legacy solver, Tkinter UI, notebooks, and experimental tests.
 - [x] Qt Widgets application and 2D graphics editor.
 - [x] Separate serializable project model and PyNite analysis adapter.
 - [x] Member drawing, snapping, selection, and property inspection.

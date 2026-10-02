@@ -1,1 +1,0 @@
-# All entry related dropdown or mneu for easy access
