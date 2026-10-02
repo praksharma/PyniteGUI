@@ -39,9 +39,9 @@ def sample_member(project, result, name):
         locations.extend(queries)
     return {
         "x": np.array(xs),
-        "shear": np.array([solver.shear("Fy", x, "Service") for x in locations]),
-        "moment": np.array([solver.moment("Mz", x, "Service") for x in locations]),
-        "deflection": np.array([solver.deflection("dy", x, "Service") for x in locations]),
+        "shear": np.array([solver.shear("Fy", x, result.combination) for x in locations]),
+        "moment": np.array([solver.moment("Mz", x, result.combination) for x in locations]),
+        "deflection": np.array([solver.deflection("dy", x, result.combination) for x in locations]),
     }
 
 
@@ -110,10 +110,15 @@ class DiagramDialog(QDialog):
     def __init__(self, parent, project, result, selected=None):
         super().__init__(parent)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
-        self.setWindowTitle("Force Diagrams | Service")
+        self.setWindowTitle(f"Force Diagrams | {result.combination}")
         self.resize(1000, 800)
         self.project, self.result = project.clone(), result
         layout = QVBoxLayout(self)
+        self.combination = QComboBox()
+        self.combination.addItems(list(result.solver.load_combos))
+        self.combination.setCurrentText(result.combination)
+        self.combination.setToolTip("Diagram combination")
+        layout.addWidget(self.combination)
         self.tabs = QTabWidget()
         layout.addWidget(self.tabs)
         structure = QWidget()
@@ -147,9 +152,16 @@ class DiagramDialog(QDialog):
         detail_layout.addWidget(NavigationToolbar2QT(self.member_canvas, self))
         detail_layout.addWidget(self.member_canvas)
         self.tabs.addTab(detail, "Member Detail")
+        self.combination.currentTextChanged.connect(self.select_combination)
         self.quantity.currentIndexChanged.connect(self.update_structure)
         self.amplitude.valueChanged.connect(self.update_structure)
         self.member.currentTextChanged.connect(self.update_member)
+        self.update_structure()
+        self.update_member()
+
+    def select_combination(self, name):
+        self.result = self.result.for_combination(name)
+        self.setWindowTitle(f"Force Diagrams | {name}")
         self.update_structure()
         self.update_member()
 

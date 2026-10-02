@@ -70,6 +70,7 @@ class Load:
     kind: str = "point"
     end_magnitude: float = 0.0
     end_position: float = 1.0
+    case: str = "Case 1"
 
 
 @dataclass
@@ -82,6 +83,68 @@ class Project:
     sections: dict[str, Section] = field(default_factory=lambda: {"W18x35": Section("W18x35")})
     default_section: str = "W18x35"
     grid: float = 12.0
+    load_cases: list[str] = field(default_factory=lambda: ["Case 1"])
+    default_load_case: str = "Case 1"
+    combinations: dict[str, dict[str, float]] = field(default_factory=lambda: {"Service": {"Case 1": 1.0}})
+
+    @staticmethod
+    def validate_load_name(name):
+        if not isinstance(name, str) or not name.strip() or name != name.strip():
+            raise ValueError("Load case/combination names must be nonempty with no surrounding spaces.")
+
+    def set_load_case(self, name, previous=None):
+        self.validate_load_name(name)
+        if name in self.load_cases and name != previous:
+            raise ValueError(f"Load case {name} already exists.")
+        if previous is None:
+            self.load_cases.append(name)
+        else:
+            if previous not in self.load_cases:
+                raise ValueError(f"Load case {previous} does not exist.")
+            self.load_cases[self.load_cases.index(previous)] = name
+            for load in self.loads.values():
+                if load.case == previous:
+                    load.case = name
+            for factors in self.combinations.values():
+                if previous in factors:
+                    factors[name] = factors.pop(previous)
+            if self.default_load_case == previous:
+                self.default_load_case = name
+
+    def delete_load_case(self, name):
+        if name == self.default_load_case:
+            raise ValueError("Choose a different default load case first.")
+        if any(load.case == name for load in self.loads.values()):
+            raise ValueError("Reassign loads before deleting their load case.")
+        if any(name in factors for factors in self.combinations.values()):
+            raise ValueError("Remove the load case from combinations before deleting it.")
+        self.load_cases.remove(name)
+
+    def validate_combination(self, name, factors):
+        self.validate_load_name(name)
+        if not isinstance(factors, dict) or not factors:
+            raise ValueError("A combination must include at least one load case.")
+        for case, factor in factors.items():
+            if case not in self.load_cases:
+                raise ValueError(f"Combination {name}: load case {case} does not exist.")
+            if not isinstance(factor, (int, float)) or not math.isfinite(factor):
+                raise ValueError("Combination factors must be finite numbers.")
+
+    def set_combination(self, name, factors, previous=None):
+        self.validate_combination(name, factors)
+        if name in self.combinations and name != previous:
+            raise ValueError(f"Combination {name} already exists.")
+        if previous is not None:
+            if previous not in self.combinations:
+                raise ValueError(f"Combination {previous} does not exist.")
+            if previous != name:
+                del self.combinations[previous]
+        self.combinations[name] = dict(factors)
+
+    def delete_combination(self, name):
+        if len(self.combinations) == 1:
+            raise ValueError("Keep at least one load combination.")
+        del self.combinations[name]
 
     @property
     def E(self):
@@ -158,13 +221,19 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 4, "units": "in-kip", **asdict(self)}
+        return {"version": 5, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
-        if data.get("version") not in (1, 2, 3, 4) or data.get("units") != "in-kip":
+        if data.get("version") not in (1, 2, 3, 4, 5) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         result = cls(grid=data["grid"])
+        if data["version"] >= 5:
+            if not isinstance(data["load_cases"], list):
+                raise ValueError("Load cases must be a list of names.")
+            result.load_cases = list(data["load_cases"])
+            result.default_load_case = data["default_load_case"]
+            result.combinations = {name: dict(factors) for name, factors in data["combinations"].items()}
         if data["version"] < 3:
             result.default_section = "Project section"
             result.sections = {result.default_section: Section(result.default_section, data["A"], data["Iy"], data["Iz"], data["J"])}
@@ -192,6 +261,18 @@ class Project:
         return self.from_dict(self.to_dict())
 
     def validate(self):
+        if not isinstance(self.load_cases, list) or not self.load_cases:
+            raise ValueError("Load cases must be a nonempty list of names.")
+        for case in self.load_cases:
+            self.validate_load_name(case)
+        if len(self.load_cases) != len(set(self.load_cases)):
+            raise ValueError("Load cases must be unique.")
+        if self.default_load_case not in self.load_cases:
+            raise ValueError("Default load case does not exist.")
+        if not self.combinations:
+            raise ValueError("Keep at least one load combination.")
+        for name, factors in self.combinations.items():
+            self.validate_combination(name, factors)
         if self.default_material not in self.materials:
             raise ValueError("Default material does not exist.")
         for name, material in self.materials.items():
@@ -236,6 +317,8 @@ class Project:
         for name, load in self.loads.items():
             if name != load.name or not name or load.target not in {*self.nodes, *self.members}:
                 raise ValueError("Invalid load target.")
+            if load.case not in self.load_cases:
+                raise ValueError(f"Load {name}: load case {load.case} does not exist.")
             if load.direction not in ("FX", "FY", "MZ"):
                 raise ValueError("Unsupported 2D load direction.")
             if not math.isfinite(load.magnitude) or not math.isfinite(load.position) or not 0 <= load.position <= 1:

@@ -36,6 +36,13 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   of member orientation. Select a load in the tree to edit it in the inspector.
   Splitting clips each loaded region and interpolates its endpoint intensities,
   preserving the original distribution without creating artificial nodal forces.
+- Edit > Load Cases and Combinations manages named load cases and linear
+  combinations. Assign each load a Case in its creation dialog or inspector.
+  Set Default chooses the case for new loads without reassigning existing loads.
+  Renaming a case updates all references; a case used by loads, combinations,
+  or the default cannot be deleted until those references are removed.
+  Add or edit a combination by checking its included cases and entering factors.
+  At least one combination is required; zero and negative factors are supported.
 - Edit > Materials opens reusable material definitions. Add or edit a name, E,
   Poisson ratio, and density; G is calculated for an isotropic material. Select
   a member, choose Material in its inspector, and press Apply to assign it.
@@ -48,10 +55,15 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   Edit > Grid changes the drawing grid spacing.
 - Use Pan (P) to drag the view, the mouse wheel to zoom, and Fit (F) to frame it.
 - Analyze (F5) runs PyNite in a worker thread. Reactions and nodal displacements
-  appear in Results. Deformed overlays the displaced members; Scale controls
+  appear in Results. Choose a combination above the result table to update
+  reactions, displacements, deformation, and factored load annotations without
+  another analysis. Deformed overlays the displaced members; Scale controls
   visual amplification. Diagrams opens whole-structure shear and bending moment
   diagrams with one common amplitude scale for every member. Member Detail
   provides local shear, bending moment, and deflection plots for any member.
+  Diagram windows have their own combination selector and retain the analyzed
+  snapshot even when the editor changes. The inspector always edits original
+  case values, not the factored values displayed after analysis.
 - Save/Open uses versioned `.pynite.json` project files. Ctrl+Z and Ctrl+Shift+Z
   undo and redo model edits. Delete removes the selected entity and its dependent
   members/loads. Unsaved changes are marked in the title and checked on exit.
@@ -64,7 +76,11 @@ Coordinates and sections use inches; forces use kips; moments use kip-in.
 The editor models frames in the global XY plane. Out-of-plane translation and
 rotations are restrained at every node. A pin restrains X/Y translation, a
 roller restrains Y translation, and a fixed support also restrains Z rotation.
-Loads support global FX, FY, and MZ, with one service combination at factor 1.
+Point loads support global FX, FY, and MZ; distributed forces support FX/FY.
+Loads belong to named cases. User-defined combinations superpose those cases
+with finite factors using linear elastic analysis. The initial project has
+Case 1 and a Service combination at factor 1. No design-code factors or
+envelopes are generated automatically.
 Member load positions are fractions measured from the start node.
 
 Each member references a reusable material definition. Editing that definition
@@ -82,15 +98,18 @@ uses W18x35 properties. Split segments inherit their original section.
 
 Version 1 files migrate their shared material to a named Project material.
 Version 1 and 2 files migrate their shared section to a named Project section.
-Version 3 point loads remain supported. New saves use version 4 and retain all material/section definitions and member
-assignments. Editing a definition updates all members assigned to it and
+Versions 1 through 4 migrate existing loads into Case 1 with the original
+Service combination. Version 3 point loads and version 4 distributed loads
+remain supported. New saves use version 5 and retain material/section definitions,
+member assignments, load cases, combination factors, and the default load case.
+Editing a definition updates all members assigned to it and
 invalidates analysis results.
 No self-weight is applied automatically. Drawing an intersection alone does not
 connect it: use Edit > Connect Intersections to create explicit shared endpoints.
 Analysis requires one connected structure and rejects overlapping members or
 nodes inside unsplit members, avoiding implicit solver connections. Geometry
 connections use an absolute tolerance of 1e-8 inches. Distributed intensity is
-force per unit member length, not projected length. Load cases/combinations, member releases,
+force per unit member length, not projected length. Member releases,
 and 3D editing are future extensions.
 
 Results are invalidated after edits and belong to the analyzed project revision.
@@ -113,6 +132,7 @@ and concentrated moments include both sides of each discontinuity.
   and sampling on both sides of force and moment discontinuities.
 - `src/pynitegui/qt/materials.py`: material definition manager and property editor.
 - `src/pynitegui/qt/sections.py`: section definition manager and property editor.
+- `src/pynitegui/qt/load_cases.py`: load-case manager and combination factor editor.
 - `tests/`: project, solver, diagram, and Qt interaction regression tests.
 
 ## Development
@@ -132,6 +152,9 @@ assignment with undo.
 Distributed-load checks cover analytical uniform/triangular beam responses,
 partial-span resultants, inclined global loading, orientation-independent
 diagrams, interpolated split loads, persistence, and editor creation/undo.
+Load-case checks cover independent results, linear superposition, negative/zero
+factors, reference-safe renaming/deletion, persistence/migration, default case
+assignment, result/diagram switching, deformation, and analyzed snapshots.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

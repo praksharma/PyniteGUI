@@ -1,7 +1,7 @@
 # PyniteGUI Roadmap
 
 Current scope: a 2D frame editor using inch/kip units, per-member materials and
-sections, and a single service load combination. This list tracks remaining work;
+sections, distributed loads, and named load cases/combinations. This list tracks remaining work;
 items are not promises of a particular release date.
 
 ## Modelling and Editing
@@ -22,7 +22,9 @@ items are not promises of a particular release date.
 
 - [x] Add uniform and varying distributed member loads, including partial spans
   and distribution-preserving member splitting.
-- [ ] Add load cases and combinations, including a results combination selector.
+- [x] Add load cases and combinations, including results and diagram selectors.
+- [ ] Add an editing load-case visibility filter and hide/show controls.
+- [ ] Add result envelopes across selected combinations.
 - [ ] Add optional self-weight with an explicit load case.
 - [ ] Add SI units and validated conversion of existing project data.
 - [ ] Improve instability messages with affected nodes and degrees of freedom.

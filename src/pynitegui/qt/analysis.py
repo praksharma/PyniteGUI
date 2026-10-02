@@ -12,6 +12,21 @@ class AnalysisResult:
     solver: FEModel3D
     displacements: dict
     reactions: dict
+    combination: str = "Service"
+
+    @classmethod
+    def from_solver(cls, model, combination):
+        if combination not in model.load_combos:
+            raise ValueError(f"Unknown result combination: {combination}")
+        return cls(
+            model,
+            {name: (node.DX[combination], node.DY[combination], node.RZ[combination]) for name, node in model.nodes.items()},
+            {name: (node.RxnFX[combination], node.RxnFY[combination], node.RxnMZ[combination]) for name, node in model.nodes.items()},
+            combination,
+        )
+
+    def for_combination(self, combination):
+        return self.from_solver(self.solver, combination)
 
 
 def analyze(project: Project) -> AnalysisResult:
@@ -43,20 +58,17 @@ def analyze(project: Project) -> AnalysisResult:
         model.add_member(member.name, member.start, member.end, member.material, member.section)
     for load in project.loads.values():
         if load.target in project.nodes:
-            model.add_node_load(load.target, load.direction, load.magnitude)
+            model.add_node_load(load.target, load.direction, load.magnitude, case=load.case)
         else:
             member = project.members[load.target]
             a, b = project.nodes[member.start], project.nodes[member.end]
             length = math.hypot(b.x - a.x, b.y - a.y)
             if load.kind == "distributed":
                 model.add_member_dist_load(load.target, load.direction, load.magnitude, load.end_magnitude,
-                                           length * load.position, length * load.end_position)
+                                           length * load.position, length * load.end_position, case=load.case)
             else:
-                model.add_member_pt_load(load.target, load.direction, load.magnitude, length * load.position)
-    model.add_load_combo("Service", {"Case 1": 1.0})
+                model.add_member_pt_load(load.target, load.direction, load.magnitude, length * load.position, case=load.case)
+    for name, factors in project.combinations.items():
+        model.add_load_combo(name, dict(factors))
     model.analyze_linear(check_stability=True, check_statics=True)
-    return AnalysisResult(
-        model,
-        {name: (node.DX["Service"], node.DY["Service"], node.RZ["Service"]) for name, node in model.nodes.items()},
-        {name: (node.RxnFX["Service"], node.RxnFY["Service"], node.RxnMZ["Service"]) for name, node in model.nodes.items()},
-    )
+    return AnalysisResult.from_solver(model, next(iter(project.combinations)))

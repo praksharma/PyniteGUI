@@ -1,13 +1,14 @@
 """Qt desktop editor for planar PyNite frames."""
 import math
 import sys
+from dataclasses import replace
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QPointF, QRectF, Qt, QThread, Signal
 from PySide6.QtGui import QAction, QActionGroup, QColor, QPainter, QPalette, QPen, QUndoCommand, QUndoStack
 from PySide6.QtWidgets import (
     QApplication, QComboBox, QDialog, QDialogButtonBox, QDockWidget,
-    QDoubleSpinBox, QFileDialog, QFormLayout, QGraphicsItem, QGraphicsScene, QGraphicsView,
+    QDoubleSpinBox, QFileDialog, QFormLayout, QGraphicsItem, QGraphicsScene, QGraphicsSimpleTextItem, QGraphicsView,
     QLabel, QMainWindow, QMessageBox, QPushButton,
     QStyle, QTableWidget, QTableWidgetItem, QTreeWidget, QTreeWidgetItem,
     QVBoxLayout, QWidget,
@@ -233,7 +234,26 @@ class StructureView(QGraphicsView):
                 symbol = EngineeringSymbol("support", node.support)
                 scene.addItem(symbol)
                 symbol.setPos(node.x, -node.y)
-        for load in project.loads.values():
+        occupied = [item.deviceTransform(self.viewportTransform()).mapRect(item.boundingRect())
+                    for item in scene.items() if isinstance(item, QGraphicsSimpleTextItem)]
+        def load_label(text, x, y):
+            from PySide6.QtGui import QTransform
+            item = self.label(text, x, y, "#bd3549", (8, -52))
+            offset = -52
+            while True:
+                rect = item.deviceTransform(self.viewportTransform()).mapRect(item.boundingRect()).adjusted(-2, -2, 2, 2)
+                if not any(rect.intersects(previous) for previous in occupied):
+                    occupied.append(rect)
+                    break
+                offset -= item.boundingRect().height() + 4
+                item.setTransform(QTransform.fromTranslate(8, offset))
+        for definition in project.loads.values():
+            load = definition
+            if self.window.result is not None:
+                factor = self.window.result.solver.load_combos[self.window.result.combination].factors.get(load.case, 0)
+                if factor == 0:
+                    continue
+                load = replace(load, magnitude=load.magnitude * factor, end_magnitude=load.end_magnitude * factor)
             if load.target in project.nodes:
                 node = project.nodes[load.target]
                 x, y = node.x, node.y
@@ -254,13 +274,13 @@ class StructureView(QGraphicsView):
                     symbol.setPos(a.x + (b.x - a.x) * fraction, -a.y - (b.y - a.y) * fraction)
                 midpoint = (load.position + load.end_position) / 2
                 x, y = a.x + (b.x - a.x) * midpoint, a.y + (b.y - a.y) * midpoint
-                self.label(f"{load.name}: {load.magnitude:g} to {load.end_magnitude:g} kip/in", x, y, "#bd3549", (8, -52))
+                load_label(f"{load.name}: {load.magnitude:g} to {load.end_magnitude:g} kip/in", x, y)
                 continue
             symbol = EngineeringSymbol("load", (load.direction, load.magnitude))
             scene.addItem(symbol)
             symbol.setPos(x, -y)
             units = "kip-in" if load.direction == "MZ" else "kip"
-            self.label(f"{load.name}: {load.magnitude:g} {units}", x, y, "#bd3549", (8, -48))
+            load_label(f"{load.name}: {load.magnitude:g} {units}", x, y)
         if self.window.result and self.window.deformed_action.isChecked():
             scale = self.window.deformation_scale.value()
             pen = QPen(QColor("#bd3549"), 2)
@@ -273,8 +293,8 @@ class StructureView(QGraphicsView):
                 previous = None
                 for index in range(41):
                     t = index / 40
-                    dx = solver_member.deflection("dx", t * length, "Service")
-                    dy = solver_member.deflection("dy", t * length, "Service")
+                    dx = solver_member.deflection("dx", t * length, self.window.result.combination)
+                    dy = solver_member.deflection("dy", t * length, self.window.result.combination)
                     ux = axes[0, 0] * dx + axes[1, 0] * dy
                     uy = axes[0, 1] * dx + axes[1, 1] * dy
                     point = QPointF(a.x + t * (b.x - a.x) + scale * ux, -(a.y + t * (b.y - a.y) + scale * uy))
@@ -345,6 +365,7 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.action("Delete Selection", self.delete_selected, "Delete", "edit-delete"))
         edit_menu.addAction(self.action("Materials...", self.manage_materials))
         edit_menu.addAction(self.action("Sections...", self.manage_sections))
+        edit_menu.addAction(self.action("Load Cases and Combinations...", self.manage_load_cases))
         edit_menu.addAction(self.action("Grid...", self.settings))
         edit_menu.addSeparator()
         edit_menu.addAction(self.action("Split Selected Member...", self.split_selected_member))
@@ -406,7 +427,16 @@ class MainWindow(QMainWindow):
         self.results_table.setHorizontalHeaderLabels(["Node", "DX (in)", "DY (in)", "RZ (rad)", "FX (kip)", "FY (kip)", "MZ (kip-in)"])
         self.results_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.results_table.setMinimumHeight(120)
-        self.results_dock = self.dock("Results - Service", self.results_table, Qt.DockWidgetArea.BottomDockWidgetArea)
+        results_panel = QWidget()
+        results_layout = QVBoxLayout(results_panel)
+        results_layout.setContentsMargins(0, 0, 0, 0)
+        self.result_combination = QComboBox()
+        self.result_combination.setToolTip("Results combination")
+        self.result_combination.setEnabled(False)
+        self.result_combination.currentTextChanged.connect(self.select_result_combination)
+        results_layout.addWidget(self.result_combination)
+        results_layout.addWidget(self.results_table)
+        self.results_dock = self.dock("Results", results_panel, Qt.DockWidgetArea.BottomDockWidgetArea)
         self.results_dock.hide()
 
     def update_title(self):
@@ -437,6 +467,8 @@ class MainWindow(QMainWindow):
         self.project = project.clone()
         self.revision += 1
         self.result = None
+        self.result_combination.setEnabled(False)
+        self.result_combination.clear()
         self.results_table.setRowCount(0)
         self.results_dock.setWindowTitle("Results - Outdated")
         self.deformed_action.setEnabled(False)
@@ -453,6 +485,8 @@ class MainWindow(QMainWindow):
             parent = QTreeWidgetItem(self.tree, [f"{title} ({len(getattr(self.project, kind))})"])
             for name, entity in getattr(self.project, kind).items():
                 detail = f"{entity.x:g}, {entity.y:g} | {entity.support}" if kind == "nodes" else f"{entity.start} - {entity.end}" if kind == "members" else f"{entity.target} | {entity.direction} {entity.magnitude:g}" + (f" to {entity.end_magnitude:g} kip/in" if entity.kind == "distributed" else "")
+                if kind == "loads":
+                    detail += f" | {entity.case}"
                 item = QTreeWidgetItem(parent, [name, detail])
                 item.setData(0, Qt.ItemDataRole.UserRole, (kind, name))
                 if self.selected == (kind, name):
@@ -517,10 +551,16 @@ class MainWindow(QMainWindow):
             fields["target"].addItems(list(self.project.members) if entity.kind == "distributed" else [*self.project.nodes, *self.project.members])
             fields["target"].setCurrentText(entity.target)
             fields["direction"] = QComboBox()
+            fields["direction"].setObjectName("load_direction")
             fields["direction"].addItems(["FX", "FY"] if entity.kind == "distributed" else ["FX", "FY", "MZ"])
             fields["direction"].setCurrentText(entity.direction)
             fields["magnitude"] = number(entity.magnitude)
             fields["position"] = number(entity.position, 0, 1)
+            fields["case"] = QComboBox()
+            fields["case"].setObjectName("load_case")
+            fields["case"].addItems(self.project.load_cases)
+            fields["case"].setCurrentText(entity.case)
+            self.form.addRow("Case", fields["case"])
             self.form.addRow("Type", QLabel(entity.kind.capitalize()))
             for key, label in (("target", "Target"), ("direction", "Global direction"),
                                ("magnitude", "Start (kip/in)" if entity.kind == "distributed" else "kip / kip-in"),
@@ -604,6 +644,10 @@ class MainWindow(QMainWindow):
         end_magnitude = number(-0.1, decimals=6)
         end_position = number(1, 0, 1, 6)
         form.addRow("Global direction", direction)
+        case = QComboBox()
+        case.addItems(self.project.load_cases)
+        case.setCurrentText(self.project.default_load_case)
+        form.addRow("Case", case)
         form.addRow("kip / kip-in", magnitude)
         if kind == "members":
             form.addRow("Fraction from start", position)
@@ -634,7 +678,7 @@ class MainWindow(QMainWindow):
             def mutate(project):
                 name = project.next_name("L", project.loads)
                 project.loads[name] = Load(name, target, direction.currentText(), magnitude.value(), position.value(),
-                                           load_type.currentText().lower(), end_magnitude.value(), end_position.value())
+                                           load_type.currentText().lower(), end_magnitude.value(), end_position.value(), case.currentText())
             self.edit("Add load", mutate)
 
     def assign_support(self):
@@ -652,6 +696,10 @@ class MainWindow(QMainWindow):
     def manage_materials(self):
         from .materials import MaterialDialog
         MaterialDialog(self).exec()
+
+    def manage_load_cases(self):
+        from .load_cases import LoadCasesDialog
+        LoadCasesDialog(self).exec()
 
     def manage_sections(self):
         from .sections import SectionDialog
@@ -741,6 +789,8 @@ class MainWindow(QMainWindow):
             return
         self.view.cancel()
         self.result = None
+        self.result_combination.setEnabled(False)
+        self.result_combination.clear()
         self.results_table.setRowCount(0)
         self.deformed_action.setChecked(False)
         self.deformed_action.setEnabled(False)
@@ -773,15 +823,29 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Analysis", error)
             return
         self.result = result
+        self.result_combination.blockSignals(True)
+        self.result_combination.clear()
+        self.result_combination.addItems(list(result.solver.load_combos))
+        self.result_combination.setCurrentText(result.combination)
+        self.result_combination.blockSignals(False)
+        self.result_combination.setEnabled(True)
+        self.select_result_combination(result.combination)
+        self.results_dock.show()
+        self.deformed_action.setEnabled(True)
+
+    def select_result_combination(self, name):
+        if self.result is None or not name:
+            return
+        self.result = self.result.for_combination(name)
+        result = self.result
         self.results_table.setRowCount(len(result.displacements))
         for row, (name, displacement) in enumerate(result.displacements.items()):
             for col, value in enumerate((name, *displacement, *result.reactions[name])):
                 self.results_table.setItem(row, col, QTableWidgetItem(value if isinstance(value, str) else f"{value:.6g}"))
         self.results_table.resizeColumnsToContents()
-        self.results_dock.setWindowTitle("Results - Service")
-        self.results_dock.show()
-        self.deformed_action.setEnabled(True)
-        self.statusBar().showMessage("Analysis complete | Service | in, kip")
+        self.results_dock.setWindowTitle(f"Results - {result.combination}")
+        self.view.redraw()
+        self.statusBar().showMessage(f"Analysis complete | {result.combination} | in, kip")
 
     def diagrams(self):
         if self.result is None:
