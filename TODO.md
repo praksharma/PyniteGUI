@@ -1,7 +1,8 @@
 # PyniteGUI Roadmap
 
 Current scope: a 2D frame editor with SI/imperial input and display, per-member materials and
-sections, distributed loads, and named load cases/combinations. This list tracks remaining work;
+sections, custom global support restraints, angled point forces, distributed loads,
+and named load cases/combinations. This list tracks remaining work;
 items are not promises of a particular release date.
 
 ## Modelling and Editing
@@ -53,7 +54,7 @@ items are not promises of a particular release date.
 
 ## Project Quality
 
-- [ ] Add recent projects and autosave/recovery.
+- [x] Add recent projects and per-window atomic autosave/recovery.
 - [ ] Expand validation for malformed project files and future format migrations.
 - [ ] Add benchmark tests for multi-storey frames and varied support/load setups.
 - [ ] Test installation and desktop rendering on Windows and macOS.

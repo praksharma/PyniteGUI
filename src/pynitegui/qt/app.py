@@ -4,10 +4,10 @@ import sys
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QPointF, QRectF, Qt, QThread, Signal
+from PySide6.QtCore import QObject, QPointF, QRectF, Qt, QThread, Signal, QTimer, QStandardPaths, QSettings
 from PySide6.QtGui import QAction, QActionGroup, QColor, QPainter, QPalette, QPen, QUndoCommand, QUndoStack
 from PySide6.QtWidgets import (
-    QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDockWidget,
+    QApplication, QAbstractItemView, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDockWidget,
     QDoubleSpinBox, QFileDialog, QFormLayout, QGraphicsItem, QGraphicsScene, QGraphicsSimpleTextItem, QGraphicsView,
     QLabel, QMainWindow, QMessageBox, QPushButton,
     QStyle, QTableWidget, QTableWidgetItem, QTreeWidget, QTreeWidgetItem,
@@ -417,8 +417,18 @@ class StructureView(QGraphicsView):
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, recovery_directory=None, settings=None):
         super().__init__()
+        self.settings_store = settings
+        self.recovery = None
+        self.recovery_error = None
+        self.last_autosave = None
+        if recovery_directory is not None:
+            from .recovery import RecoveryStore
+            try:
+                self.recovery = RecoveryStore(recovery_directory)
+            except OSError as error:
+                self.recovery_error = str(error)
         self.project = Project()
         self.saved = self.project.to_dict()
         self.path = None
@@ -446,6 +456,13 @@ class MainWindow(QMainWindow):
         self.undo.indexChanged.connect(self.update_title)
         self.refresh()
         self.view.fit()
+        self.autosave_timer = QTimer(self)
+        self.autosave_timer.setInterval(30000)
+        self.autosave_timer.timeout.connect(self.autosave_now)
+        if self.recovery is not None:
+            self.autosave_timer.start()
+        elif self.recovery_error:
+            QMessageBox.warning(self, "Autosave Unavailable", "The recovery directory could not be opened. Autosave is disabled for this session.\n\n" + self.recovery_error)
 
     def action(self, text, callback, shortcut=None, icon=None):
         action = QAction(text, self)
@@ -472,6 +489,10 @@ class MainWindow(QMainWindow):
         for action in (self.new_action, self.open_action, self.save_action):
             file_menu.addAction(action)
         file_menu.addAction(self.action("Save As...", lambda: self.save_project(True), "Ctrl+Shift+S"))
+        self.recent_menu = file_menu.addMenu("Recent Projects")
+        self.update_recent_menu()
+        if self.recovery is not None:
+            file_menu.addAction(self.action("Recover Autosave...", self.offer_recovery))
         file_menu.addSeparator()
         file_menu.addAction(self.action("Simply Supported Example", self.example))
         file_menu.addAction(self.action("Exit", self.close, "Ctrl+Q"))
@@ -1031,6 +1052,9 @@ class MainWindow(QMainWindow):
         self.undo.clear()
         self.path = path
         self.saved = project.to_dict()
+        self.clear_autosave()
+        if path is not None:
+            self.record_recent(path)
         self.set_mode("select")
         self.update_title()
         self.view.fit()
@@ -1062,6 +1086,8 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Save Project", str(error))
             return False
         self.path, self.saved = path, self.project.to_dict()
+        self.clear_autosave()
+        self.record_recent(path)
         self.update_title()
         return True
 
@@ -1154,11 +1180,139 @@ class MainWindow(QMainWindow):
         dialog = DiagramDialog(self, self.project, self.result, selected)
         dialog.show()
 
+    def clear_autosave(self):
+        self.last_autosave = None
+        if self.recovery is not None:
+            try:
+                self.recovery.clear()
+            except OSError as error:
+                self.statusBar().showMessage(f"Could not clear recovery snapshot: {error}", 6000)
+
+    def autosave_now(self):
+        if self.recovery is None:
+            return False
+        data = self.project.to_dict()
+        if data == self.saved:
+            self.clear_autosave()
+            return True
+        signature = (data, self.saved, str(self.path))
+        if signature == self.last_autosave and self.recovery.path.exists():
+            return True
+        try:
+            self.recovery.write(self.project, self.saved, self.path)
+            self.last_autosave = signature
+            return True
+        except (OSError, ValueError) as error:
+            self.statusBar().showMessage(f"Autosave failed: {error}", 10000)
+            return False
+
+    def recover_snapshot(self, path):
+        from .recovery import RecoveryStore
+        project, original, saved = RecoveryStore.read(path)
+        if not self.confirm_discard():
+            return False
+        self.load_project(project, original if original and original.exists() else None)
+        self.saved = saved
+        self.update_title()
+        if self.autosave_now():
+            if self.recovery is not None and Path(path) != self.recovery.path:
+                Path(path).unlink(missing_ok=True)
+        return True
+
+    def offer_recovery(self):
+        if self.recovery is None:
+            return
+        snapshots = self.recovery.snapshots()
+        if self.recovery.errors:
+            QMessageBox.warning(self, "Recovery", "Some recovery files could not be read and have been left untouched in:\n" + str(self.recovery.directory))
+        if not snapshots:
+            self.statusBar().showMessage("No interrupted-session recovery snapshots found", 6000)
+            return
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Recover Unsaved Projects")
+        dialog.resize(700, 320)
+        layout = QVBoxLayout(dialog)
+        table = QTableWidget(len(snapshots), 3)
+        table.setHorizontalHeaderLabels(["Project", "Snapshot (UTC)", "Original file"])
+        table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        for row, (_, payload) in enumerate(snapshots):
+            original = payload.get("original_path")
+            for col, text in enumerate((Path(original).name if original else "Untitled", payload["updated_at"], original or "-")):
+                item = QTableWidgetItem(text)
+                item.setToolTip(text)
+                table.setItem(row, col, item)
+        table.resizeColumnsToContents()
+        table.selectRow(0)
+        layout.addWidget(table)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        recover = buttons.addButton("Recover", QDialogButtonBox.ButtonRole.ActionRole)
+        discard = buttons.addButton("Discard Snapshot", QDialogButtonBox.ButtonRole.ActionRole)
+        def recover_selected():
+            if table.currentRow() < 0:
+                return
+            try:
+                if self.recover_snapshot(snapshots[table.currentRow()][0]):
+                    dialog.accept()
+            except (OSError, ValueError, KeyError, TypeError) as error:
+                QMessageBox.warning(dialog, "Recovery", str(error))
+        def discard_selected():
+            row = table.currentRow()
+            if row < 0:
+                return
+            if QMessageBox.question(dialog, "Discard Recovery", "Permanently discard this unsaved snapshot?",
+                                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                    QMessageBox.StandardButton.No) == QMessageBox.StandardButton.Yes:
+                try:
+                    snapshots[row][0].unlink(missing_ok=True)
+                    snapshots.pop(row)
+                    table.removeRow(row)
+                    if not snapshots:
+                        dialog.reject()
+                    else:
+                        table.selectRow(min(row, len(snapshots) - 1))
+                except OSError as error:
+                    QMessageBox.warning(dialog, "Recovery", str(error))
+        recover.clicked.connect(recover_selected)
+        discard.clicked.connect(discard_selected)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        dialog.exec()
+
+    def record_recent(self, path):
+        if self.settings_store is None:
+            return
+        path = str(Path(path).resolve())
+        recent = self.settings_store.value("recent_projects", [], type=list)
+        self.settings_store.setValue("recent_projects", [path, *(item for item in recent if item != path)][:10])
+        self.update_recent_menu()
+
+    def update_recent_menu(self):
+        self.recent_menu.clear()
+        recent = self.settings_store.value("recent_projects", [], type=list) if self.settings_store else []
+        self.recent_menu.setEnabled(bool(recent))
+        for filename in recent:
+            path = Path(filename)
+            action = self.action(f"{path.name} ({path.parent.name})", lambda checked=False, path=path: self.open_recent(path))
+            action.setToolTip(str(path))
+            self.recent_menu.addAction(action)
+
+    def open_recent(self, path):
+        if not self.confirm_discard():
+            return
+        try:
+            self.load_project(Project.open(path), path)
+        except (OSError, ValueError, KeyError, TypeError) as error:
+            QMessageBox.warning(self, "Open Project", str(error))
+
     def closeEvent(self, event):
         if self.thread is not None:
             QMessageBox.information(self, "Analysis Running", "Wait for analysis to finish before closing.")
             event.ignore()
         elif self.confirm_discard():
+            self.clear_autosave()
+            self.autosave_timer.stop()
             event.accept()
         else:
             event.ignore()
@@ -1216,8 +1370,10 @@ def main():
     application = QApplication.instance() or QApplication(sys.argv)
     application.setApplicationName("PyniteGUI")
     configure_theme(application)
-    window = MainWindow()
+    recovery_directory = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppDataLocation)) / "recovery"
+    window = MainWindow(recovery_directory, QSettings("PyniteGUI", "PyniteGUI"))
     window.show()
+    QTimer.singleShot(0, window.offer_recovery)
     sys.exit(application.exec())
 
 

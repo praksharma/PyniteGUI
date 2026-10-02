@@ -40,6 +40,13 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   Splitting and connecting preserve releases at original outer ends only;
   newly created internal connections stay rigid.
 - Assign a node support using Support, or select a node/member and use Load (L).
+- The desktop app keeps a separate autosave snapshot of unsaved changes every
+  30 seconds in Qt's per-user application-data recovery directory. These files
+  never overwrite your project. After an interrupted session, startup offers
+  Recover/Discard; File > Recover Autosave reopens that list. Snapshots owned by
+  another running process are excluded. Saving or intentionally closing clears
+  this window's snapshot; a cancelled close retains it. Unsaved recovered work
+  stays marked dirty. File > Recent Projects remembers the latest ten files.
 - Choose custom in the node Support inspector for independent global horizontal
   (DX), vertical (DY), and rotational (RZ) restraint checkboxes. Checked means
   restrained. Existing free/pin/roller/fixed presets remain available. Custom
@@ -148,7 +155,9 @@ Dimensional inputs and results use the selected system listed above.
 The editor models frames in the global XY plane. Out-of-plane translation and
 rotations are restrained at every node. A pin restrains X/Y translation, a
 roller restrains Y translation, and a fixed support also restrains Z rotation.
-Point loads support global FX, FY, and MZ; distributed forces support FX/FY.
+Custom supports independently restrain global DX, DY, and RZ; inclined supports
+and elastic springs are not implemented yet. Point loads support global FX, FY,
+MZ, and signed angled forces; distributed forces currently support global FX/FY.
 Loads belong to named cases. User-defined combinations superpose those cases
 with finite factors using linear elastic analysis. The initial project has
 Case 1 and a Service combination at factor 1. No design-code factors or
@@ -162,13 +171,13 @@ nodal loads, but the member remains a beam and can still bend under transverse
 member loads; it is not a separate axial-only truss element. Axial/shear,
 out-of-plane, and partial-stiffness releases are not exposed in this editor.
 
-When every connected member end at a non-fixed node is hinged, the shared
+When every connected member end at a node without an RZ restraint is hinged, the shared
 rotation has no stiffness. Analysis removes that unused rotation from the
 unknowns without restraining translations or transferring connection moments.
 Results show RZ as n/a for those joints, not a physical zero rotation. Individual
 member end rotations and deformations remain governed by the released beam.
 A net nodal MZ on such a joint is rejected for each analyzed combination unless
-a moment-resisting connection or fixed support is provided. Real translational
+a moment-resisting connection or rotational support restraint is provided. Real translational
 mechanisms still fail the solver stability checks.
 
 Each member references a reusable material definition. Editing that definition
@@ -234,6 +243,7 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/materials.py`: material definition manager and property editor.
 - `src/pynitegui/qt/sections.py`: section definition manager and property editor.
 - `src/pynitegui/qt/load_cases.py`: load-case manager and combination factor editor.
+- `src/pynitegui/qt/recovery.py`: per-window atomic recovery snapshots and validation.
 - `tests/`: project, solver, diagram, and Qt interaction regression tests.
 
 ## Development
@@ -265,6 +275,13 @@ combination switching, snapshot preservation, and compact plot-label layout.
 Unit checks cover known conversion factors, SI analytical beam responses,
 precision-preserving input, grid snapping, all dimensional editors/result columns,
 live diagram switching, persistence/migration, undo, and repeated unit changes.
+Editing checks cover drag preview/commit/cancel, snapping, collision rejection,
+and non-destructive load visibility. Custom support checks cover preset
+equivalence, independent restraints, hinged joints, persistence, and undo.
+Member-result checks cover extrema, exact-distance queries, one-sided jumps,
+click inspection, combination switching, and SI conversion. Recovery checks
+cover atomic write failures, untouched project files, multiple windows,
+malformed snapshots, recovery dirtiness, cancelled closing, and recent projects.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.
