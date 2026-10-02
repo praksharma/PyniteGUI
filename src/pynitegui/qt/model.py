@@ -5,6 +5,28 @@ import math
 
 
 @dataclass
+class Material:
+    name: str
+    E: float = 29000.0
+    nu: float = 0.3
+    rho: float = 0.49 / 12**3
+
+    @property
+    def G(self):
+        return self.E / (2 * (1 + self.nu))
+
+    def validate(self):
+        if not isinstance(self.name, str) or not self.name.strip() or self.name != self.name.strip():
+            raise ValueError("Material name must be nonempty with no leading or trailing spaces.")
+        if not isinstance(self.E, (int, float)) or not math.isfinite(self.E) or self.E <= 0:
+            raise ValueError(f"Material {self.name}: E must be a positive finite number.")
+        if not isinstance(self.nu, (int, float)) or not math.isfinite(self.nu) or not -1 < self.nu < 0.5:
+            raise ValueError(f"Material {self.name}: Poisson ratio must be between -1 and 0.5.")
+        if not isinstance(self.rho, (int, float)) or not math.isfinite(self.rho) or self.rho < 0:
+            raise ValueError(f"Material {self.name}: density must be finite and nonnegative.")
+
+
+@dataclass
 class Node:
     name: str
     x: float
@@ -17,6 +39,7 @@ class Member:
     name: str
     start: str
     end: str
+    material: str = "Steel_A992"
 
 
 @dataclass
@@ -33,26 +56,69 @@ class Project:
     nodes: dict[str, Node] = field(default_factory=dict)
     members: dict[str, Member] = field(default_factory=dict)
     loads: dict[str, Load] = field(default_factory=dict)
-    E: float = 29000.0
-    nu: float = 0.3
-    rho: float = 0.49 / 12**3
+    materials: dict[str, Material] = field(default_factory=lambda: {"Steel_A992": Material("Steel_A992")})
+    default_material: str = "Steel_A992"
     A: float = 10.3
     Iy: float = 15.3
     Iz: float = 510.0
     J: float = 0.506
     grid: float = 12.0
 
+    @property
+    def E(self):
+        return self.materials[self.default_material].E
+
+    @property
+    def nu(self):
+        return self.materials[self.default_material].nu
+
+    @property
+    def rho(self):
+        return self.materials[self.default_material].rho
+
+    def set_material(self, material, previous=None):
+        material.validate()
+        if material.name in self.materials and material.name != previous:
+            raise ValueError(f"Material {material.name} already exists.")
+        if previous is not None and previous not in self.materials:
+            raise ValueError(f"Material {previous} does not exist.")
+        if previous and previous != material.name:
+            for member in self.members.values():
+                if member.material == previous:
+                    member.material = material.name
+            if self.default_material == previous:
+                self.default_material = material.name
+            del self.materials[previous]
+        self.materials[material.name] = material
+
+    def delete_material(self, name):
+        used = [member.name for member in self.members.values() if member.material == name]
+        if used:
+            raise ValueError(f"Material {name} is assigned to: {', '.join(used)}. Reassign those members first.")
+        if name == self.default_material:
+            raise ValueError("Choose a different default material before deleting this definition.")
+        del self.materials[name]
+
     def to_dict(self):
-        return {"version": 1, "units": "in-kip", **asdict(self)}
+        return {"version": 2, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
-        if data.get("version") != 1 or data.get("units") != "in-kip":
+        if data.get("version") not in (1, 2) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
-        properties = {key: data[key] for key in ("E", "nu", "rho", "A", "Iy", "Iz", "J", "grid")}
+        properties = {key: data[key] for key in ("A", "Iy", "Iz", "J", "grid")}
         result = cls(**properties)
+        if data["version"] == 1:
+            result.default_material = "Project material"
+            result.materials = {result.default_material: Material(result.default_material, data["E"], data["nu"], data["rho"])}
+        else:
+            result.default_material = data["default_material"]
+            result.materials = {name: Material(**value) for name, value in data["materials"].items()}
         for key, kind in (("nodes", Node), ("members", Member), ("loads", Load)):
             setattr(result, key, {name: kind(**value) for name, value in data[key].items()})
+        if data["version"] == 1:
+            for member in result.members.values():
+                member.material = result.default_material
         result.validate()
         return result
 
@@ -60,14 +126,16 @@ class Project:
         return self.from_dict(self.to_dict())
 
     def validate(self):
-        for key in ("E", "A", "Iy", "Iz", "J", "grid"):
+        if self.default_material not in self.materials:
+            raise ValueError("Default material does not exist.")
+        for name, material in self.materials.items():
+            if name != material.name:
+                raise ValueError("Invalid material identifier.")
+            material.validate()
+        for key in ("A", "Iy", "Iz", "J", "grid"):
             value = getattr(self, key)
             if not isinstance(value, (float, int)) or not math.isfinite(value) or value <= 0:
                 raise ValueError(f"{key} must be a positive finite number.")
-        if not math.isfinite(self.nu) or not -1 < self.nu < 0.5:
-            raise ValueError("Poisson's ratio must be between -1 and 0.5.")
-        if not math.isfinite(self.rho) or self.rho < 0:
-            raise ValueError("Density must be finite and nonnegative.")
         coords = set()
         for name, node in self.nodes.items():
             if name != node.name or not name:
@@ -85,6 +153,8 @@ class Project:
                 raise ValueError("Invalid member or endpoint reference.")
             if member.start == member.end:
                 raise ValueError("A member needs two different nodes.")
+            if member.material not in self.materials:
+                raise ValueError(f"Member {name}: material {member.material} does not exist.")
             connection = frozenset((member.start, member.end))
             if connection in connections:
                 raise ValueError("Duplicate members connect the same nodes.")
@@ -118,7 +188,7 @@ class Project:
         if any({m.start, m.end} == {a, b} for m in self.members.values()):
             raise ValueError("A member already connects these nodes.")
         name = self.next_name("M", self.members)
-        self.members[name] = Member(name, a, b)
+        self.members[name] = Member(name, a, b, self.default_material)
         return name
 
     def member_position(self, name, x, y):

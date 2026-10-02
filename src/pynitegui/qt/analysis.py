@@ -24,7 +24,8 @@ def analyze(project: Project) -> AnalysisResult:
     if not any(node.support != "free" for node in project.nodes.values()):
         raise ValueError("Assign supports before running analysis.")
     model = FEModel3D()
-    model.add_material("Material", project.E, project.E / (2 * (1 + project.nu)), project.nu, project.rho)
+    for material in project.materials.values():
+        model.add_material(material.name, material.E, material.G, material.nu, material.rho)
     model.add_section("Section", project.A, project.Iy, project.Iz, project.J)
     for node in project.nodes.values():
         model.add_node(node.name, node.x, node.y, 0)
@@ -38,7 +39,7 @@ def analyze(project: Project) -> AnalysisResult:
             support_RZ=node.support == "fixed",
         )
     for member in project.members.values():
-        model.add_member(member.name, member.start, member.end, "Material", "Section")
+        model.add_member(member.name, member.start, member.end, member.material, "Section")
     for load in project.loads.values():
         if load.target in project.nodes:
             model.add_node_load(load.target, load.direction, load.magnitude)
