@@ -172,6 +172,24 @@ class AngledEditorTests(unittest.TestCase):
         self.assertEqual(len(glyphs), 1)
         self.assertEqual(glyphs[0].value, ("Angle", -20, -30))
 
+    def test_dialog_component_preview_has_room_for_two_lines(self):
+        self.window.select(("nodes", "N2"))
+        def accept():
+            dialog = self.application.activeModalWidget()
+            dialog.findChildren(QComboBox)[1].setCurrentText("Angle")
+            dialog.findChild(QDoubleSpinBox, "load_angle").setValue(45)
+            self.application.processEvents()
+            preview = next(label for label in dialog.findChildren(QLabel) if label.text().startswith("FX "))
+            self.assertEqual(len(preview.text().splitlines()), 2)
+            self.assertFalse(preview.wordWrap())
+            self.assertGreaterEqual(preview.height(), 2 * preview.fontMetrics().lineSpacing())
+            for line in preview.text().splitlines():
+                self.assertGreaterEqual(preview.width(), preview.fontMetrics().horizontalAdvance(line))
+            self.assertGreaterEqual(dialog.width(), 360)
+            dialog.reject()
+        QTimer.singleShot(0, accept)
+        self.window.add_load()
+
 
 if __name__ == "__main__":
     unittest.main()

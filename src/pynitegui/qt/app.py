@@ -716,7 +716,7 @@ class MainWindow(QMainWindow):
                 fields["angle"].setToolTip("Global angle: 0 deg right, 90 deg up, -90 deg down; counterclockwise positive")
                 self.form.addRow("Angle (deg)", fields["angle"])
                 components = QLabel()
-                components.setWordWrap(True)
+                components.setMinimumHeight(2 * components.fontMetrics().lineSpacing() + 4)
                 self.form.addRow("Components", components)
                 def update_point():
                     angled = fields["direction"].currentText() == "Angle"
@@ -728,7 +728,7 @@ class MainWindow(QMainWindow):
                         fields["magnitude"].setValue(abs(value))
                     self.form.labelForField(fields["magnitude"]).setText(self.project.units.moment if fields["direction"].currentText() == "MZ" else self.project.units.force)
                     resolved = Load("", "", "Angle", fields["magnitude"].value(), angle=fields["angle"].value()).components()
-                    components.setText(f"FX {resolved[0][1]:.6g} | FY {resolved[1][1]:.6g} {self.project.units.force}")
+                    components.setText(f"FX {resolved[0][1]:.6g} {self.project.units.force}\nFY {resolved[1][1]:.6g} {self.project.units.force}")
                 fields["direction"].currentTextChanged.connect(update_point)
                 fields["angle"].valueChanged.connect(update_point)
                 fields["magnitude"].valueChanged.connect(update_point)
@@ -799,6 +799,7 @@ class MainWindow(QMainWindow):
         kind, target = self.selected
         dialog = QDialog(self)
         dialog.setWindowTitle(f"Load on {target}")
+        dialog.setMinimumWidth(360)
         form = QFormLayout(dialog)
         load_type = QComboBox()
         load_type.addItems(["Point", "Distributed"] if kind == "members" else ["Point"])
@@ -820,7 +821,7 @@ class MainWindow(QMainWindow):
         angle.setToolTip("Global angle: 0 deg right, 90 deg up, -90 deg down; counterclockwise positive")
         form.addRow("Angle (deg)", angle)
         components = QLabel()
-        components.setWordWrap(True)
+        components.setMinimumHeight(2 * components.fontMetrics().lineSpacing() + 4)
         form.addRow("Components", components)
         if kind == "members":
             form.addRow("Fraction from start", position)
@@ -851,7 +852,7 @@ class MainWindow(QMainWindow):
             if angled and value < 0:
                 magnitude.setValue(abs(value))
             resolved = Load("", "", "Angle", magnitude.value(), angle=angle.value()).components()
-            components.setText(f"FX {resolved[0][1]:.6g} | FY {resolved[1][1]:.6g} {self.project.units.force}")
+            components.setText(f"FX {resolved[0][1]:.6g} {self.project.units.force}\nFY {resolved[1][1]:.6g} {self.project.units.force}")
         direction.currentTextChanged.connect(update_direction)
         angle.valueChanged.connect(update_direction)
         magnitude.valueChanged.connect(update_direction)
