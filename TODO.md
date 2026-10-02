@@ -6,7 +6,7 @@ items are not promises of a particular release date.
 
 ## Modelling and Editing
 
-- [ ] Add node dragging with snapping and undo/redo.
+- [x] Add node dragging with snapping and undo/redo.
 - [ ] Add multiple selection and bulk property editing.
 - [ ] Add editable node/member/load tables for precise numerical entry.
 - [x] Add member splitting and an explicit connect-at-intersection operation.
@@ -28,7 +28,7 @@ items are not promises of a particular release date.
 - [x] Add uniform and varying distributed member loads, including partial spans
   and distribution-preserving member splitting.
 - [x] Add load cases and combinations, including results and diagram selectors.
-- [ ] Add an editing load-case visibility filter and hide/show controls.
+- [x] Add an editing load-case visibility filter and hide/show controls.
 - [ ] Add result envelopes across selected combinations.
 - [ ] Add optional self-weight with an explicit load case.
 - [x] Add SI/imperial presets with validated dimensional input/output conversion,

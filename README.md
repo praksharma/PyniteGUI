@@ -40,6 +40,13 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   Splitting and connecting preserve releases at original outer ends only;
   newly created internal connections stay rigid.
 - Assign a node support using Support, or select a node/member and use Load (L).
+- In Select mode, drag a node to move it with snapping. Dashed connected members
+  preview the move; releasing creates one undoable edit. Escape/right-click
+  cancels. Coincident nodes and collapsed members are rejected without changing
+  the model. Moving geometry invalidates analysis results.
+- The selector above the structure tree shows all load cases, one case, or hides
+  loads. It filters load arrows and tree entries only; analysis still includes
+  all loads according to the selected combination.
 - For an angled point force on a node or member, choose Global direction > Angle,
   then enter a signed magnitude and an angle in degrees. Angles are global,
   counterclockwise from +X: 0 points right, 90 up, -90 down, and 180 left for

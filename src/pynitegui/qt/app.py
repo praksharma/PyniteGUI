@@ -147,6 +147,8 @@ class StructureView(QGraphicsView):
         self.window = window
         self.start = None
         self.preview = None
+        self.drag_node = None
+        self.drag_items = []
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setMouseTracking(True)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -200,6 +202,10 @@ class StructureView(QGraphicsView):
 
     def cancel(self):
         self.start = None
+        self.drag_node = None
+        for item in self.drag_items:
+            self.scene().removeItem(item)
+        self.drag_items.clear()
         if self.preview is not None:
             self.scene().removeItem(self.preview)
             self.preview = None
@@ -224,7 +230,12 @@ class StructureView(QGraphicsView):
                 self.cancel()
                 self.window.edit("Add member", lambda project: project.add_member(start, xy))
         else:
-            self.window.select(self.hit(point))
+            hit = self.hit(point)
+            self.window.select(hit)
+            if hit and hit[0] == "nodes":
+                self.drag_node = hit[1]
+                self.drag_origin = event.position().toPoint()
+                self.drag_target = None
 
     def mouseMoveEvent(self, event):
         point = self.mapToScene(event.position().toPoint())
@@ -233,7 +244,32 @@ class StructureView(QGraphicsView):
         self.window.coordinates.setText(f"X {units.to_display(x, 'length'):g} {units.length}   Y {units.to_display(y, 'length'):g} {units.length}")
         if self.preview is not None:
             self.preview.setLine(self.start[0], -self.start[1], x, -y)
+        if self.drag_node and (event.position().toPoint() - self.drag_origin).manhattanLength() >= QApplication.startDragDistance():
+            self.drag_target = x, y
+            for item in self.drag_items:
+                self.scene().removeItem(item)
+            self.drag_items.clear()
+            pen = QPen(QColor("#168b8b"), 0, Qt.PenStyle.DashLine)
+            for member in self.window.project.members.values():
+                if self.drag_node in (member.start, member.end):
+                    other = self.window.project.nodes[member.end if member.start == self.drag_node else member.start]
+                    self.drag_items.append(self.scene().addLine(other.x, -other.y, x, -y, pen))
+            dot = self.scene().addEllipse(-4, -4, 8, 8, QPen(QColor("#168b8b")), QColor("white"))
+            dot.setFlag(dot.GraphicsItemFlag.ItemIgnoresTransformations)
+            dot.setPos(x, -y)
+            self.drag_items.append(dot)
         super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton and self.drag_node:
+            name, target = self.drag_node, self.drag_target
+            self.cancel()
+            if target is not None:
+                def move(project):
+                    project.nodes[name].x, project.nodes[name].y = target
+                self.window.edit(f"Move {name}", move)
+            return
+        super().mouseReleaseEvent(event)
 
     def wheelEvent(self, event):
         factor = 1.2 if event.angleDelta().y() > 0 else 1 / 1.2
@@ -301,6 +337,8 @@ class StructureView(QGraphicsView):
                 offset -= item.boundingRect().height() + 4
                 item.setTransform(QTransform.fromTranslate(8, offset))
         for definition in project.loads.values():
+            if not self.window.load_visible(definition):
+                continue
             load = definition
             if self.window.result is not None:
                 factor = self.window.result.solver.load_combos[self.window.result.combination].factors.get(load.case, 0)
@@ -499,7 +537,15 @@ class MainWindow(QMainWindow):
         self.tree.setHeaderLabels(["Model", "Properties"])
         self.tree.setMinimumWidth(210)
         self.tree.itemSelectionChanged.connect(self.tree_selection)
-        self.dock("Structure", self.tree, Qt.DockWidgetArea.LeftDockWidgetArea)
+        structure_panel = QWidget()
+        structure_layout = QVBoxLayout(structure_panel)
+        structure_layout.setContentsMargins(0, 0, 0, 0)
+        self.load_filter = QComboBox()
+        self.load_filter.setToolTip("Visible load cases; analysis always uses all model loads")
+        self.load_filter.currentIndexChanged.connect(self.filter_loads)
+        structure_layout.addWidget(self.load_filter)
+        structure_layout.addWidget(self.tree)
+        self.dock("Structure", structure_panel, Qt.DockWidgetArea.LeftDockWidgetArea)
         self.inspector = QWidget()
         self.form = QFormLayout(self.inspector)
         self.form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
@@ -585,6 +631,16 @@ class MainWindow(QMainWindow):
 
     def refresh(self):
         units = self.project.units
+        visible_case = self.load_filter.currentData()
+        self.load_filter.blockSignals(True)
+        self.load_filter.clear()
+        self.load_filter.addItem("All load cases", None)
+        self.load_filter.addItem("Hide loads", False)
+        for case in self.project.load_cases:
+            self.load_filter.addItem(case, case)
+        index = self.load_filter.findData(visible_case)
+        self.load_filter.setCurrentIndex(max(0, index))
+        self.load_filter.blockSignals(False)
         self.unit_selector.blockSignals(True)
         self.unit_selector.setCurrentIndex(self.unit_selector.findData(self.project.unit_system))
         self.unit_selector.blockSignals(False)
@@ -599,6 +655,8 @@ class MainWindow(QMainWindow):
         for kind, title in (("nodes", "Nodes"), ("members", "Members"), ("loads", "Loads")):
             parent = QTreeWidgetItem(self.tree, [f"{title} ({len(getattr(self.project, kind))})"])
             for name, entity in getattr(self.project, kind).items():
+                if kind == "loads" and not self.load_visible(entity):
+                    continue
                 if kind == "nodes":
                     detail = f"{units.to_display(entity.x, 'length'):g}, {units.to_display(entity.y, 'length'):g} {units.length} | {entity.support}"
                 elif kind == "members":
@@ -626,6 +684,15 @@ class MainWindow(QMainWindow):
         self.update_inspector()
         self.view.redraw()
         self.update_title()
+
+    def load_visible(self, load):
+        case = self.load_filter.currentData()
+        return case is None or (case is not False and load.case == case)
+
+    def filter_loads(self):
+        if self.selected and self.selected[0] == "loads" and not self.load_visible(self.project.loads[self.selected[1]]):
+            self.selected = None
+        self.refresh()
 
     def tree_selection(self):
         items = self.tree.selectedItems()
