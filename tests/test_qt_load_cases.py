@@ -190,6 +190,7 @@ class LoadCaseEditorTests(unittest.TestCase):
 
     def test_deformed_shape_tracks_combination(self):
         self.finish_analysis()
+        self.window.deformation_mode.setCurrentText("Custom")
         self.window.deformed_action.trigger()
         from PySide6.QtWidgets import QGraphicsLineItem
         def peak():

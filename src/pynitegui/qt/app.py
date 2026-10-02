@@ -44,6 +44,25 @@ def unit_value(widget, units, quantity=None):
     return units.from_display(widget.value(), quantity)
 
 
+def deformation_paths(project, result):
+    paths = []
+    for member in project.members.values():
+        a, b = project.nodes[member.start], project.nodes[member.end]
+        length = math.hypot(b.x - a.x, b.y - a.y)
+        solver_member = result.solver.members[member.name]
+        axes = solver_member.T()[:3, :3]
+        points = []
+        for index in range(41):
+            t = index / 40
+            dx = solver_member.deflection("dx", t * length, result.combination)
+            dy = solver_member.deflection("dy", t * length, result.combination)
+            ux = axes[0, 0] * dx + axes[1, 0] * dy
+            uy = axes[0, 1] * dx + axes[1, 1] * dy
+            points.append((a.x + t * (b.x - a.x), a.y + t * (b.y - a.y), ux, uy))
+        paths.append(points)
+    return paths
+
+
 class Edit(QUndoCommand):
     def __init__(self, window, title, before, after):
         super().__init__(title)
@@ -312,23 +331,30 @@ class StructureView(QGraphicsView):
             symbol.setPos(x, -y)
             quantity = "moment" if load.direction == "MZ" else "force"
             load_label(f"{load.name}: {units.to_display(load.magnitude, quantity):g} {getattr(units, quantity)}", x, y)
-        if self.window.result and self.window.deformed_action.isChecked():
+        visible = bool(self.window.result and self.window.deformed_action.isChecked())
+        self.window.deformation_mode.setEnabled(visible)
+        self.window.deformation_scale.setEnabled(visible and self.window.deformation_mode.currentData() == "custom")
+        self.window.deformation_scale_action.setVisible(self.window.deformation_mode.currentData() == "custom")
+        self.window.deformation_peak.setVisible(visible)
+        if visible:
+            paths = deformation_paths(project, self.window.result)
+            peak = max((math.hypot(ux, uy) for path in paths for _, _, ux, uy in path), default=0)
+            mode = self.window.deformation_mode.currentData()
             scale = self.window.deformation_scale.value()
+            if mode == "auto":
+                xs = [node.x for node in project.nodes.values()]
+                ys = [node.y for node in project.nodes.values()]
+                span = math.hypot(max(xs) - min(xs), max(ys) - min(ys)) if xs else 0
+                scale = 0.15 * span / peak if peak > 1e-12 else 1.0
+            elif mode == "true":
+                scale = 1.0
+            self.window.deformation_peak.setText(f"Factor {scale:.6g}x | Max {units.to_display(peak, 'length'):.6g} {units.length}")
             pen = QPen(QColor("#bd3549"), 2)
             pen.setCosmetic(True)
-            for member in project.members.values():
-                a, b = project.nodes[member.start], project.nodes[member.end]
-                length = math.hypot(b.x - a.x, b.y - a.y)
-                solver_member = self.window.result.solver.members[member.name]
-                axes = solver_member.T()[:3, :3]
+            for path in paths:
                 previous = None
-                for index in range(41):
-                    t = index / 40
-                    dx = solver_member.deflection("dx", t * length, self.window.result.combination)
-                    dy = solver_member.deflection("dy", t * length, self.window.result.combination)
-                    ux = axes[0, 0] * dx + axes[1, 0] * dy
-                    uy = axes[0, 1] * dx + axes[1, 1] * dy
-                    point = QPointF(a.x + t * (b.x - a.x) + scale * ux, -(a.y + t * (b.y - a.y) + scale * uy))
+                for x, y, ux, uy in path:
+                    point = QPointF(x + scale * ux, -(y + scale * uy))
                     if previous is not None:
                         scene.addLine(previous.x(), previous.y(), point.x(), point.y(), pen)
                     previous = point
@@ -430,16 +456,30 @@ class MainWindow(QMainWindow):
         toolbar.addSeparator()
         self.analyze_action = self.action("Analyze", self.run_analysis, "F5", "media-playback-start")
         toolbar.addAction(self.analyze_action)
+        toolbar.addAction(self.action("Diagrams...", self.diagrams))
+        self.addToolBarBreak()
+        deformation_toolbar = self.addToolBar("Deformation")
+        deformation_toolbar.setMovable(False)
         self.deformed_action = self.action("Deformed", self.view.redraw)
         self.deformed_action.setCheckable(True)
         self.deformed_action.setEnabled(False)
-        toolbar.addAction(self.deformed_action)
-        self.deformation_scale = number(100, 0.01, 1e6, 2)
-        self.deformation_scale.setPrefix("Scale ")
+        deformation_toolbar.addAction(self.deformed_action)
+        self.deformation_mode = QComboBox()
+        for label, key in (("Auto", "auto"), ("True Scale", "true"), ("Custom", "custom")):
+            self.deformation_mode.addItem(label, key)
+        self.deformation_mode.setToolTip("Auto: fit displacement to 15% of model extent; True Scale: 1x; Custom: chosen factor")
+        self.deformation_mode.currentIndexChanged.connect(self.view.redraw)
+        deformation_toolbar.addWidget(self.deformation_mode)
+        self.deformation_scale = number(100, 0.001, 1e9, 3)
+        self.deformation_scale.setSuffix("x")
+        self.deformation_scale.setToolTip("Custom displacement amplification factor")
         self.deformation_scale.setFixedWidth(140)
         self.deformation_scale.valueChanged.connect(self.view.redraw)
-        toolbar.addWidget(self.deformation_scale)
-        toolbar.addAction(self.action("Diagrams...", self.diagrams))
+        self.deformation_scale_action = deformation_toolbar.addWidget(self.deformation_scale)
+        self.deformation_peak = QLabel()
+        self.deformation_peak.setMargin(6)
+        self.deformation_peak.setToolTip("Actual maximum displacement magnitude sampled at 41 positions per member; not amplified")
+        deformation_toolbar.addWidget(self.deformation_peak)
 
     def dock(self, title, widget, area):
         dock = QDockWidget(title, self)

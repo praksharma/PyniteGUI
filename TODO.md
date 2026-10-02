@@ -35,6 +35,8 @@ items are not promises of a particular release date.
 
 ## Results and Presentation
 
+- [x] Add auto, true-scale, and custom deformed-shape amplification with actual
+  maximum sampled displacement shown in the selected project units.
 - [x] Add axial-force diagrams for the whole structure and Member Detail.
 - [ ] Add interactive value inspection at a chosen distance along a member.
 - [ ] Improve label placement for dense structures and overlapping diagrams.

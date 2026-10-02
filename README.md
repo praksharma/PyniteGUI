@@ -68,8 +68,12 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
 - Analyze (F5) runs PyNite in a worker thread. Reactions and nodal displacements
   appear in Results. Choose a combination above the result table to update
   reactions, displacements, deformation, and factored load annotations without
-  another analysis. Deformed overlays the displaced members; Scale controls
-  visual amplification. Diagrams opens whole-structure axial, shear, and bending moment
+  another analysis. Deformed overlays the displaced members. Its toolbar offers
+  Auto (maximum displayed displacement is 15% of the model extent), True Scale
+  (1x), and Custom amplification. The current factor and actual maximum sampled
+  displacement are shown separately; scaling never changes analysis results.
+  The maximum is sampled at 41 positions per member, not an exact extremum search.
+  Fit (F) includes the visible deformed shape. Diagrams opens whole-structure axial, shear, and bending moment
   diagrams with one common amplitude scale for every member. Member Detail
   provides axial force, local shear, bending moment, and transverse deflection
   plots for any member, sharing one distance axis.
