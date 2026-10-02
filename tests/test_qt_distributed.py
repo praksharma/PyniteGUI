@@ -178,7 +178,7 @@ class DistributedEditorTests(unittest.TestCase):
         def accept(dialog):
             combos = dialog.findChildren(QComboBox)
             combos[0].setCurrentText("Distributed")
-            self.assertEqual(combos[1].count(), 2)
+            self.assertEqual(combos[1].count(), 6)
             numbers = [widget for widget in dialog.findChildren(QDoubleSpinBox) if widget.objectName() != "load_angle"]
             self.assertEqual([n.value() for n in numbers], [-0.1, 0, -0.1, 1])
             return QDialog.DialogCode.Accepted
@@ -195,7 +195,7 @@ class DistributedEditorTests(unittest.TestCase):
         self.window.refresh()
         combos = self.window.inspector.findChildren(QComboBox)
         self.assertEqual(self.window.inspector.findChild(QComboBox, "load_case").count(), 1)
-        self.assertEqual(self.window.inspector.findChild(QComboBox, "load_direction").count(), 2)
+        self.assertEqual(self.window.inspector.findChild(QComboBox, "load_direction").count(), 6)
         numbers = self.window.inspector.findChildren(QDoubleSpinBox)
         numbers[2].setValue(-0.2)
         buttons = self.window.inspector.findChildren(QPushButton)

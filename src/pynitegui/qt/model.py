@@ -87,11 +87,23 @@ class Load:
     case: str = "Case 1"
     angle: float = -90.0
 
-    def components(self):
-        if self.direction != "Angle":
-            return [(self.direction, self.magnitude)]
-        radians = math.radians(self.angle)
-        return [(direction, self.magnitude * (0.0 if abs(factor) < 1e-14 else factor))
+    def resolved_angle(self, project=None):
+        if self.direction.startswith("Local"):
+            if project is None or self.target not in project.members:
+                raise ValueError("Local forces require a member target.")
+            member = project.members[self.target]
+            a, b = project.nodes[member.start], project.nodes[member.end]
+            base = math.degrees(math.atan2(b.y - a.y, b.x - a.x))
+            offset = 90 if self.direction == "Local y" else self.angle if self.direction == "Local angle" else 0
+            return (base + offset + 180) % 360 - 180
+        return self.angle if self.direction == "Angle" else 0 if self.direction == "FX" else 90
+
+    def components(self, project=None, magnitude=None):
+        magnitude = self.magnitude if magnitude is None else magnitude
+        if self.direction != "Angle" and not self.direction.startswith("Local"):
+            return [(self.direction, magnitude)]
+        radians = math.radians(self.resolved_angle(project))
+        return [(direction, magnitude * (0.0 if abs(factor) < 1e-14 else factor))
                 for direction, factor in (("FX", math.cos(radians)), ("FY", math.sin(radians)))]
 
 
@@ -248,11 +260,11 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 9, "units": "in-kip", **asdict(self)}
+        return {"version": 10, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
-        if data.get("version") not in (1, 2, 3, 4, 5, 6, 7, 8, 9) or data.get("units") != "in-kip":
+        if data.get("version") not in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         result = cls(grid=data["grid"])
         if data["version"] >= 7:
@@ -354,8 +366,10 @@ class Project:
                 raise ValueError("Invalid load target.")
             if load.case not in self.load_cases:
                 raise ValueError(f"Load {name}: load case {load.case} does not exist.")
-            if load.direction not in ("FX", "FY", "MZ", "Angle"):
+            if load.direction not in ("FX", "FY", "MZ", "Angle", "Local x", "Local y", "Local angle"):
                 raise ValueError("Unsupported 2D load direction.")
+            if load.direction.startswith("Local") and load.target not in self.members:
+                raise ValueError("Local forces require a member target.")
             if not math.isfinite(load.angle) or not -360 <= load.angle <= 360:
                 raise ValueError("Load angle must be finite and between -360 and 360 degrees.")
             if not math.isfinite(load.magnitude) or not math.isfinite(load.position) or not 0 <= load.position <= 1:
@@ -363,8 +377,8 @@ class Project:
             if load.kind not in ("point", "distributed"):
                 raise ValueError("Unknown load type.")
             if load.kind == "distributed":
-                if load.target not in self.members or load.direction not in ("FX", "FY"):
-                    raise ValueError("Distributed forces require a member and global FX or FY direction.")
+                if load.target not in self.members or load.direction == "MZ":
+                    raise ValueError("Distributed forces require a member and a force direction, not MZ.")
                 if not math.isfinite(load.end_magnitude) or not math.isfinite(load.end_position) or not load.position < load.end_position <= 1:
                     raise ValueError("Distributed load requires finite intensities and 0 <= start < end <= 1.")
 
@@ -485,6 +499,9 @@ class Project:
             position = load.position
             for index, cut in enumerate(cuts[1:-1], 1):
                 if abs(position - cut) * length <= 1e-8:
+                    if load.direction.startswith("Local"):
+                        load.angle = load.resolved_angle(self)
+                        load.direction = "Angle"
                     load.target = nodes[index]
                     break
             else:

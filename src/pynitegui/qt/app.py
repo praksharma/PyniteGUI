@@ -44,6 +44,30 @@ def unit_value(widget, units, quantity=None):
     return units.from_display(widget.value(), quantity)
 
 
+def load_directions(is_member, kind):
+    choices = ["FY", "FX", "Angle"] if kind == "distributed" else ["FY", "FX", "MZ", "Angle"]
+    return choices + (["Local x", "Local y", "Local angle"] if is_member else [])
+
+
+def component_preview(project, load):
+    units = project.units
+    quantity = "intensity" if load.kind == "distributed" else "force"
+    start, end = dict(load.components(project)), dict(load.components(project, load.end_magnitude))
+    lines = []
+    for direction in ("FX", "FY"):
+        value = f"{units.to_display(start.get(direction, 0), quantity):.6g}"
+        if load.kind == "distributed":
+            value += f" to {units.to_display(end.get(direction, 0), quantity):.6g}"
+        lines.append(f"{direction} {value} {getattr(units, quantity)}")
+    return "\n".join(lines)
+
+
+def load_symbol(project, load, magnitude):
+    if load.direction == "Angle" or load.direction.startswith("Local"):
+        return "Angle", magnitude, load.resolved_angle(project)
+    return load.direction, magnitude
+
+
 def deformation_paths(project, result):
     paths = []
     for member in project.members.values():
@@ -296,6 +320,7 @@ class StructureView(QGraphicsView):
         rect = rect.adjusted(-48, -48, 48, 48)
         self.setSceneRect(rect.adjusted(-rect.width(), -rect.height(), rect.width(), rect.height()))
         self.fitInView(rect, Qt.AspectRatioMode.KeepAspectRatio)
+        self.redraw()
 
     def label(self, text, x, y, color="#47575c", offset=(7, 7)):
         item = self.scene().addSimpleText(text)
@@ -343,9 +368,11 @@ class StructureView(QGraphicsView):
             from PySide6.QtGui import QTransform
             item = self.label(text, x, y, "#bd3549", (8, -52))
             offset = -52
+            obstacles = occupied + [symbol.deviceTransform(self.viewportTransform()).mapRect(symbol.boundingRect())
+                                    for symbol in scene.items() if isinstance(symbol, EngineeringSymbol) and symbol.kind == "load"]
             while True:
                 rect = item.deviceTransform(self.viewportTransform()).mapRect(item.boundingRect()).adjusted(-2, -2, 2, 2)
-                if not any(rect.intersects(previous) for previous in occupied):
+                if not any(rect.intersects(previous) for previous in obstacles):
                     occupied.append(rect)
                     break
                 offset -= item.boundingRect().height() + 4
@@ -374,18 +401,23 @@ class StructureView(QGraphicsView):
                     intensity = load.magnitude + ratio * (load.end_magnitude - load.magnitude)
                     if abs(intensity) < maximum * 1e-8:
                         continue
-                    symbol = EngineeringSymbol("load", (load.direction, intensity), 38 * abs(intensity) / maximum)
+                    symbol = EngineeringSymbol("load", load_symbol(project, load, intensity), 38 * abs(intensity) / maximum)
                     scene.addItem(symbol)
                     symbol.setPos(a.x + (b.x - a.x) * fraction, -a.y - (b.y - a.y) * fraction)
                 midpoint = (load.position + load.end_position) / 2
                 x, y = a.x + (b.x - a.x) * midpoint, a.y + (b.y - a.y) * midpoint
-                load_label(f"{load.name}: {units.to_display(load.magnitude, 'intensity'):g} to {units.to_display(load.end_magnitude, 'intensity'):g} {units.intensity}", x, y)
+                direction_label = f" @ {load.angle:g} deg" if load.direction == "Angle" else f" | {load.direction}" if load.direction.startswith("Local") else ""
+                if load.direction == "Local angle":
+                    direction_label += f" {load.angle:g} deg"
+                load_label(f"{load.name}: {units.to_display(load.magnitude, 'intensity'):g} to {units.to_display(load.end_magnitude, 'intensity'):g} {units.intensity}{direction_label}", x, y)
                 continue
-            symbol = EngineeringSymbol("load", (load.direction, load.magnitude, load.angle) if load.direction == "Angle" else (load.direction, load.magnitude))
+            symbol = EngineeringSymbol("load", load_symbol(project, load, load.magnitude))
             scene.addItem(symbol)
             symbol.setPos(x, -y)
             quantity = "moment" if load.direction == "MZ" else "force"
             angle_label = f" @ {load.angle:g} deg" if load.direction == "Angle" else ""
+            if load.direction.startswith("Local"):
+                angle_label = f" | {load.direction}" + (f" {load.angle:g} deg" if load.direction == "Local angle" else "")
             load_label(f"{load.name}: {units.to_display(load.magnitude, quantity):g} {getattr(units, quantity)}{angle_label}", x, y)
         visible = bool(self.window.result and self.window.deformed_action.isChecked())
         self.window.deformation_mode.setEnabled(visible)
@@ -704,7 +736,7 @@ class MainWindow(QMainWindow):
                     if entity.kind == "distributed":
                         detail += f" to {units.to_display(entity.end_magnitude, quantity):g}"
                     detail += f" {getattr(units, quantity)}"
-                    if entity.direction == "Angle":
+                    if entity.direction in ("Angle", "Local angle"):
                         detail += f" @ {entity.angle:g} deg"
                 if kind == "members" and (entity.release_start or entity.release_end):
                     ends = ", ".join(end for end, released in (("start", entity.release_start), ("end", entity.release_end)) if released)
@@ -806,7 +838,7 @@ class MainWindow(QMainWindow):
             fields["target"].setCurrentText(entity.target)
             fields["direction"] = QComboBox()
             fields["direction"].setObjectName("load_direction")
-            fields["direction"].addItems(["FX", "FY"] if entity.kind == "distributed" else ["FX", "FY", "MZ", "Angle"])
+            fields["direction"].addItems(load_directions(entity.target in self.project.members, entity.kind))
             fields["direction"].setCurrentText(entity.direction)
             quantity = "intensity" if entity.kind == "distributed" else "moment" if entity.direction == "MZ" else "force"
             fields["magnitude"] = unit_number(entity.magnitude, self.project.units, quantity)
@@ -819,38 +851,70 @@ class MainWindow(QMainWindow):
             fields["case"].setCurrentText(entity.case)
             self.form.addRow("Case", fields["case"])
             self.form.addRow("Type", QLabel(entity.kind.capitalize()))
-            for key, label in (("target", "Target"), ("direction", "Global direction"),
+            for key, label in (("target", "Target"), ("direction", "Direction"),
                                ("magnitude", f"Start ({self.project.units.intensity})" if entity.kind == "distributed" else getattr(self.project.units, quantity)),
                                ("position", "Start fraction" if entity.kind == "distributed" else "Member fraction")):
                 self.form.addRow(label, fields[key])
             if entity.kind == "distributed":
                 fields["end_magnitude"] = unit_number(entity.end_magnitude, self.project.units, "intensity")
+                fields["end_magnitude"].setObjectName("load_end_magnitude")
                 fields["magnitude"].setDecimals(6)
                 fields["end_position"] = number(entity.end_position, 0, 1, 6)
                 fields["position"].setDecimals(6)
                 self.form.addRow(f"End ({self.project.units.intensity})", fields["end_magnitude"])
                 self.form.addRow("End fraction", fields["end_position"])
-            if entity.kind == "point":
-                fields["angle"] = number(entity.angle, -360, 360, 4)
-                fields["angle"].setObjectName("load_angle")
-                fields["angle"].setToolTip("Global angle: 0 deg right, 90 deg up, -90 deg down; counterclockwise positive")
-                self.form.addRow("Angle (deg)", fields["angle"])
-                components = QLabel()
-                components.setMinimumHeight(2 * components.fontMetrics().lineSpacing() + 4)
-                self.form.addRow("Components", components)
-                def update_point():
-                    angled = fields["direction"].currentText() == "Angle"
-                    self.form.setRowVisible(fields["angle"], angled)
-                    self.form.setRowVisible(components, angled)
-                    self.form.labelForField(fields["magnitude"]).setText(self.project.units.moment if fields["direction"].currentText() == "MZ" else self.project.units.force)
-                    resolved = Load("", "", "Angle", fields["magnitude"].value(), angle=fields["angle"].value()).components()
-                    components.setText(f"FX {resolved[0][1]:.6g} {self.project.units.force}\nFY {resolved[1][1]:.6g} {self.project.units.force}")
-                fields["direction"].currentTextChanged.connect(update_point)
-                fields["angle"].valueChanged.connect(update_point)
-                fields["magnitude"].valueChanged.connect(update_point)
-                update_point()
+            fields["angle"] = number(entity.angle, -360, 360, 4)
+            fields["angle"].setProperty("original_angle", entity.angle)
+            fields["angle"].setProperty("initial_angle", fields["angle"].value())
+            fields["angle"].setObjectName("load_angle")
+            self.form.addRow("Angle (deg)", fields["angle"])
+            components = QLabel()
+            components.setMinimumHeight(2 * components.fontMetrics().lineSpacing() + 4)
+            self.form.addRow("Components", components)
+            previous_target = [entity.target]
+            def update_force():
+                direction = fields["direction"].currentText()
+                self.form.setRowVisible(fields["angle"], direction in ("Angle", "Local angle"))
+                self.form.setRowVisible(components, direction == "Angle" or direction.startswith("Local"))
+                local_angle = direction == "Local angle"
+                self.form.labelForField(fields["angle"]).setText("Local angle (deg)" if local_angle else "Angle (deg)")
+                fields["angle"].setToolTip("Counterclockwise from member start-to-end (+local x)" if local_angle else "Global angle: 0 deg right, 90 deg up, -90 deg down; counterclockwise positive")
+                quantity = "intensity" if entity.kind == "distributed" else "moment" if direction == "MZ" else "force"
+                self.form.labelForField(fields["magnitude"]).setText(f"Start ({self.project.units.intensity})" if entity.kind == "distributed" else getattr(self.project.units, quantity))
+                preview = replace(entity, target=fields["target"].currentText(), direction=direction,
+                                  magnitude=self.project.units.from_display(fields["magnitude"].value(), quantity),
+                                  end_magnitude=self.project.units.from_display(fields["end_magnitude"].value(), "intensity") if entity.kind == "distributed" else 0,
+                                  angle=fields["angle"].value())
+                components.setText(component_preview(self.project, preview))
+            def update_target():
+                direction = fields["direction"].currentText()
+                target = fields["target"].currentText()
+                if direction.startswith("Local") and target not in self.project.members:
+                    preview = replace(entity, target=previous_target[0], direction=direction, angle=fields["angle"].value())
+                    fields["angle"].blockSignals(True)
+                    fields["angle"].setValue(preview.resolved_angle(self.project))
+                    fields["angle"].setProperty("original_angle", preview.resolved_angle(self.project))
+                    fields["angle"].setProperty("initial_angle", fields["angle"].value())
+                    fields["angle"].blockSignals(False)
+                    direction = "Angle"
+                fields["direction"].blockSignals(True)
+                fields["direction"].clear()
+                fields["direction"].addItems(load_directions(target in self.project.members, entity.kind))
+                fields["direction"].setCurrentText(direction)
+                fields["direction"].blockSignals(False)
+                previous_target[0] = target
+                update_force()
+            fields["target"].currentTextChanged.connect(update_target)
+            fields["direction"].currentTextChanged.connect(update_force)
+            fields["angle"].valueChanged.connect(update_force)
+            fields["magnitude"].valueChanged.connect(update_force)
+            if entity.kind == "distributed":
+                fields["end_magnitude"].valueChanged.connect(update_force)
+            update_force()
         def apply():
             values = {key: widget.currentText() if isinstance(widget, QComboBox) else widget.isChecked() if isinstance(widget, QCheckBox) else widget.value() for key, widget in fields.items()}
+            if kind == "loads" and fields["angle"].value() == fields["angle"].property("initial_angle"):
+                values["angle"] = fields["angle"].property("original_angle")
             if kind == "nodes" and values["support"] != "custom":
                 for key in ("restraint_x", "restraint_y", "restraint_rz"):
                     values.pop(key)
@@ -924,14 +988,15 @@ class MainWindow(QMainWindow):
         load_type.addItems(["Point", "Distributed"] if kind == "members" else ["Point"])
         form.addRow("Type", load_type)
         direction = QComboBox()
-        direction.addItems(["FY", "FX", "MZ", "Angle"])
+        direction.addItems(load_directions(kind == "members", "point"))
         magnitude = number(-10)
         magnitude.setObjectName("load_magnitude")
         magnitude.setToolTip("Signed load value; a negative angled force reverses the specified angle")
         position = number(0.5, 0, 1)
         end_magnitude = number(-0.1, decimals=6)
+        end_magnitude.setObjectName("load_end_magnitude")
         end_position = number(1, 0, 1, 6)
-        form.addRow("Global direction", direction)
+        form.addRow("Direction", direction)
         case = QComboBox()
         case.addItems(self.project.load_cases)
         case.setCurrentText(self.project.default_load_case)
@@ -951,9 +1016,12 @@ class MainWindow(QMainWindow):
         def update_type():
             distributed = load_type.currentText() == "Distributed"
             previous = direction.currentText()
+            direction.blockSignals(True)
             direction.clear()
-            direction.addItems(["FY", "FX"] if distributed else ["FY", "FX", "MZ", "Angle"])
-            direction.setCurrentText(previous if previous in ("FY", "FX") or not distributed else "FY")
+            choices = load_directions(kind == "members", "distributed" if distributed else "point")
+            direction.addItems(choices)
+            direction.setCurrentText(previous if previous in choices else "FY")
+            direction.blockSignals(False)
             magnitude.setDecimals(6 if distributed else 4)
             magnitude.setValue(-0.1 if distributed else -10)
             position.setDecimals(6)
@@ -965,14 +1033,20 @@ class MainWindow(QMainWindow):
             form.setRowVisible(end_position, distributed)
             update_direction()
         def update_direction():
-            angled = direction.currentText() == "Angle"
-            form.setRowVisible(angle, angled)
-            form.setRowVisible(components, angled)
-            resolved = Load("", "", "Angle", magnitude.value(), angle=angle.value()).components()
-            components.setText(f"FX {resolved[0][1]:.6g} {self.project.units.force}\nFY {resolved[1][1]:.6g} {self.project.units.force}")
+            chosen = direction.currentText()
+            form.setRowVisible(angle, chosen in ("Angle", "Local angle"))
+            form.setRowVisible(components, chosen == "Angle" or chosen.startswith("Local"))
+            form.labelForField(angle).setText("Local angle (deg)" if chosen == "Local angle" else "Angle (deg)")
+            angle.setToolTip("Counterclockwise from member start-to-end (+local x)" if chosen == "Local angle" else "Global angle: 0 deg right, 90 deg up, -90 deg down; counterclockwise positive")
+            quantity = "intensity" if load_type.currentText() == "Distributed" else "moment" if chosen == "MZ" else "force"
+            preview = Load("", target, chosen, self.project.units.from_display(magnitude.value(), quantity),
+                           kind=load_type.currentText().lower(), angle=angle.value(),
+                           end_magnitude=self.project.units.from_display(end_magnitude.value(), "intensity"))
+            components.setText(component_preview(self.project, preview))
         direction.currentTextChanged.connect(update_direction)
         angle.valueChanged.connect(update_direction)
         magnitude.valueChanged.connect(update_direction)
+        end_magnitude.valueChanged.connect(update_direction)
         direction.currentTextChanged.connect(lambda: form.labelForField(magnitude).setText(
             f"Start ({self.project.units.intensity})" if load_type.currentText() == "Distributed" else
             self.project.units.moment if direction.currentText() == "MZ" else self.project.units.force))

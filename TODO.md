@@ -1,7 +1,7 @@
 # PyniteGUI Roadmap
 
 Current scope: a 2D frame editor with SI/imperial input and display, per-member materials and
-sections, custom global support restraints, angled point forces, distributed loads,
+sections, custom global support restraints, global/member-local angled forces, distributed loads,
 and named load cases/combinations. This list tracks remaining work;
 items are not promises of a particular release date.
 
@@ -25,7 +25,7 @@ items are not promises of a particular release date.
 
 - [x] Add angled nodal/member point forces with automatic FX/FY resolution,
   global angle input, component previews, and oriented arrows.
-- [ ] Extend angled force input to distributed member loads and add local-axis
+- [x] Extend angled force input to distributed member loads and add local-axis
   load directions with explicit angle/reference conventions.
 - [x] Add uniform and varying distributed member loads, including partial spans
   and distribution-preserving member splitting.

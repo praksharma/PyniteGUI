@@ -59,7 +59,7 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
 - The selector above the structure tree shows all load cases, one case, or hides
   loads. It filters load arrows and tree entries only; analysis still includes
   all loads according to the selected combination.
-- For an angled point force on a node or member, choose Global direction > Angle,
+- For an angled point force on a node or member, choose Direction > Angle,
   then enter a signed magnitude and an angle in degrees. Angles are global,
   counterclockwise from +X: 0 points right, 90 up, -90 down, and 180 left for
   positive magnitudes. A negative magnitude reverses the chosen direction.
@@ -70,10 +70,24 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
 - Member loads can be Point or Distributed. Distributed loads use start/end
   intensities in kip/in or kN/m and start/end fractions along the member. Equal intensities
   give a uniform load; different intensities give a linear ramp, including
-  triangular or sign-changing loads. Global FX/FY directions apply independently
-  of member orientation. Select a load in the tree to edit it in the inspector.
+  triangular or sign-changing loads. Choose FX/FY for global axis loading or
+  Angle for a global angled distribution; one angle applies to both endpoint
+  intensities. Negative intensities reverse that direction. Intensities remain
+  force per unit member length, not projected length. Select a load in the tree
+  to edit it in the inspector.
   Splitting clips each loaded region and interpolates its endpoint intensities,
   preserving the original distribution without creating artificial nodal forces.
+- Member forces also offer Local x, Local y, and Local angle for both point and
+  distributed loads. +local x runs from the member start node to its end node;
+  +local y is 90 degrees counterclockwise from that direction in the XY plane.
+  Local angle is counterclockwise from +local x. These definitions are resolved
+  to global FX/FY at the solver boundary, independently of PyNite's internal
+  3D axis orientation. The preview always shows global components. Local loads
+  rotate with member geometry, including when its endpoints are reversed.
+  Split segments retain the local reference. A point force at a split becomes
+  a global angled nodal load with the same vector, since a node has no unique
+  member-local axes. Reassigning a local point load to a node in the inspector
+  also preserves its current global vector.
 - Edit > Load Cases and Combinations manages named load cases and linear
   combinations. Assign each load a Case in its creation dialog or inspector.
   Set Default chooses the case for new loads without reassigning existing loads.
@@ -157,7 +171,9 @@ rotations are restrained at every node. A pin restrains X/Y translation, a
 roller restrains Y translation, and a fixed support also restrains Z rotation.
 Custom supports independently restrain global DX, DY, and RZ; inclined supports
 and elastic springs are not implemented yet. Point loads support global FX, FY,
-MZ, and signed angled forces; distributed forces currently support global FX/FY.
+MZ, and signed angled forces. Member point/distributed forces additionally
+support local x/y and member-relative angles. Nodal forces use global axes only;
+distributed moments are not implemented.
 Loads belong to named cases. User-defined combinations superpose those cases
 with finite factors using linear elastic analysis. The initial project has
 Case 1 and a Service combination at factor 1. No design-code factors or
@@ -199,10 +215,12 @@ Versions 1 through 4 migrate existing loads into Case 1 with the original
 Service combination. Version 3 point loads and version 4 distributed loads
 remain supported. Versions 1 through 5 migrate to rigid member ends.
 Versions 1 through 6 open in Imperial, preserving their original inch-kip values.
-New saves use version 9 and retain material/section definitions, member
+New saves use version 10 and retain material/section definitions, member
 assignments, load cases, combination factors, the default load case, and each
 member end moment release, plus the selected unit system, point-load angle,
-and custom support restraints.
+and custom support restraints. Version 10 adds local force directions and
+angled distributed loading; version 9 and older files retain their saved global
+force directions and physical magnitudes.
 Older project loads retain their original directions and magnitudes. The JSON units field
 remains in-kip to identify the canonical storage units; unit_system controls
 presentation and input conversion.
@@ -282,6 +300,9 @@ Member-result checks cover extrema, exact-distance queries, one-sided jumps,
 click inspection, combination switching, and SI conversion. Recovery checks
 cover atomic write failures, untouched project files, multiple windows,
 malformed snapshots, recovery dirtiness, cancelled closing, and recent projects.
+Local-loading checks cover inclined/vertical/reversed axes, angled triangular
+resultants, manual component equivalence, sign-changing ramps, split/node
+conversion, SI input, persistence, and unedited angle/intensity precision.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

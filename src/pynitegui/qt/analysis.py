@@ -65,17 +65,18 @@ def analyze(project: Project) -> AnalysisResult:
         model.def_releases(member.name, Rzi=member.release_start, Rzj=member.release_end)
     for load in project.loads.values():
         if load.target in project.nodes:
-            for direction, magnitude in load.components():
+            for direction, magnitude in load.components(project):
                 model.add_node_load(load.target, direction, magnitude, case=load.case)
         else:
             member = project.members[load.target]
             a, b = project.nodes[member.start], project.nodes[member.end]
             length = math.hypot(b.x - a.x, b.y - a.y)
             if load.kind == "distributed":
-                model.add_member_dist_load(load.target, load.direction, load.magnitude, load.end_magnitude,
-                                           length * load.position, length * load.end_position, case=load.case)
+                for (direction, start), (_, end) in zip(load.components(project), load.components(project, load.end_magnitude)):
+                    model.add_member_dist_load(load.target, direction, start, end,
+                                               length * load.position, length * load.end_position, case=load.case)
             else:
-                for direction, magnitude in load.components():
+                for direction, magnitude in load.components(project):
                     model.add_member_pt_load(load.target, direction, magnitude, length * load.position, case=load.case)
     for name, factors in project.combinations.items():
         model.add_load_combo(name, dict(factors))

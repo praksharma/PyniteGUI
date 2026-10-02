@@ -58,7 +58,7 @@ class AngledModelTests(unittest.TestCase):
 
     def test_save_roundtrip_and_legacy_defaults(self):
         project = beam()
-        self.assertEqual(project.to_dict()["version"], 9)
+        self.assertEqual(project.to_dict()["version"], 10)
         self.assertEqual(Project.from_dict(project.to_dict()).to_dict(), project.to_dict())
         data = project.to_dict()
         data["version"] = 7
@@ -101,7 +101,7 @@ class AngledModelTests(unittest.TestCase):
 
     def test_invalid_angles_magnitudes_and_distributed_direction(self):
         for changes in ({"angle": float("nan")}, {"angle": float("inf")}, {"angle": 361},
-                        {"magnitude": float("inf")}, {"kind": "distributed"}):
+                        {"magnitude": float("inf")}, {"kind": "distributed", "direction": "MZ"}):
             project = beam()
             project.loads["L1"] = replace(project.loads["L1"], **changes)
             with self.assertRaises(ValueError):
