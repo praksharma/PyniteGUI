@@ -64,9 +64,10 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   appear in Results. Choose a combination above the result table to update
   reactions, displacements, deformation, and factored load annotations without
   another analysis. Deformed overlays the displaced members; Scale controls
-  visual amplification. Diagrams opens whole-structure shear and bending moment
+  visual amplification. Diagrams opens whole-structure axial, shear, and bending moment
   diagrams with one common amplitude scale for every member. Member Detail
-  provides local shear, bending moment, and deflection plots for any member.
+  provides axial force, local shear, bending moment, and transverse deflection
+  plots for any member, sharing one distance axis.
   Diagram windows have their own combination selector and retain the analyzed
   snapshot even when the editor changes. The inspector always edits original
   case values, not the factored values displayed after analysis.
@@ -143,7 +144,11 @@ Whole-structure diagrams use a consistent cut orientation from the endpoint with
 the smaller (X, Y) coordinate to the larger endpoint. Positive shear and moment
 offsets lie on the left normal of that direction. This makes diagram geometry
 independent of member drawing order; negative sagging moments appear below a
-horizontal beam. Member Detail retains PyNite local Fy/Mz signs. Point forces
+horizontal beam. Axial force N uses the PyNite convention: positive compression
+and negative tension. Axial force is independent of member drawing direction;
+compression offsets lie on the same canonical left normal, and tension offsets
+lie on the opposite side. Each whole-structure quantity has a common amplitude
+scale across all members. Member Detail retains PyNite local Fy/Mz signs. Point forces
 and concentrated moments include both sides of each discontinuity.
 
 ## Architecture
@@ -152,7 +157,7 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/analysis.py`: project-to-PyNite adapter and analysis results.
 - `src/pynitegui/qt/app.py`: Qt graphics editor, inspector, undo commands,
   background analysis, and a consistent light application theme.
-- `src/pynitegui/qt/diagrams.py`: whole-frame SFD/BMD views, member detail plots,
+- `src/pynitegui/qt/diagrams.py`: whole-frame axial/SFD/BMD views, member detail plots,
   and sampling on both sides of force and moment discontinuities.
 - `src/pynitegui/qt/materials.py`: material definition manager and property editor.
 - `src/pynitegui/qt/sections.py`: section definition manager and property editor.
@@ -182,6 +187,9 @@ assignment, result/diagram switching, deformation, and analyzed snapshots.
 Hinge checks cover analytical released beams, pin-jointed frames, mixed rigid
 and hinged connections, real mechanisms, unsupported nodal moments, inactive
 rotation reporting, split/intersection preservation, persistence, and undo.
+Axial-force checks cover tension/compression signs, inclined and reversed members,
+point-force jumps, distributed axial loading, pin-jointed frames, common scaling,
+combination switching, snapshot preservation, and compact plot-label layout.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

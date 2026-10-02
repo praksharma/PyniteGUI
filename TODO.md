@@ -33,7 +33,7 @@ items are not promises of a particular release date.
 
 ## Results and Presentation
 
-- [ ] Add axial-force diagrams for the whole structure.
+- [x] Add axial-force diagrams for the whole structure and Member Detail.
 - [ ] Add interactive value inspection at a chosen distance along a member.
 - [ ] Improve label placement for dense structures and overlapping diagrams.
 - [ ] Add diagram side/sign display preferences with clear conventions.

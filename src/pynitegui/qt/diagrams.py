@@ -41,6 +41,7 @@ def sample_member(project, result, name):
         locations.extend(queries)
     return {
         "x": np.array(xs),
+        "axial": np.array([solver.axial(x, result.combination) for x in locations]),
         "shear": np.array([solver.shear("Fy", x, result.combination) for x in locations]),
         "moment": np.array([solver.moment("Mz", x, result.combination) for x in locations]),
         "deflection": np.array([solver.deflection("dy", x, result.combination) for x in locations]),
@@ -61,7 +62,9 @@ def structure_data(project, result, quantity):
         direction = float(np.dot(local_y, normal))
         # Express cut forces using a consistent endpoint orientation, regardless
         # of the order in which a user originally drew each member.
-        values = sampled[quantity] * direction * (orientation if quantity == "shear" else 1)
+        # Axial compression/tension is a scalar and does not change with local
+        # axis reversal. Only transverse cut forces need the orientation mapping.
+        values = sampled[quantity].copy() if quantity == "axial" else sampled[quantity] * direction * (orientation if quantity == "shear" else 1)
         base = start + np.outer(sampled["x"], tangent)
         data[name] = {"base": base, "normal": normal, "values": values}
     return data
@@ -73,7 +76,7 @@ def draw_structure(ax, project, result, quantity, amplitude=20):
     xs, ys = [n.x for n in project.nodes.values()], [n.y for n in project.nodes.values()]
     extent = max(max(xs) - min(xs), max(ys) - min(ys), 1)
     factor = extent * amplitude / 100 / maximum if maximum > 1e-10 else 0
-    color = "#168b8b" if quantity == "shear" else "#b53c5b"
+    color = {"axial": "#3279a4", "shear": "#168b8b", "moment": "#b53c5b"}[quantity]
     for name, row in data.items():
         base, values, normal = row["base"], row["values"], row["normal"]
         offset = base + np.outer(values * factor, normal)
@@ -109,7 +112,9 @@ def draw_structure(ax, project, result, quantity, amplitude=20):
                 marker.add_artist(Circle((4, 4), 3, facecolor="white", edgecolor="#176b73", linewidth=1.3))
                 ax.add_artist(AnnotationBbox(marker, point, xybox=tuple(sign * tangent * 9),
                                             boxcoords="offset points", frameon=False, pad=0, zorder=5))
-    ax.set_title("Shear Force Diagram V (kip)" if quantity == "shear" else "Bending Moment Diagram M (kip-in)")
+    ax.set_title({"axial": "Axial Force Diagram N (kip; + compression)",
+                  "shear": "Shear Force Diagram V (kip)",
+                  "moment": "Bending Moment Diagram M (kip-in)"}[quantity])
     ax.set_xlabel("X (in)")
     ax.set_ylabel("Y (in)")
     ax.set_aspect("equal", adjustable="datalim")
@@ -137,7 +142,9 @@ class DiagramDialog(QDialog):
         structure_layout = QVBoxLayout(structure)
         controls = QHBoxLayout()
         self.quantity = QComboBox()
-        self.quantity.addItems(["Shear Force (kip)", "Bending Moment (kip-in)"])
+        for label, key in (("Shear Force (kip)", "shear"), ("Bending Moment (kip-in)", "moment"), ("Axial Force (kip)", "axial")):
+            self.quantity.addItem(label, key)
+        self.quantity.setToolTip("Axial force: positive compression, negative tension.")
         controls.addWidget(self.quantity)
         controls.addStretch()
         controls.addWidget(QLabel("Amplitude (%)"))
@@ -180,21 +187,28 @@ class DiagramDialog(QDialog):
     def update_structure(self):
         self.structure_figure.clear()
         ax = self.structure_figure.add_subplot(111)
-        draw_structure(ax, self.project, self.result, "shear" if self.quantity.currentIndex() == 0 else "moment", self.amplitude.value())
+        draw_structure(ax, self.project, self.result, self.quantity.currentData(), self.amplitude.value())
         self.structure_canvas.draw_idle()
 
     def update_member(self):
         self.member_figure.clear()
         name = self.member.currentText()
         data = sample_member(self.project, self.result, name)
-        for index, (key, label) in enumerate((("shear", "Shear Fy (kip)"), ("moment", "Moment Mz (kip-in)"), ("deflection", "Deflection dy (in)"))):
-            ax = self.member_figure.add_subplot(3, 1, index + 1)
-            ax.plot(data["x"], data[key], color="#168b8b")
+        shared = None
+        for index, (key, label, color) in enumerate((("axial", "Axial N (kip)\n+ compression", "#3279a4"),
+                                                     ("shear", "Shear Fy (kip)", "#168b8b"),
+                                                     ("moment", "Moment Mz (kip-in)", "#b53c5b"),
+                                                     ("deflection", "Deflection dy (in)", "#168b8b"))):
+            ax = self.member_figure.add_subplot(4, 1, index + 1, sharex=shared)
+            if shared is None:
+                shared = ax
+            ax.plot(data["x"], data[key], color=color)
             ax.axhline(0, color="#869395", linewidth=0.6)
-            ax.set_ylabel(label)
+            ax.set_ylabel(label, fontsize=8)
             ax.grid(alpha=0.2)
             if index == 0:
                 ax.set_title(f"{name} | Local Member Axes")
-            if index == 2:
+            ax.tick_params(axis="x", labelbottom=index == 3)
+            if index == 3:
                 ax.set_xlabel("Distance from start (in)")
         self.member_canvas.draw_idle()

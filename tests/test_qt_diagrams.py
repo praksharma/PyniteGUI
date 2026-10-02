@@ -41,7 +41,7 @@ class DiagramTests(unittest.TestCase):
         project = portal()
         result = analyze(project)
         self.assertAlmostEqual(sum(row[1] for row in result.reactions.values()), 10)
-        original = {key: structure_data(project, result, key) for key in ("shear", "moment")}
+        original = {key: structure_data(project, result, key) for key in ("axial", "shear", "moment")}
         for member in project.members.values():
             member.start, member.end = member.end, member.start
         reversed_result = analyze(project)
@@ -59,7 +59,7 @@ class DiagramTests(unittest.TestCase):
         project.nodes["N1"].support = "fixed"
         project.loads["L1"] = Load("L1", "N2", "FY", -2)
         result = analyze(project)
-        original = {key: structure_data(project, result, key)["M1"] for key in ("shear", "moment")}
+        original = {key: structure_data(project, result, key)["M1"] for key in ("axial", "shear", "moment")}
         member = project.members["M1"]
         member.start, member.end = member.end, member.start
         reverse_result = analyze(project)
