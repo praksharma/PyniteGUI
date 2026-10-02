@@ -327,6 +327,10 @@ class MainWindow(QMainWindow):
         edit_menu.addActions([undo, redo])
         edit_menu.addAction(self.action("Delete Selection", self.delete_selected, "Delete", "edit-delete"))
         edit_menu.addAction(self.action("Material and Section...", self.settings))
+        edit_menu.addSeparator()
+        edit_menu.addAction(self.action("Split Selected Member...", self.split_selected_member))
+        edit_menu.addAction(self.action("Connect Intersections", self.connect_intersections))
+        edit_menu.addAction(self.action("Check Model", self.check_model))
         toolbar = self.addToolBar("Model")
         toolbar.setMovable(False)
         toolbar.addActions([self.new_action, self.open_action, self.save_action])
@@ -504,6 +508,40 @@ class MainWindow(QMainWindow):
         delete = QPushButton("Delete")
         delete.clicked.connect(self.delete_selected)
         self.form.addRow(delete)
+        if kind == "members":
+            split = QPushButton("Split...")
+            split.clicked.connect(self.split_selected_member)
+            self.form.addRow(split)
+
+    def split_selected_member(self):
+        if not self.selected or self.selected[0] != "members":
+            QMessageBox.information(self, "Split Member", "Select a member first.")
+            return
+        from PySide6.QtWidgets import QInputDialog
+        name = self.selected[1]
+        fraction, accepted = QInputDialog.getDouble(
+            self, f"Split {name}", "Fraction from start", 0.5, 0.000001, 0.999999, 6
+        )
+        if accepted:
+            self.edit(f"Split {name}", lambda project: project.split_member(name, fraction))
+
+    def connect_intersections(self):
+        before = len(self.project.members)
+        self.edit("Connect intersections", lambda project: project.connect_intersections())
+        added = len(self.project.members) - before
+        if added:
+            self.statusBar().showMessage(f"Connected intersections | {added} additional member segments | Results require analysis")
+
+    def check_model(self):
+        try:
+            self.project.validate()
+            issues = self.project.analysis_topology_issues()
+        except ValueError as error:
+            issues = [str(error)]
+        if issues:
+            QMessageBox.warning(self, "Model Check", "\n\n".join(issues))
+        else:
+            QMessageBox.information(self, "Model Check", "No geometry or connectivity issues found.")
 
     def delete_selected(self):
         if self.selected:

@@ -19,6 +19,15 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   or an existing node. Escape or right-click cancels an unfinished member.
 - Choose Select (V) and click a node or member, or select it in the structure
   tree. Edit properties in the inspector and press Apply.
+- Select a member and choose Split in its inspector, or Edit > Split Selected
+  Member, to divide it at a fraction measured from its start node. The first
+  segment keeps the original member ID. Point loads and moments retain their
+  physical locations; a load at the split becomes a nodal load at the new joint.
+- Edit > Connect Intersections splits crossing members and T-junctions into
+  explicit segments sharing one node. Existing interior nodes are also connected.
+  Splitting and connecting are each a single undoable edit.
+- Edit > Check Model reports overlapping members, interior-node connections that
+  need splitting, and disconnected groups. Analysis also runs these checks.
 - Assign a node support using Support, or select a node/member and use Load (L).
 - Use Pan (P) to drag the view, the mouse wheel to zoom, and Fit (F) to frame it.
 - Analyze (F5) runs PyNite in a worker thread. Reactions and nodal displacements
@@ -43,8 +52,11 @@ Member load positions are fractions measured from the start node.
 
 All members currently share one material and section, editable through
 Edit > Material and Section. Defaults are steel and W18x35 section properties.
-No self-weight is applied automatically. Intersections do not automatically
-split members: connect members at explicit shared endpoints. Distributed loads,
+No self-weight is applied automatically. Drawing an intersection alone does not
+connect it: use Edit > Connect Intersections to create explicit shared endpoints.
+Analysis requires one connected structure and rejects overlapping members or
+nodes inside unsplit members, avoiding implicit solver connections. Geometry
+connections use an absolute tolerance of 1e-8 inches. Distributed loads,
 multiple material/section assignments, load cases/combinations, member releases,
 and 3D editing are future extensions.
 
@@ -78,7 +90,8 @@ uv run python -m unittest discover -s tests
 
 The Qt interaction tests run offscreen. The suite covers project persistence,
 undo/redo, result invalidation, analytical beam checks, portal-frame diagrams,
-inclined/reversed members, and point-force/moment jumps.
+inclined/reversed members, point-force/moment jumps, explicit member connections,
+load preservation during splitting, and rejection of invalid model topology.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

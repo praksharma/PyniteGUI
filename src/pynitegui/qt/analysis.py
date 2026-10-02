@@ -18,9 +18,9 @@ def analyze(project: Project) -> AnalysisResult:
     project.validate()
     if not project.members:
         raise ValueError("Add at least one member before running analysis.")
-    connected = {name for m in project.members.values() for name in (m.start, m.end)}
-    if connected != set(project.nodes):
-        raise ValueError("Remove or connect isolated nodes before analysis.")
+    issues = project.analysis_topology_issues()
+    if issues:
+        raise ValueError("\n\n".join(issues))
     if not any(node.support != "free" for node in project.nodes.values()):
         raise ValueError("Assign supports before running analysis.")
     model = FEModel3D()

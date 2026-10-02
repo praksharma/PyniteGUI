@@ -105,7 +105,7 @@ class Project:
 
     def node_at(self, x, y):
         for node in self.nodes.values():
-            if math.isclose(node.x, x, abs_tol=1e-8) and math.isclose(node.y, y, abs_tol=1e-8):
+            if math.isclose(node.x, x, rel_tol=0, abs_tol=1e-8) and math.isclose(node.y, y, rel_tol=0, abs_tol=1e-8):
                 return node.name
         name = self.next_name("N", self.nodes)
         self.nodes[name] = Node(name, x, y)
@@ -120,6 +120,144 @@ class Project:
         name = self.next_name("M", self.members)
         self.members[name] = Member(name, a, b)
         return name
+
+    def member_position(self, name, x, y):
+        member = self.members[name]
+        a, b = self.nodes[member.start], self.nodes[member.end]
+        dx, dy = b.x - a.x, b.y - a.y
+        length = math.hypot(dx, dy)
+        if length <= 1e-8:
+            raise ValueError(f"Member {name} is too short.")
+        fraction = ((x - a.x) * dx + (y - a.y) * dy) / length**2
+        distance = abs((x - a.x) * dy - (y - a.y) * dx) / length
+        if distance <= 1e-8 and -1e-8 / length <= fraction <= 1 + 1e-8 / length:
+            if fraction * length <= 1e-8:
+                return 0.0
+            if (1 - fraction) * length <= 1e-8:
+                return 1.0
+            return max(0.0, min(1.0, fraction))
+        return None
+
+    def member_intersection(self, first, second):
+        one, two = self.members[first], self.members[second]
+        a, b = self.nodes[one.start], self.nodes[one.end]
+        c, d = self.nodes[two.start], self.nodes[two.end]
+        rx, ry, sx, sy = b.x - a.x, b.y - a.y, d.x - c.x, d.y - c.y
+        lr, ls = math.hypot(rx, ry), math.hypot(sx, sy)
+        if min(lr, ls) <= 1e-8:
+            raise ValueError("Members must be longer than 1e-8 in.")
+        qx, qy = c.x - a.x, c.y - a.y
+        denominator = rx * sy - ry * sx
+        if abs(denominator) <= 1e-12 * lr * ls:
+            if abs(qx * ry - qy * rx) / lr > 1e-8:
+                return None
+            left = (qx * rx + qy * ry) / lr**2
+            right = left + (sx * rx + sy * ry) / lr**2
+            overlap = min(1, max(left, right)) - max(0, min(left, right))
+            if overlap * lr > 1e-8:
+                raise ValueError(f"Members {first} and {second} overlap. Remove or shorten the overlapping member.")
+            return None
+        t = (qx * sy - qy * sx) / denominator
+        u = (qx * ry - qy * rx) / denominator
+        if -1e-8 / lr <= t <= 1 + 1e-8 / lr and -1e-8 / ls <= u <= 1 + 1e-8 / ls:
+            t = 0.0 if t * lr <= 1e-8 else 1.0 if (1 - t) * lr <= 1e-8 else t
+            u = 0.0 if u * ls <= 1e-8 else 1.0 if (1 - u) * ls <= 1e-8 else u
+            return max(0.0, min(1.0, t)), max(0.0, min(1.0, u))
+        return None
+
+    def split_member(self, name, fraction):
+        if not math.isfinite(fraction) or not 0 < fraction < 1:
+            raise ValueError("Split fraction must be strictly between 0 and 1.")
+        return self._split_member(name, [fraction])
+
+    def _split_member(self, name, fractions):
+        from dataclasses import replace
+        original = self.members[name]
+        a, b = self.nodes[original.start], self.nodes[original.end]
+        length = math.hypot(b.x - a.x, b.y - a.y)
+        cuts = [0.0]
+        for fraction in sorted(fractions):
+            if (fraction - cuts[-1]) * length > 1e-8 and (1 - fraction) * length > 1e-8:
+                cuts.append(fraction)
+        if len(cuts) == 1:
+            raise ValueError("Split point is too close to a member endpoint.")
+        cuts.append(1.0)
+        nodes = [original.start]
+        nodes.extend(self.node_at(a.x + t * (b.x - a.x), a.y + t * (b.y - a.y)) for t in cuts[1:-1])
+        nodes.append(original.end)
+        segments = []
+        for index, (start, end) in enumerate(zip(nodes, nodes[1:])):
+            segment = name if index == 0 else self.next_name("M", self.members)
+            self.members[segment] = replace(original, name=segment, start=start, end=end)
+            segments.append(segment)
+        for load in self.loads.values():
+            if load.target != name:
+                continue
+            position = load.position
+            for index, cut in enumerate(cuts[1:-1], 1):
+                if abs(position - cut) * length <= 1e-8:
+                    load.target = nodes[index]
+                    break
+            else:
+                index = next(i for i, right in enumerate(cuts[1:]) if position <= right)
+                load.target = segments[index]
+                load.position = (position - cuts[index]) / (cuts[index + 1] - cuts[index])
+        return segments
+
+    def connect_intersections(self):
+        names = list(self.members)
+        cuts = {name: [] for name in names}
+        # Collect every split first so IDs and original load fractions stay stable.
+        for index, first in enumerate(names):
+            for second in names[index + 1:]:
+                intersection = self.member_intersection(first, second)
+                if intersection:
+                    for name, fraction in zip((first, second), intersection):
+                        if 0 < fraction < 1:
+                            cuts[name].append(fraction)
+        for name in names:
+            member = self.members[name]
+            for node in self.nodes.values():
+                if node.name not in (member.start, member.end):
+                    fraction = self.member_position(name, node.x, node.y)
+                    if fraction is not None and 0 < fraction < 1:
+                        cuts[name].append(fraction)
+        for name, fractions in cuts.items():
+            if fractions:
+                self._split_member(name, fractions)
+
+    def analysis_topology_issues(self):
+        issues = []
+        names = list(self.members)
+        for index, first in enumerate(names):
+            for second in names[index + 1:]:
+                try:
+                    self.member_intersection(first, second)
+                except ValueError as error:
+                    issues.append(str(error))
+        adjacency = {name: set() for name in self.nodes}
+        for name, member in self.members.items():
+            adjacency[member.start].add(member.end)
+            adjacency[member.end].add(member.start)
+            for node in self.nodes.values():
+                if node.name not in (member.start, member.end):
+                    fraction = self.member_position(name, node.x, node.y)
+                    if fraction is not None and 0 < fraction < 1:
+                        issues.append(f"{node.name} lies inside {name}. Use Edit > Connect Intersections to make this connection explicit.")
+        remaining = set(self.nodes)
+        components = []
+        while remaining:
+            todo, component = [min(remaining)], set()
+            while todo:
+                node = todo.pop()
+                if node not in component:
+                    component.add(node)
+                    todo.extend(adjacency[node] - component)
+            remaining -= component
+            components.append(", ".join(sorted(component)))
+        if len(components) > 1:
+            issues.append("Disconnected node groups: " + "; ".join(components) + ". Connect or remove separate parts before analysis.")
+        return issues
 
     def delete(self, kind, name):
         if kind == "nodes":

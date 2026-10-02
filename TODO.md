@@ -9,8 +9,8 @@ items are not promises of a particular release date.
 - [ ] Add node dragging with snapping and undo/redo.
 - [ ] Add multiple selection and bulk property editing.
 - [ ] Add editable node/member/load tables for precise numerical entry.
-- [ ] Add member splitting and an explicit connect-at-intersection operation.
-- [ ] Detect overlapping members, disconnected components, and unintended
+- [x] Add member splitting and an explicit connect-at-intersection operation.
+- [x] Detect overlapping members, disconnected components, and unintended
   intermediate-node connections before analysis.
 - [ ] Add member end releases for hinges and truss-style members.
 - [ ] Add per-member materials and sections, with reusable definitions.
