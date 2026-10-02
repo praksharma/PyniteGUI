@@ -29,6 +29,13 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
 - Edit > Check Model reports overlapping members, interior-node connections that
   need splitting, and disconnected groups. Analysis also runs these checks.
 - Assign a node support using Support, or select a node/member and use Load (L).
+- Member loads can be Point or Distributed. Distributed loads use start/end
+  intensities in kip/in and start/end fractions along the member. Equal intensities
+  give a uniform load; different intensities give a linear ramp, including
+  triangular or sign-changing loads. Global FX/FY directions apply independently
+  of member orientation. Select a load in the tree to edit it in the inspector.
+  Splitting clips each loaded region and interpolates its endpoint intensities,
+  preserving the original distribution without creating artificial nodal forces.
 - Edit > Materials opens reusable material definitions. Add or edit a name, E,
   Poisson ratio, and density; G is calculated for an isotropic material. Select
   a member, choose Material in its inspector, and press Apply to assign it.
@@ -75,15 +82,15 @@ uses W18x35 properties. Split segments inherit their original section.
 
 Version 1 files migrate their shared material to a named Project material.
 Version 1 and 2 files migrate their shared section to a named Project section.
-New saves use version 3 and retain all material/section definitions and member
+Version 3 point loads remain supported. New saves use version 4 and retain all material/section definitions and member
 assignments. Editing a definition updates all members assigned to it and
 invalidates analysis results.
 No self-weight is applied automatically. Drawing an intersection alone does not
 connect it: use Edit > Connect Intersections to create explicit shared endpoints.
 Analysis requires one connected structure and rejects overlapping members or
 nodes inside unsplit members, avoiding implicit solver connections. Geometry
-connections use an absolute tolerance of 1e-8 inches. Distributed loads,
-load cases/combinations, member releases,
+connections use an absolute tolerance of 1e-8 inches. Distributed intensity is
+force per unit member length, not projected length. Load cases/combinations, member releases,
 and 3D editing are future extensions.
 
 Results are invalidated after edits and belong to the analyzed project revision.
@@ -122,6 +129,9 @@ inclined/reversed members, point-force/moment jumps, explicit member connections
 load preservation during splitting, rejection of invalid model topology,
 mixed-material/section stiffness, legacy-file migration, and material/section
 assignment with undo.
+Distributed-load checks cover analytical uniform/triangular beam responses,
+partial-span resultants, inclined global loading, orientation-independent
+diagrams, interpolated split loads, persistence, and editor creation/undo.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

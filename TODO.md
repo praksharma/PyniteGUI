@@ -20,7 +20,8 @@ items are not promises of a particular release date.
 
 ## Loads and Analysis
 
-- [ ] Add uniform and varying distributed member loads.
+- [x] Add uniform and varying distributed member loads, including partial spans
+  and distribution-preserving member splitting.
 - [ ] Add load cases and combinations, including a results combination selector.
 - [ ] Add optional self-weight with an explicit load case.
 - [ ] Add SI units and validated conversion of existing project data.

@@ -47,7 +47,12 @@ def analyze(project: Project) -> AnalysisResult:
         else:
             member = project.members[load.target]
             a, b = project.nodes[member.start], project.nodes[member.end]
-            model.add_member_pt_load(load.target, load.direction, load.magnitude, math.hypot(b.x - a.x, b.y - a.y) * load.position)
+            length = math.hypot(b.x - a.x, b.y - a.y)
+            if load.kind == "distributed":
+                model.add_member_dist_load(load.target, load.direction, load.magnitude, load.end_magnitude,
+                                           length * load.position, length * load.end_position)
+            else:
+                model.add_member_pt_load(load.target, load.direction, load.magnitude, length * load.position)
     model.add_load_combo("Service", {"Case 1": 1.0})
     model.analyze_linear(check_stability=True, check_statics=True)
     return AnalysisResult(

@@ -13,7 +13,11 @@ def sample_member(project, result, name):
     a, b = project.nodes[member.start], project.nodes[member.end]
     length = math.hypot(b.x - a.x, b.y - a.y)
     breaks = {0.0, length}
-    breaks.update(load.position * length for load in project.loads.values() if load.target == name)
+    for load in project.loads.values():
+        if load.target == name:
+            breaks.add(load.position * length)
+            if load.kind == "distributed":
+                breaks.add(load.end_position * length)
     # Physical members can also be segmented at intermediate model nodes.
     for node in project.nodes.values():
         distance = ((node.x - a.x) * (b.x - a.x) + (node.y - a.y) * (b.y - a.y)) / length

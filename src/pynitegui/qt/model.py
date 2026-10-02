@@ -67,6 +67,9 @@ class Load:
     direction: str = "FY"
     magnitude: float = -10.0
     position: float = 0.5
+    kind: str = "point"
+    end_magnitude: float = 0.0
+    end_position: float = 1.0
 
 
 @dataclass
@@ -155,11 +158,11 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 3, "units": "in-kip", **asdict(self)}
+        return {"version": 4, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
-        if data.get("version") not in (1, 2, 3) or data.get("units") != "in-kip":
+        if data.get("version") not in (1, 2, 3, 4) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         result = cls(grid=data["grid"])
         if data["version"] < 3:
@@ -237,6 +240,13 @@ class Project:
                 raise ValueError("Unsupported 2D load direction.")
             if not math.isfinite(load.magnitude) or not math.isfinite(load.position) or not 0 <= load.position <= 1:
                 raise ValueError("Invalid load magnitude or position.")
+            if load.kind not in ("point", "distributed"):
+                raise ValueError("Unknown load type.")
+            if load.kind == "distributed":
+                if load.target not in self.members or load.direction not in ("FX", "FY"):
+                    raise ValueError("Distributed forces require a member and global FX or FY direction.")
+                if not math.isfinite(load.end_magnitude) or not math.isfinite(load.end_position) or not load.position < load.end_position <= 1:
+                    raise ValueError("Distributed load requires finite intensities and 0 <= start < end <= 1.")
 
     def next_name(self, prefix, collection):
         index = 1
@@ -331,8 +341,24 @@ class Project:
             segment = name if index == 0 else self.next_name("M", self.members)
             self.members[segment] = replace(original, name=segment, start=start, end=end)
             segments.append(segment)
-        for load in self.loads.values():
+        for load in list(self.loads.values()):
             if load.target != name:
+                continue
+            if load.kind == "distributed":
+                pieces = []
+                for index, (left, right) in enumerate(zip(cuts, cuts[1:])):
+                    start, end = max(left, load.position), min(right, load.end_position)
+                    if start >= end:
+                        continue
+                    slope = (load.end_magnitude - load.magnitude) / (load.end_position - load.position)
+                    identifier = load.name if not pieces else self.next_name("L", self.loads)
+                    piece = replace(load, name=identifier, target=segments[index],
+                                    position=(start - left) / (right - left),
+                                    end_position=(end - left) / (right - left),
+                                    magnitude=load.magnitude + slope * (start - load.position),
+                                    end_magnitude=load.magnitude + slope * (end - load.position))
+                    self.loads[identifier] = piece
+                    pieces.append(piece)
                 continue
             position = load.position
             for index, cut in enumerate(cuts[1:-1], 1):

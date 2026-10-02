@@ -53,9 +53,9 @@ class AnalysisWorker(QObject):
 
 
 class EngineeringSymbol(QGraphicsItem):
-    def __init__(self, kind, value=None):
+    def __init__(self, kind, value=None, length=38):
         super().__init__()
-        self.kind, self.value = kind, value
+        self.kind, self.value, self.length = kind, value, length
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations)
         self.setZValue(2)
 
@@ -88,9 +88,11 @@ class EngineeringSymbol(QGraphicsItem):
                 painter.drawLine(QPointF(12, -7), QPointF(7, -8))
                 return
             dx, dy = (sign, 0) if direction == "FX" else (0, -sign)
-            painter.drawLine(QPointF(-dx * 38, -dy * 38), QPointF(0, 0))
-            painter.drawLine(QPointF(0, 0), QPointF(-dx * 9 + dy * 4, -dy * 9 - dx * 4))
-            painter.drawLine(QPointF(0, 0), QPointF(-dx * 9 - dy * 4, -dy * 9 + dx * 4))
+            head = min(9, self.length * 0.5)
+            width = head * 4 / 9
+            painter.drawLine(QPointF(-dx * self.length, -dy * self.length), QPointF(0, 0))
+            painter.drawLine(QPointF(0, 0), QPointF(-dx * head + dy * width, -dy * head - dx * width))
+            painter.drawLine(QPointF(0, 0), QPointF(-dx * head - dy * width, -dy * head + dx * width))
 
 
 class StructureView(QGraphicsView):
@@ -239,6 +241,21 @@ class StructureView(QGraphicsView):
                 member = project.members[load.target]
                 a, b = project.nodes[member.start], project.nodes[member.end]
                 x, y = a.x + (b.x - a.x) * load.position, a.y + (b.y - a.y) * load.position
+            if load.kind == "distributed":
+                maximum = max(abs(load.magnitude), abs(load.end_magnitude), 1e-12)
+                for index in range(9):
+                    ratio = index / 8
+                    fraction = load.position + ratio * (load.end_position - load.position)
+                    intensity = load.magnitude + ratio * (load.end_magnitude - load.magnitude)
+                    if abs(intensity) < maximum * 1e-8:
+                        continue
+                    symbol = EngineeringSymbol("load", (load.direction, intensity), 38 * abs(intensity) / maximum)
+                    scene.addItem(symbol)
+                    symbol.setPos(a.x + (b.x - a.x) * fraction, -a.y - (b.y - a.y) * fraction)
+                midpoint = (load.position + load.end_position) / 2
+                x, y = a.x + (b.x - a.x) * midpoint, a.y + (b.y - a.y) * midpoint
+                self.label(f"{load.name}: {load.magnitude:g} to {load.end_magnitude:g} kip/in", x, y, "#bd3549", (8, -52))
+                continue
             symbol = EngineeringSymbol("load", (load.direction, load.magnitude))
             scene.addItem(symbol)
             symbol.setPos(x, -y)
@@ -435,7 +452,7 @@ class MainWindow(QMainWindow):
         for kind, title in (("nodes", "Nodes"), ("members", "Members"), ("loads", "Loads")):
             parent = QTreeWidgetItem(self.tree, [f"{title} ({len(getattr(self.project, kind))})"])
             for name, entity in getattr(self.project, kind).items():
-                detail = f"{entity.x:g}, {entity.y:g} | {entity.support}" if kind == "nodes" else f"{entity.start} - {entity.end}" if kind == "members" else f"{entity.target} | {entity.direction} {entity.magnitude:g}"
+                detail = f"{entity.x:g}, {entity.y:g} | {entity.support}" if kind == "nodes" else f"{entity.start} - {entity.end}" if kind == "members" else f"{entity.target} | {entity.direction} {entity.magnitude:g}" + (f" to {entity.end_magnitude:g} kip/in" if entity.kind == "distributed" else "")
                 item = QTreeWidgetItem(parent, [name, detail])
                 item.setData(0, Qt.ItemDataRole.UserRole, (kind, name))
                 if self.selected == (kind, name):
@@ -497,15 +514,25 @@ class MainWindow(QMainWindow):
             self.form.addRow("Material", fields["material"])
         else:
             fields["target"] = QComboBox()
-            fields["target"].addItems([*self.project.nodes, *self.project.members])
+            fields["target"].addItems(list(self.project.members) if entity.kind == "distributed" else [*self.project.nodes, *self.project.members])
             fields["target"].setCurrentText(entity.target)
             fields["direction"] = QComboBox()
-            fields["direction"].addItems(["FX", "FY", "MZ"])
+            fields["direction"].addItems(["FX", "FY"] if entity.kind == "distributed" else ["FX", "FY", "MZ"])
             fields["direction"].setCurrentText(entity.direction)
             fields["magnitude"] = number(entity.magnitude)
             fields["position"] = number(entity.position, 0, 1)
-            for key, label in (("target", "Target"), ("direction", "Direction"), ("magnitude", "kip / kip-in"), ("position", "Member fraction")):
+            self.form.addRow("Type", QLabel(entity.kind.capitalize()))
+            for key, label in (("target", "Target"), ("direction", "Global direction"),
+                               ("magnitude", "Start (kip/in)" if entity.kind == "distributed" else "kip / kip-in"),
+                               ("position", "Start fraction" if entity.kind == "distributed" else "Member fraction")):
                 self.form.addRow(label, fields[key])
+            if entity.kind == "distributed":
+                fields["end_magnitude"] = number(entity.end_magnitude, decimals=6)
+                fields["magnitude"].setDecimals(6)
+                fields["end_position"] = number(entity.end_position, 0, 1, 6)
+                fields["position"].setDecimals(6)
+                self.form.addRow("End (kip/in)", fields["end_magnitude"])
+                self.form.addRow("End fraction", fields["end_position"])
         def apply():
             values = {key: widget.currentText() if isinstance(widget, QComboBox) else widget.value() for key, widget in fields.items()}
             def mutate(project):
@@ -567,14 +594,38 @@ class MainWindow(QMainWindow):
         dialog = QDialog(self)
         dialog.setWindowTitle(f"Load on {target}")
         form = QFormLayout(dialog)
+        load_type = QComboBox()
+        load_type.addItems(["Point", "Distributed"] if kind == "members" else ["Point"])
+        form.addRow("Type", load_type)
         direction = QComboBox()
         direction.addItems(["FY", "FX", "MZ"])
         magnitude = number(-10)
         position = number(0.5, 0, 1)
-        form.addRow("Direction", direction)
+        end_magnitude = number(-0.1, decimals=6)
+        end_position = number(1, 0, 1, 6)
+        form.addRow("Global direction", direction)
         form.addRow("kip / kip-in", magnitude)
         if kind == "members":
             form.addRow("Fraction from start", position)
+        form.addRow("End (kip/in)", end_magnitude)
+        form.addRow("End fraction", end_position)
+        def update_type():
+            distributed = load_type.currentText() == "Distributed"
+            previous = direction.currentText()
+            direction.clear()
+            direction.addItems(["FY", "FX"] if distributed else ["FY", "FX", "MZ"])
+            direction.setCurrentText(previous if previous in ("FY", "FX") or not distributed else "FY")
+            magnitude.setDecimals(6 if distributed else 4)
+            magnitude.setValue(-0.1 if distributed else -10)
+            position.setDecimals(6)
+            position.setValue(0 if distributed else 0.5)
+            form.labelForField(magnitude).setText("Start (kip/in)" if distributed else "kip / kip-in")
+            if kind == "members":
+                form.labelForField(position).setText("Start fraction" if distributed else "Fraction from start")
+            form.setRowVisible(end_magnitude, distributed)
+            form.setRowVisible(end_position, distributed)
+        load_type.currentTextChanged.connect(update_type)
+        update_type()
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(dialog.accept)
         buttons.rejected.connect(dialog.reject)
@@ -582,7 +633,8 @@ class MainWindow(QMainWindow):
         if dialog.exec():
             def mutate(project):
                 name = project.next_name("L", project.loads)
-                project.loads[name] = Load(name, target, direction.currentText(), magnitude.value(), position.value())
+                project.loads[name] = Load(name, target, direction.currentText(), magnitude.value(), position.value(),
+                                           load_type.currentText().lower(), end_magnitude.value(), end_position.value())
             self.edit("Add load", mutate)
 
     def assign_support(self):
