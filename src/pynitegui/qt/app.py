@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 
 from .analysis import analyze
 from .model import Load, Project
+from .units import UNIT_SYSTEMS
 
 
 def number(value, minimum=-1e9, maximum=1e9, decimals=4):
@@ -25,6 +26,22 @@ def number(value, minimum=-1e9, maximum=1e9, decimals=4):
     widget.setValue(value)
     widget.setKeyboardTracking(False)
     return widget
+
+
+def unit_number(value, units, quantity, minimum=-1e9, maximum=1e9, decimals=6):
+    widget = number(units.to_display(value, quantity), units.to_display(minimum, quantity),
+                    units.to_display(maximum, quantity), decimals)
+    widget.setProperty("quantity", quantity)
+    widget.setProperty("original_value", value)
+    widget.setProperty("initial_value", widget.value())
+    return widget
+
+
+def unit_value(widget, units, quantity=None):
+    quantity = quantity or widget.property("quantity")
+    if quantity == widget.property("quantity") and widget.value() == widget.property("initial_value"):
+        return widget.property("original_value")
+    return units.from_display(widget.value(), quantity)
 
 
 class Edit(QUndoCommand):
@@ -190,7 +207,8 @@ class StructureView(QGraphicsView):
     def mouseMoveEvent(self, event):
         point = self.mapToScene(event.position().toPoint())
         x, y = self.snapped(point)
-        self.window.coordinates.setText(f"X {x:g} in   Y {y:g} in")
+        units = self.window.project.units
+        self.window.coordinates.setText(f"X {units.to_display(x, 'length'):g} {units.length}   Y {units.to_display(y, 'length'):g} {units.length}")
         if self.preview is not None:
             self.preview.setLine(self.start[0], -self.start[1], x, -y)
         super().mouseMoveEvent(event)
@@ -222,6 +240,7 @@ class StructureView(QGraphicsView):
     def redraw(self):
         self.cancel()
         scene, project = self.scene(), self.window.project
+        units = project.units
         scene.clear()
         selected = self.window.selected
         for name, member in project.members.items():
@@ -286,13 +305,13 @@ class StructureView(QGraphicsView):
                     symbol.setPos(a.x + (b.x - a.x) * fraction, -a.y - (b.y - a.y) * fraction)
                 midpoint = (load.position + load.end_position) / 2
                 x, y = a.x + (b.x - a.x) * midpoint, a.y + (b.y - a.y) * midpoint
-                load_label(f"{load.name}: {load.magnitude:g} to {load.end_magnitude:g} kip/in", x, y)
+                load_label(f"{load.name}: {units.to_display(load.magnitude, 'intensity'):g} to {units.to_display(load.end_magnitude, 'intensity'):g} {units.intensity}", x, y)
                 continue
             symbol = EngineeringSymbol("load", (load.direction, load.magnitude))
             scene.addItem(symbol)
             symbol.setPos(x, -y)
-            units = "kip-in" if load.direction == "MZ" else "kip"
-            load_label(f"{load.name}: {load.magnitude:g} {units}", x, y)
+            quantity = "moment" if load.direction == "MZ" else "force"
+            load_label(f"{load.name}: {units.to_display(load.magnitude, quantity):g} {getattr(units, quantity)}", x, y)
         if self.window.result and self.window.deformed_action.isChecked():
             scale = self.window.deformation_scale.value()
             pen = QPen(QColor("#bd3549"), 2)
@@ -333,9 +352,15 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.view)
         self.build_actions()
         self.build_panels()
-        self.coordinates = QLabel("X 0 in   Y 0 in")
+        self.coordinates = QLabel()
         self.statusBar().addPermanentWidget(self.coordinates)
-        self.statusBar().showMessage("Ready | 2D frame | in, kip")
+        self.unit_selector = QComboBox()
+        self.unit_selector.setToolTip("Project display and input units")
+        for key, units in UNIT_SYSTEMS.items():
+            self.unit_selector.addItem(units.label, key)
+        self.unit_selector.currentIndexChanged.connect(lambda: self.set_units(self.unit_selector.currentData()))
+        self.statusBar().addPermanentWidget(self.unit_selector)
+        self.statusBar().showMessage(f"Ready | 2D frame | {self.project.units.summary}")
         self.undo.indexChanged.connect(self.update_title)
         self.refresh()
         self.view.fit()
@@ -379,6 +404,7 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.action("Sections...", self.manage_sections))
         edit_menu.addAction(self.action("Load Cases and Combinations...", self.manage_load_cases))
         edit_menu.addAction(self.action("Grid...", self.settings))
+        edit_menu.addAction(self.action("Units...", self.choose_units))
         edit_menu.addSeparator()
         edit_menu.addAction(self.action("Split Selected Member...", self.split_selected_member))
         edit_menu.addAction(self.action("Connect Intersections", self.connect_intersections))
@@ -436,7 +462,6 @@ class MainWindow(QMainWindow):
         self.inspector.setMinimumWidth(240)
         self.dock("Properties", self.inspector, Qt.DockWidgetArea.RightDockWidgetArea)
         self.results_table = QTableWidget(0, 7)
-        self.results_table.setHorizontalHeaderLabels(["Node", "DX (in)", "DY (in)", "RZ (rad)", "FX (kip)", "FY (kip)", "MZ (kip-in)"])
         self.results_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.results_table.setMinimumHeight(120)
         results_panel = QWidget()
@@ -461,7 +486,7 @@ class MainWindow(QMainWindow):
         self.mode_actions[mode].setChecked(True)
         self.view.setDragMode(QGraphicsView.DragMode.ScrollHandDrag if mode == "pan" else QGraphicsView.DragMode.NoDrag)
         self.view.setCursor(Qt.CursorShape.CrossCursor if mode == "draw" else Qt.CursorShape.ArrowCursor)
-        self.statusBar().showMessage(f"{mode.capitalize()} | 2D frame | in, kip")
+        self.statusBar().showMessage(f"{mode.capitalize()} | 2D frame | {self.project.units.summary}")
 
     def edit(self, title, mutate):
         before = self.project.clone()
@@ -475,8 +500,32 @@ class MainWindow(QMainWindow):
         if before.to_dict() != after.to_dict():
             self.undo.push(Edit(self, title, before, after))
 
+    def set_units(self, key):
+        if key != self.project.unit_system:
+            self.edit("Change units", lambda p: setattr(p, "unit_system", key))
+
+    def choose_units(self):
+        from PySide6.QtWidgets import QInputDialog
+        keys = list(UNIT_SYSTEMS)
+        labels = [UNIT_SYSTEMS[key].label for key in keys]
+        selected, accepted = QInputDialog.getItem(self, "Units", "Unit system", labels,
+                                                 keys.index(self.project.unit_system), False)
+        if accepted:
+            self.set_units(keys[labels.index(selected)])
+
     def replace_project(self, project):
+        before, after = self.project.to_dict(), project.to_dict()
+        before.pop("unit_system")
+        after.pop("unit_system")
+        units_only = before == after and self.project.unit_system != project.unit_system
         self.project = project.clone()
+        if units_only:
+            self.refresh()
+            if self.result is not None:
+                self.select_result_combination(self.result.combination)
+            else:
+                self.statusBar().showMessage(f"Units updated | {self.project.units.summary}")
+            return
         self.revision += 1
         self.result = None
         self.result_combination.setEnabled(False)
@@ -488,15 +537,34 @@ class MainWindow(QMainWindow):
         if self.selected and self.selected[1] not in getattr(self.project, self.selected[0]):
             self.selected = None
         self.refresh()
-        self.statusBar().showMessage("Model updated | Results require analysis | in, kip")
+        self.statusBar().showMessage(f"Model updated | Results require analysis | {self.project.units.summary}")
 
     def refresh(self):
+        units = self.project.units
+        self.unit_selector.blockSignals(True)
+        self.unit_selector.setCurrentIndex(self.unit_selector.findData(self.project.unit_system))
+        self.unit_selector.blockSignals(False)
+        self.results_table.setHorizontalHeaderLabels(["Node", f"DX ({units.length})", f"DY ({units.length})", "RZ (rad)",
+                                                      f"FX ({units.force})", f"FY ({units.force})", f"MZ ({units.moment})"])
+        self.coordinates.setText(f"X 0 {units.length}   Y 0 {units.length}")
+        from .diagrams import DiagramDialog
+        for dialog in self.findChildren(DiagramDialog):
+            dialog.set_unit_system(self.project.unit_system)
         self.tree.blockSignals(True)
         self.tree.clear()
         for kind, title in (("nodes", "Nodes"), ("members", "Members"), ("loads", "Loads")):
             parent = QTreeWidgetItem(self.tree, [f"{title} ({len(getattr(self.project, kind))})"])
             for name, entity in getattr(self.project, kind).items():
-                detail = f"{entity.x:g}, {entity.y:g} | {entity.support}" if kind == "nodes" else f"{entity.start} - {entity.end}" if kind == "members" else f"{entity.target} | {entity.direction} {entity.magnitude:g}" + (f" to {entity.end_magnitude:g} kip/in" if entity.kind == "distributed" else "")
+                if kind == "nodes":
+                    detail = f"{units.to_display(entity.x, 'length'):g}, {units.to_display(entity.y, 'length'):g} {units.length} | {entity.support}"
+                elif kind == "members":
+                    detail = f"{entity.start} - {entity.end}"
+                else:
+                    quantity = "intensity" if entity.kind == "distributed" else "moment" if entity.direction == "MZ" else "force"
+                    detail = f"{entity.target} | {entity.direction} {units.to_display(entity.magnitude, quantity):g}"
+                    if entity.kind == "distributed":
+                        detail += f" to {units.to_display(entity.end_magnitude, quantity):g}"
+                    detail += f" {getattr(units, quantity)}"
                 if kind == "members" and (entity.release_start or entity.release_end):
                     ends = ", ".join(end for end, released in (("start", entity.release_start), ("end", entity.release_end)) if released)
                     detail += f" | hinge: {ends}"
@@ -525,13 +593,13 @@ class MainWindow(QMainWindow):
         while self.form.rowCount():
             self.form.removeRow(0)
         if not self.selected:
-            self.form.addRow("Units", QLabel("in, kip"))
+            self.form.addRow("Units", QLabel(self.project.units.label))
             self.form.addRow("Default material", QLabel(self.project.default_material))
             self.form.addRow("Default section", QLabel(self.project.default_section))
-            grid = number(self.project.grid, 0.001, 1e6)
-            self.form.addRow("Grid (in)", grid)
+            grid = unit_number(self.project.grid, self.project.units, "length", 0.001, 1e6)
+            self.form.addRow(f"Grid ({self.project.units.length})", grid)
             button = QPushButton("Apply")
-            button.clicked.connect(lambda: self.edit("Change grid", lambda p: setattr(p, "grid", grid.value())))
+            button.clicked.connect(lambda: self.edit("Change grid", lambda p: setattr(p, "grid", unit_value(grid, self.project.units))))
             self.form.addRow(button)
             return
         kind, name = self.selected
@@ -540,8 +608,8 @@ class MainWindow(QMainWindow):
         fields = {}
         if kind == "nodes":
             for key in ("x", "y"):
-                fields[key] = number(getattr(entity, key))
-                self.form.addRow(f"{key.upper()} (in)", fields[key])
+                fields[key] = unit_number(getattr(entity, key), self.project.units, "length")
+                self.form.addRow(f"{key.upper()} ({self.project.units.length})", fields[key])
             fields["support"] = QComboBox()
             fields["support"].addItems(["free", "pin", "roller", "fixed"])
             fields["support"].setCurrentText(entity.support)
@@ -553,7 +621,7 @@ class MainWindow(QMainWindow):
                 fields[key].setCurrentText(getattr(entity, key))
                 self.form.addRow(key.capitalize(), fields[key])
             a, b = self.project.nodes[entity.start], self.project.nodes[entity.end]
-            self.form.addRow("Length (in)", QLabel(f"{math.hypot(b.x - a.x, b.y - a.y):g}"))
+            self.form.addRow(f"Length ({self.project.units.length})", QLabel(f"{self.project.units.to_display(math.hypot(b.x - a.x, b.y - a.y), 'length'):g}"))
             fields["section"] = QComboBox()
             fields["section"].addItems(list(self.project.sections))
             fields["section"].setCurrentText(entity.section)
@@ -576,7 +644,8 @@ class MainWindow(QMainWindow):
             fields["direction"].setObjectName("load_direction")
             fields["direction"].addItems(["FX", "FY"] if entity.kind == "distributed" else ["FX", "FY", "MZ"])
             fields["direction"].setCurrentText(entity.direction)
-            fields["magnitude"] = number(entity.magnitude)
+            quantity = "intensity" if entity.kind == "distributed" else "moment" if entity.direction == "MZ" else "force"
+            fields["magnitude"] = unit_number(entity.magnitude, self.project.units, quantity)
             fields["position"] = number(entity.position, 0, 1)
             fields["case"] = QComboBox()
             fields["case"].setObjectName("load_case")
@@ -585,18 +654,27 @@ class MainWindow(QMainWindow):
             self.form.addRow("Case", fields["case"])
             self.form.addRow("Type", QLabel(entity.kind.capitalize()))
             for key, label in (("target", "Target"), ("direction", "Global direction"),
-                               ("magnitude", "Start (kip/in)" if entity.kind == "distributed" else "kip / kip-in"),
+                               ("magnitude", f"Start ({self.project.units.intensity})" if entity.kind == "distributed" else getattr(self.project.units, quantity)),
                                ("position", "Start fraction" if entity.kind == "distributed" else "Member fraction")):
                 self.form.addRow(label, fields[key])
             if entity.kind == "distributed":
-                fields["end_magnitude"] = number(entity.end_magnitude, decimals=6)
+                fields["end_magnitude"] = unit_number(entity.end_magnitude, self.project.units, "intensity")
                 fields["magnitude"].setDecimals(6)
                 fields["end_position"] = number(entity.end_position, 0, 1, 6)
                 fields["position"].setDecimals(6)
-                self.form.addRow("End (kip/in)", fields["end_magnitude"])
+                self.form.addRow(f"End ({self.project.units.intensity})", fields["end_magnitude"])
                 self.form.addRow("End fraction", fields["end_position"])
+            if entity.kind == "point":
+                fields["direction"].currentTextChanged.connect(lambda direction: self.form.labelForField(fields["magnitude"]).setText(
+                    self.project.units.moment if direction == "MZ" else self.project.units.force))
         def apply():
             values = {key: widget.currentText() if isinstance(widget, QComboBox) else widget.isChecked() if isinstance(widget, QCheckBox) else widget.value() for key, widget in fields.items()}
+            for key, widget in fields.items():
+                if isinstance(widget, QDoubleSpinBox) and widget.property("quantity"):
+                    quantity = widget.property("quantity")
+                    if kind == "loads" and key == "magnitude" and entity.kind == "point":
+                        quantity = "moment" if values["direction"] == "MZ" else "force"
+                    values[key] = unit_value(widget, self.project.units, quantity)
             def mutate(project):
                 target = getattr(project, kind)[name]
                 for key, value in values.items():
@@ -670,10 +748,10 @@ class MainWindow(QMainWindow):
         case.addItems(self.project.load_cases)
         case.setCurrentText(self.project.default_load_case)
         form.addRow("Case", case)
-        form.addRow("kip / kip-in", magnitude)
+        form.addRow(self.project.units.force, magnitude)
         if kind == "members":
             form.addRow("Fraction from start", position)
-        form.addRow("End (kip/in)", end_magnitude)
+        form.addRow(f"End ({self.project.units.intensity})", end_magnitude)
         form.addRow("End fraction", end_position)
         def update_type():
             distributed = load_type.currentText() == "Distributed"
@@ -685,11 +763,14 @@ class MainWindow(QMainWindow):
             magnitude.setValue(-0.1 if distributed else -10)
             position.setDecimals(6)
             position.setValue(0 if distributed else 0.5)
-            form.labelForField(magnitude).setText("Start (kip/in)" if distributed else "kip / kip-in")
+            form.labelForField(magnitude).setText(f"Start ({self.project.units.intensity})" if distributed else self.project.units.moment if direction.currentText() == "MZ" else self.project.units.force)
             if kind == "members":
                 form.labelForField(position).setText("Start fraction" if distributed else "Fraction from start")
             form.setRowVisible(end_magnitude, distributed)
             form.setRowVisible(end_position, distributed)
+        direction.currentTextChanged.connect(lambda: form.labelForField(magnitude).setText(
+            f"Start ({self.project.units.intensity})" if load_type.currentText() == "Distributed" else
+            self.project.units.moment if direction.currentText() == "MZ" else self.project.units.force))
         load_type.currentTextChanged.connect(update_type)
         update_type()
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -699,8 +780,9 @@ class MainWindow(QMainWindow):
         if dialog.exec():
             def mutate(project):
                 name = project.next_name("L", project.loads)
-                project.loads[name] = Load(name, target, direction.currentText(), magnitude.value(), position.value(),
-                                           load_type.currentText().lower(), end_magnitude.value(), end_position.value(), case.currentText())
+                quantity = "intensity" if load_type.currentText() == "Distributed" else "moment" if direction.currentText() == "MZ" else "force"
+                project.loads[name] = Load(name, target, direction.currentText(), project.units.from_display(magnitude.value(), quantity), position.value(),
+                                           load_type.currentText().lower(), project.units.from_display(end_magnitude.value(), "intensity"), end_position.value(), case.currentText())
             self.edit("Add load", mutate)
 
     def assign_support(self):
@@ -732,9 +814,9 @@ class MainWindow(QMainWindow):
         dialog.setWindowTitle("Grid")
         form = QFormLayout(dialog)
         fields = {}
-        labels = {"grid": "Grid (in)"}
+        labels = {"grid": f"Grid ({self.project.units.length})"}
         for key, label in labels.items():
-            fields[key] = number(getattr(self.project, key), 0, 1e12, 8)
+            fields[key] = unit_number(getattr(self.project, key), self.project.units, "length", 0, 1e12, 8)
             form.addRow(label, fields[key])
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(dialog.accept)
@@ -743,7 +825,7 @@ class MainWindow(QMainWindow):
         if dialog.exec():
             def mutate(project):
                 for key, widget in fields.items():
-                    setattr(project, key, widget.value())
+                    setattr(project, key, unit_value(widget, self.project.units))
             self.edit("Edit grid", mutate)
 
     def confirm_discard(self):
@@ -766,7 +848,7 @@ class MainWindow(QMainWindow):
 
     def new_project(self):
         if self.confirm_discard():
-            self.load_project(Project())
+            self.load_project(Project(unit_system=self.project.unit_system))
 
     def open_project(self):
         if not self.confirm_discard():
@@ -797,7 +879,7 @@ class MainWindow(QMainWindow):
     def example(self):
         if not self.confirm_discard():
             return
-        project = Project()
+        project = Project(unit_system=self.project.unit_system)
         project.add_member((0, 0), (420, 0))
         project.nodes["N1"].support = "pin"
         project.nodes["N2"].support = "roller"
@@ -863,6 +945,8 @@ class MainWindow(QMainWindow):
         self.results_table.setRowCount(len(result.displacements))
         for row, (name, displacement) in enumerate(result.displacements.items()):
             for col, value in enumerate((name, *displacement, *result.reactions[name])):
+                if col and value is not None:
+                    value = self.project.units.to_display(value, ("length", "length", "rotation", "force", "force", "moment")[col - 1])
                 item = QTableWidgetItem("n/a" if value is None else value if isinstance(value, str) else f"{value:.6g}")
                 if value is None:
                     item.setToolTip("Released member ends rotate independently; no shared nodal rotation is defined.")
@@ -870,7 +954,7 @@ class MainWindow(QMainWindow):
         self.results_table.resizeColumnsToContents()
         self.results_dock.setWindowTitle(f"Results - {result.combination}")
         self.view.redraw()
-        self.statusBar().showMessage(f"Analysis complete | {result.combination} | in, kip")
+        self.statusBar().showMessage(f"Analysis complete | {result.combination} | {self.project.units.summary}")
 
     def diagrams(self):
         if self.result is None:

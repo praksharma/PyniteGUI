@@ -4,7 +4,7 @@ from PySide6.QtWidgets import (
     QLineEdit, QMessageBox, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout,
 )
 
-from .app import number
+from .app import unit_number, unit_value
 from .model import Section
 
 
@@ -20,8 +20,9 @@ class SectionEditor(QDialog):
         self.name.setMaxLength(80)
         form.addRow("Name", self.name)
         self.fields = {}
-        for key, label in (("A", "Area (in2)"), ("Iy", "Iy (in4)"), ("Iz", "Iz (in4)"), ("J", "J (in4)")):
-            self.fields[key] = number(getattr(section, key), 0, 1e12, 8)
+        for key, label in (("A", f"Area ({project.units.area})"), ("Iy", f"Iy ({project.units.inertia})"),
+                           ("Iz", f"Iz ({project.units.inertia})"), ("J", f"J ({project.units.inertia})")):
+            self.fields[key] = unit_number(getattr(section, key), project.units, "area" if key == "A" else "inertia", 0, 1e12, 8)
             form.addRow(label, self.fields[key])
         self.initial_values = {key: widget.value() for key, widget in self.fields.items()}
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -30,7 +31,7 @@ class SectionEditor(QDialog):
         form.addRow(buttons)
 
     def accept(self):
-        values = {key: getattr(self.original, key) if widget.value() == self.initial_values[key] else widget.value()
+        values = {key: getattr(self.original, key) if widget.value() == self.initial_values[key] else unit_value(widget, self.project.units)
                   for key, widget in self.fields.items()}
         section = Section(self.name.text().strip(), **values)
         try:
@@ -52,7 +53,7 @@ class SectionDialog(QDialog):
         self.resize(760, 400)
         layout = QVBoxLayout(self)
         self.table = QTableWidget(0, 7)
-        self.table.setHorizontalHeaderLabels(["Section", "Area (in2)", "Iy (in4)", "Iz (in4)", "J (in4)", "Members", "Default"])
+
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -84,13 +85,15 @@ class SectionDialog(QDialog):
     def refresh(self, selected=None):
         selected = selected or self.selected_name() or self.window.project.default_section
         project = self.window.project
+        units = project.units
+        self.table.setHorizontalHeaderLabels(["Section", f"Area ({units.area})", f"Iy ({units.inertia})", f"Iz ({units.inertia})", f"J ({units.inertia})", "Members", "Default"])
         if selected not in project.sections:
             selected = project.default_section
         self.table.blockSignals(True)
         self.table.setRowCount(len(project.sections))
         for row, section in enumerate(project.sections.values()):
             count = sum(member.section == section.name for member in project.members.values())
-            values = (section.name, f"{section.A:g}", f"{section.Iy:g}", f"{section.Iz:g}", f"{section.J:g}", str(count), "Yes" if section.name == project.default_section else "")
+            values = (section.name, f"{units.to_display(section.A, 'area'):g}", f"{units.to_display(section.Iy, 'inertia'):g}", f"{units.to_display(section.Iz, 'inertia'):g}", f"{units.to_display(section.J, 'inertia'):g}", str(count), "Yes" if section.name == project.default_section else "")
             for column, value in enumerate(values):
                 self.table.setItem(row, column, QTableWidgetItem(value))
             if section.name == selected:

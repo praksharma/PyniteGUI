@@ -1,6 +1,6 @@
 # PyniteGUI Roadmap
 
-Current scope: a 2D frame editor using inch/kip units, per-member materials and
+Current scope: a 2D frame editor with SI/imperial input and display, per-member materials and
 sections, distributed loads, and named load cases/combinations. This list tracks remaining work;
 items are not promises of a particular release date.
 
@@ -27,7 +27,9 @@ items are not promises of a particular release date.
 - [ ] Add an editing load-case visibility filter and hide/show controls.
 - [ ] Add result envelopes across selected combinations.
 - [ ] Add optional self-weight with an explicit load case.
-- [ ] Add SI units and validated conversion of existing project data.
+- [x] Add SI/imperial presets with validated dimensional input/output conversion,
+  persistent selection, and physical-model preservation for existing projects.
+- [ ] Add further unit presets or custom length/force choices.
 - [ ] Improve instability messages with affected nodes and degrees of freedom.
 - [ ] Add an analysis progress indicator and cancellation for large models.
 

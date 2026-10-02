@@ -15,6 +15,11 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
 
 ## Workflow
 
+- Choose Imperial or SI from the unit selector at the bottom-right, or use
+  Edit > Units. All dimensional inputs, inspectors, coordinate readouts, load
+  labels, property tables, results, and open diagrams use the selected system.
+  Switching is undoable, preserves the physical model and valid results, and is
+  saved with the project. New projects keep the currently selected system.
 - Choose Member (M), then click two points. Coordinates snap to the project grid
   or an existing node. Escape or right-click cancels an unfinished member.
 - Choose Select (V) and click a node or member, or select it in the structure
@@ -36,7 +41,7 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   newly created internal connections stay rigid.
 - Assign a node support using Support, or select a node/member and use Load (L).
 - Member loads can be Point or Distributed. Distributed loads use start/end
-  intensities in kip/in and start/end fractions along the member. Equal intensities
+  intensities in kip/in or kN/m and start/end fractions along the member. Equal intensities
   give a uniform load; different intensities give a linear ramp, including
   triangular or sign-changing loads. Global FX/FY directions apply independently
   of member orientation. Select a load in the tree to edit it in the inspector.
@@ -75,11 +80,42 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   undo and redo model edits. Delete removes the selected entity and its dependent
   members/loads. Unsaved changes are marked in the title and checked on exit.
 - File > Simply Supported Example loads a 420-inch beam with a 10-kip downward
-  midspan load. Each support should react with 5 kip.
+  midspan load. Each support should react with 5 kip. In SI the same physical
+  example displays a 10.668 m span, 44.4822 kN load, and 22.2411 kN reactions.
+
+## Units
+
+| Quantity | Imperial | SI |
+| --- | --- | --- |
+| Coordinates, lengths, grid, displacements | in | m |
+| Forces | kip | kN |
+| Moments | kip-in | kN-m |
+| Distributed intensity | kip/in | kN/m |
+| E and G | kip/in2 | MPa |
+| Weight density | kip/in3 | kN/m3 |
+| Section area | in2 | mm2 |
+| Iy, Iz, J | in4 | mm4 |
+| Rotation | rad | rad |
+
+Density is weight per volume, not mass density in kg/m3. Load fractions,
+Poisson ratio, combination factors, and deformation amplification are
+dimensionless and do not change with units. Switching preserves grid spacing;
+enter a new value in Edit > Grid when a round metric spacing is wanted.
+Section and material names are identifiers and are not renamed by conversion.
+
+The model, saved engineering numbers, and solver use canonical inch-kip units.
+Only input/output boundaries convert. This avoids repeated conversion drift and
+keeps old projects physically unchanged. Unedited property fields retain their
+full internal precision even when displayed with fewer decimals. Open diagram
+windows retain their analyzed geometry and loading, but follow the active unit
+selection. Unit changes alone do not require another analysis.
+Conversions use exact inch and pound-force definitions from
+[NIST SP 811](https://pml.nist.gov/cuu/pdf/sp811.pdf), with other factors derived
+by their physical dimensions.
 
 ## Engineering Scope
 
-Coordinates and sections use inches; forces use kips; moments use kip-in.
+Dimensional inputs and results use the selected system listed above.
 The editor models frames in the global XY plane. Out-of-plane translation and
 rotations are restrained at every node. A pin restrains X/Y translation, a
 roller restrains Y translation, and a fixed support also restrains Z rotation.
@@ -109,12 +145,12 @@ mechanisms still fail the solver stability checks.
 Each member references a reusable material definition. Editing that definition
 updates every member assigned to it and invalidates results. Split member
 segments inherit the original material. The default definition is Steel_A992;
-material units are E/G in kip/in2 and density in kip/in3. Materials are isotropic
+E/G and weight density use the selected units. Materials are isotropic
 and linear elastic; yield strength and nonlinear constitutive models are not
 currently represented.
 
-Each member also references a reusable section definition. Area uses in2;
-Iy, Iz, and J use in4 in the member local axes. Iz governs in-plane bending
+Each member also references a reusable section definition. Area uses in2 or mm2;
+Iy, Iz, and J use in4 or mm4 in the member local axes. Iz governs in-plane bending
 for the current XY frame model. Section properties are entered directly;
 definition names do not perform a section-catalog lookup. The initial default
 uses W18x35 properties. Split segments inherit their original section.
@@ -124,9 +160,12 @@ Version 1 and 2 files migrate their shared section to a named Project section.
 Versions 1 through 4 migrate existing loads into Case 1 with the original
 Service combination. Version 3 point loads and version 4 distributed loads
 remain supported. Versions 1 through 5 migrate to rigid member ends.
-New saves use version 6 and retain material/section definitions, member
+Versions 1 through 6 open in Imperial, preserving their original inch-kip values.
+New saves use version 7 and retain material/section definitions, member
 assignments, load cases, combination factors, the default load case, and each
-member end moment release.
+member end moment release, plus the selected unit system. The JSON units field
+remains in-kip to identify the canonical storage units; unit_system controls
+presentation and input conversion.
 Editing a definition updates all members assigned to it and
 invalidates analysis results.
 No self-weight is applied automatically. Drawing an intersection alone does not
@@ -137,7 +176,8 @@ connections use an absolute tolerance of 1e-8 inches. Distributed intensity is
 force per unit member length, not projected length. Additional release types
 and 3D editing are future extensions.
 
-Results are invalidated after edits and belong to the analyzed project revision.
+Results are invalidated after engineering edits and belong to the analyzed project revision.
+Unit selection changes presentation only and retains valid analysis results.
 Result diagrams already open remain snapshots of that analysis.
 
 Whole-structure diagrams use a consistent cut orientation from the endpoint with
@@ -154,6 +194,7 @@ and concentrated moments include both sides of each discontinuity.
 ## Architecture
 
 - `src/pynitegui/qt/model.py`: validated, serializable project data.
+- `src/pynitegui/qt/units.py`: canonical-to-display conversion factors and presets.
 - `src/pynitegui/qt/analysis.py`: project-to-PyNite adapter and analysis results.
 - `src/pynitegui/qt/app.py`: Qt graphics editor, inspector, undo commands,
   background analysis, and a consistent light application theme.
@@ -190,6 +231,9 @@ rotation reporting, split/intersection preservation, persistence, and undo.
 Axial-force checks cover tension/compression signs, inclined and reversed members,
 point-force jumps, distributed axial loading, pin-jointed frames, common scaling,
 combination switching, snapshot preservation, and compact plot-label layout.
+Unit checks cover known conversion factors, SI analytical beam responses,
+precision-preserving input, grid snapping, all dimensional editors/result columns,
+live diagram switching, persistence/migration, undo, and repeated unit changes.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

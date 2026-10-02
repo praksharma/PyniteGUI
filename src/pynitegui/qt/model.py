@@ -3,6 +3,8 @@ from dataclasses import asdict, dataclass, field
 import json
 import math
 
+from .units import UNIT_SYSTEMS
+
 
 @dataclass
 class Material:
@@ -85,9 +87,14 @@ class Project:
     sections: dict[str, Section] = field(default_factory=lambda: {"W18x35": Section("W18x35")})
     default_section: str = "W18x35"
     grid: float = 12.0
+    unit_system: str = "imperial"
     load_cases: list[str] = field(default_factory=lambda: ["Case 1"])
     default_load_case: str = "Case 1"
     combinations: dict[str, dict[str, float]] = field(default_factory=lambda: {"Service": {"Case 1": 1.0}})
+
+    @property
+    def units(self):
+        return UNIT_SYSTEMS[self.unit_system]
 
     @staticmethod
     def validate_load_name(name):
@@ -223,13 +230,15 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 6, "units": "in-kip", **asdict(self)}
+        return {"version": 7, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
-        if data.get("version") not in (1, 2, 3, 4, 5, 6) or data.get("units") != "in-kip":
+        if data.get("version") not in (1, 2, 3, 4, 5, 6, 7) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         result = cls(grid=data["grid"])
+        if data["version"] >= 7:
+            result.unit_system = data["unit_system"]
         if data["version"] >= 5:
             if not isinstance(data["load_cases"], list):
                 raise ValueError("Load cases must be a list of names.")
@@ -263,6 +272,8 @@ class Project:
         return self.from_dict(self.to_dict())
 
     def validate(self):
+        if not isinstance(self.unit_system, str) or self.unit_system not in UNIT_SYSTEMS:
+            raise ValueError("Unsupported unit system.")
         if not isinstance(self.load_cases, list) or not self.load_cases:
             raise ValueError("Load cases must be a nonempty list of names.")
         for case in self.load_cases:
@@ -383,7 +394,7 @@ class Project:
         rx, ry, sx, sy = b.x - a.x, b.y - a.y, d.x - c.x, d.y - c.y
         lr, ls = math.hypot(rx, ry), math.hypot(sx, sy)
         if min(lr, ls) <= 1e-8:
-            raise ValueError("Members must be longer than 1e-8 in.")
+            raise ValueError(f"Members must be longer than {self.units.to_display(1e-8, 'length'):g} {self.units.length}.")
         qx, qy = c.x - a.x, c.y - a.y
         denominator = rx * sy - ry * sx
         if abs(denominator) <= 1e-12 * lr * ls:

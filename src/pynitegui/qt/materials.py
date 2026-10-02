@@ -6,7 +6,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from .app import number
+from .app import number, unit_number, unit_value
 from .model import Material
 
 
@@ -19,13 +19,13 @@ class MaterialEditor(QDialog):
         form = QFormLayout(self)
         self.name = QLineEdit(material.name)
         self.name.setMaxLength(80)
-        self.E = number(material.E, 0.000001, 1e12, 6)
+        self.E = unit_number(material.E, project.units, "stress", 0.000001, 1e12, 6)
         self.nu = number(material.nu, -0.999999, 0.499999, 6)
-        self.rho = number(material.rho, 0, 1e9, 10)
+        self.rho = unit_number(material.rho, project.units, "density", 0, 1e9, 10)
         self.original = material
         self.initial_values = (self.E.value(), self.nu.value(), self.rho.value())
         self.G = QLabel()
-        for label, widget in (("Name", self.name), ("E (kip/in2)", self.E), ("Poisson ratio", self.nu), ("Density (kip/in3)", self.rho), ("G (kip/in2)", self.G)):
+        for label, widget in (("Name", self.name), (f"E ({project.units.stress})", self.E), ("Poisson ratio", self.nu), (f"Weight density ({project.units.density})", self.rho), (f"G ({project.units.stress})", self.G)):
             form.addRow(label, widget)
         self.E.valueChanged.connect(self.update_G)
         self.nu.valueChanged.connect(self.update_G)
@@ -43,7 +43,7 @@ class MaterialEditor(QDialog):
                        for widget, initial, original in zip(
                            (self.E, self.nu, self.rho), self.initial_values,
                            (self.original.E, self.original.nu, self.original.rho)))
-        material = Material(self.name.text().strip(), *values)
+        material = Material(self.name.text().strip(), unit_value(self.E, self.project.units), values[1], unit_value(self.rho, self.project.units))
         try:
             material.validate()
             if material.name in self.project.materials and material.name != self.previous:
@@ -63,7 +63,7 @@ class MaterialDialog(QDialog):
         self.resize(760, 400)
         layout = QVBoxLayout(self)
         self.table = QTableWidget(0, 6)
-        self.table.setHorizontalHeaderLabels(["Material", "E (kip/in2)", "Poisson ratio", "Density (kip/in3)", "Members", "Default"])
+
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -95,13 +95,15 @@ class MaterialDialog(QDialog):
     def refresh(self, selected=None):
         selected = selected or self.selected_name() or self.window.project.default_material
         project = self.window.project
+        units = project.units
+        self.table.setHorizontalHeaderLabels(["Material", f"E ({units.stress})", "Poisson ratio", f"Weight density ({units.density})", "Members", "Default"])
         if selected not in project.materials:
             selected = project.default_material
         self.table.blockSignals(True)
         self.table.setRowCount(len(project.materials))
         for row, material in enumerate(project.materials.values()):
             count = sum(member.material == material.name for member in project.members.values())
-            values = (material.name, f"{material.E:g}", f"{material.nu:g}", f"{material.rho:.8g}", str(count), "Yes" if material.name == project.default_material else "")
+            values = (material.name, f"{units.to_display(material.E, 'stress'):g}", f"{material.nu:g}", f"{units.to_display(material.rho, 'density'):.8g}", str(count), "Yes" if material.name == project.default_material else "")
             for column, value in enumerate(values):
                 self.table.setItem(row, column, QTableWidgetItem(value))
             if material.name == selected:

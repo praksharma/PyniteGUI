@@ -72,6 +72,8 @@ def structure_data(project, result, quantity):
 
 def draw_structure(ax, project, result, quantity, amplitude=20):
     data = structure_data(project, result, quantity)
+    units = project.units
+    value_quantity = "moment" if quantity == "moment" else "force"
     maximum = max((float(np.max(np.abs(row["values"]))) for row in data.values()), default=0)
     xs, ys = [n.x for n in project.nodes.values()], [n.y for n in project.nodes.values()]
     extent = max(max(xs) - min(xs), max(ys) - min(ys), 1)
@@ -79,7 +81,8 @@ def draw_structure(ax, project, result, quantity, amplitude=20):
     color = {"axial": "#3279a4", "shear": "#168b8b", "moment": "#b53c5b"}[quantity]
     for name, row in data.items():
         base, values, normal = row["base"], row["values"], row["normal"]
-        offset = base + np.outer(values * factor, normal)
+        base = units.to_display(base, "length")
+        offset = base + np.outer(units.to_display(values * factor, "length"), normal)
         ax.plot(base[:, 0], base[:, 1], color="#32464d", linewidth=2, zorder=3)
         ax.plot(offset[:, 0], offset[:, 1], color=color, linewidth=1.7)
         polygon = np.vstack((base[0], offset, base[-1]))
@@ -91,17 +94,18 @@ def draw_structure(ax, project, result, quantity, amplitude=20):
         used = []
         for index in labels:
             point = offset[index]
-            if any(np.linalg.norm(point - previous) < extent * 0.025 for previous in used):
+            if any(np.linalg.norm(point - previous) < units.to_display(extent * 0.025, "length") for previous in used):
                 continue
             used.append(point)
-            ax.annotate(f"{values[index]:.4g}", point, xytext=(5, 5), textcoords="offset points", fontsize=8, color=color,
+            ax.annotate(f"{units.to_display(values[index], value_quantity):.4g}", point, xytext=(5, 5), textcoords="offset points", fontsize=8, color=color,
                         bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.8, "pad": 1})
         midpoint = (base[0] + base[-1]) / 2
         ax.annotate(name, midpoint, xytext=(5, -12), textcoords="offset points", fontsize=8, color="#32464d")
     for node in project.nodes.values():
-        ax.plot(node.x, node.y, "o", color="#32464d", markersize=3, zorder=4)
+        x, y = units.to_display(node.x, "length"), units.to_display(node.y, "length")
+        ax.plot(x, y, "o", color="#32464d", markersize=3, zorder=4)
         if node.support != "free":
-            ax.plot(node.x, node.y, marker="^" if node.support != "roller" else "o", color="#258451", fillstyle="none", markersize=9, zorder=4)
+            ax.plot(x, y, marker="^" if node.support != "roller" else "o", color="#258451", fillstyle="none", markersize=9, zorder=4)
     for name, row in data.items():
         member = project.members[name]
         start, end = row["base"][0], row["base"][-1]
@@ -110,13 +114,13 @@ def draw_structure(ax, project, result, quantity, amplitude=20):
             if released:
                 marker = DrawingArea(8, 8)
                 marker.add_artist(Circle((4, 4), 3, facecolor="white", edgecolor="#176b73", linewidth=1.3))
-                ax.add_artist(AnnotationBbox(marker, point, xybox=tuple(sign * tangent * 9),
+                ax.add_artist(AnnotationBbox(marker, units.to_display(point, "length"), xybox=tuple(sign * tangent * 9),
                                             boxcoords="offset points", frameon=False, pad=0, zorder=5))
-    ax.set_title({"axial": "Axial Force Diagram N (kip; + compression)",
-                  "shear": "Shear Force Diagram V (kip)",
-                  "moment": "Bending Moment Diagram M (kip-in)"}[quantity])
-    ax.set_xlabel("X (in)")
-    ax.set_ylabel("Y (in)")
+    ax.set_title({"axial": f"Axial Force Diagram N ({units.force}; + compression)",
+                  "shear": f"Shear Force Diagram V ({units.force})",
+                  "moment": f"Bending Moment Diagram M ({units.moment})"}[quantity])
+    ax.set_xlabel(f"X ({units.length})")
+    ax.set_ylabel(f"Y ({units.length})")
     ax.set_aspect("equal", adjustable="datalim")
     ax.margins(0.2)
     ax.grid(alpha=0.15)
@@ -142,7 +146,8 @@ class DiagramDialog(QDialog):
         structure_layout = QVBoxLayout(structure)
         controls = QHBoxLayout()
         self.quantity = QComboBox()
-        for label, key in (("Shear Force (kip)", "shear"), ("Bending Moment (kip-in)", "moment"), ("Axial Force (kip)", "axial")):
+        units = project.units
+        for label, key in ((f"Shear Force ({units.force})", "shear"), (f"Bending Moment ({units.moment})", "moment"), (f"Axial Force ({units.force})", "axial")):
             self.quantity.addItem(label, key)
         self.quantity.setToolTip("Axial force: positive compression, negative tension.")
         controls.addWidget(self.quantity)
@@ -178,6 +183,18 @@ class DiagramDialog(QDialog):
         self.update_structure()
         self.update_member()
 
+    def set_unit_system(self, key):
+        if self.project.unit_system == key:
+            return
+        self.project.unit_system = key
+        units = self.project.units
+        self.quantity.blockSignals(True)
+        for index, label in enumerate((f"Shear Force ({units.force})", f"Bending Moment ({units.moment})", f"Axial Force ({units.force})")):
+            self.quantity.setItemText(index, label)
+        self.quantity.blockSignals(False)
+        self.update_structure()
+        self.update_member()
+
     def select_combination(self, name):
         self.result = self.result.for_combination(name)
         self.setWindowTitle(f"Force Diagrams | {name}")
@@ -194,15 +211,16 @@ class DiagramDialog(QDialog):
         self.member_figure.clear()
         name = self.member.currentText()
         data = sample_member(self.project, self.result, name)
+        units = self.project.units
         shared = None
-        for index, (key, label, color) in enumerate((("axial", "Axial N (kip)\n+ compression", "#3279a4"),
-                                                     ("shear", "Shear Fy (kip)", "#168b8b"),
-                                                     ("moment", "Moment Mz (kip-in)", "#b53c5b"),
-                                                     ("deflection", "Deflection dy (in)", "#168b8b"))):
+        for index, (key, label, color) in enumerate((("axial", f"Axial N ({units.force})\n+ compression", "#3279a4"),
+                                                     ("shear", f"Shear Fy ({units.force})", "#168b8b"),
+                                                     ("moment", f"Moment Mz ({units.moment})", "#b53c5b"),
+                                                     ("deflection", f"Deflection dy ({units.length})", "#168b8b"))):
             ax = self.member_figure.add_subplot(4, 1, index + 1, sharex=shared)
             if shared is None:
                 shared = ax
-            ax.plot(data["x"], data[key], color=color)
+            ax.plot(units.to_display(data["x"], "length"), units.to_display(data[key], "length" if key == "deflection" else "moment" if key == "moment" else "force"), color=color)
             ax.axhline(0, color="#869395", linewidth=0.6)
             ax.set_ylabel(label, fontsize=8)
             ax.grid(alpha=0.2)
@@ -210,5 +228,5 @@ class DiagramDialog(QDialog):
                 ax.set_title(f"{name} | Local Member Axes")
             ax.tick_params(axis="x", labelbottom=index == 3)
             if index == 3:
-                ax.set_xlabel("Distance from start (in)")
+                ax.set_xlabel(f"Distance from start ({units.length})")
         self.member_canvas.draw_idle()
