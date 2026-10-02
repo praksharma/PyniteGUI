@@ -75,6 +75,14 @@ class Load:
     end_magnitude: float = 0.0
     end_position: float = 1.0
     case: str = "Case 1"
+    angle: float = -90.0
+
+    def components(self):
+        if self.direction != "Angle":
+            return [(self.direction, self.magnitude)]
+        radians = math.radians(self.angle)
+        return [(direction, self.magnitude * (0.0 if abs(factor) < 1e-14 else factor))
+                for direction, factor in (("FX", math.cos(radians)), ("FY", math.sin(radians)))]
 
 
 @dataclass
@@ -230,11 +238,11 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 7, "units": "in-kip", **asdict(self)}
+        return {"version": 8, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
-        if data.get("version") not in (1, 2, 3, 4, 5, 6, 7) or data.get("units") != "in-kip":
+        if data.get("version") not in (1, 2, 3, 4, 5, 6, 7, 8) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         result = cls(grid=data["grid"])
         if data["version"] >= 7:
@@ -334,8 +342,12 @@ class Project:
                 raise ValueError("Invalid load target.")
             if load.case not in self.load_cases:
                 raise ValueError(f"Load {name}: load case {load.case} does not exist.")
-            if load.direction not in ("FX", "FY", "MZ"):
+            if load.direction not in ("FX", "FY", "MZ", "Angle"):
                 raise ValueError("Unsupported 2D load direction.")
+            if not math.isfinite(load.angle) or not -360 <= load.angle <= 360:
+                raise ValueError("Load angle must be finite and between -360 and 360 degrees.")
+            if load.direction == "Angle" and load.magnitude < 0:
+                raise ValueError("Angled force magnitude must be nonnegative; use the angle to choose its direction.")
             if not math.isfinite(load.magnitude) or not math.isfinite(load.position) or not 0 <= load.position <= 1:
                 raise ValueError("Invalid load magnitude or position.")
             if load.kind not in ("point", "distributed"):

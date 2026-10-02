@@ -64,7 +64,8 @@ def analyze(project: Project) -> AnalysisResult:
         model.def_releases(member.name, Rzi=member.release_start, Rzj=member.release_end)
     for load in project.loads.values():
         if load.target in project.nodes:
-            model.add_node_load(load.target, load.direction, load.magnitude, case=load.case)
+            for direction, magnitude in load.components():
+                model.add_node_load(load.target, direction, magnitude, case=load.case)
         else:
             member = project.members[load.target]
             a, b = project.nodes[member.start], project.nodes[member.end]
@@ -73,7 +74,8 @@ def analyze(project: Project) -> AnalysisResult:
                 model.add_member_dist_load(load.target, load.direction, load.magnitude, load.end_magnitude,
                                            length * load.position, length * load.end_position, case=load.case)
             else:
-                model.add_member_pt_load(load.target, load.direction, load.magnitude, length * load.position, case=load.case)
+                for direction, magnitude in load.components():
+                    model.add_member_pt_load(load.target, direction, magnitude, length * load.position, case=load.case)
     for name, factors in project.combinations.items():
         model.add_load_combo(name, dict(factors))
     model.analyze_linear(check_stability=True, check_statics=True)

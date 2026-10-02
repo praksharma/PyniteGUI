@@ -40,6 +40,12 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   Splitting and connecting preserve releases at original outer ends only;
   newly created internal connections stay rigid.
 - Assign a node support using Support, or select a node/member and use Load (L).
+- For an angled point force on a node or member, choose Global direction > Angle,
+  then enter a nonnegative magnitude and an angle in degrees. Angles are global,
+  counterclockwise from +X: 0 points right, 90 up, -90 down, and 180 left.
+  The live FX/FY preview is in the selected force units. One angled load is saved
+  and edited as a single object; its components are resolved automatically for
+  analysis. Negative combination factors reverse the force normally.
 - Member loads can be Point or Distributed. Distributed loads use start/end
   intensities in kip/in or kN/m and start/end fractions along the member. Equal intensities
   give a uniform load; different intensities give a linear ramp, including
@@ -165,9 +171,10 @@ Versions 1 through 4 migrate existing loads into Case 1 with the original
 Service combination. Version 3 point loads and version 4 distributed loads
 remain supported. Versions 1 through 5 migrate to rigid member ends.
 Versions 1 through 6 open in Imperial, preserving their original inch-kip values.
-New saves use version 7 and retain material/section definitions, member
+New saves use version 8 and retain material/section definitions, member
 assignments, load cases, combination factors, the default load case, and each
-member end moment release, plus the selected unit system. The JSON units field
+member end moment release, plus the selected unit system and point-load angle.
+Older project loads retain their original directions and magnitudes. The JSON units field
 remains in-kip to identify the canonical storage units; unit_system controls
 presentation and input conversion.
 Editing a definition updates all members assigned to it and

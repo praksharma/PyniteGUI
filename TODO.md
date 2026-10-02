@@ -21,6 +21,10 @@ items are not promises of a particular release date.
 
 ## Loads and Analysis
 
+- [x] Add angled nodal/member point forces with automatic FX/FY resolution,
+  global angle input, component previews, and oriented arrows.
+- [ ] Extend angled force input to distributed member loads and add local-axis
+  load directions with explicit angle/reference conventions.
 - [x] Add uniform and varying distributed member loads, including partial spans
   and distribution-preserving member splitting.
 - [x] Add load cases and combinations, including results and diagram selectors.

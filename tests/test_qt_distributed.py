@@ -179,7 +179,7 @@ class DistributedEditorTests(unittest.TestCase):
             combos = dialog.findChildren(QComboBox)
             combos[0].setCurrentText("Distributed")
             self.assertEqual(combos[1].count(), 2)
-            numbers = dialog.findChildren(QDoubleSpinBox)
+            numbers = [widget for widget in dialog.findChildren(QDoubleSpinBox) if widget.objectName() != "load_angle"]
             self.assertEqual([n.value() for n in numbers], [-0.1, 0, -0.1, 1])
             return QDialog.DialogCode.Accepted
         with patch.object(QDialog, "exec", accept):
