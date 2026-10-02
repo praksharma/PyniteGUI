@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Local reference copies of external packages (read-only, for API inspection)
+reference/
