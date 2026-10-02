@@ -35,6 +35,10 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   Set Default controls newly drawn members without changing existing assignments.
   Renaming a definition updates its references; assigned/default materials cannot
   be deleted until members are reassigned and a different default is chosen.
+- Edit > Sections manages reusable area, Iy, Iz, and J definitions. Choose
+  Section in a selected member inspector and press Apply. Section defaults,
+  renaming, deletion protection, and undo work like material definitions.
+  Edit > Grid changes the drawing grid spacing.
 - Use Pan (P) to drag the view, the mouse wheel to zoom, and Fit (F) to frame it.
 - Analyze (F5) runs PyNite in a worker thread. Reactions and nodal displacements
   appear in Results. Deformed overlays the displaced members; Scale controls
@@ -63,16 +67,23 @@ material units are E/G in kip/in2 and density in kip/in3. Materials are isotropi
 and linear elastic; yield strength and nonlinear constitutive models are not
 currently represented.
 
-All members currently share one section, editable through Edit > Section and Grid.
-Default section properties are W18x35. Version 1 project files automatically
-migrate their shared properties into a named Project material. New saves use
-version 2 and retain all definitions and member assignments.
+Each member also references a reusable section definition. Area uses in2;
+Iy, Iz, and J use in4 in the member local axes. Iz governs in-plane bending
+for the current XY frame model. Section properties are entered directly;
+definition names do not perform a section-catalog lookup. The initial default
+uses W18x35 properties. Split segments inherit their original section.
+
+Version 1 files migrate their shared material to a named Project material.
+Version 1 and 2 files migrate their shared section to a named Project section.
+New saves use version 3 and retain all material/section definitions and member
+assignments. Editing a definition updates all members assigned to it and
+invalidates analysis results.
 No self-weight is applied automatically. Drawing an intersection alone does not
 connect it: use Edit > Connect Intersections to create explicit shared endpoints.
 Analysis requires one connected structure and rejects overlapping members or
 nodes inside unsplit members, avoiding implicit solver connections. Geometry
 connections use an absolute tolerance of 1e-8 inches. Distributed loads,
-per-member section assignments, load cases/combinations, member releases,
+load cases/combinations, member releases,
 and 3D editing are future extensions.
 
 Results are invalidated after edits and belong to the analyzed project revision.
@@ -94,6 +105,7 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/diagrams.py`: whole-frame SFD/BMD views, member detail plots,
   and sampling on both sides of force and moment discontinuities.
 - `src/pynitegui/qt/materials.py`: material definition manager and property editor.
+- `src/pynitegui/qt/sections.py`: section definition manager and property editor.
 - `tests/`: project, solver, diagram, and Qt interaction regression tests.
 
 ## Development
@@ -108,7 +120,8 @@ The Qt interaction tests run offscreen. The suite covers project persistence,
 undo/redo, result invalidation, analytical beam checks, portal-frame diagrams,
 inclined/reversed members, point-force/moment jumps, explicit member connections,
 load preservation during splitting, rejection of invalid model topology,
-mixed-material stiffness, version 1 migration, and material assignment/undo.
+mixed-material/section stiffness, legacy-file migration, and material/section
+assignment with undo.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

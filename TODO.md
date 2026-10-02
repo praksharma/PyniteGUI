@@ -1,7 +1,7 @@
 # PyniteGUI Roadmap
 
-Current scope: a 2D frame editor using inch/kip units, per-member materials,
-one shared section, and a single service load combination. This list tracks remaining work;
+Current scope: a 2D frame editor using inch/kip units, per-member materials and
+sections, and a single service load combination. This list tracks remaining work;
 items are not promises of a particular release date.
 
 ## Modelling and Editing
@@ -14,7 +14,7 @@ items are not promises of a particular release date.
   intermediate-node connections before analysis.
 - [ ] Add member end releases for hinges and truss-style members.
 - [x] Add per-member materials with reusable definitions and legacy-file migration.
-- [ ] Add per-member sections with reusable definitions.
+- [x] Add per-member sections with reusable definitions and legacy-file migration.
 - [ ] Add a section library and distinguish custom properties from named sections.
 - [ ] Add configurable support degrees of freedom and support orientation.
 

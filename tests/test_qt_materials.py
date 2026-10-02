@@ -19,13 +19,16 @@ class MaterialTests(unittest.TestCase):
         legacy["version"] = 1
         legacy.pop("materials")
         legacy.pop("default_material")
+        legacy.pop("sections")
+        legacy.pop("default_section")
+        legacy.update(A=10.3, Iy=15.3, Iz=510.0, J=0.506)
         legacy.update(E=12345, nu=0.24, rho=0.0001)
         legacy["nodes"] = {"N1": {"name": "N1", "x": 0, "y": 0, "support": "fixed"}, "N2": {"name": "N2", "x": 120, "y": 0, "support": "free"}}
         legacy["members"] = {"M1": {"name": "M1", "start": "N1", "end": "N2"}}
         project = Project.from_dict(legacy)
         self.assertEqual((project.E, project.nu, project.rho), (12345, 0.24, 0.0001))
         self.assertEqual(project.members["M1"].material, "Project material")
-        self.assertEqual(project.to_dict()["version"], 2)
+        self.assertEqual(project.to_dict()["version"], 3)
         self.assertEqual(project.to_dict(), Project.from_dict(project.to_dict()).to_dict())
 
     def test_mixed_material_axial_stiffness(self):

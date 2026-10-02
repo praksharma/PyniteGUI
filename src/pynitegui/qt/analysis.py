@@ -26,7 +26,8 @@ def analyze(project: Project) -> AnalysisResult:
     model = FEModel3D()
     for material in project.materials.values():
         model.add_material(material.name, material.E, material.G, material.nu, material.rho)
-    model.add_section("Section", project.A, project.Iy, project.Iz, project.J)
+    for section in project.sections.values():
+        model.add_section(section.name, section.A, section.Iy, section.Iz, section.J)
     for node in project.nodes.values():
         model.add_node(node.name, node.x, node.y, 0)
         model.def_support(
@@ -39,7 +40,7 @@ def analyze(project: Project) -> AnalysisResult:
             support_RZ=node.support == "fixed",
         )
     for member in project.members.values():
-        model.add_member(member.name, member.start, member.end, member.material, "Section")
+        model.add_member(member.name, member.start, member.end, member.material, member.section)
     for load in project.loads.values():
         if load.target in project.nodes:
             model.add_node_load(load.target, load.direction, load.magnitude)

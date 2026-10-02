@@ -27,6 +27,23 @@ class Material:
 
 
 @dataclass
+class Section:
+    name: str
+    A: float = 10.3
+    Iy: float = 15.3
+    Iz: float = 510.0
+    J: float = 0.506
+
+    def validate(self):
+        if not isinstance(self.name, str) or not self.name.strip() or self.name != self.name.strip():
+            raise ValueError("Section name must be nonempty with no leading or trailing spaces.")
+        for key in ("A", "Iy", "Iz", "J"):
+            value = getattr(self, key)
+            if not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
+                raise ValueError(f"Section {self.name}: {key} must be a positive finite number.")
+
+
+@dataclass
 class Node:
     name: str
     x: float
@@ -40,6 +57,7 @@ class Member:
     start: str
     end: str
     material: str = "Steel_A992"
+    section: str = "W18x35"
 
 
 @dataclass
@@ -58,10 +76,8 @@ class Project:
     loads: dict[str, Load] = field(default_factory=dict)
     materials: dict[str, Material] = field(default_factory=lambda: {"Steel_A992": Material("Steel_A992")})
     default_material: str = "Steel_A992"
-    A: float = 10.3
-    Iy: float = 15.3
-    Iz: float = 510.0
-    J: float = 0.506
+    sections: dict[str, Section] = field(default_factory=lambda: {"W18x35": Section("W18x35")})
+    default_section: str = "W18x35"
     grid: float = 12.0
 
     @property
@@ -99,15 +115,59 @@ class Project:
             raise ValueError("Choose a different default material before deleting this definition.")
         del self.materials[name]
 
+    @property
+    def A(self):
+        return self.sections[self.default_section].A
+
+    @property
+    def Iy(self):
+        return self.sections[self.default_section].Iy
+
+    @property
+    def Iz(self):
+        return self.sections[self.default_section].Iz
+
+    @property
+    def J(self):
+        return self.sections[self.default_section].J
+
+    def set_section(self, section, previous=None):
+        section.validate()
+        if section.name in self.sections and section.name != previous:
+            raise ValueError(f"Section {section.name} already exists.")
+        if previous is not None and previous not in self.sections:
+            raise ValueError(f"Section {previous} does not exist.")
+        if previous and previous != section.name:
+            for member in self.members.values():
+                if member.section == previous:
+                    member.section = section.name
+            if self.default_section == previous:
+                self.default_section = section.name
+            del self.sections[previous]
+        self.sections[section.name] = section
+
+    def delete_section(self, name):
+        used = [member.name for member in self.members.values() if member.section == name]
+        if used:
+            raise ValueError(f"Section {name} is assigned to: {', '.join(used)}. Reassign those members first.")
+        if name == self.default_section:
+            raise ValueError("Choose a different default section before deleting this definition.")
+        del self.sections[name]
+
     def to_dict(self):
-        return {"version": 2, "units": "in-kip", **asdict(self)}
+        return {"version": 3, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
-        if data.get("version") not in (1, 2) or data.get("units") != "in-kip":
+        if data.get("version") not in (1, 2, 3) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
-        properties = {key: data[key] for key in ("A", "Iy", "Iz", "J", "grid")}
-        result = cls(**properties)
+        result = cls(grid=data["grid"])
+        if data["version"] < 3:
+            result.default_section = "Project section"
+            result.sections = {result.default_section: Section(result.default_section, data["A"], data["Iy"], data["Iz"], data["J"])}
+        else:
+            result.default_section = data["default_section"]
+            result.sections = {name: Section(**value) for name, value in data["sections"].items()}
         if data["version"] == 1:
             result.default_material = "Project material"
             result.materials = {result.default_material: Material(result.default_material, data["E"], data["nu"], data["rho"])}
@@ -119,6 +179,9 @@ class Project:
         if data["version"] == 1:
             for member in result.members.values():
                 member.material = result.default_material
+        if data["version"] < 3:
+            for member in result.members.values():
+                member.section = result.default_section
         result.validate()
         return result
 
@@ -132,7 +195,13 @@ class Project:
             if name != material.name:
                 raise ValueError("Invalid material identifier.")
             material.validate()
-        for key in ("A", "Iy", "Iz", "J", "grid"):
+        if self.default_section not in self.sections:
+            raise ValueError("Default section does not exist.")
+        for name, section in self.sections.items():
+            if name != section.name:
+                raise ValueError("Invalid section identifier.")
+            section.validate()
+        for key in ("grid",):
             value = getattr(self, key)
             if not isinstance(value, (float, int)) or not math.isfinite(value) or value <= 0:
                 raise ValueError(f"{key} must be a positive finite number.")
@@ -155,6 +224,8 @@ class Project:
                 raise ValueError("A member needs two different nodes.")
             if member.material not in self.materials:
                 raise ValueError(f"Member {name}: material {member.material} does not exist.")
+            if member.section not in self.sections:
+                raise ValueError(f"Member {name}: section {member.section} does not exist.")
             connection = frozenset((member.start, member.end))
             if connection in connections:
                 raise ValueError("Duplicate members connect the same nodes.")
@@ -188,7 +259,7 @@ class Project:
         if any({m.start, m.end} == {a, b} for m in self.members.values()):
             raise ValueError("A member already connects these nodes.")
         name = self.next_name("M", self.members)
-        self.members[name] = Member(name, a, b, self.default_material)
+        self.members[name] = Member(name, a, b, self.default_material, self.default_section)
         return name
 
     def member_position(self, name, x, y):

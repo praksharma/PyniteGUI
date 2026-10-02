@@ -327,7 +327,8 @@ class MainWindow(QMainWindow):
         edit_menu.addActions([undo, redo])
         edit_menu.addAction(self.action("Delete Selection", self.delete_selected, "Delete", "edit-delete"))
         edit_menu.addAction(self.action("Materials...", self.manage_materials))
-        edit_menu.addAction(self.action("Section and Grid...", self.settings))
+        edit_menu.addAction(self.action("Sections...", self.manage_sections))
+        edit_menu.addAction(self.action("Grid...", self.settings))
         edit_menu.addSeparator()
         edit_menu.addAction(self.action("Split Selected Member...", self.split_selected_member))
         edit_menu.addAction(self.action("Connect Intersections", self.connect_intersections))
@@ -459,6 +460,7 @@ class MainWindow(QMainWindow):
         if not self.selected:
             self.form.addRow("Units", QLabel("in, kip"))
             self.form.addRow("Default material", QLabel(self.project.default_material))
+            self.form.addRow("Default section", QLabel(self.project.default_section))
             grid = number(self.project.grid, 0.001, 1e6)
             self.form.addRow("Grid (in)", grid)
             button = QPushButton("Apply")
@@ -485,7 +487,10 @@ class MainWindow(QMainWindow):
                 self.form.addRow(key.capitalize(), fields[key])
             a, b = self.project.nodes[entity.start], self.project.nodes[entity.end]
             self.form.addRow("Length (in)", QLabel(f"{math.hypot(b.x - a.x, b.y - a.y):g}"))
-            self.form.addRow("Section", QLabel("Project section"))
+            fields["section"] = QComboBox()
+            fields["section"].addItems(list(self.project.sections))
+            fields["section"].setCurrentText(entity.section)
+            self.form.addRow("Section", fields["section"])
             fields["material"] = QComboBox()
             fields["material"].addItems(list(self.project.materials))
             fields["material"].setCurrentText(entity.material)
@@ -596,12 +601,16 @@ class MainWindow(QMainWindow):
         from .materials import MaterialDialog
         MaterialDialog(self).exec()
 
+    def manage_sections(self):
+        from .sections import SectionDialog
+        SectionDialog(self).exec()
+
     def settings(self):
         dialog = QDialog(self)
-        dialog.setWindowTitle("Section and Grid")
+        dialog.setWindowTitle("Grid")
         form = QFormLayout(dialog)
         fields = {}
-        labels = {"A": "Area (in2)", "Iy": "Iy (in4)", "Iz": "Iz (in4)", "J": "J (in4)", "grid": "Grid (in)"}
+        labels = {"grid": "Grid (in)"}
         for key, label in labels.items():
             fields[key] = number(getattr(self.project, key), 0, 1e12, 8)
             form.addRow(label, fields[key])
@@ -613,7 +622,7 @@ class MainWindow(QMainWindow):
             def mutate(project):
                 for key, widget in fields.items():
                     setattr(project, key, widget.value())
-            self.edit("Edit section and grid", mutate)
+            self.edit("Edit grid", mutate)
 
     def confirm_discard(self):
         if self.project.to_dict() == self.saved:
