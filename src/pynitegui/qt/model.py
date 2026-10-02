@@ -58,6 +58,8 @@ class Member:
     end: str
     material: str = "Steel_A992"
     section: str = "W18x35"
+    release_start: bool = False
+    release_end: bool = False
 
 
 @dataclass
@@ -221,11 +223,11 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 5, "units": "in-kip", **asdict(self)}
+        return {"version": 6, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
-        if data.get("version") not in (1, 2, 3, 4, 5) or data.get("units") != "in-kip":
+        if data.get("version") not in (1, 2, 3, 4, 5, 6) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         result = cls(grid=data["grid"])
         if data["version"] >= 5:
@@ -306,6 +308,8 @@ class Project:
                 raise ValueError("Invalid member or endpoint reference.")
             if member.start == member.end:
                 raise ValueError("A member needs two different nodes.")
+            if type(member.release_start) is not bool or type(member.release_end) is not bool:
+                raise ValueError(f"Member {name}: moment releases must be true or false.")
             if member.material not in self.materials:
                 raise ValueError(f"Member {name}: material {member.material} does not exist.")
             if member.section not in self.sections:
@@ -422,7 +426,9 @@ class Project:
         segments = []
         for index, (start, end) in enumerate(zip(nodes, nodes[1:])):
             segment = name if index == 0 else self.next_name("M", self.members)
-            self.members[segment] = replace(original, name=segment, start=start, end=end)
+            self.members[segment] = replace(original, name=segment, start=start, end=end,
+                                            release_start=original.release_start if index == 0 else False,
+                                            release_end=original.release_end if index == len(nodes) - 2 else False)
             segments.append(segment)
         for load in list(self.loads.values()):
             if load.target != name:
@@ -475,6 +481,28 @@ class Project:
         for name, fractions in cuts.items():
             if fractions:
                 self._split_member(name, fractions)
+
+    def inactive_rotations(self):
+        connected = set()
+        active = set()
+        for member in self.members.values():
+            connected.update((member.start, member.end))
+            if not member.release_start:
+                active.add(member.start)
+            if not member.release_end:
+                active.add(member.end)
+        return {name for name in connected - active if self.nodes[name].support != "fixed"}
+
+    def analysis_release_issues(self):
+        issues = []
+        for node in sorted(self.inactive_rotations()):
+            for combination, factors in self.combinations.items():
+                moments = [load.magnitude * factors.get(load.case, 0) for load in self.loads.values()
+                           if load.target == node and load.direction == "MZ"]
+                total = math.fsum(moments)
+                if abs(total) > math.fsum(abs(value) for value in moments) * 1e-12:
+                    issues.append(f"Node {node}: all connected member ends are hinged, so nodal moment MZ in {combination} has no rotational restraint. Remove the moment or provide a moment-resisting connection/support.")
+        return issues
 
     def analysis_topology_issues(self):
         issues = []

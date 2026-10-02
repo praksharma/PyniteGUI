@@ -28,6 +28,12 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   Splitting and connecting are each a single undoable edit.
 - Edit > Check Model reports overlapping members, interior-node connections that
   need splitting, and disconnected groups. Analysis also runs these checks.
+- Select a member and check Released (hinge) for its Start or End moment in
+  the inspector, then press Apply. Hollow circles mark released member ends.
+  These releases disconnect in-plane moment transfer at the member connection;
+  they do not change node supports or disconnect axial/shear translations.
+  Splitting and connecting preserve releases at original outer ends only;
+  newly created internal connections stay rigid.
 - Assign a node support using Support, or select a node/member and use Load (L).
 - Member loads can be Point or Distributed. Distributed loads use start/end
   intensities in kip/in and start/end fractions along the member. Equal intensities
@@ -83,6 +89,22 @@ Case 1 and a Service combination at factor 1. No design-code factors or
 envelopes are generated automatically.
 Member load positions are fractions measured from the start node.
 
+Member moment releases act about local Z, normal to the XY frame. End releases
+are independent: one member may hinge at a shared node while other members
+retain a rigid connection. Releasing both ends supports pin-jointed frames with
+nodal loads, but the member remains a beam and can still bend under transverse
+member loads; it is not a separate axial-only truss element. Axial/shear,
+out-of-plane, and partial-stiffness releases are not exposed in this editor.
+
+When every connected member end at a non-fixed node is hinged, the shared
+rotation has no stiffness. Analysis removes that unused rotation from the
+unknowns without restraining translations or transferring connection moments.
+Results show RZ as n/a for those joints, not a physical zero rotation. Individual
+member end rotations and deformations remain governed by the released beam.
+A net nodal MZ on such a joint is rejected for each analyzed combination unless
+a moment-resisting connection or fixed support is provided. Real translational
+mechanisms still fail the solver stability checks.
+
 Each member references a reusable material definition. Editing that definition
 updates every member assigned to it and invalidates results. Split member
 segments inherit the original material. The default definition is Steel_A992;
@@ -100,8 +122,10 @@ Version 1 files migrate their shared material to a named Project material.
 Version 1 and 2 files migrate their shared section to a named Project section.
 Versions 1 through 4 migrate existing loads into Case 1 with the original
 Service combination. Version 3 point loads and version 4 distributed loads
-remain supported. New saves use version 5 and retain material/section definitions,
-member assignments, load cases, combination factors, and the default load case.
+remain supported. Versions 1 through 5 migrate to rigid member ends.
+New saves use version 6 and retain material/section definitions, member
+assignments, load cases, combination factors, the default load case, and each
+member end moment release.
 Editing a definition updates all members assigned to it and
 invalidates analysis results.
 No self-weight is applied automatically. Drawing an intersection alone does not
@@ -109,7 +133,7 @@ connect it: use Edit > Connect Intersections to create explicit shared endpoints
 Analysis requires one connected structure and rejects overlapping members or
 nodes inside unsplit members, avoiding implicit solver connections. Geometry
 connections use an absolute tolerance of 1e-8 inches. Distributed intensity is
-force per unit member length, not projected length. Member releases,
+force per unit member length, not projected length. Additional release types
 and 3D editing are future extensions.
 
 Results are invalidated after edits and belong to the analyzed project revision.
@@ -155,6 +179,9 @@ diagrams, interpolated split loads, persistence, and editor creation/undo.
 Load-case checks cover independent results, linear superposition, negative/zero
 factors, reference-safe renaming/deletion, persistence/migration, default case
 assignment, result/diagram switching, deformation, and analyzed snapshots.
+Hinge checks cover analytical released beams, pin-jointed frames, mixed rigid
+and hinged connections, real mechanisms, unsupported nodal moments, inactive
+rotation reporting, split/intersection preservation, persistence, and undo.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

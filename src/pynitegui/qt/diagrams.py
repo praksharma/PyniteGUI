@@ -3,6 +3,8 @@ import math
 
 import numpy as np
 from matplotlib.figure import Figure
+from matplotlib.offsetbox import AnnotationBbox, DrawingArea
+from matplotlib.patches import Circle
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QComboBox, QDialog, QDoubleSpinBox, QHBoxLayout, QLabel, QTabWidget, QVBoxLayout, QWidget
@@ -97,6 +99,16 @@ def draw_structure(ax, project, result, quantity, amplitude=20):
         ax.plot(node.x, node.y, "o", color="#32464d", markersize=3, zorder=4)
         if node.support != "free":
             ax.plot(node.x, node.y, marker="^" if node.support != "roller" else "o", color="#258451", fillstyle="none", markersize=9, zorder=4)
+    for name, row in data.items():
+        member = project.members[name]
+        start, end = row["base"][0], row["base"][-1]
+        tangent = (end - start) / np.linalg.norm(end - start)
+        for released, point, sign in ((member.release_start, start, 1), (member.release_end, end, -1)):
+            if released:
+                marker = DrawingArea(8, 8)
+                marker.add_artist(Circle((4, 4), 3, facecolor="white", edgecolor="#176b73", linewidth=1.3))
+                ax.add_artist(AnnotationBbox(marker, point, xybox=tuple(sign * tangent * 9),
+                                            boxcoords="offset points", frameon=False, pad=0, zorder=5))
     ax.set_title("Shear Force Diagram V (kip)" if quantity == "shear" else "Bending Moment Diagram M (kip-in)")
     ax.set_xlabel("X (in)")
     ax.set_ylabel("Y (in)")

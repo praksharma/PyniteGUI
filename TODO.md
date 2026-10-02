@@ -12,7 +12,8 @@ items are not promises of a particular release date.
 - [x] Add member splitting and an explicit connect-at-intersection operation.
 - [x] Detect overlapping members, disconnected components, and unintended
   intermediate-node connections before analysis.
-- [ ] Add member end releases for hinges and truss-style members.
+- [x] Add in-plane member end moment releases for hinges and pin-jointed frames.
+- [ ] Add explicit axial-only truss elements and additional release degrees of freedom.
 - [x] Add per-member materials with reusable definitions and legacy-file migration.
 - [x] Add per-member sections with reusable definitions and legacy-file migration.
 - [ ] Add a section library and distinguish custom properties from named sections.

@@ -7,7 +7,7 @@ from pathlib import Path
 from PySide6.QtCore import QObject, QPointF, QRectF, Qt, QThread, Signal
 from PySide6.QtGui import QAction, QActionGroup, QColor, QPainter, QPalette, QPen, QUndoCommand, QUndoStack
 from PySide6.QtWidgets import (
-    QApplication, QComboBox, QDialog, QDialogButtonBox, QDockWidget,
+    QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDockWidget,
     QDoubleSpinBox, QFileDialog, QFormLayout, QGraphicsItem, QGraphicsScene, QGraphicsSimpleTextItem, QGraphicsView,
     QLabel, QMainWindow, QMessageBox, QPushButton,
     QStyle, QTableWidget, QTableWidgetItem, QTreeWidget, QTreeWidgetItem,
@@ -66,6 +66,12 @@ class EngineeringSymbol(QGraphicsItem):
     def paint(self, painter, option, widget=None):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         painter.setPen(QPen(QColor("#258451" if self.kind == "support" else "#bd3549"), 1.8))
+        if self.kind == "hinge":
+            painter.setPen(QPen(QColor("#176b73"), 1.8))
+            painter.setBrush(QColor("#ffffff"))
+            dx, dy = self.value
+            painter.drawEllipse(QPointF(dx * 9, dy * 9), 4, 4)
+            return
         if self.kind == "support":
             if self.value in ("pin", "roller"):
                 painter.drawLine(QPointF(0, 0), QPointF(-9, 15))
@@ -223,6 +229,12 @@ class StructureView(QGraphicsView):
             pen = QPen(QColor("#168b8b" if selected == ("members", name) else "#32464d"), 3)
             pen.setCosmetic(True)
             scene.addLine(a.x, -a.y, b.x, -b.y, pen)
+            length = math.hypot(b.x - a.x, b.y - a.y)
+            for released, node, sign in ((member.release_start, a, 1), (member.release_end, b, -1)):
+                if released:
+                    symbol = EngineeringSymbol("hinge", (sign * (b.x - a.x) / length, -sign * (b.y - a.y) / length))
+                    scene.addItem(symbol)
+                    symbol.setPos(node.x, -node.y)
             self.label(name, (a.x + b.x) / 2, (a.y + b.y) / 2, offset=(4, 8))
         for name, node in project.nodes.items():
             color = QColor("#168b8b" if selected == ("nodes", name) else "#32464d")
@@ -485,9 +497,13 @@ class MainWindow(QMainWindow):
             parent = QTreeWidgetItem(self.tree, [f"{title} ({len(getattr(self.project, kind))})"])
             for name, entity in getattr(self.project, kind).items():
                 detail = f"{entity.x:g}, {entity.y:g} | {entity.support}" if kind == "nodes" else f"{entity.start} - {entity.end}" if kind == "members" else f"{entity.target} | {entity.direction} {entity.magnitude:g}" + (f" to {entity.end_magnitude:g} kip/in" if entity.kind == "distributed" else "")
+                if kind == "members" and (entity.release_start or entity.release_end):
+                    ends = ", ".join(end for end, released in (("start", entity.release_start), ("end", entity.release_end)) if released)
+                    detail += f" | hinge: {ends}"
                 if kind == "loads":
                     detail += f" | {entity.case}"
                 item = QTreeWidgetItem(parent, [name, detail])
+                item.setToolTip(1, detail)
                 item.setData(0, Qt.ItemDataRole.UserRole, (kind, name))
                 if self.selected == (kind, name):
                     item.setSelected(True)
@@ -546,6 +562,12 @@ class MainWindow(QMainWindow):
             fields["material"].addItems(list(self.project.materials))
             fields["material"].setCurrentText(entity.material)
             self.form.addRow("Material", fields["material"])
+            for key, label in (("release_start", f"Start moment ({entity.start})"), ("release_end", f"End moment ({entity.end})")):
+                fields[key] = QCheckBox("Released (hinge)")
+                fields[key].setObjectName(key)
+                fields[key].setChecked(getattr(entity, key))
+                fields[key].setToolTip("Release member-end moment about Z; translations remain connected.")
+                self.form.addRow(label, fields[key])
         else:
             fields["target"] = QComboBox()
             fields["target"].addItems(list(self.project.members) if entity.kind == "distributed" else [*self.project.nodes, *self.project.members])
@@ -574,7 +596,7 @@ class MainWindow(QMainWindow):
                 self.form.addRow("End (kip/in)", fields["end_magnitude"])
                 self.form.addRow("End fraction", fields["end_position"])
         def apply():
-            values = {key: widget.currentText() if isinstance(widget, QComboBox) else widget.value() for key, widget in fields.items()}
+            values = {key: widget.currentText() if isinstance(widget, QComboBox) else widget.isChecked() if isinstance(widget, QCheckBox) else widget.value() for key, widget in fields.items()}
             def mutate(project):
                 target = getattr(project, kind)[name]
                 for key, value in values.items():
@@ -613,13 +635,13 @@ class MainWindow(QMainWindow):
     def check_model(self):
         try:
             self.project.validate()
-            issues = self.project.analysis_topology_issues()
+            issues = self.project.analysis_topology_issues() + self.project.analysis_release_issues()
         except ValueError as error:
             issues = [str(error)]
         if issues:
             QMessageBox.warning(self, "Model Check", "\n\n".join(issues))
         else:
-            QMessageBox.information(self, "Model Check", "No geometry or connectivity issues found.")
+            QMessageBox.information(self, "Model Check", "No geometry, connectivity, or release/load issues found.")
 
     def delete_selected(self):
         if self.selected:
@@ -841,7 +863,10 @@ class MainWindow(QMainWindow):
         self.results_table.setRowCount(len(result.displacements))
         for row, (name, displacement) in enumerate(result.displacements.items()):
             for col, value in enumerate((name, *displacement, *result.reactions[name])):
-                self.results_table.setItem(row, col, QTableWidgetItem(value if isinstance(value, str) else f"{value:.6g}"))
+                item = QTableWidgetItem("n/a" if value is None else value if isinstance(value, str) else f"{value:.6g}")
+                if value is None:
+                    item.setToolTip("Released member ends rotate independently; no shared nodal rotation is defined.")
+                self.results_table.setItem(row, col, item)
         self.results_table.resizeColumnsToContents()
         self.results_dock.setWindowTitle(f"Results - {result.combination}")
         self.view.redraw()
