@@ -692,6 +692,8 @@ class MainWindow(QMainWindow):
             fields["direction"].setCurrentText(entity.direction)
             quantity = "intensity" if entity.kind == "distributed" else "moment" if entity.direction == "MZ" else "force"
             fields["magnitude"] = unit_number(entity.magnitude, self.project.units, quantity)
+            fields["magnitude"].setObjectName("load_magnitude")
+            fields["magnitude"].setToolTip("Signed load value; a negative angled force reverses the specified angle")
             fields["position"] = number(entity.position, 0, 1)
             fields["case"] = QComboBox()
             fields["case"].setObjectName("load_case")
@@ -722,10 +724,6 @@ class MainWindow(QMainWindow):
                     angled = fields["direction"].currentText() == "Angle"
                     self.form.setRowVisible(fields["angle"], angled)
                     self.form.setRowVisible(components, angled)
-                    value = fields["magnitude"].value()
-                    fields["magnitude"].setMinimum(0 if angled else self.project.units.to_display(-1e9, quantity))
-                    if angled and value < 0:
-                        fields["magnitude"].setValue(abs(value))
                     self.form.labelForField(fields["magnitude"]).setText(self.project.units.moment if fields["direction"].currentText() == "MZ" else self.project.units.force)
                     resolved = Load("", "", "Angle", fields["magnitude"].value(), angle=fields["angle"].value()).components()
                     components.setText(f"FX {resolved[0][1]:.6g} {self.project.units.force}\nFY {resolved[1][1]:.6g} {self.project.units.force}")
@@ -807,6 +805,8 @@ class MainWindow(QMainWindow):
         direction = QComboBox()
         direction.addItems(["FY", "FX", "MZ", "Angle"])
         magnitude = number(-10)
+        magnitude.setObjectName("load_magnitude")
+        magnitude.setToolTip("Signed load value; a negative angled force reverses the specified angle")
         position = number(0.5, 0, 1)
         end_magnitude = number(-0.1, decimals=6)
         end_position = number(1, 0, 1, 6)
@@ -847,10 +847,6 @@ class MainWindow(QMainWindow):
             angled = direction.currentText() == "Angle"
             form.setRowVisible(angle, angled)
             form.setRowVisible(components, angled)
-            value = magnitude.value()
-            magnitude.setMinimum(0 if angled else -1e9)
-            if angled and value < 0:
-                magnitude.setValue(abs(value))
             resolved = Load("", "", "Angle", magnitude.value(), angle=angle.value()).components()
             components.setText(f"FX {resolved[0][1]:.6g} {self.project.units.force}\nFY {resolved[1][1]:.6g} {self.project.units.force}")
         direction.currentTextChanged.connect(update_direction)

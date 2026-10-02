@@ -346,8 +346,6 @@ class Project:
                 raise ValueError("Unsupported 2D load direction.")
             if not math.isfinite(load.angle) or not -360 <= load.angle <= 360:
                 raise ValueError("Load angle must be finite and between -360 and 360 degrees.")
-            if load.direction == "Angle" and load.magnitude < 0:
-                raise ValueError("Angled force magnitude must be nonnegative; use the angle to choose its direction.")
             if not math.isfinite(load.magnitude) or not math.isfinite(load.position) or not 0 <= load.position <= 1:
                 raise ValueError("Invalid load magnitude or position.")
             if load.kind not in ("point", "distributed"):

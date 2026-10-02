@@ -8,7 +8,8 @@ from dataclasses import replace
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import QTimer, Qt
+from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QComboBox, QDialog, QDoubleSpinBox, QLabel, QPushButton
 from pynitegui.qt.analysis import analyze
 from pynitegui.qt.app import MainWindow, EngineeringSymbol
@@ -87,9 +88,20 @@ class AngledModelTests(unittest.TestCase):
             for actual, original in zip(reverse.reactions[name], result.reactions[name]):
                 self.assertAlmostEqual(actual, -2 * original)
 
+    def test_signed_force_reverses_solution_and_roundtrips(self):
+        project = beam()
+        positive = solve(project)
+        project.loads["L1"].magnitude = -10
+        restored = Project.from_dict(project.to_dict())
+        self.assertEqual(restored.loads["L1"].magnitude, -10)
+        negative = solve(restored)
+        for name in project.nodes:
+            for actual, original in zip(negative.reactions[name], positive.reactions[name]):
+                self.assertAlmostEqual(actual, -original)
+
     def test_invalid_angles_magnitudes_and_distributed_direction(self):
         for changes in ({"angle": float("nan")}, {"angle": float("inf")}, {"angle": 361},
-                        {"magnitude": -1}, {"kind": "distributed"}):
+                        {"magnitude": float("inf")}, {"kind": "distributed"}):
             project = beam()
             project.loads["L1"] = replace(project.loads["L1"], **changes)
             with self.assertRaises(ValueError):
@@ -159,8 +171,39 @@ class AngledEditorTests(unittest.TestCase):
         self.window.select(("loads", "L1"))
         self.window.inspector.findChild(QComboBox, "load_direction").setCurrentText("Angle")
         next(button for button in self.window.inspector.findChildren(QPushButton) if button.text() == "Apply").click()
-        self.assertEqual(self.window.project.loads["L1"].magnitude, 10)
+        self.assertEqual(self.window.project.loads["L1"].magnitude, -10)
         self.window.project.validate()
+
+    def test_typing_signed_and_large_magnitudes_in_inspector(self):
+        for units in ("imperial", "si"):
+            self.window.set_units(units)
+            self.window.select(("loads", "L1"))
+            field = self.window.inspector.findChild(QDoubleSpinBox, "load_magnitude")
+            for text in ("-10", "-12345.125", "123456789.125", "0", "-10"):
+                field.lineEdit().selectAll()
+                QTest.keyClicks(field.lineEdit(), text)
+                QTest.keyClick(field.lineEdit(), Qt.Key.Key_Return)
+                self.assertEqual(field.value(), float(text))
+            next(button for button in self.window.inspector.findChildren(QPushButton) if button.text() == "Apply").click()
+            self.assertAlmostEqual(self.window.project.units.to_display(self.window.project.loads["L1"].magnitude, "force"), -10)
+            self.window.project.validate()
+
+    def test_typing_negative_force_in_creation_dialog(self):
+        self.window.select(("nodes", "N2"))
+        def accept():
+            dialog = self.application.activeModalWidget()
+            dialog.findChildren(QComboBox)[1].setCurrentText("Angle")
+            field = dialog.findChild(QDoubleSpinBox, "load_magnitude")
+            field.lineEdit().selectAll()
+            QTest.keyClicks(field.lineEdit(), "-10")
+            QTest.keyClick(field.lineEdit(), Qt.Key.Key_Return)
+            self.assertEqual(field.value(), -10)
+            self.assertTrue(any("FY 10 kip" in label.text() for label in dialog.findChildren(QLabel)))
+            dialog.accept()
+        QTimer.singleShot(0, accept)
+        self.window.add_load()
+        self.assertEqual(self.window.project.loads["L2"].magnitude, -10)
+        self.assertEqual(self.window.project.loads["L2"].components(), [("FX", 0), ("FY", 10)])
 
     def test_factored_arrow_reverses_without_splitting_load(self):
         self.window.project.set_combination("Reverse", {"Case 1": -2})

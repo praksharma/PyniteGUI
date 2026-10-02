@@ -41,8 +41,9 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   newly created internal connections stay rigid.
 - Assign a node support using Support, or select a node/member and use Load (L).
 - For an angled point force on a node or member, choose Global direction > Angle,
-  then enter a nonnegative magnitude and an angle in degrees. Angles are global,
-  counterclockwise from +X: 0 points right, 90 up, -90 down, and 180 left.
+  then enter a signed magnitude and an angle in degrees. Angles are global,
+  counterclockwise from +X: 0 points right, 90 up, -90 down, and 180 left for
+  positive magnitudes. A negative magnitude reverses the chosen direction.
   The live FX/FY preview shows each component on its own line in the selected
   force units. One angled load is saved
   and edited as a single object; its components are resolved automatically for
