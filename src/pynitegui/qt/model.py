@@ -51,6 +51,16 @@ class Node:
     x: float
     y: float
     support: str = "free"
+    restraint_x: bool = False
+    restraint_y: bool = False
+    restraint_rz: bool = False
+
+    @property
+    def restraints(self):
+        if self.support == "custom":
+            return self.restraint_x, self.restraint_y, self.restraint_rz
+        return {"free": (False, False, False), "pin": (True, True, False),
+                "roller": (False, True, False), "fixed": (True, True, True)}[self.support]
 
 
 @dataclass
@@ -238,11 +248,11 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 8, "units": "in-kip", **asdict(self)}
+        return {"version": 9, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
-        if data.get("version") not in (1, 2, 3, 4, 5, 6, 7, 8) or data.get("units") != "in-kip":
+        if data.get("version") not in (1, 2, 3, 4, 5, 6, 7, 8, 9) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         result = cls(grid=data["grid"])
         if data["version"] >= 7:
@@ -319,8 +329,10 @@ class Project:
             if (node.x, node.y) in coords:
                 raise ValueError("Two nodes cannot occupy the same coordinates.")
             coords.add((node.x, node.y))
-            if node.support not in ("free", "pin", "roller", "fixed"):
+            if node.support not in ("free", "pin", "roller", "fixed", "custom"):
                 raise ValueError("Unknown support type.")
+            if any(type(value) is not bool for value in (node.restraint_x, node.restraint_y, node.restraint_rz)):
+                raise ValueError("Support restraints must be boolean values.")
         connections = set()
         for name, member in self.members.items():
             if name != member.name or not name or member.start not in self.nodes or member.end not in self.nodes:
@@ -512,7 +524,7 @@ class Project:
                 active.add(member.start)
             if not member.release_end:
                 active.add(member.end)
-        return {name for name in connected - active if self.nodes[name].support != "fixed"}
+        return {name for name in connected - active if not self.nodes[name].restraints[2]}
 
     def analysis_release_issues(self):
         issues = []

@@ -104,7 +104,7 @@ def draw_structure(ax, project, result, quantity, amplitude=20):
     for node in project.nodes.values():
         x, y = units.to_display(node.x, "length"), units.to_display(node.y, "length")
         ax.plot(x, y, "o", color="#32464d", markersize=3, zorder=4)
-        if node.support != "free":
+        if any(node.restraints):
             ax.plot(x, y, marker="^" if node.support != "roller" else "o", color="#258451", fillstyle="none", markersize=9, zorder=4)
     for name, row in data.items():
         member = project.members[name]

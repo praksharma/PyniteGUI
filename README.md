@@ -40,6 +40,11 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   Splitting and connecting preserve releases at original outer ends only;
   newly created internal connections stay rigid.
 - Assign a node support using Support, or select a node/member and use Load (L).
+- Choose custom in the node Support inspector for independent global horizontal
+  (DX), vertical (DY), and rotational (RZ) restraint checkboxes. Checked means
+  restrained. Existing free/pin/roller/fixed presets remain available. Custom
+  support symbols show horizontal/vertical restraint lines and a square for
+  rotational restraint; hovering identifies the restrained degrees of freedom.
 - In Select mode, drag a node to move it with snapping. Dashed connected members
   preview the move; releasing creates one undoable edit. Escape/right-click
   cancels. Coincident nodes and collapsed members are rejected without changing
@@ -180,9 +185,10 @@ Versions 1 through 4 migrate existing loads into Case 1 with the original
 Service combination. Version 3 point loads and version 4 distributed loads
 remain supported. Versions 1 through 5 migrate to rigid member ends.
 Versions 1 through 6 open in Imperial, preserving their original inch-kip values.
-New saves use version 8 and retain material/section definitions, member
+New saves use version 9 and retain material/section definitions, member
 assignments, load cases, combination factors, the default load case, and each
-member end moment release, plus the selected unit system and point-load angle.
+member end moment release, plus the selected unit system, point-load angle,
+and custom support restraints.
 Older project loads retain their original directions and magnitudes. The JSON units field
 remains in-kip to identify the canonical storage units; unit_system controls
 presentation and input conversion.

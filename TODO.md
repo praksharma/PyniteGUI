@@ -17,7 +17,8 @@ items are not promises of a particular release date.
 - [x] Add per-member materials with reusable definitions and legacy-file migration.
 - [x] Add per-member sections with reusable definitions and legacy-file migration.
 - [ ] Add a section library and distinguish custom properties from named sections.
-- [ ] Add configurable support degrees of freedom and support orientation.
+- [x] Add configurable global DX, DY, and RZ support degrees of freedom.
+- [ ] Add inclined support orientation and elastic support springs.
 
 ## Loads and Analysis
 

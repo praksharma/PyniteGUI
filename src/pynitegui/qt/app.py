@@ -109,6 +109,19 @@ class EngineeringSymbol(QGraphicsItem):
             painter.drawEllipse(QPointF(dx * 9, dy * 9), 4, 4)
             return
         if self.kind == "support":
+            if isinstance(self.value, tuple):
+                _, rx, ry, rz = self.value
+                if rx:
+                    painter.drawLine(QPointF(-9, -12), QPointF(-9, 12))
+                    for y in (-10, -4, 2, 8):
+                        painter.drawLine(QPointF(-9, y), QPointF(-14, y + 4))
+                if ry:
+                    painter.drawLine(QPointF(-12, 9), QPointF(12, 9))
+                    for x in (-10, -4, 2, 8):
+                        painter.drawLine(QPointF(x, 9), QPointF(x - 4, 14))
+                if rz:
+                    painter.drawRect(QRectF(-4, -4, 8, 8))
+                return
             if self.value in ("pin", "roller"):
                 painter.drawLine(QPointF(0, 0), QPointF(-9, 15))
                 painter.drawLine(QPointF(-9, 15), QPointF(9, 15))
@@ -319,8 +332,9 @@ class StructureView(QGraphicsView):
             dot.setFlag(dot.GraphicsItemFlag.ItemIgnoresTransformations)
             dot.setPos(node.x, -node.y)
             self.label(name, node.x, node.y, offset=(8, -22))
-            if node.support != "free":
-                symbol = EngineeringSymbol("support", node.support)
+            if any(node.restraints):
+                symbol = EngineeringSymbol("support", ("custom", *node.restraints) if node.support == "custom" else node.support)
+                symbol.setToolTip("Restrained: " + ", ".join(label for label, fixed in zip(("DX", "DY", "RZ"), node.restraints) if fixed))
                 scene.addItem(symbol)
                 symbol.setPos(node.x, -node.y)
         occupied = [item.deviceTransform(self.viewportTransform()).mapRect(item.boundingRect())
@@ -659,6 +673,8 @@ class MainWindow(QMainWindow):
                     continue
                 if kind == "nodes":
                     detail = f"{units.to_display(entity.x, 'length'):g}, {units.to_display(entity.y, 'length'):g} {units.length} | {entity.support}"
+                    if entity.support == "custom":
+                        detail += " " + ",".join(label for label, fixed in zip(("DX", "DY", "RZ"), entity.restraints) if fixed)
                 elif kind == "members":
                     detail = f"{entity.start} - {entity.end}"
                 else:
@@ -724,9 +740,23 @@ class MainWindow(QMainWindow):
                 fields[key] = unit_number(getattr(entity, key), self.project.units, "length")
                 self.form.addRow(f"{key.upper()} ({self.project.units.length})", fields[key])
             fields["support"] = QComboBox()
-            fields["support"].addItems(["free", "pin", "roller", "fixed"])
+            fields["support"].addItems(["free", "pin", "roller", "fixed", "custom"])
             fields["support"].setCurrentText(entity.support)
             self.form.addRow("Support", fields["support"])
+            for key, label, fixed in zip(("restraint_x", "restraint_y", "restraint_rz"),
+                                         ("Horizontal DX", "Vertical DY", "Rotation RZ"), entity.restraints):
+                fields[key] = QCheckBox("Restrained")
+                fields[key].setObjectName(key)
+                fields[key].setChecked(fixed)
+                self.form.addRow(label, fields[key])
+            def update_support():
+                custom = fields["support"].currentText() == "custom"
+                for index, key in enumerate(("restraint_x", "restraint_y", "restraint_rz")):
+                    self.form.setRowVisible(fields[key], custom)
+                    if not custom:
+                        fields[key].setChecked(replace(entity, support=fields["support"].currentText()).restraints[index])
+            fields["support"].currentTextChanged.connect(update_support)
+            update_support()
         elif kind == "members":
             for key in ("start", "end"):
                 fields[key] = QComboBox()
@@ -800,6 +830,9 @@ class MainWindow(QMainWindow):
                 update_point()
         def apply():
             values = {key: widget.currentText() if isinstance(widget, QComboBox) else widget.isChecked() if isinstance(widget, QCheckBox) else widget.value() for key, widget in fields.items()}
+            if kind == "nodes" and values["support"] != "custom":
+                for key in ("restraint_x", "restraint_y", "restraint_rz"):
+                    values.pop(key)
             for key, widget in fields.items():
                 if isinstance(widget, QDoubleSpinBox) and widget.property("quantity"):
                     quantity = widget.property("quantity")
@@ -943,10 +976,15 @@ class MainWindow(QMainWindow):
         from PySide6.QtWidgets import QInputDialog
         name = self.selected[1]
         current = self.project.nodes[name].support
-        choices = ["free", "pin", "roller", "fixed"]
+        choices = ["free", "pin", "roller", "fixed", "custom"]
         value, accepted = QInputDialog.getItem(self, f"Support on {name}", "Type", choices, choices.index(current), False)
         if accepted:
-            self.edit("Assign support", lambda project: setattr(project.nodes[name], "support", value))
+            def assign(project):
+                node = project.nodes[name]
+                if value == "custom" and node.support != "custom":
+                    node.restraint_x, node.restraint_y, node.restraint_rz = node.restraints
+                node.support = value
+            self.edit("Assign support", assign)
 
     def manage_materials(self):
         from .materials import MaterialDialog

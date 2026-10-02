@@ -61,7 +61,7 @@ class SectionTests(unittest.TestCase):
             self.assertEqual((restored.A, restored.Iy, restored.Iz, restored.J), (2.5, 12, 345, 0.15))
             self.assertEqual(restored.members["M1"].section, "Project section")
             self.assertEqual(restored.materials[restored.members["M1"].material].E, 10000)
-            self.assertEqual(restored.to_dict()["version"], 8)
+            self.assertEqual(restored.to_dict()["version"], 9)
 
     def test_new_default_only_affects_new_members(self):
         project = Project()

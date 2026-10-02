@@ -38,7 +38,7 @@ def analyze(project: Project) -> AnalysisResult:
     issues = project.analysis_topology_issues() + project.analysis_release_issues()
     if issues:
         raise ValueError("\n\n".join(issues))
-    if not any(node.support != "free" for node in project.nodes.values()):
+    if not any(any(node.restraints) for node in project.nodes.values()):
         raise ValueError("Assign supports before running analysis.")
     inactive_rotations = project.inactive_rotations()
     model = FEModel3D()
@@ -48,16 +48,17 @@ def analyze(project: Project) -> AnalysisResult:
         model.add_section(section.name, section.A, section.Iy, section.Iz, section.J)
     for node in project.nodes.values():
         model.add_node(node.name, node.x, node.y, 0)
+        restraint_x, restraint_y, restraint_rz = node.restraints
         model.def_support(
             node.name,
-            support_DX=node.support in ("pin", "fixed"),
-            support_DY=node.support != "free",
+            support_DX=restraint_x,
+            support_DY=restraint_y,
             support_DZ=True,
             support_RX=True,
             support_RY=True,
             # An all-hinged joint has no shared rotation DOF. This numerical
             # restraint cannot transfer moment through its released members.
-            support_RZ=node.support == "fixed" or node.name in inactive_rotations,
+            support_RZ=restraint_rz or node.name in inactive_rotations,
         )
     for member in project.members.values():
         model.add_member(member.name, member.start, member.end, member.material, member.section)
