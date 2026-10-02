@@ -97,6 +97,11 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   diagrams with one common amplitude scale for every member. Member Detail
   provides axial force, local shear, bending moment, and transverse deflection
   plots for any member, sharing one distance axis.
+  In Member Detail, enter a distance or click a plot to inspect N, Fy, Mz, and dy.
+  Left/Right side selects one-sided values at point-load jumps. Dashed cursors
+  align all four plots. Member Results lists start/end values and solver minimum/
+  maximum values for each member in local axes and current units; each extrema
+  column is independent, not a set of forces at one common station.
   Diagram windows have their own combination selector and retain the analyzed
   snapshot even when the editor changes. The inspector always edits original
   case values, not the factored values displayed after analysis.

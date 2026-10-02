@@ -7,10 +7,10 @@ from matplotlib.offsetbox import AnnotationBbox, DrawingArea
 from matplotlib.patches import Circle
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QComboBox, QDialog, QDoubleSpinBox, QHBoxLayout, QLabel, QTabWidget, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QComboBox, QDialog, QDoubleSpinBox, QHBoxLayout, QLabel, QTabWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
 
 
-def sample_member(project, result, name):
+def member_breaks(project, name):
     member = project.members[name]
     a, b = project.nodes[member.start], project.nodes[member.end]
     length = math.hypot(b.x - a.x, b.y - a.y)
@@ -26,7 +26,45 @@ def sample_member(project, result, name):
         cross = (node.x - a.x) * (b.y - a.y) - (node.y - a.y) * (b.x - a.x)
         if 0 < distance < length and abs(cross) < length * 1e-8:
             breaks.add(distance)
-    boundaries = sorted(breaks)
+    return length, sorted(breaks)
+
+
+def member_values(project, result, name, distance, side="right"):
+    length, boundaries = member_breaks(project, name)
+    if not math.isfinite(distance) or not 0 <= distance <= length:
+        raise ValueError("Inspection distance must be within the member.")
+    if side not in ("left", "right"):
+        raise ValueError("Unknown inspection side.")
+    query = distance
+    for index, boundary in enumerate(boundaries[1:-1], 1):
+        if abs(distance - boundary) <= max(length * 1e-10, 1e-10):
+            gap = min(boundary - boundaries[index - 1], boundaries[index + 1] - boundary)
+            epsilon = min(gap * 1e-5, max(length * 1e-8, 1e-8))
+            query = boundary + (epsilon if side == "right" else -epsilon)
+            break
+    solver, combo = result.solver.members[name], result.combination
+    return (solver.axial(query, combo), solver.shear("Fy", query, combo),
+            solver.moment("Mz", query, combo), solver.deflection("dy", query, combo))
+
+
+def member_result_rows(project, result):
+    rows = []
+    combo = result.combination
+    for name in project.members:
+        length, _ = member_breaks(project, name)
+        solver = result.solver.members[name]
+        for label, distance in (("Start", 0), ("End", length)):
+            rows.append((name, label, distance, *member_values(project, result, name, distance)))
+        for label, prefix in (("Minimum", "min"), ("Maximum", "max")):
+            rows.append((name, label, None, getattr(solver, prefix + "_axial")(combo),
+                         getattr(solver, prefix + "_shear")("Fy", combo),
+                         getattr(solver, prefix + "_moment")("Mz", combo),
+                         getattr(solver, prefix + "_deflection")("dy", combo)))
+    return rows
+
+
+def sample_member(project, result, name):
+    length, boundaries = member_breaks(project, name)
     solver = result.solver.members[name]
     xs, locations = [], []
     for left, right in zip(boundaries, boundaries[1:]):
@@ -171,17 +209,47 @@ class DiagramDialog(QDialog):
         if selected in project.members:
             self.member.setCurrentText(selected)
         detail_layout.addWidget(self.member)
+        inspection = QHBoxLayout()
+        inspection.addWidget(QLabel("Distance"))
+        self.distance = QDoubleSpinBox()
+        self.distance.setDecimals(8)
+        self.distance.setKeyboardTracking(False)
+        self.distance.setToolTip("Distance from the member start; click a member plot to inspect")
+        inspection.addWidget(self.distance)
+        self.inspection_side = QComboBox()
+        self.inspection_side.addItem("Right side", "right")
+        self.inspection_side.addItem("Left side", "left")
+        self.inspection_side.setToolTip("One-sided value at a concentrated load or internal segment boundary")
+        inspection.addWidget(self.inspection_side)
+        inspection.addStretch()
+        detail_layout.addLayout(inspection)
+        self.inspection_values = QTableWidget(1, 4)
+        self.inspection_values.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.inspection_values.verticalHeader().hide()
+        self.inspection_values.setMaximumHeight(72)
+        detail_layout.addWidget(self.inspection_values)
+        self.inspection_x = 0
+        self.inspection_member = self.member.currentText()
+        self.probes = []
         self.member_figure = Figure(figsize=(9, 7), layout="constrained")
         self.member_canvas = FigureCanvasQTAgg(self.member_figure)
         detail_layout.addWidget(NavigationToolbar2QT(self.member_canvas, self))
         detail_layout.addWidget(self.member_canvas)
         self.tabs.addTab(detail, "Member Detail")
+        self.member_results = QTableWidget(0, 7)
+        self.member_results.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.member_results.setAlternatingRowColors(True)
+        self.tabs.addTab(self.member_results, "Member Results")
         self.combination.currentTextChanged.connect(self.select_combination)
         self.quantity.currentIndexChanged.connect(self.update_structure)
         self.amplitude.valueChanged.connect(self.update_structure)
         self.member.currentTextChanged.connect(self.update_member)
+        self.distance.valueChanged.connect(self.inspect_distance)
+        self.inspection_side.currentIndexChanged.connect(self.update_inspection)
+        self.member_canvas.mpl_connect("button_press_event", self.inspect_click)
         self.update_structure()
         self.update_member()
+        self.update_results()
 
     def set_unit_system(self, key):
         if self.project.unit_system == key:
@@ -194,12 +262,14 @@ class DiagramDialog(QDialog):
         self.quantity.blockSignals(False)
         self.update_structure()
         self.update_member()
+        self.update_results()
 
     def select_combination(self, name):
         self.result = self.result.for_combination(name)
         self.setWindowTitle(f"Force Diagrams | {name}")
         self.update_structure()
         self.update_member()
+        self.update_results()
 
     def update_structure(self):
         self.structure_figure.clear()
@@ -210,8 +280,17 @@ class DiagramDialog(QDialog):
     def update_member(self):
         self.member_figure.clear()
         name = self.member.currentText()
+        if name != self.inspection_member:
+            self.inspection_x = 0
+            self.inspection_member = name
         data = sample_member(self.project, self.result, name)
         units = self.project.units
+        self.distance.blockSignals(True)
+        self.distance.setRange(0, units.to_display(float(data["x"][-1]), "length"))
+        self.distance.setSuffix(f" {units.length}")
+        self.distance.setValue(units.to_display(self.inspection_x, "length"))
+        self.distance.blockSignals(False)
+        self.probes = []
         shared = None
         for index, (key, label, color) in enumerate((("axial", f"Axial N ({units.force})\n+ compression", "#3279a4"),
                                                      ("shear", f"Shear Fy ({units.force})", "#168b8b"),
@@ -222,11 +301,55 @@ class DiagramDialog(QDialog):
                 shared = ax
             ax.plot(units.to_display(data["x"], "length"), units.to_display(data[key], "length" if key == "deflection" else "moment" if key == "moment" else "force"), color=color)
             ax.axhline(0, color="#869395", linewidth=0.6)
-            ax.set_ylabel(label, fontsize=8)
+            ax.set_ylabel(label, fontsize=8, rotation=0, ha="right", va="center", labelpad=12)
             ax.grid(alpha=0.2)
             if index == 0:
                 ax.set_title(f"{name} | Local Member Axes")
             ax.tick_params(axis="x", labelbottom=index == 3)
             if index == 3:
                 ax.set_xlabel(f"Distance from start ({units.length})")
+        self.update_inspection()
+
+    def inspect_distance(self):
+        self.inspection_x = self.project.units.from_display(self.distance.value(), "length")
+        length, _ = member_breaks(self.project, self.member.currentText())
+        self.inspection_x = min(length, max(0, self.inspection_x))
+        self.update_inspection()
+
+    def inspect_click(self, event):
+        if event.button != 1 or event.inaxes not in self.member_figure.axes or event.xdata is None:
+            return
+        if self.member_canvas.toolbar and self.member_canvas.toolbar.mode:
+            return
+        self.distance.setValue(min(self.distance.maximum(), max(0, event.xdata)))
+
+    def update_inspection(self):
+        units = self.project.units
+        values = member_values(self.project, self.result, self.member.currentText(), self.inspection_x,
+                               self.inspection_side.currentData())
+        self.inspection_values.setHorizontalHeaderLabels([f"N ({units.force})", f"Fy ({units.force})",
+                                                          f"Mz ({units.moment})", f"dy ({units.length})"])
+        for col, (value, quantity) in enumerate(zip(values, ("force", "force", "moment", "length"))):
+            self.inspection_values.setItem(0, col, QTableWidgetItem(f"{units.to_display(value, quantity):.6g}"))
+        self.inspection_values.resizeColumnsToContents()
+        for line in self.probes:
+            line.remove()
+        self.probes = [ax.axvline(units.to_display(self.inspection_x, "length"), color="#47575c", linestyle="--", linewidth=0.8)
+                       for ax in self.member_figure.axes]
         self.member_canvas.draw_idle()
+
+    def update_results(self):
+        units = self.project.units
+        self.member_results.setHorizontalHeaderLabels(["Member", "Station", f"x ({units.length})", f"N ({units.force})",
+                                                       f"Fy ({units.force})", f"Mz ({units.moment})", f"dy ({units.length})"])
+        rows = member_result_rows(self.project, self.result)
+        self.member_results.setRowCount(len(rows))
+        for row, values in enumerate(rows):
+            for col, value in enumerate(values):
+                if col >= 2 and value is not None:
+                    value = units.to_display(value, ("length", "force", "force", "moment", "length")[col - 2])
+                text = "-" if value is None else value if isinstance(value, str) else f"{value:.6g}"
+                item = QTableWidgetItem(text)
+                item.setToolTip("Local member axes; N positive compression. Min/max are independent extrema of each column, not values at one shared station.")
+                self.member_results.setItem(row, col, item)
+        self.member_results.resizeColumnsToContents()

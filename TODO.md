@@ -43,11 +43,11 @@ items are not promises of a particular release date.
 - [x] Add auto, true-scale, and custom deformed-shape amplification with actual
   maximum sampled displacement shown in the selected project units.
 - [x] Add axial-force diagrams for the whole structure and Member Detail.
-- [ ] Add interactive value inspection at a chosen distance along a member.
+- [x] Add interactive value inspection at a chosen distance along a member.
 - [ ] Improve label placement for dense structures and overlapping diagrams.
 - [ ] Add diagram side/sign display preferences with clear conventions.
 - [ ] Show supports and load annotations consistently across result views.
-- [ ] Add result tables for member end forces and extrema.
+- [x] Add result tables for member end forces and extrema.
 - [ ] Add explicit result snapshot identification in open diagram windows.
 - [ ] Export reactions, forces, and displacements as CSV and a printable report.
 
