@@ -155,6 +155,11 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   Set Default controls newly drawn members without changing existing assignments.
   Renaming a definition updates its references; assigned/default materials cannot
   be deleted until members are reassigned and a different default is chosen.
+  Library provides five reference presets: US/EU typical steel, generic aluminum,
+  and C30/37 concrete with plain or reinforced-concrete weight. Search, preview
+  E/Poisson ratio/G/weight density, and Add to Project. Imports do not reassign
+  members or change the default. Source distinguishes Library from Custom;
+  renaming retains the preset, while numerical edits make it custom.
 - Edit > Sections manages reusable area, Iy, Iz, and J definitions. Choose
   Section in a selected member inspector and press Apply. Section defaults,
   renaming, deletion protection, and undo work like material definitions.
@@ -304,6 +309,19 @@ E/G and weight density use the selected units. Materials are isotropic
 and linear elastic; yield strength and nonlinear constitutive models are not
 currently represented.
 
+Material-library presets are reference starting points, not certified grades.
+US steel uses the [PyNite Quickstart](https://pynite.readthedocs.io/en/latest/quickstart.html)
+elastic constants and weight density. EU steel and C30/37 concrete use
+[JRC Handbook 3](https://eurocodes.jrc.ec.europa.eu/sites/default/files/2021-12/handbook3.pdf)
+(steel Annex Table 2; concrete Chapter VI and Annex Table 9). Aluminum uses
+the [MIT material database](https://www.mit.edu/~6.777/matprops/aluminum.htm).
+Mass densities for EU steel/aluminum are converted with standard gravity
+9.80665 m/s2; the UI and PyNite receive weight density, not mass density.
+Concrete presets assume uncracked, short-term stiffness. The RC-weight variant
+changes density only, not reinforcement stiffness. No preset adds cracking,
+creep, plasticity, yield strength, buckling, or a design-code check. Verify
+properties for the actual grade, alloy, aggregate, and conditions of use.
+
 Each member also references a reusable section definition. Area uses in2 or mm2;
 Iy, Iz, and J use in4 or mm4 in the member local axes. Iz governs in-plane bending
 for the current XY frame model. Custom properties are entered directly;
@@ -336,7 +354,7 @@ Versions 1 through 4 migrate existing loads into Case 1 with the original
 Service combination. Version 3 point loads and version 4 distributed loads
 remain supported. Versions 1 through 5 migrate to rigid member ends.
 Versions 1 through 6 open in Imperial, preserving their original inch-kip values.
-New saves use version 12 and retain material/section definitions, member
+New saves use version 13 and retain material/section definitions, member
 assignments, load cases, combination factors, the default load case, and each
 member end moment release, plus the selected unit system, point-load angle,
 and custom support restraints. Version 10 adds local force directions and
@@ -346,6 +364,7 @@ Version 11 adds the optional self-weight case and factor. Versions 1 through 10
 open with automatic self-weight off so existing reactions do not change.
 Version 12 adds section catalog provenance and strong/weak-axis orientation.
 Older files retain their exact numerical properties as custom definitions.
+Version 13 adds material-library provenance; older materials remain custom.
 Older project loads retain their original directions and magnitudes. The JSON units field
 remains in-kip to identify the canonical storage units; unit_system controls
 presentation and input conversion.
@@ -353,7 +372,7 @@ Malformed files are rejected before replacing the active project. Missing fields
 incorrect collection/entity shapes, unknown entity fields, invalid references,
 boolean/string/nonfinite numerical values, and duplicate JSON keys produce
 readable errors. JSON syntax errors include their line and column. Supported
-versions 1 through 12 are migrated without modifying the input; unknown/future
+versions 1 through 13 are migrated without modifying the input; unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be
 distinct so load targets are unambiguous.
 Editing a definition updates all members assigned to it and
@@ -393,6 +412,7 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/materials.py`: material definition manager and property editor.
 - `src/pynitegui/qt/sections.py`: section definition manager and property editor.
 - `src/pynitegui/qt/section_library.py`: offline catalog facts and axis mapping.
+- `src/pynitegui/qt/material_library.py`: reference elastic and weight-density presets.
 - `src/pynitegui/qt/load_cases.py`: load-case manager and combination factor editor.
 - `src/pynitegui/qt/recovery.py`: per-window atomic recovery snapshots and validation.
 - `src/pynitegui/qt/reports.py`: unit-aware CSV exports and native printable reports.
@@ -448,7 +468,7 @@ Export checks cover SI/imperial values, combination identity, undefined rotation
 CSV quoting/formula safety, atomic failures, cancellation, stale-model rejection,
 retained snapshot exports, report escaping, and native PDF rendering.
 File-validation checks cover malformed shapes and values, duplicate keys,
-versions 1 through 12, future-version rejection, non-mutating migrations, and
+versions 1 through 13, future-version rejection, non-mutating migrations, and
 preservation of the active project and source file after a failed open.
 Stability checks cover inadequate pins/rollers, custom restraints, translated
 coordinates, zero-stiffness and internal sway mechanisms, valid released beams,
@@ -482,6 +502,9 @@ Section-library checks cover all entries, strong/weak-axis stiffness, all unit
 presets, source metadata validation, legacy custom definitions, save/reopen,
 search/family filters, duplicate-name protection, cancellation, one-step import
 undo/redo, rename provenance, and custom classification after property edits.
+Material-library checks cover reference conversions, mass/weight distinction,
+all unit presets, source validation, old-file preservation, safe imports,
+search, cancellation, conflicts, undo/redo, and property-edit classification.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

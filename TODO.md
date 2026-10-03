@@ -21,6 +21,8 @@ and verified PyNite extensions. This file remains the primary implementation lis
 - [x] Add in-plane member end moment releases for hinges and pin-jointed frames.
 - [ ] Add explicit axial-only truss elements and additional release degrees of freedom.
 - [x] Add per-member materials with reusable definitions and legacy-file migration.
+- [x] Add a unit-aware material library with reference elastic/weight-density
+  presets, safe imports, provenance, and custom classification after edits.
 - [x] Add per-member sections with reusable definitions and legacy-file migration.
 - [x] Add a section library and distinguish custom properties from named sections.
   Searchable offline AISC starter subset, strong/weak-axis assignment, unit-aware

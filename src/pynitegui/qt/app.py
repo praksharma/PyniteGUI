@@ -987,6 +987,8 @@ class MainWindow(QMainWindow):
             self.form.addRow("Section", fields["section"])
             fields["material"] = QComboBox()
             fields["material"].addItems(list(self.project.materials))
+            for index, material in enumerate(self.project.materials.values()):
+                fields["material"].setItemData(index, material.source_label, Qt.ItemDataRole.ToolTipRole)
             fields["material"].setCurrentText(entity.material)
             self.form.addRow("Material", fields["material"])
             for key, label in (("release_start", f"Start moment ({entity.start})"), ("release_end", f"End moment ({entity.end})")):

@@ -34,6 +34,15 @@ class Material:
     E: float = 29000.0
     nu: float = 0.3
     rho: float = 0.49 / 12**3
+    preset: str | None = None
+
+    @property
+    def source_label(self):
+        if self.preset is None:
+            return "Custom"
+        from .material_library import BY_KEY
+        item = BY_KEY[self.preset]
+        return f"Library | {item.name} | {item.source}"
 
     @property
     def G(self):
@@ -48,6 +57,12 @@ class Material:
             raise ValueError(f"Material {self.name}: Poisson ratio must be between -1 and 0.5.")
         if not finite_number(self.rho) or self.rho < 0:
             raise ValueError(f"Material {self.name}: density must be finite and nonnegative.")
+        if self.preset is not None:
+            from .material_library import BY_KEY
+            if not isinstance(self.preset, str) or self.preset not in BY_KEY:
+                raise ValueError(f"Material {self.name}: unknown library preset.")
+            if any(getattr(self, key) != value for key, value in BY_KEY[self.preset].properties().items()):
+                raise ValueError(f"Material {self.name}: library properties differ; save as a custom material.")
 
 
 @dataclass
@@ -329,14 +344,14 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 12, "units": "in-kip", **asdict(self)}
+        return {"version": 13, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
         if not isinstance(data, dict):
             raise ValueError("Project document must be a JSON object.")
         version = data.get("version")
-        if type(version) is not int or version not in range(1, 13) or data.get("units") != "in-kip":
+        if type(version) is not int or version not in range(1, 14) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         required = {"grid", "nodes", "members", "loads"}
         required.update({"E", "nu", "rho"} if version == 1 else {"materials", "default_material"})
