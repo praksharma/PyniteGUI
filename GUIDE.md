@@ -42,6 +42,22 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   or an existing node. Escape or right-click cancels an unfinished member.
 - Choose Select (V) and click a node or member, or select it in the structure
   tree. Edit properties in the inspector and press Apply.
+- Edit > Model Tables opens draft Nodes, Members, and Loads tables. Enter signed
+  coordinates and load values directly (scientific notation is accepted), choose
+  endpoints/materials/sections/cases, and set custom restraints or end hinges.
+  Add rows or remove selected rows to build/edit the model numerically. IDs are
+  generated and read-only; references to newly added rows are available immediately.
+  OK validates all three tables and applies one undoable edit; Cancel discards
+  the draft. Removing a referenced row requires explicitly removing or reassigning
+  its dependent members/loads before OK. Invalid input never partially changes
+  the active model. Untouched numbers preserve their full stored precision.
+  Coordinates use the selected length unit; each load row shows its magnitude
+  units, and the end-intensity header identifies distributed-load units. Changing
+  load type/direction reinterprets the entered magnitude in those units. Positions
+  are member fractions, angles are degrees, and end intensity/fraction apply to
+  distributed loads only. Preset restraint checkboxes show the effective supports
+  but are editable only for custom supports. Generated self-weight is not listed
+  as a manual load; configure it separately in Edit > Self-Weight.
 - Select a member and choose Split in its inspector, or Edit > Split Selected
   Member, to divide it at a fraction measured from its start node. The first
   segment keeps the original member ID. Point loads and moments retain their
@@ -334,6 +350,7 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/examples.py`: fresh, canonical-unit example beam/frame models.
 - `src/pynitegui/qt/theme.py`: shared light/dark widget, canvas, and plot styling.
 - `src/pynitegui/qt/self_weight.py`: opt-in case/factor editor and weight preview.
+- `src/pynitegui/qt/model_tables.py`: atomic numerical geometry/load editing.
 - `tests/`: project, solver, diagram, and Qt interaction regression tests.
 
 ## Development
@@ -403,6 +420,10 @@ materials/sections, inclined/reversed axes, case omission/factors/renaming,
 zero density, splitting, old-file migration, validation, preview precision,
 manual-load superposition, repeated analysis without duplication, undo/filtering,
 snapshot invalidation, and export metadata.
+Model-table checks cover all unit presets, unchanged-value precision, force/moment/
+intensity interpretation, custom restraints, assignments/releases, new references,
+dependent deletion, invalid drafts, the active numeric editor, cancellation,
+self-weight separation, and one-step undo/redo.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

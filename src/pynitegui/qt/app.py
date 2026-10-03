@@ -578,6 +578,7 @@ class MainWindow(QMainWindow):
         redo.setShortcuts(["Ctrl+Shift+Z", "Ctrl+Y"])
         edit_menu.addActions([undo, redo])
         edit_menu.addAction(self.action("Delete Selection", self.delete_selected, "Delete", "edit-delete"))
+        edit_menu.addAction(self.action("Model Tables...", self.manage_model_tables))
         edit_menu.addAction(self.action("Materials...", self.manage_materials))
         edit_menu.addAction(self.action("Sections...", self.manage_sections))
         edit_menu.addAction(self.action("Load Cases and Combinations...", self.manage_load_cases))
@@ -1163,6 +1164,16 @@ class MainWindow(QMainWindow):
     def manage_sections(self):
         from .sections import SectionDialog
         SectionDialog(self).exec()
+
+    def manage_model_tables(self):
+        from .model_tables import ModelTablesDialog
+        dialog = ModelTablesDialog(self, self.project)
+        if dialog.exec():
+            def mutate(project):
+                definition = dialog.definition.clone()
+                for kind in ("nodes", "members", "loads"):
+                    setattr(project, kind, getattr(definition, kind))
+            self.edit("Edit model tables", mutate)
 
     def manage_self_weight(self):
         from .self_weight import SelfWeightDialog

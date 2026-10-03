@@ -12,7 +12,8 @@ and verified PyNite extensions. This file remains the primary implementation lis
 
 - [x] Add node dragging with snapping and undo/redo.
 - [ ] Add multiple selection and bulk property editing.
-- [ ] Add editable node/member/load tables for precise numerical entry.
+- [x] Add editable node/member/load tables with unit-aware numerical entry,
+  row addition/removal, atomic validation, and one-step undo/redo.
 - [x] Add member splitting and an explicit connect-at-intersection operation.
 - [x] Detect overlapping members, disconnected components, and unintended
   intermediate-node connections before analysis.
