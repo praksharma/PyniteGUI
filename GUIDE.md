@@ -208,7 +208,20 @@ Results show RZ as n/a for those joints, not a physical zero rotation. Individua
 member end rotations and deformations remain governed by the released beam.
 A net nodal MZ on such a joint is rejected for each analyzed combination unless
 a moment-resisting connection or rotational support restraint is provided. Real translational
-mechanisms still fail the solver stability checks.
+mechanisms are not hidden by adding translational restraints.
+
+Analysis checks whether the actual supports prevent planar rigid-body motion
+and lists affected global DX/DY/RZ directions when they do not. Solver
+instability errors are translated into joint-level messages where possible.
+For models with at most 600 free planar degrees of freedom, a diagonally scaled
+stiffness check also rejects singular/numerically ill-conditioned results even
+when the solver returns finite values. Candidate mechanism directions are
+diagnostic hints, not a unique identification of the defective member. Very
+large stiffness contrasts can cause poor conditioning without a physical
+mechanism. For larger models, solver checks and rejection of nonfinite results
+remain active, but detailed spectral checks/localization are skipped to avoid
+an expensive dense calculation. These are linear-model checks, not buckling
+or nonlinear stability verification.
 
 Each member references a reusable material definition. Editing that definition
 updates every member assigned to it and invalidates results. Split member
@@ -331,6 +344,10 @@ retained snapshot exports, report escaping, and native PDF rendering.
 File-validation checks cover malformed shapes and values, duplicate keys,
 versions 1 through 10, future-version rejection, non-mutating migrations, and
 preservation of the active project and source file after a failed open.
+Stability checks cover inadequate pins/rollers, custom restraints, translated
+coordinates, zero-stiffness and internal sway mechanisms, valid released beams,
+uniformly soft materials, nonfinite results in any combination, unrelated solver
+errors, and the dense-localization size limit.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

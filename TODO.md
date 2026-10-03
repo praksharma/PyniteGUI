@@ -36,7 +36,9 @@ items are not promises of a particular release date.
 - [x] Add SI/imperial presets with validated dimensional input/output conversion,
   persistent selection, and physical-model preservation for existing projects.
 - [ ] Add further unit presets or custom length/force choices.
-- [ ] Improve instability messages with affected nodes and degrees of freedom.
+- [x] Improve instability messages with affected nodes and degrees of freedom.
+- [ ] Add scalable sparse mechanism checks/localization beyond 600 free planar
+  degrees of freedom.
 - [ ] Add an analysis progress indicator and cancellation for large models.
 
 ## Results and Presentation
