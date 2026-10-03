@@ -293,6 +293,9 @@ class DiagramDialog(QDialog):
         self.member_results.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.member_results.setAlternatingRowColors(True)
         self.tabs.addTab(self.member_results, "Member Results")
+        from .envelopes import EnvelopeWidget
+        self.envelopes = EnvelopeWidget(self, self.project, result, self.source, selected)
+        self.tabs.addTab(self.envelopes, "Envelopes")
         self.combination.currentTextChanged.connect(self.select_combination)
         self.quantity.currentIndexChanged.connect(self.update_structure)
         self.amplitude.valueChanged.connect(self.update_structure)
@@ -334,6 +337,7 @@ class DiagramDialog(QDialog):
         self.update_structure()
         self.update_member()
         self.update_results()
+        self.envelopes.refresh()
 
     def select_combination(self, name):
         self.result = self.result.for_combination(name)
@@ -396,6 +400,7 @@ class DiagramDialog(QDialog):
         self.member_canvas.setPalette(self.palette())
         self.structure_canvas.draw_idle()
         self.member_canvas.draw_idle()
+        self.envelopes.apply_theme()
 
     def inspect_distance(self):
         self.inspection_x = self.project.units.from_display(self.distance.value(), "length")

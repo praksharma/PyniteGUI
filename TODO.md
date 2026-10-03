@@ -43,7 +43,10 @@ and verified PyNite extensions. This file remains the primary implementation lis
   and distribution-preserving member splitting.
 - [x] Add load cases and combinations, including results and diagram selectors.
 - [x] Add an editing load-case visibility filter and hide/show controls.
-- [ ] Add result envelopes across selected combinations.
+- [x] Add result envelopes across selected combinations: node bounds, exact
+  solver member extrema, governing combinations, sampled member curves,
+  one-sided station inspection, and snapshot-aware CSV export.
+- [ ] Include selected-combination envelopes in printable reports.
 - [x] Add optional self-weight with an explicit load case, per-member weight
   density/area, multiplier, generated load display, and safe legacy migration.
 - [x] Add SI/imperial presets with validated dimensional input/output conversion,

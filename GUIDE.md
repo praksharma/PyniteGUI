@@ -198,6 +198,23 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   Diagram windows have their own combination selector and retain the analyzed
   snapshot even when the editor changes. The inspector always edits original
   case values, not the factored values displayed after analysis.
+- Diagrams > Envelopes compares checked combinations from that analyzed
+  snapshot without another solve. The main combination selector does not change
+  the envelope selection. Nodes lists displacement/reaction bounds; Members
+  lists exact solver extrema for N, Fy, Mz, and dy over entire members. Each
+  minimum and maximum identifies its governing combination. Ties use the first
+  checked combination in list order; undefined truss-joint rotations remain n/a.
+  These are independent bounds, not a simultaneous force/displacement state.
+  Member Curves shows sampled min/max envelopes in local axes, including both
+  sides of load jumps. Curve peaks are sampled, not exact extrema searches; use
+  Members for solver extrema. Enter a distance or click a curve to inspect exact
+  one-sided station bounds and their governing combinations. Left/Right side
+  chooses the side at point-load jumps. Axial N remains positive compression;
+  Whole Structure placement/sign controls do not change envelopes.
+  The envelope export icon saves both summary tables as CSV with units, source,
+  snapshot identity, selected combinations/factors, and self-weight metadata.
+  Unit/theme changes retain the selection. Envelopes are window-local and are
+  not included in the single-combination print report or saved project.
 - File > Export Results saves node reactions/displacements or member end/extrema
   values as CSV in the selected units and combination. Files include source,
   analysis ID, UTC timestamp, model signature, and unit system. Undefined joint
@@ -442,6 +459,8 @@ and concentrated moments include both sides of each discontinuity.
   background analysis, and a consistent light application theme.
 - `src/pynitegui/qt/diagrams.py`: whole-frame axial/SFD/BMD views, member detail plots,
   and sampling on both sides of force and moment discontinuities.
+- `src/pynitegui/qt/envelopes.py`: combination bounds, governing combinations,
+  envelope tables/curves, exact station inspection, and atomic CSV export.
 - `src/pynitegui/qt/materials.py`: material definition manager and property editor.
 - `src/pynitegui/qt/sections.py`: section definition manager and property editor.
 - `src/pynitegui/qt/section_library.py`: offline catalog facts and axis mapping.

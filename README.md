@@ -6,7 +6,7 @@ A desktop editor for 2D frame and truss analysis, powered by PyNite and Qt.
 
 Draw and edit frames or trusses, assign custom or library materials and sections, and apply point,
 distributed, or automatic self-weight loads. Analyze combinations and inspect
-reactions, deformed shapes, and axial-force, shear-force, and bending-moment diagrams. Supports
+reactions, deformed shapes, force diagrams, and envelopes across combinations. Supports
 SI/Imperial units, light/dark themes, undo/redo, and autosave recovery.
 Print selected model definitions, result tables, and force diagrams as a report.
 
