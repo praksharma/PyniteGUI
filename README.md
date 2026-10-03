@@ -4,7 +4,7 @@
 
 A desktop editor for 2D structural frame analysis, powered by PyNite and Qt.
 
-Draw and edit frames, assign materials and sections, and apply point,
+Draw and edit frames, assign materials and custom or library sections, and apply point,
 distributed, or automatic self-weight loads. Analyze combinations and inspect
 reactions, deformed shapes, and axial-force, shear-force, and bending-moment diagrams. Supports
 SI/Imperial units, light/dark themes, undo/redo, and autosave recovery.

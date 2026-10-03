@@ -981,6 +981,8 @@ class MainWindow(QMainWindow):
             self.form.addRow(f"Length ({self.project.units.length})", QLabel(f"{self.project.units.to_display(math.hypot(b.x - a.x, b.y - a.y), 'length'):g}"))
             fields["section"] = QComboBox()
             fields["section"].addItems(list(self.project.sections))
+            for index, section in enumerate(self.project.sections.values()):
+                fields["section"].setItemData(index, section.source_label, Qt.ItemDataRole.ToolTipRole)
             fields["section"].setCurrentText(entity.section)
             self.form.addRow("Section", fields["section"])
             fields["material"] = QComboBox()

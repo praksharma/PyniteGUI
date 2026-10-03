@@ -57,6 +57,16 @@ class Section:
     Iy: float = 15.3
     Iz: float = 510.0
     J: float = 0.506
+    catalog: str | None = None
+    designation: str | None = None
+    weak_axis: bool = False
+
+    @property
+    def source_label(self):
+        if self.catalog is None:
+            return "Custom"
+        axis = "weak-axis" if self.weak_axis else "strong-axis"
+        return f"{self.catalog} | {self.designation} | {axis}"
 
     def validate(self):
         if not isinstance(self.name, str) or not self.name.strip() or self.name != self.name.strip():
@@ -65,6 +75,18 @@ class Section:
             value = getattr(self, key)
             if not finite_number(value) or value <= 0:
                 raise ValueError(f"Section {self.name}: {key} must be a positive finite number.")
+        if type(self.weak_axis) is not bool:
+            raise ValueError(f"Section {self.name}: weak_axis must be a boolean.")
+        if self.catalog is None:
+            if self.designation is not None or self.weak_axis:
+                raise ValueError(f"Section {self.name}: custom section has invalid catalog metadata.")
+        else:
+            from .section_library import BY_DESIGNATION, SOURCE
+            if self.catalog != SOURCE or not isinstance(self.designation, str) or self.designation not in BY_DESIGNATION:
+                raise ValueError(f"Section {self.name}: unknown catalog section.")
+            properties = BY_DESIGNATION[self.designation].properties(self.weak_axis)
+            if any(getattr(self, key) != value for key, value in properties.items()):
+                raise ValueError(f"Section {self.name}: catalog properties differ; save as a custom section.")
 
 
 @dataclass
@@ -307,14 +329,14 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 11, "units": "in-kip", **asdict(self)}
+        return {"version": 12, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
         if not isinstance(data, dict):
             raise ValueError("Project document must be a JSON object.")
         version = data.get("version")
-        if type(version) is not int or version not in range(1, 12) or data.get("units") != "in-kip":
+        if type(version) is not int or version not in range(1, 13) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         required = {"grid", "nodes", "members", "loads"}
         required.update({"E", "nu", "rho"} if version == 1 else {"materials", "default_material"})

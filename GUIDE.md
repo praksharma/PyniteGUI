@@ -158,6 +158,12 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
 - Edit > Sections manages reusable area, Iy, Iz, and J definitions. Choose
   Section in a selected member inspector and press Apply. Section defaults,
   renaming, deletion protection, and undo work like material definitions.
+  Library opens a searchable, family-filtered AISC starter catalog. Choose the
+  in-plane strong or weak bending axis and Add to Project, then assign the
+  definition to members or Set Default. Imports never replace existing sections;
+  duplicate names receive a suggested suffix. The Source column distinguishes
+  catalog definitions from custom properties. Renaming preserves provenance;
+  changing any numerical property makes the definition custom.
   Edit > Grid changes the drawing grid spacing.
 - Use Pan (P) to drag the view, the mouse wheel to zoom, and Fit (F) to frame it.
 - Analyze (F5) runs PyNite in a worker thread. Reactions and nodal displacements
@@ -300,9 +306,29 @@ currently represented.
 
 Each member also references a reusable section definition. Area uses in2 or mm2;
 Iy, Iz, and J use in4 or mm4 in the member local axes. Iz governs in-plane bending
-for the current XY frame model. Section properties are entered directly;
-definition names do not perform a section-catalog lookup. The initial default
-uses W18x35 properties. Split segments inherit their original section.
+for the current XY frame model. Custom properties are entered directly;
+definition names alone do not perform a section-catalog lookup. The initial
+default uses W18x35 properties but is classified as custom, like older saved
+definitions. Split segments inherit their original section.
+
+The offline library contains 15 doubly symmetric wide-flange, square,
+rectangular, and round HSS sections, not a complete catalog. Its numerical
+properties come from the August 2023 [AISC Shapes Database v16.0](https://www.aisc.org/aisc/publications/steel-construction-manual/aisc-shapes-database-v160/),
+consistent with the 16th Edition Manual, first printing. The source workbook was
+retrieved from this [public mirror](https://github.com/OpenCivil-Project/Open-Structures/blob/main/app/resources/aisc-shapes-database-v16.0.xlsx)
+because the official download returned HTTP 403. Its SHA-256 is
+`82d0ceb96a0d938ae1a6bd9637cb10a1e269225b5d668dce5b0bdc8d86013496`.
+Only designation and A/Iy/Ix/J numerical facts are bundled, not the workbook.
+Values use U.S. customary columns C, F, AQ, AM, AX; metric previews convert
+these values rather than using the workbook's separately rounded metric columns.
+Strong-axis bending maps catalog Ix to PyNite Iz and catalog Iy to PyNite Iy.
+Weak-axis bending swaps those inertias; A and torsional J stay unchanged.
+HSS design properties are taken directly from the database, not recalculated
+from nominal wall thickness. Imported catalog properties and orientation are
+validated on reopen; modified values must be classified as custom. Materials
+remain a separate assignment, and imports do not change them. This is a stiffness
+library, not a strength, buckling, or code-compliance check. Verify suitability
+and section properties independently for engineering use.
 
 Version 1 files migrate their shared material to a named Project material.
 Version 1 and 2 files migrate their shared section to a named Project section.
@@ -310,7 +336,7 @@ Versions 1 through 4 migrate existing loads into Case 1 with the original
 Service combination. Version 3 point loads and version 4 distributed loads
 remain supported. Versions 1 through 5 migrate to rigid member ends.
 Versions 1 through 6 open in Imperial, preserving their original inch-kip values.
-New saves use version 11 and retain material/section definitions, member
+New saves use version 12 and retain material/section definitions, member
 assignments, load cases, combination factors, the default load case, and each
 member end moment release, plus the selected unit system, point-load angle,
 and custom support restraints. Version 10 adds local force directions and
@@ -318,6 +344,8 @@ angled distributed loading; version 9 and older files retain their saved global
 force directions and physical magnitudes.
 Version 11 adds the optional self-weight case and factor. Versions 1 through 10
 open with automatic self-weight off so existing reactions do not change.
+Version 12 adds section catalog provenance and strong/weak-axis orientation.
+Older files retain their exact numerical properties as custom definitions.
 Older project loads retain their original directions and magnitudes. The JSON units field
 remains in-kip to identify the canonical storage units; unit_system controls
 presentation and input conversion.
@@ -325,7 +353,7 @@ Malformed files are rejected before replacing the active project. Missing fields
 incorrect collection/entity shapes, unknown entity fields, invalid references,
 boolean/string/nonfinite numerical values, and duplicate JSON keys produce
 readable errors. JSON syntax errors include their line and column. Supported
-versions 1 through 11 are migrated without modifying the input; unknown/future
+versions 1 through 12 are migrated without modifying the input; unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be
 distinct so load targets are unambiguous.
 Editing a definition updates all members assigned to it and
@@ -364,6 +392,7 @@ and concentrated moments include both sides of each discontinuity.
   and sampling on both sides of force and moment discontinuities.
 - `src/pynitegui/qt/materials.py`: material definition manager and property editor.
 - `src/pynitegui/qt/sections.py`: section definition manager and property editor.
+- `src/pynitegui/qt/section_library.py`: offline catalog facts and axis mapping.
 - `src/pynitegui/qt/load_cases.py`: load-case manager and combination factor editor.
 - `src/pynitegui/qt/recovery.py`: per-window atomic recovery snapshots and validation.
 - `src/pynitegui/qt/reports.py`: unit-aware CSV exports and native printable reports.
@@ -419,7 +448,7 @@ Export checks cover SI/imperial values, combination identity, undefined rotation
 CSV quoting/formula safety, atomic failures, cancellation, stale-model rejection,
 retained snapshot exports, report escaping, and native PDF rendering.
 File-validation checks cover malformed shapes and values, duplicate keys,
-versions 1 through 11, future-version rejection, non-mutating migrations, and
+versions 1 through 12, future-version rejection, non-mutating migrations, and
 preservation of the active project and source file after a failed open.
 Stability checks cover inadequate pins/rollers, custom restraints, translated
 coordinates, zero-stiffness and internal sway mechanisms, valid released beams,
@@ -449,6 +478,10 @@ Bulk-edit checks cover tree/canvas modifier selection, rectangle intersections,
 cancellation, selection synchronization, mixed entity types, preserved properties,
 all load quantities, atomic failure, cascading deletion, filtering, history,
 selected-load highlighting, and result preservation/invalidation.
+Section-library checks cover all entries, strong/weak-axis stiffness, all unit
+presets, source metadata validation, legacy custom definitions, save/reopen,
+search/family filters, duplicate-name protection, cancellation, one-step import
+undo/redo, rename provenance, and custom classification after property edits.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

@@ -22,7 +22,10 @@ and verified PyNite extensions. This file remains the primary implementation lis
 - [ ] Add explicit axial-only truss elements and additional release degrees of freedom.
 - [x] Add per-member materials with reusable definitions and legacy-file migration.
 - [x] Add per-member sections with reusable definitions and legacy-file migration.
-- [ ] Add a section library and distinguish custom properties from named sections.
+- [x] Add a section library and distinguish custom properties from named sections.
+  Searchable offline AISC starter subset, strong/weak-axis assignment, unit-aware
+  previews, persisted provenance, and custom classification after property edits.
+- [ ] Expand the section library with additional regional catalogs and sizes.
 - [x] Add configurable global DX, DY, and RZ support degrees of freedom.
 - [ ] Add inclined support orientation and elastic support springs.
 

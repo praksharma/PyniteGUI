@@ -28,7 +28,7 @@ class MaterialTests(unittest.TestCase):
         project = Project.from_dict(legacy)
         self.assertEqual((project.E, project.nu, project.rho), (12345, 0.24, 0.0001))
         self.assertEqual(project.members["M1"].material, "Project material")
-        self.assertEqual(project.to_dict()["version"], 11)
+        self.assertEqual(project.to_dict()["version"], 12)
         self.assertEqual(project.to_dict(), Project.from_dict(project.to_dict()).to_dict())
 
     def test_mixed_material_axial_stiffness(self):
