@@ -49,8 +49,9 @@ items are not promises of a particular release date.
 - [ ] Add diagram side/sign display preferences with clear conventions.
 - [ ] Show supports and load annotations consistently across result views.
 - [x] Add result tables for member end forces and extrema.
-- [ ] Add explicit result snapshot identification in open diagram windows.
-- [ ] Export reactions, forces, and displacements as CSV and a printable report.
+- [x] Add explicit result snapshot identification in open diagram windows.
+- [x] Export reactions, forces, and displacements as CSV and a printable report.
+- [ ] Extend printable reports with model definitions and selected diagrams.
 
 ## Project Quality
 

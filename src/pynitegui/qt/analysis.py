@@ -1,10 +1,20 @@
 """PyNite adapter for planar frame models (inches and kips)."""
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from datetime import datetime, timezone
+import hashlib
+import json
 import math
+import uuid
 
 from Pynite import FEModel3D
 
 from .model import Project
+
+
+def model_signature(project):
+    data = project.to_dict()
+    data.pop("unit_system")
+    return hashlib.sha256(json.dumps(data, sort_keys=True, allow_nan=False).encode("utf-8")).hexdigest()
 
 
 @dataclass
@@ -14,6 +24,9 @@ class AnalysisResult:
     reactions: dict
     combination: str = "Service"
     inactive_rotations: frozenset[str] = field(default_factory=frozenset)
+    snapshot_id: str = field(default_factory=lambda: uuid.uuid4().hex[:12])
+    analyzed_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds"))
+    model_signature: str = ""
 
     @classmethod
     def from_solver(cls, model, combination, inactive_rotations=frozenset()):
@@ -28,7 +41,9 @@ class AnalysisResult:
         )
 
     def for_combination(self, combination):
-        return self.from_solver(self.solver, combination, self.inactive_rotations)
+        return replace(self.from_solver(self.solver, combination, self.inactive_rotations),
+                       snapshot_id=self.snapshot_id, analyzed_at=self.analyzed_at,
+                       model_signature=self.model_signature)
 
 
 def analyze(project: Project) -> AnalysisResult:
@@ -81,4 +96,6 @@ def analyze(project: Project) -> AnalysisResult:
     for name, factors in project.combinations.items():
         model.add_load_combo(name, dict(factors))
     model.analyze_linear(check_stability=True, check_statics=True)
-    return AnalysisResult.from_solver(model, next(iter(project.combinations)), inactive_rotations)
+    result = AnalysisResult.from_solver(model, next(iter(project.combinations)), inactive_rotations)
+    result.model_signature = model_signature(project)
+    return result

@@ -521,6 +521,10 @@ class MainWindow(QMainWindow):
         for action in (self.new_action, self.open_action, self.save_action):
             file_menu.addAction(action)
         file_menu.addAction(self.action("Save As...", lambda: self.save_project(True), "Ctrl+Shift+S"))
+        from .reports import ResultExportMenu
+        self.export_menu = ResultExportMenu(self, lambda: (self.project, self.result, str(self.path or "Untitled")))
+        self.export_menu.setEnabled(False)
+        file_menu.addMenu(self.export_menu)
         self.recent_menu = file_menu.addMenu("Recent Projects")
         self.update_recent_menu()
         if self.recovery is not None:
@@ -685,6 +689,7 @@ class MainWindow(QMainWindow):
             return
         self.revision += 1
         self.result = None
+        self.export_menu.setEnabled(False)
         self.result_combination.setEnabled(False)
         self.result_combination.clear()
         self.results_table.setRowCount(0)
@@ -717,6 +722,7 @@ class MainWindow(QMainWindow):
         from .diagrams import DiagramDialog
         for dialog in self.findChildren(DiagramDialog):
             dialog.set_unit_system(self.project.unit_system)
+            dialog.update_snapshot_status()
         self.tree.blockSignals(True)
         self.tree.clear()
         for kind, title in (("nodes", "Nodes"), ("members", "Members"), ("loads", "Loads")):
@@ -1182,6 +1188,7 @@ class MainWindow(QMainWindow):
             return
         self.view.cancel()
         self.result = None
+        self.export_menu.setEnabled(False)
         self.result_combination.setEnabled(False)
         self.result_combination.clear()
         self.results_table.setRowCount(0)
@@ -1216,6 +1223,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Analysis", error)
             return
         self.result = result
+        self.export_menu.setEnabled(True)
         self.result_combination.blockSignals(True)
         self.result_combination.clear()
         self.result_combination.addItems(list(result.solver.load_combos))
@@ -1225,6 +1233,9 @@ class MainWindow(QMainWindow):
         self.select_result_combination(result.combination)
         self.results_dock.show()
         self.deformed_action.setEnabled(True)
+        from .diagrams import DiagramDialog
+        for dialog in self.findChildren(DiagramDialog):
+            dialog.update_snapshot_status()
 
     def select_result_combination(self, name):
         if self.result is None or not name:

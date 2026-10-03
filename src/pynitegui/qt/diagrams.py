@@ -7,7 +7,9 @@ from matplotlib.offsetbox import AnnotationBbox, DrawingArea
 from matplotlib.patches import Circle
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QComboBox, QDialog, QDoubleSpinBox, QHBoxLayout, QLabel, QTabWidget, QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QComboBox, QDialog, QDoubleSpinBox, QHBoxLayout, QLabel, QStyle, QTabWidget, QTableWidget, QTableWidgetItem, QToolButton, QVBoxLayout, QWidget
+
+from .analysis import model_signature
 
 
 def member_breaks(project, name):
@@ -172,12 +174,28 @@ class DiagramDialog(QDialog):
         self.setWindowTitle(f"Force Diagrams | {result.combination}")
         self.resize(1000, 800)
         self.project, self.result = project.clone(), result
+        self.source = str(getattr(parent, "path", None) or "Untitled")
+        self.model_revision = getattr(parent, "revision", None)
         layout = QVBoxLayout(self)
+        self.snapshot_label = QLabel()
+        self.snapshot_label.setTextFormat(Qt.TextFormat.PlainText)
+        self.snapshot_label.setWordWrap(True)
+        layout.addWidget(self.snapshot_label)
+        top_controls = QHBoxLayout()
         self.combination = QComboBox()
         self.combination.addItems(list(result.solver.load_combos))
         self.combination.setCurrentText(result.combination)
         self.combination.setToolTip("Diagram combination")
-        layout.addWidget(self.combination)
+        top_controls.addWidget(self.combination, 1)
+        from .reports import ResultExportMenu
+        self.export_menu = ResultExportMenu(self, lambda: (self.project, self.result, self.source))
+        self.export_button = QToolButton()
+        self.export_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton))
+        self.export_button.setToolTip("Export or print this analyzed snapshot")
+        self.export_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.export_button.setMenu(self.export_menu)
+        top_controls.addWidget(self.export_button)
+        layout.addLayout(top_controls)
         self.tabs = QTabWidget()
         layout.addWidget(self.tabs)
         structure = QWidget()
@@ -250,6 +268,22 @@ class DiagramDialog(QDialog):
         self.update_structure()
         self.update_member()
         self.update_results()
+        self.update_snapshot_status()
+
+    def update_snapshot_status(self):
+        parent = self.parentWidget()
+        status = "Analyzed snapshot"
+        if parent is not None and hasattr(parent, "project"):
+            if model_signature(parent.project) != self.result.model_signature:
+                status = "Different from current editor model"
+            elif getattr(parent, "result", None) is not None and parent.result.snapshot_id != self.result.snapshot_id:
+                status = "Earlier analysis of current model"
+            else:
+                status = "Matches current editor model"
+        revision = f" | Editor revision {self.model_revision}" if self.model_revision is not None else ""
+        self.snapshot_label.setText(f"Analysis {self.result.snapshot_id} | {self.result.analyzed_at} (UTC)\nModel {self.result.model_signature[:12]}{revision} | {status}")
+        self.snapshot_label.setToolTip(self.source)
+        self.setWindowTitle(f"Force Diagrams | {self.result.combination} | {self.result.snapshot_id}")
 
     def set_unit_system(self, key):
         if self.project.unit_system == key:
@@ -266,7 +300,7 @@ class DiagramDialog(QDialog):
 
     def select_combination(self, name):
         self.result = self.result.for_combination(name)
-        self.setWindowTitle(f"Force Diagrams | {name}")
+        self.update_snapshot_status()
         self.update_structure()
         self.update_member()
         self.update_results()

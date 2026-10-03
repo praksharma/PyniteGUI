@@ -126,6 +126,20 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   Diagram windows have their own combination selector and retain the analyzed
   snapshot even when the editor changes. The inspector always edits original
   case values, not the factored values displayed after analysis.
+- File > Export Results saves node reactions/displacements or member end/extrema
+  values as CSV in the selected units and combination. Files include source,
+  analysis ID, UTC timestamp, model signature, and unit system. Undefined joint
+  rotations export as n/a; extrema have no common station, so x is blank.
+  Text identifiers that could be interpreted as spreadsheet formulas are
+  prefixed with an apostrophe; numeric loads/results retain their signs.
+  Print Results opens a native print preview for the same tables and metadata,
+  suitable for printing or saving to PDF through the print dialog.
+- Diagram windows show their analysis ID, analysis time, original editor revision,
+  and whether their model matches the current editor. A new analysis of the same
+  model is distinguished from the earlier snapshot. The export icon in a diagram
+  window exports/prints that snapshot, even after editor results are invalidated.
+  Unit and combination changes retain the snapshot ID; engineering changes
+  require a new analysis before exporting from the main editor.
 - Save/Open uses versioned `.pynite.json` project files. Ctrl+Z and Ctrl+Shift+Z
   undo and redo model edits. Delete removes the selected entity and its dependent
   members/loads. Unsaved changes are marked in the title and checked on exit.
@@ -262,6 +276,7 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/sections.py`: section definition manager and property editor.
 - `src/pynitegui/qt/load_cases.py`: load-case manager and combination factor editor.
 - `src/pynitegui/qt/recovery.py`: per-window atomic recovery snapshots and validation.
+- `src/pynitegui/qt/reports.py`: unit-aware CSV exports and native printable reports.
 - `tests/`: project, solver, diagram, and Qt interaction regression tests.
 
 ## Development
@@ -303,6 +318,9 @@ malformed snapshots, recovery dirtiness, cancelled closing, and recent projects.
 Local-loading checks cover inclined/vertical/reversed axes, angled triangular
 resultants, manual component equivalence, sign-changing ramps, split/node
 conversion, SI input, persistence, and unedited angle/intensity precision.
+Export checks cover SI/imperial values, combination identity, undefined rotations,
+CSV quoting/formula safety, atomic failures, cancellation, stale-model rejection,
+retained snapshot exports, report escaping, and native PDF rendering.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

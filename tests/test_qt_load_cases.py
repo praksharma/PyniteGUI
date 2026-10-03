@@ -222,7 +222,7 @@ class LoadCaseEditorTests(unittest.TestCase):
         dialog.combination.setCurrentText("Factored")
         self.assertEqual(dialog.result.combination, "Factored")
         self.assertEqual(self.window.result.combination, "Dead only")
-        self.assertEqual(dialog.windowTitle(), "Force Diagrams | Factored")
+        self.assertEqual(dialog.windowTitle(), f"Force Diagrams | Factored | {dialog.result.snapshot_id}")
         old = sample_member(dialog.project, dialog.result, "M1")["moment"].copy()
         self.window.edit("Change factor", lambda p: p.set_combination("Factored", {"Dead": 1}, "Factored"))
         np.testing.assert_allclose(sample_member(dialog.project, dialog.result, "M1")["moment"], old)
