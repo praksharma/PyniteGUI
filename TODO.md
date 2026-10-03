@@ -35,7 +35,8 @@ items are not promises of a particular release date.
 - [ ] Add optional self-weight with an explicit load case.
 - [x] Add SI/imperial presets with validated dimensional input/output conversion,
   persistent selection, and physical-model preservation for existing projects.
-- [ ] Add further unit presets or custom length/force choices.
+- [x] Add mm/N and ft/kip unit presets alongside the original in/kip and m/kN.
+- [ ] Add custom length/force unit choices.
 - [x] Improve instability messages with affected nodes and degrees of freedom.
 - [ ] Add scalable sparse mechanism checks/localization beyond 600 free planar
   degrees of freedom.

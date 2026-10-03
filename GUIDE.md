@@ -15,6 +15,11 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
 
 ## Workflow
 
+- The unit selector also offers SI (mm, N) and Imperial (ft, kip). The mm/N
+  preset uses N-mm moments, N/mm line loads, MPa stresses, and mm2/mm4 sections.
+  The ft/kip preset uses kip-ft moments and kip/ft line loads, while keeping
+  section properties in in2/in4 and material stiffness in kip/in2. Weight
+  density follows the geometry volume units (N/mm3 or kip/ft3).
 - File > Examples opens fresh, editable models: a simply supported beam,
   distributed-load portal frame, cantilever with partial distributed/angled/tip
   loads and a moment, partially loaded continuous beam, pitched frame with local
@@ -342,6 +347,8 @@ combination switching, snapshot preservation, and compact plot-label layout.
 Unit checks cover known conversion factors, SI analytical beam responses,
 precision-preserving input, grid snapping, all dimensional editors/result columns,
 live diagram switching, persistence/migration, undo, and repeated unit changes.
+Additional-preset checks cover known mm/N and ft/kip conversion factors and
+preservation of model data, analysis identity, result exports, and persistence.
 Editing checks cover drag preview/commit/cancel, snapping, collision rejection,
 and non-destructive load visibility. Custom support checks cover preset
 equivalence, independent restraints, hinged joints, persistence, and undo.
