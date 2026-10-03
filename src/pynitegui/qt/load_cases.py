@@ -73,7 +73,7 @@ class LoadCasesDialog(QDialog):
         self.tables = {}
         self.buttons = {}
         for kind, title, headers in (
-            ("cases", "Load Cases", ["Load case", "Loads", "Default"]),
+            ("cases", "Load Cases", ["Load case", "Loads", "Self-weight loads", "Default"]),
             ("combinations", "Combinations", ["Combination", "Factors"]),
         ):
             panel = QWidget()
@@ -122,6 +122,7 @@ class LoadCasesDialog(QDialog):
             table.setRowCount(len(names))
             for row, name in enumerate(names):
                 values = (name, str(sum(load.case == name for load in project.loads.values())),
+                          str(len(project.self_weight_loads())) if name == project.self_weight_case else "0",
                           "Yes" if name == project.default_load_case else "") if key == "cases" else (
                               name, "; ".join(f"{case}: {factor:g}" for case, factor in project.combinations[name].items()))
                 for column, value in enumerate(values):
@@ -138,11 +139,12 @@ class LoadCasesDialog(QDialog):
             return
         project = self.window.project
         case = self.selected_name("cases")
-        used = any(load.case == case for load in project.loads.values()) or any(case in factors for factors in project.combinations.values())
+        used = (case == project.self_weight_case or any(load.case == case for load in project.loads.values())
+                or any(case in factors for factors in project.combinations.values()))
         self.buttons["cases", "edit"].setEnabled(case is not None)
         self.buttons["cases", "default"].setEnabled(case is not None and case != project.default_load_case)
         self.buttons["cases", "delete"].setEnabled(case is not None and not used and case != project.default_load_case)
-        self.buttons["cases", "delete"].setToolTip("Reassign loads, remove combination references, and change the default before deleting a used case.")
+        self.buttons["cases", "delete"].setToolTip("Reassign manual loads and self-weight, remove combination references, and change the default before deleting a used case.")
         combination = self.selected_name("combinations")
         self.buttons["combinations", "edit"].setEnabled(combination is not None)
         self.buttons["combinations", "delete"].setEnabled(combination is not None and len(project.combinations) > 1)

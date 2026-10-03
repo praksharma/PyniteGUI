@@ -176,6 +176,8 @@ def analyze(project: Project) -> AnalysisResult:
                     model.add_member_pt_load(load.target, direction, magnitude, length * load.position, case=load.case)
     for name, factors in project.combinations.items():
         model.add_load_combo(name, dict(factors))
+    if project.self_weight_case is not None:
+        model.add_member_self_weight("FY", -project.self_weight_factor, project.self_weight_case)
     try:
         model.analyze_linear(check_stability=True, check_statics=True)
     except Exception as error:

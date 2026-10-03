@@ -45,14 +45,16 @@ def csv_text(value):
 
 def export_csv(path, project, result, kind, source="Untitled"):
     headers, rows = result_table(project, result, kind)
-    metadata = [source, result.snapshot_id, result.analyzed_at, result.model_signature, result.combination, project.units.label]
+    metadata = [source, result.snapshot_id, result.analyzed_at, result.model_signature, result.combination, project.units.label,
+                project.self_weight_case or "", project.self_weight_factor if project.self_weight_case is not None else ""]
     path, temporary = Path(path), None
     try:
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", newline="", dir=path.parent,
                                          prefix=f".{path.name}.", suffix=".tmp", delete=False) as stream:
             temporary = Path(stream.name)
             writer = csv.writer(stream)
-            writer.writerow(["Source", "Analysis ID", "Analyzed (UTC)", "Model signature", "Combination", "Unit system", *headers])
+            writer.writerow(["Source", "Analysis ID", "Analyzed (UTC)", "Model signature", "Combination", "Unit system",
+                             "Self-weight case", "Self-weight factor", *headers])
             writer.writerows([csv_text(value) for value in (*metadata, *row)] for row in rows)
             stream.flush()
             os.fsync(stream.fileno())
@@ -70,6 +72,7 @@ def report_html(project, result, source="Untitled"):
                                        for value in row) + "</tr>" for row in rows)
         return f'<table width="100%" border="1" cellspacing="0" cellpadding="5"><thead><tr>{heading}</tr></thead><tbody>{body}</tbody></table>'
     factors = ", ".join(f"{case}: {factor:.6g}" for case, factor in result.solver.load_combos[result.combination].factors.items())
+    weight = "Off" if project.self_weight_case is None else f"{project.self_weight_case}; factor {project.self_weight_factor:.6g}"
     return f'''<html><head><style>
         body {{ font-family: sans-serif; color: #24343b; }}
         h1 {{ font-size: 20pt; }} h2 {{ font-size: 12pt; }}
@@ -80,7 +83,8 @@ def report_html(project, result, source="Untitled"):
         <b>Analysis ID:</b> {escape(result.snapshot_id)} | <b>Model:</b> {escape(result.model_signature[:12])}<br>
         <b>Analyzed (UTC):</b> {escape(result.analyzed_at)}<br>
         <b>Combination:</b> {escape(result.combination)} | <b>Factors:</b> {escape(factors)}<br>
-        <b>Units:</b> {escape(project.units.label)}</p>
+        <b>Units:</b> {escape(project.units.label)}<br>
+        <b>Self-weight:</b> {escape(weight)}</p>
         <h2>Node Displacements and Support Reactions</h2>{table('nodes')}
         <p>RZ is n/a where released member ends have no shared nodal rotation.</p>
         <h2>Member End Values and Extrema</h2>{table('members')}

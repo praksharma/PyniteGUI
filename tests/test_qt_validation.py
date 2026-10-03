@@ -26,7 +26,7 @@ class ValidationTests(unittest.TestCase):
         for value in (None, [], "project", 123, True):
             with self.subTest(value=value), self.assertRaisesRegex(ValueError, "JSON object"):
                 Project.from_dict(value)
-        for version in (True, 10.0, "10", 0, 11, None):
+        for version in (True, 11.0, "11", 0, 12, None):
             data = document()
             data["version"] = version
             with self.subTest(version=version), self.assertRaisesRegex(ValueError, "version"):
@@ -87,9 +87,12 @@ class ValidationTests(unittest.TestCase):
             Project.from_dict(data)
 
     def test_every_supported_version_migrates_without_mutating_input(self):
-        for version in range(1, 11):
+        for version in range(1, 12):
             data = document()
             data["version"] = version
+            if version < 11:
+                data.pop("self_weight_case")
+                data.pop("self_weight_factor")
             if version < 7:
                 data.pop("unit_system")
             if version < 5:
@@ -107,7 +110,7 @@ class ValidationTests(unittest.TestCase):
             before = copy.deepcopy(data)
             with self.subTest(version=version):
                 project = Project.from_dict(data)
-                self.assertEqual(project.to_dict()["version"], 10)
+                self.assertEqual(project.to_dict()["version"], 11)
                 self.assertEqual(project.nodes["N2"].x, 120)
                 self.assertEqual(data, before)
 

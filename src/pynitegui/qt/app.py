@@ -380,7 +380,7 @@ class StructureView(QGraphicsView):
                     break
                 offset -= item.boundingRect().height() + 4
                 item.setTransform(QTransform.fromTranslate(8, offset))
-        for definition in project.loads.values():
+        for definition in (*project.loads.values(), *project.self_weight_loads()):
             if not self.window.load_visible(definition):
                 continue
             load = definition
@@ -581,6 +581,7 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.action("Materials...", self.manage_materials))
         edit_menu.addAction(self.action("Sections...", self.manage_sections))
         edit_menu.addAction(self.action("Load Cases and Combinations...", self.manage_load_cases))
+        edit_menu.addAction(self.action("Self-Weight...", self.manage_self_weight))
         edit_menu.addAction(self.action("Grid...", self.settings))
         edit_menu.addAction(self.action("Units...", self.choose_units))
         edit_menu.addSeparator()
@@ -809,6 +810,15 @@ class MainWindow(QMainWindow):
                 item.setData(0, Qt.ItemDataRole.UserRole, (kind, name))
                 if self.selected == (kind, name):
                     item.setSelected(True)
+            parent.setExpanded(True)
+        if self.project.self_weight_case is not None:
+            generated = [load for load in self.project.self_weight_loads() if self.load_visible(load)]
+            parent = QTreeWidgetItem(self.tree, [f"Self-weight ({len(generated)})", f"{self.project.self_weight_case} | factor {self.project.self_weight_factor:g}"])
+            parent.setFlags(parent.flags() & ~Qt.ItemFlag.ItemIsSelectable)
+            for load in generated:
+                item = QTreeWidgetItem(parent, [load.target, f"FY {units.to_display(load.magnitude, 'intensity'):g} {units.intensity}"])
+                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsSelectable)
+                item.setToolTip(1, "Generated from material weight density and section area; configure via Edit > Self-Weight.")
             parent.setExpanded(True)
         self.tree.blockSignals(False)
         self.update_inspector()
@@ -1153,6 +1163,15 @@ class MainWindow(QMainWindow):
     def manage_sections(self):
         from .sections import SectionDialog
         SectionDialog(self).exec()
+
+    def manage_self_weight(self):
+        from .self_weight import SelfWeightDialog
+        dialog = SelfWeightDialog(self, self.project)
+        if dialog.exec():
+            case, factor = dialog.definition
+            def mutate(project):
+                project.self_weight_case, project.self_weight_factor = case, factor
+            self.edit("Edit self-weight", mutate)
 
     def settings(self):
         dialog = QDialog(self)

@@ -32,7 +32,8 @@ items are not promises of a particular release date.
 - [x] Add load cases and combinations, including results and diagram selectors.
 - [x] Add an editing load-case visibility filter and hide/show controls.
 - [ ] Add result envelopes across selected combinations.
-- [ ] Add optional self-weight with an explicit load case.
+- [x] Add optional self-weight with an explicit load case, per-member weight
+  density/area, multiplier, generated load display, and safe legacy migration.
 - [x] Add SI/imperial presets with validated dimensional input/output conversion,
   persistent selection, and physical-model preservation for existing projects.
 - [x] Add mm/N and ft/kip unit presets alongside the original in/kip and m/kN.

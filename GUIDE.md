@@ -24,6 +24,7 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   distributed-load portal frame, cantilever with partial distributed/angled/tip
   loads and a moment, partially loaded continuous beam, pitched frame with local
   roof loads, and a two-storey gravity/wind frame with separate combinations.
+  A seventh example demonstrates a beam loaded only by automatic self-weight.
   Examples retain the current unit system and prompt before replacing unsaved
   work. They start as unsaved projects, not as files to overwrite.
 - View > Appearance selects Light or Dark. The preference is saved between app
@@ -146,7 +147,8 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
 - File > Export Results saves node reactions/displacements or member end/extrema
   values as CSV in the selected units and combination. Files include source,
   analysis ID, UTC timestamp, model signature, and unit system. Undefined joint
-  rotations export as n/a; extrema have no common station, so x is blank.
+  rotations export as n/a; CSV/report metadata also identifies the self-weight
+  case and multiplier when enabled. Extrema have no common station, so x is blank.
   Text identifiers that could be interpreted as spreadsheet formulas are
   prefixed with an apostrophe; numeric loads/results retain their signs.
   Print Results opens a native print preview for the same tables and metadata,
@@ -160,23 +162,23 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
 - Save/Open uses versioned `.pynite.json` project files. Ctrl+Z and Ctrl+Shift+Z
   undo and redo model edits. Delete removes the selected entity and its dependent
   members/loads. Unsaved changes are marked in the title and checked on exit.
-- File > Simply Supported Example loads a 420-inch beam with a 10-kip downward
+- File > Examples > Simply Supported Beam loads a 420-inch beam with a 10-kip downward
   midspan load. Each support should react with 5 kip. In SI the same physical
   example displays a 10.668 m span, 44.4822 kN load, and 22.2411 kN reactions.
 
 ## Units
 
-| Quantity | Imperial | SI |
-| --- | --- | --- |
-| Coordinates, lengths, grid, displacements | in | m |
-| Forces | kip | kN |
-| Moments | kip-in | kN-m |
-| Distributed intensity | kip/in | kN/m |
-| E and G | kip/in2 | MPa |
-| Weight density | kip/in3 | kN/m3 |
-| Section area | in2 | mm2 |
-| Iy, Iz, J | in4 | mm4 |
-| Rotation | rad | rad |
+| Quantity | Imperial (in, kip) | SI (m, kN) | SI (mm, N) | Imperial (ft, kip) |
+| --- | --- | --- | --- | --- |
+| Coordinates, lengths, grid, displacements | in | m | mm | ft |
+| Forces | kip | kN | N | kip |
+| Moments | kip-in | kN-m | N-mm | kip-ft |
+| Distributed intensity | kip/in | kN/m | N/mm | kip/ft |
+| E and G | kip/in2 | MPa | MPa | kip/in2 |
+| Weight density | kip/in3 | kN/m3 | N/mm3 | kip/ft3 |
+| Section area | in2 | mm2 | mm2 | in2 |
+| Iy, Iz, J | in4 | mm4 | mm4 | in4 |
+| Rotation | rad | rad | rad | rad |
 
 Density is weight per volume, not mass density in kg/m3. Load fractions,
 Poisson ratio, combination factors, and deformation amplification are
@@ -209,6 +211,19 @@ Loads belong to named cases. User-defined combinations superpose those cases
 with finite factors using linear elastic analysis. The initial project has
 Case 1 and a Service combination at factor 1. No design-code factors or
 envelopes are generated automatically.
+Edit > Self-Weight opts into automatic gravity loading in a chosen load case,
+with a positive multiplier and total unfactored weight in the current force
+units. It applies global downward FY uniform loads to every member using its
+own weight density times section area. Zero-density members contribute no
+weight. The case must appear in a combination to affect that combination;
+combination factors apply normally. Existing manual loads are additional, so
+do not also enter the same member self-weight manually. Generated loads appear
+as read-only entries in the structure tree and respect case visibility filters.
+They are recalculated after material/section changes and member splitting,
+not duplicated as editable project loads. Disabling or changing self-weight is
+undoable and invalidates results; case renaming follows the reference, and a
+referenced case cannot be deleted. Density is weight per volume, not kg/m3;
+do not multiply it by gravity again.
 Member load positions are fractions measured from the start node.
 
 Member moment releases act about local Z, normal to the XY frame. End releases
@@ -259,12 +274,14 @@ Versions 1 through 4 migrate existing loads into Case 1 with the original
 Service combination. Version 3 point loads and version 4 distributed loads
 remain supported. Versions 1 through 5 migrate to rigid member ends.
 Versions 1 through 6 open in Imperial, preserving their original inch-kip values.
-New saves use version 10 and retain material/section definitions, member
+New saves use version 11 and retain material/section definitions, member
 assignments, load cases, combination factors, the default load case, and each
 member end moment release, plus the selected unit system, point-load angle,
 and custom support restraints. Version 10 adds local force directions and
 angled distributed loading; version 9 and older files retain their saved global
 force directions and physical magnitudes.
+Version 11 adds the optional self-weight case and factor. Versions 1 through 10
+open with automatic self-weight off so existing reactions do not change.
 Older project loads retain their original directions and magnitudes. The JSON units field
 remains in-kip to identify the canonical storage units; unit_system controls
 presentation and input conversion.
@@ -272,7 +289,7 @@ Malformed files are rejected before replacing the active project. Missing fields
 incorrect collection/entity shapes, unknown entity fields, invalid references,
 boolean/string/nonfinite numerical values, and duplicate JSON keys produce
 readable errors. JSON syntax errors include their line and column. Supported
-versions 1 through 10 are migrated without modifying the input; unknown/future
+versions 1 through 11 are migrated without modifying the input; unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be
 distinct so load targets are unambiguous.
 Editing a definition updates all members assigned to it and
@@ -316,6 +333,7 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/reports.py`: unit-aware CSV exports and native printable reports.
 - `src/pynitegui/qt/examples.py`: fresh, canonical-unit example beam/frame models.
 - `src/pynitegui/qt/theme.py`: shared light/dark widget, canvas, and plot styling.
+- `src/pynitegui/qt/self_weight.py`: opt-in case/factor editor and weight preview.
 - `tests/`: project, solver, diagram, and Qt interaction regression tests.
 
 ## Development
@@ -363,7 +381,7 @@ Export checks cover SI/imperial values, combination identity, undefined rotation
 CSV quoting/formula safety, atomic failures, cancellation, stale-model rejection,
 retained snapshot exports, report escaping, and native PDF rendering.
 File-validation checks cover malformed shapes and values, duplicate keys,
-versions 1 through 10, future-version rejection, non-mutating migrations, and
+versions 1 through 11, future-version rejection, non-mutating migrations, and
 preservation of the active project and source file after a failed open.
 Stability checks cover inadequate pins/rollers, custom restraints, translated
 coordinates, zero-stiffness and internal sway mechanisms, valid released beams,
@@ -380,6 +398,11 @@ analytical reactions, and cover fresh copies, SI equivalence, menu loading,
 unsaved-state handling, and cancellation. Theme checks cover preference restore,
 live recoloring, multi-window synchronization, contrast, toolbar icons, compact
 inspector scrolling, pending input, and preservation of results/plot inspection.
+Self-weight checks cover analytical beam deflection/reactions, per-member
+materials/sections, inclined/reversed axes, case omission/factors/renaming,
+zero density, splitting, old-file migration, validation, preview precision,
+manual-load superposition, repeated analysis without duplication, undo/filtering,
+snapshot invalidation, and export metadata.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

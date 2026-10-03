@@ -9,6 +9,7 @@ EXAMPLES = {
     "continuous": "Continuous Beam - Partial Loads",
     "pitched": "Pitched Frame - Local Loads",
     "multistorey": "Two-Storey Frame - Gravity and Wind",
+    "self_weight": "Simply Supported Beam - Self-Weight",
 }
 
 
@@ -27,11 +28,15 @@ def example_project(key, unit_system="imperial"):
         name = project.next_name("L", project.loads)
         project.loads[name] = Load(name, target, direction, magnitude, **kwargs)
 
-    if key == "simple_beam":
+    if key in ("simple_beam", "self_weight"):
         beam = member((0, 0), (420, 0))
         support((0, 0), "pin")
         support((420, 0), "roller")
-        load(beam, "FY", -10)
+        if key == "self_weight":
+            project.set_load_case("Self-weight", "Case 1")
+            project.self_weight_case = "Self-weight"
+        else:
+            load(beam, "FY", -10)
     elif key == "portal":
         member((0, 0), (0, 144))
         beam = member((0, 144), (240, 144))

@@ -143,10 +143,31 @@ class Project:
     load_cases: list[str] = field(default_factory=lambda: ["Case 1"])
     default_load_case: str = "Case 1"
     combinations: dict[str, dict[str, float]] = field(default_factory=lambda: {"Service": {"Case 1": 1.0}})
+    self_weight_case: str | None = None
+    self_weight_factor: float = 1.0
 
     @property
     def units(self):
         return UNIT_SYSTEMS[self.unit_system]
+
+    def self_weight_loads(self):
+        if self.self_weight_case is None:
+            return []
+        loads = []
+        for member in self.members.values():
+            magnitude = -self.materials[member.material].rho * self.sections[member.section].A * self.self_weight_factor
+            if magnitude:
+                loads.append(Load(f"SW {member.name}", member.name, "FY", magnitude, 0, "distributed",
+                                  magnitude, 1, self.self_weight_case))
+        return loads
+
+    def self_weight_total(self):
+        total = 0.0
+        for load in self.self_weight_loads():
+            member = self.members[load.target]
+            a, b = self.nodes[member.start], self.nodes[member.end]
+            total -= load.magnitude * math.hypot(b.x - a.x, b.y - a.y)
+        return total
 
     @staticmethod
     def validate_load_name(name):
@@ -171,8 +192,12 @@ class Project:
                     factors[name] = factors.pop(previous)
             if self.default_load_case == previous:
                 self.default_load_case = name
+            if self.self_weight_case == previous:
+                self.self_weight_case = name
 
     def delete_load_case(self, name):
+        if name == self.self_weight_case:
+            raise ValueError("Reassign or disable self-weight before deleting its load case.")
         if name == self.default_load_case:
             raise ValueError("Choose a different default load case first.")
         if any(load.case == name for load in self.loads.values()):
@@ -282,14 +307,14 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 10, "units": "in-kip", **asdict(self)}
+        return {"version": 11, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
         if not isinstance(data, dict):
             raise ValueError("Project document must be a JSON object.")
         version = data.get("version")
-        if type(version) is not int or version not in range(1, 11) or data.get("units") != "in-kip":
+        if type(version) is not int or version not in range(1, 12) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         required = {"grid", "nodes", "members", "loads"}
         required.update({"E", "nu", "rho"} if version == 1 else {"materials", "default_material"})
@@ -298,6 +323,8 @@ class Project:
             required.update({"load_cases", "default_load_case", "combinations"})
         if version >= 7:
             required.add("unit_system")
+        if version >= 11:
+            required.update({"self_weight_case", "self_weight_factor"})
         missing = required - data.keys()
         if missing:
             raise ValueError("Missing project fields: " + ", ".join(sorted(missing)) + ".")
@@ -316,6 +343,9 @@ class Project:
             return result
 
         result = cls(grid=data["grid"])
+        if version >= 11:
+            result.self_weight_case = data["self_weight_case"]
+            result.self_weight_factor = data["self_weight_factor"]
         if data["version"] >= 7:
             result.unit_system = data["unit_system"]
         if data["version"] >= 5:
@@ -373,6 +403,10 @@ class Project:
             raise ValueError("Load cases must be unique.")
         if self.default_load_case not in self.load_cases:
             raise ValueError("Default load case does not exist.")
+        if self.self_weight_case is not None and (not identifier(self.self_weight_case) or self.self_weight_case not in self.load_cases):
+            raise ValueError("Self-weight load case does not exist.")
+        if not finite_number(self.self_weight_factor) or self.self_weight_factor <= 0:
+            raise ValueError("Self-weight factor must be a positive finite number.")
         if not self.combinations:
             raise ValueError("Keep at least one load combination.")
         for name, factors in self.combinations.items():
@@ -420,6 +454,8 @@ class Project:
                 raise ValueError(f"Member {name}: material {member.material} does not exist.")
             if member.section not in self.sections:
                 raise ValueError(f"Member {name}: section {member.section} does not exist.")
+            if self.self_weight_case is not None and not finite_number(self.materials[member.material].rho * self.sections[member.section].A * self.self_weight_factor):
+                raise ValueError(f"Member {name}: self-weight intensity is not finite.")
             connection = frozenset((member.start, member.end))
             if connection in connections:
                 raise ValueError("Duplicate members connect the same nodes.")
