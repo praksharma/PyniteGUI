@@ -14,7 +14,7 @@ class SelfWeightDialog(QDialog):
         form = QFormLayout(self)
         self.enabled = QCheckBox("Enabled")
         self.enabled.setChecked(project.self_weight_case is not None)
-        self.enabled.setToolTip("Generate downward global FY member loads from weight density and section area. Existing manual loads remain unchanged.")
+        self.enabled.setToolTip("Generate downward global FY from weight density and area: distributed on frames, shared equally between truss end nodes. Manual loads remain unchanged.")
         form.addRow("Self-weight", self.enabled)
         self.case = QComboBox()
         self.case.addItems(project.load_cases)

@@ -394,9 +394,12 @@ class StructureView(QGraphicsView):
             a, b = project.nodes[member.start], project.nodes[member.end]
             pen = QPen(QColor(c["accent"] if ("members", name) in selected else c["member"]), 3)
             pen.setCosmetic(True)
+            if member.kind == "truss":
+                pen.setStyle(Qt.PenStyle.DashLine)
             scene.addLine(a.x, -a.y, b.x, -b.y, pen)
             length = math.hypot(b.x - a.x, b.y - a.y)
-            for released, node, sign in ((member.release_start, a, 1), (member.release_end, b, -1)):
+            release_start, release_end = member.moment_releases
+            for released, node, sign in ((release_start, a, 1), (release_end, b, -1)):
                 if released:
                     symbol = EngineeringSymbol("hinge", (sign * (b.x - a.x) / length, -sign * (b.y - a.y) / length))
                     scene.addItem(symbol)
@@ -848,6 +851,8 @@ class MainWindow(QMainWindow):
                         detail += " " + ",".join(label for label, fixed in zip(("DX", "DY", "RZ"), entity.restraints) if fixed)
                 elif kind == "members":
                     detail = f"{entity.start} - {entity.end}"
+                    if entity.kind == "truss":
+                        detail += " | truss (axial only)"
                 else:
                     quantity = "intensity" if entity.kind == "distributed" else "moment" if entity.direction == "MZ" else "force"
                     detail = f"{entity.target} | {entity.direction} {units.to_display(entity.magnitude, quantity):g}"
@@ -856,7 +861,7 @@ class MainWindow(QMainWindow):
                     detail += f" {getattr(units, quantity)}"
                     if entity.direction in ("Angle", "Local angle"):
                         detail += f" @ {entity.angle:g} deg"
-                if kind == "members" and (entity.release_start or entity.release_end):
+                if kind == "members" and entity.kind == "frame" and (entity.release_start or entity.release_end):
                     ends = ", ".join(end for end, released in (("start", entity.release_start), ("end", entity.release_end)) if released)
                     detail += f" | hinge: {ends}"
                 if kind == "loads":
@@ -872,9 +877,10 @@ class MainWindow(QMainWindow):
             parent = QTreeWidgetItem(self.tree, [f"Self-weight ({len(generated)})", f"{self.project.self_weight_case} | factor {self.project.self_weight_factor:g}"])
             parent.setFlags(parent.flags() & ~Qt.ItemFlag.ItemIsSelectable)
             for load in generated:
-                item = QTreeWidgetItem(parent, [load.target, f"FY {units.to_display(load.magnitude, 'intensity'):g} {units.intensity}"])
+                quantity = "intensity" if load.kind == "distributed" else "force"
+                item = QTreeWidgetItem(parent, [load.target, f"FY {units.to_display(load.magnitude, quantity):g} {getattr(units, quantity)}"])
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsSelectable)
-                item.setToolTip(1, "Generated from material weight density and section area; configure via Edit > Self-Weight.")
+                item.setToolTip(1, f"{load.name}: generated from material weight density and section area; configure via Edit > Self-Weight.")
             parent.setExpanded(True)
         self.tree.blockSignals(False)
         self.update_inspector()
@@ -991,12 +997,22 @@ class MainWindow(QMainWindow):
                 fields["material"].setItemData(index, material.source_label, Qt.ItemDataRole.ToolTipRole)
             fields["material"].setCurrentText(entity.material)
             self.form.addRow("Material", fields["material"])
+            fields["kind"] = QComboBox()
+            fields["kind"].setObjectName("member_type")
+            fields["kind"].addItems(["frame", "truss"])
+            fields["kind"].setCurrentText(entity.kind)
+            self.form.addRow("Type", fields["kind"])
             for key, label in (("release_start", f"Start moment ({entity.start})"), ("release_end", f"End moment ({entity.end})")):
                 fields[key] = QCheckBox("Released (hinge)")
                 fields[key].setObjectName(key)
                 fields[key].setChecked(getattr(entity, key))
                 fields[key].setToolTip("Release member-end moment about Z; translations remain connected.")
                 self.form.addRow(label, fields[key])
+            def update_member_type():
+                for key in ("release_start", "release_end"):
+                    self.form.setRowVisible(fields[key], fields["kind"].currentText() == "frame")
+            fields["kind"].currentTextChanged.connect(update_member_type)
+            update_member_type()
         else:
             fields["target"] = QComboBox()
             fields["target"].addItems(list(self.project.members) if entity.kind == "distributed" else [*self.project.nodes, *self.project.members])
@@ -1149,6 +1165,9 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "Load", "Select a node or member first.")
             return
         kind, target = self.selected
+        if kind == "members" and self.project.members[target].kind == "truss":
+            QMessageBox.information(self, "Truss Load", "Truss members accept joint loads only. Select a node at a properly restrained or braced joint.")
+            return
         dialog = QDialog(self)
         dialog.setWindowTitle(f"Load on {target}")
         dialog.setMinimumWidth(360)

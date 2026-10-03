@@ -58,7 +58,7 @@ class AngledModelTests(unittest.TestCase):
 
     def test_save_roundtrip_and_legacy_defaults(self):
         project = beam()
-        self.assertEqual(project.to_dict()["version"], 13)
+        self.assertEqual(project.to_dict()["version"], 14)
         self.assertEqual(Project.from_dict(project.to_dict()).to_dict(), project.to_dict())
         data = project.to_dict()
         data["version"] = 7

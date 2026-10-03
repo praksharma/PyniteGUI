@@ -10,6 +10,7 @@ EXAMPLES = {
     "pitched": "Pitched Frame - Local Loads",
     "multistorey": "Two-Storey Frame - Gravity and Wind",
     "self_weight": "Simply Supported Beam - Self-Weight",
+    "truss": "Triangular Truss - Joint Loads",
 }
 
 
@@ -37,6 +38,12 @@ def example_project(key, unit_system="imperial"):
             project.self_weight_case = "Self-weight"
         else:
             load(beam, "FY", -10)
+    elif key == "truss":
+        for a, b in (((0, 0), (240, 0)), ((0, 0), (120, 96)), ((120, 96), (240, 0))):
+            project.members[member(a, b)].kind = "truss"
+        support((0, 0), "pin")
+        support((240, 0), "roller")
+        load(project.node_at(120, 96), "FY", -10)
     elif key == "portal":
         member((0, 0), (0, 144))
         beam = member((0, 144), (240, 144))

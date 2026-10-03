@@ -1,6 +1,6 @@
 # PyniteGUI Guide
 
-A Python desktop editor for 2D frame analysis with PyNite.
+A Python desktop editor for 2D frame and truss analysis with PyNite.
 
 ## Run
 
@@ -25,6 +25,7 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   loads and a moment, partially loaded continuous beam, pitched frame with local
   roof loads, and a two-storey gravity/wind frame with separate combinations.
   A seventh example demonstrates a beam loaded only by automatic self-weight.
+  A triangular truss example demonstrates axial-only members and joint loads.
   Examples retain the current unit system and prompt before replacing unsaved
   work. They start as unsaved projects, not as files to overwrite.
 - View > Appearance selects Light or Dark. The preference is saved between app
@@ -260,8 +261,9 @@ Case 1 and a Service combination at factor 1. No design-code factors or
 envelopes are generated automatically.
 Edit > Self-Weight opts into automatic gravity loading in a chosen load case,
 with a positive multiplier and total unfactored weight in the current force
-units. It applies global downward FY uniform loads to every member using its
-own weight density times section area. Zero-density members contribute no
+units. Frame members receive global downward FY uniform loads using their
+own weight density times section area. Truss weight is lumped equally to the
+two end nodes; it never creates transverse member bending. Zero-density members contribute no
 weight. The case must appear in a combination to affect that combination;
 combination factors apply normally. Existing manual loads are additional, so
 do not also enter the same member self-weight manually. Generated loads appear
@@ -279,6 +281,21 @@ retain a rigid connection. Releasing both ends supports pin-jointed frames with
 nodal loads, but the member remains a beam and can still bend under transverse
 member loads; it is not a separate axial-only truss element. Axial/shear,
 out-of-plane, and partial-stiffness releases are not exposed in this editor.
+
+Choose Type = truss in the member inspector, bulk inspector, or Model Tables
+for an explicitly axial-only member. Truss ends are implicitly pinned; saved
+frame hinge settings are retained but ignored until switched back to frame.
+Dashed member lines and end circles distinguish trusses on the editing canvas.
+Materials and section area determine EA stiffness; Iy/Iz/J remain stored for
+switching back to a frame but do not affect the planar truss response.
+The adapter uses [PyNite rotational end releases](https://pynite.readthedocs.io/en/latest/member.html)
+with strict joint-only loading to enforce this behavior in the XY model.
+Member point/distributed forces and moments are rejected on trusses, including
+when changing a loaded frame to truss. Move loads to nodes explicitly; there is
+no silent conversion. Splitting a straight truss bar creates a new joint that
+must be properly restrained or braced: an unbraced intermediate joint generally
+introduces a transverse mechanism. Mixed frame/truss structures are supported;
+a rigid frame connection at a shared joint retains its rotational DOF.
 
 When every connected member end at a node without an RZ restraint is hinged, the shared
 rotation has no stiffness. Analysis removes that unused rotation from the
@@ -354,7 +371,7 @@ Versions 1 through 4 migrate existing loads into Case 1 with the original
 Service combination. Version 3 point loads and version 4 distributed loads
 remain supported. Versions 1 through 5 migrate to rigid member ends.
 Versions 1 through 6 open in Imperial, preserving their original inch-kip values.
-New saves use version 13 and retain material/section definitions, member
+New saves use version 14 and retain material/section definitions, member
 assignments, load cases, combination factors, the default load case, and each
 member end moment release, plus the selected unit system, point-load angle,
 and custom support restraints. Version 10 adds local force directions and
@@ -365,6 +382,8 @@ open with automatic self-weight off so existing reactions do not change.
 Version 12 adds section catalog provenance and strong/weak-axis orientation.
 Older files retain their exact numerical properties as custom definitions.
 Version 13 adds material-library provenance; older materials remain custom.
+Version 14 adds the frame/truss member type. Earlier files keep frame behavior,
+including any existing end moment releases, without changing their response.
 Older project loads retain their original directions and magnitudes. The JSON units field
 remains in-kip to identify the canonical storage units; unit_system controls
 presentation and input conversion.
@@ -372,7 +391,7 @@ Malformed files are rejected before replacing the active project. Missing fields
 incorrect collection/entity shapes, unknown entity fields, invalid references,
 boolean/string/nonfinite numerical values, and duplicate JSON keys produce
 readable errors. JSON syntax errors include their line and column. Supported
-versions 1 through 13 are migrated without modifying the input; unknown/future
+versions 1 through 14 are migrated without modifying the input; unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be
 distinct so load targets are unambiguous.
 Editing a definition updates all members assigned to it and
@@ -468,7 +487,7 @@ Export checks cover SI/imperial values, combination identity, undefined rotation
 CSV quoting/formula safety, atomic failures, cancellation, stale-model rejection,
 retained snapshot exports, report escaping, and native PDF rendering.
 File-validation checks cover malformed shapes and values, duplicate keys,
-versions 1 through 13, future-version rejection, non-mutating migrations, and
+versions 1 through 14, future-version rejection, non-mutating migrations, and
 preservation of the active project and source file after a failed open.
 Stability checks cover inadequate pins/rollers, custom restraints, translated
 coordinates, zero-stiffness and internal sway mechanisms, valid released beams,
@@ -505,6 +524,11 @@ undo/redo, rename provenance, and custom classification after property edits.
 Material-library checks cover reference conversions, mass/weight distinction,
 all unit presets, source validation, old-file preservation, safe imports,
 search, cancellation, conflicts, undo/redo, and property-edit classification.
+Truss checks cover triangle joint equilibrium and virtual-work displacement,
+zero shear/moment, inertia independence, reversed endpoints, mixed joints,
+joint moments, lumped/mixed self-weight and combinations, split mechanisms,
+migration, type validation, inspector/bulk/table edits, generated force units,
+load rejection, and undo.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

@@ -158,8 +158,9 @@ def analyze(project: Project) -> AnalysisResult:
         )
     for member in project.members.values():
         model.add_member(member.name, member.start, member.end, member.material, member.section)
-        model.def_releases(member.name, Rzi=member.release_start, Rzj=member.release_end)
-    for load in project.loads.values():
+        release_start, release_end = member.moment_releases
+        model.def_releases(member.name, Rzi=release_start, Rzj=release_end)
+    for load in (*project.loads.values(), *project.self_weight_loads()):
         if load.target in project.nodes:
             for direction, magnitude in load.components(project):
                 model.add_node_load(load.target, direction, magnitude, case=load.case)
@@ -176,8 +177,6 @@ def analyze(project: Project) -> AnalysisResult:
                     model.add_member_pt_load(load.target, direction, magnitude, length * load.position, case=load.case)
     for name, factors in project.combinations.items():
         model.add_load_combo(name, dict(factors))
-    if project.self_weight_case is not None:
-        model.add_member_self_weight("FY", -project.self_weight_factor, project.self_weight_case)
     try:
         model.analyze_linear(check_stability=True, check_statics=True)
     except Exception as error:

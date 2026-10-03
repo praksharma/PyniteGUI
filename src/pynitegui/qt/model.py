@@ -131,6 +131,11 @@ class Member:
     section: str = "W18x35"
     release_start: bool = False
     release_end: bool = False
+    kind: str = "frame"
+
+    @property
+    def moment_releases(self):
+        return (True, True) if self.kind == "truss" else (self.release_start, self.release_end)
 
 
 @dataclass
@@ -194,16 +199,25 @@ class Project:
         for member in self.members.values():
             magnitude = -self.materials[member.material].rho * self.sections[member.section].A * self.self_weight_factor
             if magnitude:
-                loads.append(Load(f"SW {member.name}", member.name, "FY", magnitude, 0, "distributed",
-                                  magnitude, 1, self.self_weight_case))
+                if member.kind == "truss":
+                    a, b = self.nodes[member.start], self.nodes[member.end]
+                    half_weight = magnitude * math.hypot(b.x - a.x, b.y - a.y) / 2
+                    for end, target in (("i", member.start), ("j", member.end)):
+                        loads.append(Load(f"SW {member.name} {end}", target, "FY", half_weight, case=self.self_weight_case))
+                else:
+                    loads.append(Load(f"SW {member.name}", member.name, "FY", magnitude, 0, "distributed",
+                                      magnitude, 1, self.self_weight_case))
         return loads
 
     def self_weight_total(self):
         total = 0.0
         for load in self.self_weight_loads():
-            member = self.members[load.target]
-            a, b = self.nodes[member.start], self.nodes[member.end]
-            total -= load.magnitude * math.hypot(b.x - a.x, b.y - a.y)
+            if load.target in self.nodes:
+                total -= load.magnitude
+            else:
+                member = self.members[load.target]
+                a, b = self.nodes[member.start], self.nodes[member.end]
+                total -= load.magnitude * math.hypot(b.x - a.x, b.y - a.y)
         return total
 
     @staticmethod
@@ -344,14 +358,14 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 13, "units": "in-kip", **asdict(self)}
+        return {"version": 14, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
         if not isinstance(data, dict):
             raise ValueError("Project document must be a JSON object.")
         version = data.get("version")
-        if type(version) is not int or version not in range(1, 14) or data.get("units") != "in-kip":
+        if type(version) is not int or version not in range(1, 15) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         required = {"grid", "nodes", "members", "loads"}
         required.update({"E", "nu", "rho"} if version == 1 else {"materials", "default_material"})
@@ -487,6 +501,8 @@ class Project:
                 raise ValueError("A member needs two different nodes.")
             if type(member.release_start) is not bool or type(member.release_end) is not bool:
                 raise ValueError(f"Member {name}: moment releases must be true or false.")
+            if member.kind not in ("frame", "truss"):
+                raise ValueError(f"Member {name}: type must be frame or truss.")
             if member.material not in self.materials:
                 raise ValueError(f"Member {name}: material {member.material} does not exist.")
             if member.section not in self.sections:
@@ -503,6 +519,8 @@ class Project:
                 raise ValueError("Invalid load target.")
             if load.case not in self.load_cases:
                 raise ValueError(f"Load {name}: load case {load.case} does not exist.")
+            if load.target in self.members and self.members[load.target].kind == "truss":
+                raise ValueError(f"Load {name}: truss member {load.target} accepts joint loads only. Apply the load to a node or use a frame member.")
             if load.direction not in ("FX", "FY", "MZ", "Angle", "Local x", "Local y", "Local angle"):
                 raise ValueError("Unsupported 2D load direction.")
             if load.direction.startswith("Local") and load.target not in self.members:
@@ -676,9 +694,10 @@ class Project:
         active = set()
         for member in self.members.values():
             connected.update((member.start, member.end))
-            if not member.release_start:
+            release_start, release_end = member.moment_releases
+            if not release_start:
                 active.add(member.start)
-            if not member.release_end:
+            if not release_end:
                 active.add(member.end)
         return {name for name in connected - active if not self.nodes[name].restraints[2]}
 

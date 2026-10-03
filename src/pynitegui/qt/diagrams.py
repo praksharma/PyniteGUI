@@ -46,6 +46,8 @@ def member_values(project, result, name, distance, side="right"):
             query = boundary + (epsilon if side == "right" else -epsilon)
             break
     solver, combo = result.solver.members[name], result.combination
+    if project.members[name].kind == "truss":
+        return (solver.axial(query, combo), 0.0, 0.0, solver.deflection("dy", query, combo))
     return (solver.axial(query, combo), solver.shear("Fy", query, combo),
             solver.moment("Mz", query, combo), solver.deflection("dy", query, combo))
 
@@ -59,9 +61,10 @@ def member_result_rows(project, result):
         for label, distance in (("Start", 0), ("End", length)):
             rows.append((name, label, distance, *member_values(project, result, name, distance)))
         for label, prefix in (("Minimum", "min"), ("Maximum", "max")):
+            truss = project.members[name].kind == "truss"
             rows.append((name, label, None, getattr(solver, prefix + "_axial")(combo),
-                         getattr(solver, prefix + "_shear")("Fy", combo),
-                         getattr(solver, prefix + "_moment")("Mz", combo),
+                         0.0 if truss else getattr(solver, prefix + "_shear")("Fy", combo),
+                         0.0 if truss else getattr(solver, prefix + "_moment")("Mz", combo),
                          getattr(solver, prefix + "_deflection")("dy", combo)))
     return rows
 
@@ -80,11 +83,12 @@ def sample_member(project, result, name):
             queries[-1] -= epsilon
         xs.extend(points)
         locations.extend(queries)
+    truss = project.members[name].kind == "truss"
     return {
         "x": np.array(xs),
         "axial": np.array([solver.axial(x, result.combination) for x in locations]),
-        "shear": np.array([solver.shear("Fy", x, result.combination) for x in locations]),
-        "moment": np.array([solver.moment("Mz", x, result.combination) for x in locations]),
+        "shear": np.zeros(len(locations)) if truss else np.array([solver.shear("Fy", x, result.combination) for x in locations]),
+        "moment": np.zeros(len(locations)) if truss else np.array([solver.moment("Mz", x, result.combination) for x in locations]),
         "deflection": np.array([solver.deflection("dy", x, result.combination) for x in locations]),
     }
 
@@ -152,7 +156,8 @@ def draw_structure(ax, project, result, quantity, amplitude=20):
         member = project.members[name]
         start, end = row["base"][0], row["base"][-1]
         tangent = (end - start) / np.linalg.norm(end - start)
-        for released, point, sign in ((member.release_start, start, 1), (member.release_end, end, -1)):
+        release_start, release_end = member.moment_releases
+        for released, point, sign in ((release_start, start, 1), (release_end, end, -1)):
             if released:
                 marker = DrawingArea(8, 8)
                 marker.add_artist(Circle((4, 4), 3, facecolor=c["canvas"], edgecolor=c["accent"], linewidth=1.3))

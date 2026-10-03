@@ -13,7 +13,7 @@ from .model import Load, Member, Node
 
 FIELDS = {
     "nodes": ("name", "x", "y", "support", "restraint_x", "restraint_y", "restraint_rz"),
-    "members": ("name", "start", "end", "material", "section", "release_start", "release_end"),
+    "members": ("name", "start", "end", "material", "section", "release_start", "release_end", "kind"),
     "loads": ("name", "target", "case", "kind", "direction", "magnitude", "position",
               "end_magnitude", "end_position", "angle", "units"),
 }
@@ -35,7 +35,7 @@ class ModelTablesDialog(QDialog):
         headers = {
             "nodes": ["ID", f"X ({project.units.length})", f"Y ({project.units.length})",
                       "Support", "Restrain DX", "Restrain DY", "Restrain RZ"],
-            "members": ["ID", "Start", "End", "Material", "Section", "Start hinge", "End hinge"],
+            "members": ["ID", "Start", "End", "Material", "Section", "Start hinge", "End hinge", "Type"],
             "loads": ["ID", "Target", "Case", "Type", "Direction", "Magnitude / start intensity",
                       "Start fraction", f"End intensity ({project.units.intensity})", "End fraction", "Angle (deg)", "Magnitude units"],
         }
@@ -77,6 +77,8 @@ class ModelTablesDialog(QDialog):
         return [table.item(row, 0).text() for row in range(table.rowCount())]
 
     def choices(self, kind, key):
+        if kind == "members" and key == "kind":
+            return ["frame", "truss"]
         if key in ("start", "end"):
             return self.names("nodes")
         if key == "target":
@@ -116,7 +118,7 @@ class ModelTablesDialog(QDialog):
                 widget = QComboBox()
                 widget.addItems(choices if value in choices else [*choices, value])
                 widget.setCurrentText(value)
-                if key in ("kind", "direction"):
+                if kind == "loads" and key in ("kind", "direction"):
                     widget.setToolTip("Changing type or direction reinterprets the entered magnitude in the row's displayed units.")
                 table.setCellWidget(row, column, widget)
             else:
@@ -144,6 +146,20 @@ class ModelTablesDialog(QDialog):
             widget = table.cellWidget(row, FIELDS[kind].index("support"))
             widget.currentTextChanged.connect(self.update_supports)
             self.update_supports()
+        if kind == "members":
+            widget = table.cellWidget(row, FIELDS[kind].index("kind"))
+            widget.currentTextChanged.connect(self.update_member_types)
+            self.update_member_types()
+
+    def update_member_types(self):
+        table = self.tables["members"]
+        for row in range(table.rowCount()):
+            frame = table.cellWidget(row, FIELDS["members"].index("kind")).currentText() == "frame"
+            for key in ("release_start", "release_end"):
+                item = table.item(row, FIELDS["members"].index(key))
+                flags = item.flags()
+                item.setFlags(flags | Qt.ItemFlag.ItemIsEnabled if frame else flags & ~Qt.ItemFlag.ItemIsEnabled)
+                item.setToolTip("Frame moment release; truss ends are always pinned. Stored frame settings are retained.")
 
     def update_load_units(self):
         table = self.tables["loads"]

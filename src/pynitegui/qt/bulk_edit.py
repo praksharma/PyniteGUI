@@ -45,6 +45,7 @@ def populate_bulk_inspector(window):
         window.form.addRow(QLabel(f"Members ({sum(kind == 'members' for kind, name in selections)})"))
         choice("material", "Material", window.project.materials)
         choice("section", "Section", window.project.sections)
+        choice("kind", "Type", ("frame", "truss"))
         boolean("release_start", "Start hinge")
         boolean("release_end", "End hinge")
     if "loads" in kinds:
@@ -76,7 +77,7 @@ def populate_bulk_inspector(window):
                 if kind == "nodes" and values.get("support") == "custom":
                     entity.restraint_x, entity.restraint_y, entity.restraint_rz = entity.restraints
                 keys = {"nodes": ("support", "restraint_x", "restraint_y", "restraint_rz"),
-                        "members": ("material", "section", "release_start", "release_end"),
+                        "members": ("material", "section", "kind", "release_start", "release_end"),
                         "loads": ("case",)}[kind]
                 for key in keys:
                     if key in values:

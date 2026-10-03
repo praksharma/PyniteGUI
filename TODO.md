@@ -1,6 +1,6 @@
 # PyniteGUI Roadmap
 
-Current scope: a 2D frame editor with SI/imperial input and display, per-member materials and
+Current scope: a 2D frame/truss editor with SI/imperial input and display, per-member materials and
 sections, custom global support restraints, global/member-local angled forces, distributed loads,
 and named load cases/combinations. This list tracks remaining work;
 items are not promises of a particular release date.
@@ -19,7 +19,9 @@ and verified PyNite extensions. This file remains the primary implementation lis
 - [x] Detect overlapping members, disconnected components, and unintended
   intermediate-node connections before analysis.
 - [x] Add in-plane member end moment releases for hinges and pin-jointed frames.
-- [ ] Add explicit axial-only truss elements and additional release degrees of freedom.
+- [x] Add explicit axial-only truss members, joint-load validation, lumped
+  self-weight, mixed frame/truss analysis, and a joint-loaded example.
+- [ ] Add additional member release degrees of freedom beyond in-plane moment hinges.
 - [x] Add per-member materials with reusable definitions and legacy-file migration.
 - [x] Add a unit-aware material library with reference elastic/weight-density
   presets, safe imports, provenance, and custom classification after edits.

@@ -2,9 +2,9 @@
 
 <img src="assets/PyniteGUI%20Structural%20Frame%20Logo.png" alt="PyniteGUI structural frame logo" width="480">
 
-A desktop editor for 2D structural frame analysis, powered by PyNite and Qt.
+A desktop editor for 2D frame and truss analysis, powered by PyNite and Qt.
 
-Draw and edit frames, assign custom or library materials and sections, and apply point,
+Draw and edit frames or trusses, assign custom or library materials and sections, and apply point,
 distributed, or automatic self-weight loads. Analyze combinations and inspect
 reactions, deformed shapes, and axial-force, shear-force, and bending-moment diagrams. Supports
 SI/Imperial units, light/dark themes, undo/redo, and autosave recovery.
