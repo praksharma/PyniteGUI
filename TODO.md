@@ -62,12 +62,16 @@ and verified PyNite extensions. This file remains the primary implementation lis
 - [x] Add axial-force diagrams for the whole structure and Member Detail.
 - [x] Add interactive value inspection at a chosen distance along a member.
 - [ ] Improve label placement for dense structures and overlapping diagrams.
-- [ ] Add diagram side/sign display preferences with clear conventions.
+- [x] Add diagram side/sign display preferences with clear conventions.
+  Per-window whole-structure placement/sign controls; analytical tables and CSV
+  retain solver signs, and report diagrams explicitly identify display conventions.
 - [ ] Show supports and load annotations consistently across result views.
 - [x] Add result tables for member end forces and extrema.
 - [x] Add explicit result snapshot identification in open diagram windows.
 - [x] Export reactions, forces, and displacements as CSV and a printable report.
-- [ ] Extend printable reports with model definitions and selected diagrams.
+- [x] Extend printable reports with model definitions and selected diagrams.
+  Select definitions/result tables/axial/SFD/BMD diagrams; retain snapshot identity,
+  unfactored load definitions, unit conversion, and a print-friendly palette.
 
 ## Project Quality
 

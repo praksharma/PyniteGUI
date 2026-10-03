@@ -15,7 +15,7 @@ from pynitegui.qt.analysis import analyze, model_signature
 from pynitegui.qt.app import MainWindow
 from pynitegui.qt.diagrams import DiagramDialog
 from pynitegui.qt.model import Load, Project
-from pynitegui.qt.reports import export_csv, report_document, report_html, report_printer, result_table
+from pynitegui.qt.reports import ReportOptions, export_csv, report_document, report_html, report_printer, result_table
 
 
 def beam(released=False):
@@ -170,7 +170,10 @@ class ReportTests(unittest.TestCase):
                 patch("pynitegui.qt.reports.export_csv") as export:
             window.export_menu.save_csv("nodes")
             export.assert_not_called()
-        with patch("pynitegui.qt.reports.QPrintPreviewDialog") as preview:
+        with patch("pynitegui.qt.reports.ReportOptionsDialog") as choices, \
+                patch("pynitegui.qt.reports.QPrintPreviewDialog") as preview:
+            choices.return_value.exec.return_value = 1
+            choices.return_value.definition = ReportOptions()
             window.export_menu.print_report()
             preview.return_value.paintRequested.connect.assert_called_once()
             preview.return_value.exec.assert_called_once()

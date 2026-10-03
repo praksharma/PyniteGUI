@@ -181,7 +181,13 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   displacement are shown separately; scaling never changes analysis results.
   The maximum is sampled at 41 positions per member, not an exact extremum search.
   Fit (F) includes the visible deformed shape. Diagrams opens whole-structure axial, shear, and bending moment
-  diagrams with one common amplitude scale for every member. Member Detail
+  diagrams with one common amplitude scale for every member.
+  Whole Structure also offers Default/Opposite side and Reverse display signs.
+  Side changes placement only; sign reversal changes plotted values and labels
+  the convention in the title (+ tension for reversed axial diagrams).
+  These per-window controls survive unit/combination/theme changes but do not
+  change Member Detail, numerical tables, CSV, analysis results, or saved models.
+  New diagram windows start with the standard convention. Member Detail
   provides axial force, local shear, bending moment, and transverse deflection
   plots for any member, sharing one distance axis.
   In Member Detail, enter a distance or click a plot to inspect N, Fy, Mz, and dy.
@@ -199,8 +205,16 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   case and multiplier when enabled. Extrema have no common station, so x is blank.
   Text identifiers that could be interpreted as spreadsheet formulas are
   prefixed with an apostrophe; numeric loads/results retain their signs.
-  Print Results opens a native print preview for the same tables and metadata,
-  suitable for printing or saving to PDF through the print dialog.
+  Print Results first opens content choices for model definitions, node/member
+  results, and selected axial/SFD/BMD diagrams, then opens native print preview.
+  Model definitions include nodes/effective supports, frame/truss assignments
+  and hinges, materials/section properties and provenance, manual and generated
+  unfactored loads, defaults, and load combinations. Diagrams use the selected
+  analyzed combination, snapshot ID, units, and explicitly labelled display
+  side/sign/amplitude. Printing from a diagram window starts with its current
+  diagram settings. Charts use a light print palette even in dark mode and have
+  their own pages. Reports can be printed or saved to PDF through the print
+  dialog. Cancelling content selection does not open preview or change the model.
 - Diagram windows show their analysis ID, analysis time, original editor revision,
   and whether their model matches the current editor. A new analysis of the same
   model is distinguished from the earlier snapshot. The export icon in a diagram
@@ -529,6 +543,10 @@ zero shear/moment, inertia independence, reversed endpoints, mixed joints,
 joint moments, lumped/mixed self-weight and combinations, split mechanisms,
 migration, type validation, inspector/bulk/table edits, generated force units,
 load rejection, and undo.
+Presentation/report checks cover placement and sign independence, unchanged
+solver probes, unit/combination updates, model definition conversions and HTML
+escaping, selected sections, embedded light-palette images, inherited diagram
+settings, invalid/empty choices, snapshot validation, and cancellation.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

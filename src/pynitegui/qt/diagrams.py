@@ -7,7 +7,7 @@ from matplotlib.offsetbox import AnnotationBbox, DrawingArea
 from matplotlib.patches import Circle
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QComboBox, QDialog, QDoubleSpinBox, QHBoxLayout, QLabel, QStyle, QTabWidget, QTableWidget, QTableWidgetItem, QToolButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QHBoxLayout, QLabel, QStyle, QTabWidget, QTableWidget, QTableWidgetItem, QToolButton, QVBoxLayout, QWidget
 
 from .analysis import model_signature
 from .theme import colors, restyle_figure, style_axes
@@ -115,20 +115,24 @@ def structure_data(project, result, quantity):
     return data
 
 
-def draw_structure(ax, project, result, quantity, amplitude=20):
+def draw_structure(ax, project, result, quantity, amplitude=20, side=1, sign=1, palette=None):
+    if type(side) is not int or side not in (-1, 1) or type(sign) is not int or sign not in (-1, 1):
+        raise ValueError("Diagram side and sign must be +1 or -1.")
     data = structure_data(project, result, quantity)
+    for row in data.values():
+        row["values"] *= sign
     units = project.units
     value_quantity = "moment" if quantity == "moment" else "force"
     maximum = max((float(np.max(np.abs(row["values"]))) for row in data.values()), default=0)
     xs, ys = [n.x for n in project.nodes.values()], [n.y for n in project.nodes.values()]
     extent = max(max(xs) - min(xs), max(ys) - min(ys), 1)
     factor = extent * amplitude / 100 / maximum if maximum > 1e-10 else 0
-    c = colors()
+    c = palette or colors()
     color = c[quantity]
     for name, row in data.items():
         base, values, normal = row["base"], row["values"], row["normal"]
         base = units.to_display(base, "length")
-        offset = base + np.outer(units.to_display(values * factor, "length"), normal)
+        offset = base + np.outer(units.to_display(values * factor * side, "length"), normal)
         ax.plot(base[:, 0], base[:, 1], color=c["member"], linewidth=2, zorder=3)
         ax.plot(offset[:, 0], offset[:, 1], color=color, linewidth=1.7)
         polygon = np.vstack((base[0], offset, base[-1]))
@@ -157,21 +161,32 @@ def draw_structure(ax, project, result, quantity, amplitude=20):
         start, end = row["base"][0], row["base"][-1]
         tangent = (end - start) / np.linalg.norm(end - start)
         release_start, release_end = member.moment_releases
-        for released, point, sign in ((release_start, start, 1), (release_end, end, -1)):
+        for released, point, offset_sign in ((release_start, start, 1), (release_end, end, -1)):
             if released:
                 marker = DrawingArea(8, 8)
                 marker.add_artist(Circle((4, 4), 3, facecolor=c["canvas"], edgecolor=c["accent"], linewidth=1.3))
-                ax.add_artist(AnnotationBbox(marker, units.to_display(point, "length"), xybox=tuple(sign * tangent * 9),
+                ax.add_artist(AnnotationBbox(marker, units.to_display(point, "length"), xybox=tuple(offset_sign * tangent * 9),
                                             boxcoords="offset points", frameon=False, pad=0, zorder=5))
-    ax.set_title({"axial": f"Axial Force Diagram N ({units.force}; + compression)",
+    ax.set_title({"axial": f"Axial Force Diagram N ({units.force}; + {'compression' if sign == 1 else 'tension'})",
                   "shear": f"Shear Force Diagram V ({units.force})",
-                  "moment": f"Bending Moment Diagram M ({units.moment})"}[quantity])
+                  "moment": f"Bending Moment Diagram M ({units.moment})"}[quantity] +
+                 (" | reversed display sign" if sign == -1 and quantity != "axial" else ""))
     ax.set_xlabel(f"X ({units.length})")
     ax.set_ylabel(f"Y ({units.length})")
     ax.set_aspect("equal", adjustable="datalim")
     ax.margins(0.2)
     ax.grid(alpha=0.15)
-    style_axes(ax)
+    if palette is None:
+        style_axes(ax)
+    else:
+        ax.figure.set_facecolor(c["window"])
+        ax.set_facecolor(c["canvas"])
+        ax.tick_params(colors=c["label"])
+        for spine in ax.spines.values():
+            spine.set_color(c["axis"])
+        for text in (ax.title, ax.xaxis.label, ax.yaxis.label):
+            text.set_color(c["text"])
+        ax.grid(color=c["axis"], alpha=0.3)
     return data
 
 
@@ -224,6 +239,17 @@ class DiagramDialog(QDialog):
         self.amplitude.setKeyboardTracking(False)
         controls.addWidget(self.amplitude)
         structure_layout.addLayout(controls)
+        display = QHBoxLayout()
+        self.diagram_side = QComboBox()
+        self.diagram_side.addItem("Default side", 1)
+        self.diagram_side.addItem("Opposite side", -1)
+        self.diagram_side.setToolTip("Flip diagram placement; numerical signs remain unchanged.")
+        display.addWidget(self.diagram_side)
+        self.reverse_sign = QCheckBox("Reverse display signs")
+        self.reverse_sign.setToolTip("Whole-structure diagrams only. Member Detail, result tables, and CSV keep solver signs.")
+        display.addWidget(self.reverse_sign)
+        display.addStretch()
+        structure_layout.addLayout(display)
         self.structure_figure = Figure(figsize=(9, 7), layout="constrained")
         self.structure_canvas = FigureCanvasQTAgg(self.structure_figure)
         structure_layout.addWidget(NavigationToolbar2QT(self.structure_canvas, self))
@@ -270,6 +296,8 @@ class DiagramDialog(QDialog):
         self.combination.currentTextChanged.connect(self.select_combination)
         self.quantity.currentIndexChanged.connect(self.update_structure)
         self.amplitude.valueChanged.connect(self.update_structure)
+        self.diagram_side.currentIndexChanged.connect(self.update_structure)
+        self.reverse_sign.toggled.connect(self.update_structure)
         self.member.currentTextChanged.connect(self.update_member)
         self.distance.valueChanged.connect(self.inspect_distance)
         self.inspection_side.currentIndexChanged.connect(self.update_inspection)
@@ -318,7 +346,8 @@ class DiagramDialog(QDialog):
         self.structure_canvas.setPalette(self.palette())
         self.structure_figure.clear()
         ax = self.structure_figure.add_subplot(111)
-        draw_structure(ax, self.project, self.result, self.quantity.currentData(), self.amplitude.value())
+        draw_structure(ax, self.project, self.result, self.quantity.currentData(), self.amplitude.value(),
+                       self.diagram_side.currentData(), -1 if self.reverse_sign.isChecked() else 1)
         self.structure_canvas.draw_idle()
 
     def update_member(self):
