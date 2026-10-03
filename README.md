@@ -20,6 +20,16 @@ uv run pynitegui
 
 Try **File > Examples** to open a ready-to-analyze beam or frame.
 
+## Screenshots
+
+Frame editor with loads, deformed shape, and support reactions.
+
+![Dark-mode frame editor with distributed loads and analysis results](assets/structure.png)
+
+Whole-frame shear-force diagram.
+
+![Shear-force diagram for a portal frame in dark mode](assets/SFD.png)
+
 ## More
 
 - [User and developer guide](GUIDE.md): workflows, units, engineering scope, and tests.
