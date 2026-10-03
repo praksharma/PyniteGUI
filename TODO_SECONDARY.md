@@ -1,7 +1,8 @@
 # Secondary Roadmap: Stabileo-Inspired Ideas
 
 Reviewed 2026-10-03. Inspiration: [Stabileo](https://github.com/lambdaclass/stabileo)
-and its [live Basic editor](https://stabileo.com/app/basic). This is a wishlist,
+and its [Basic](https://stabileo.com/app/basic) and
+[PRO](https://stabileo.com/app/pro) editors. This is a wishlist,
 not a commitment to copy its interface or replace Qt/PyNite.
 
 [TODO.md](TODO.md) remains the primary implementation roadmap. When an item
@@ -89,6 +90,85 @@ silently changing saved engineering definitions.
   Import into a preview before replacing the project; show units and snapshot
   metadata in exports. Primary owner: richer printable reports in TODO.md.
 
+## PRO: Larger-Model Workflows
+
+Follow-up review on 2026-10-03 covered PRO's Model, Analyze, and Design tabs,
+including Transform, Generators, Groups, Edit, Project, and a solved 20-node,
+28-member planar-frame example. These are observed interface workflows, not
+an audit of Stabileo's engineering calculations. PRO is labelled beta.
+
+### Priority: Repeated Geometry and Model Organization
+
+- [ ] **Model/Results workspaces (UI).** Adapt PRO's command tabs to our scope:
+  modelling tools in one workspace, results and exports in another, with the
+  command strip collapsible. Preserve selection, view framing, and unsaved
+  input when switching. Extend the grouped-toolbar/in-canvas-result tasks
+  above; do not add an empty Design tab or imply code verification.
+- [ ] **Named groups and levels (UI).** Save node/member selection sets for a
+  frame, storey, or zone; reselect and isolate them quickly. Define explicit
+  elevation levels in our XY plane, with optional snapping. Groups are editing
+  metadata, not rigid diaphragms or solver constraints. Update references after
+  splitting/deleting entities and coordinate with primary multiple selection.
+- [ ] **Repeat, mirror, rotate, and move with preview (UI).** Transform selected
+  geometry about a specified point, or repeat it at explicit bay/storey offsets.
+  Show a ghost before applying; offer separate load/support-copy options and
+  optional connecting members. Preserve global versus local force semantics,
+  load positions, end releases, and identifiers. Resolve node collisions and
+  support conflicts explicitly; one undo transaction per operation. PyNite
+  receives ordinary validated nodes, members, and loads.
+- [ ] **Parametric planar generators and reusable pieces (UI).** Generate
+  continuous beams and multi-bay/multi-storey frames from spacing lists, with
+  separate beam/column sections, material, base supports, and insertion point.
+  Preview counts, dimensions, and assumptions before placement. Save selected
+  geometry as a reusable local template. Truss generators wait for the explicit
+  truss workflow; no automatic sizing or structural design is implied.
+- [ ] **Reviewable topology cleanup and construction aids (UI).** Turn existing
+  validation findings into select/zoom actions and previewed fixes. Add equal
+  subdivision, perpendicular connections, and midpoint-to-midpoint members.
+  Offer controlled node merging, orientation reversal, and renumbering; rewrite
+  every reference and preserve loads, releases, and group membership. Merge
+  collinear members only when the intermediate node has no engineering role
+  and properties agree. Never silently remove a support/load/hinge or connect
+  a crossing; build on existing split/connect operations in TODO.md.
+
+### Priority: Navigable Engineering Results
+
+- [ ] **Scoped result queries (UI).** Filter by all members, selection, group,
+  or ID, then max, min, absolute extreme, and a unit-aware threshold. Clicking
+  the governing row locates its member and station. Reuse PyNite extrema/span
+  results, include interior extrema and discontinuities rather than only ends,
+  and export the filtered query with snapshot/combination metadata. Extend the
+  linked tables and envelope tasks above instead of duplicating them.
+- [ ] **Visible equilibrium and analysis status (UI).** Present planar sums of
+  applied forces/moments and reactions, residuals, tolerances, and units beside
+  results. Include manual loads and generated self-weight, combination factors,
+  and distributed-load resultants. Show pending/current/stale/failed state and
+  offer navigation to affected geometry. An equilibrium pass is not a design
+  approval or proof that the modelling assumptions are correct. Extend the
+  free-body inspector below.
+- [ ] **Plain storey displacement/drift table (UI).** For explicitly paired
+  nodes at successive levels, calculate horizontal displacement difference and
+  drift ratio from PyNite nodal results. Report pairs, height, combination, and
+  governing value; allow multiple columns without assuming a rigid floor.
+  This is static result post-processing, not automatic seismic load generation,
+  code-amplified seismic drift, or a code pass/fail check. PRO's drift tab was
+  inspected but required code-generator settings; borrow the workflow, not its
+  code-dependent calculation.
+- [ ] **Fast deformation preview for large frames (UI).** Offer sampled member
+  curves versus displaced-node straight lines, clearly identifying the latter
+  as an approximate display. Both use the same solved snapshot; switching must
+  not change numerical probes, extrema, exported result tables, or the solver.
+  Coordinate with existing deformation scale/animation controls.
+
+### Later: Approximate Geometry, Not a New Element Formulation
+
+- [ ] **Tapered-member segmentation helper (UI, deferred).** Generate a sequence
+  of prismatic members with explicitly assigned section properties to approximate
+  a changing section. PyNite supports that assembled model; this is not native
+  exact tapered-element support. Preserve integrated loads and self-weight,
+  define section/torsion assumptions, and require mesh-convergence benchmarks
+  before exposing the helper. Do not reuse PRO's advertised error bound.
+
 ## Later: Verified Solver Extensions
 
 - [ ] **Elastic supports and settlement (Adapter).** Expose global DX/DY/RZ
@@ -137,11 +217,22 @@ layer, rather than a native capability verified here. Plates/shells are supporte
 by PyNite, but are outside this frame-focused shortlist. Web accounts, hosted
 sharing, and web-only delivery are not desktop UI requirements.
 
+The PRO review does not promote its Design tab, reinforcement detailing,
+connection checks, automatic wind/seismic code loads, rigid diaphragms, member
+offsets, IFC inference, or automatic architectural-DXF-to-structure proposals.
+Those require independently verified solver/engineering workflows beyond this
+shortlist. A tab or advertised feature is not evidence of PyNite compatibility.
+Shell meshing remains a separate scope decision, not a new near-term task.
+
 ## Evidence and Recheck Points
 
 - [Stabileo repository and feature/status overview](https://github.com/lambdaclass/stabileo).
 - [Live Basic editor](https://stabileo.com/app/basic): reviewed Project, portal-frame
   results, Advanced, and Explore panels; observations are not implementation guarantees.
+- [Live PRO editor](https://stabileo.com/app/pro): reviewed Model tools and Project
+  examples/exports, solved the planar static-force example, inspected Analyze
+  outputs/query controls and Design prerequisites. Design checks, imports,
+  transforms, and generator placement were not independently validated.
 - [PyNite model API overview](https://pynite.readthedocs.io/en/latest/FEModel3D.html).
 - [PyNite member conventions and result APIs](https://pynite.readthedocs.io/en/latest/member.html).
 - Local check: installed `Pynite/FEModel3D.py` and `Pynite/Member3D.py` in `.venv`,
@@ -151,3 +242,5 @@ sharing, and web-only delivery are not desktop UI requirements.
 Recommended starting batch: grouped toolbar, in-canvas result workspace, linked
 tables, then comparison/envelopes. These improve daily use without widening the
 engineering assumptions.
+Follow with PRO-inspired selection groups, previewed repeat/mirror tools, and
+planar generators; these become much more useful once bulk selection is in place.
