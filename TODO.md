@@ -60,7 +60,7 @@ items are not promises of a particular release date.
 - [x] Add recent projects and per-window atomic autosave/recovery.
 - [x] Expand validation for malformed project files and supported format migrations,
   including safe rejection of future versions.
-- [ ] Add benchmark tests for multi-storey frames and varied support/load setups.
+- [x] Add benchmark tests for multi-storey frames and varied support/load setups.
 - [ ] Test installation and desktop rendering on Windows and macOS.
 - [ ] Package standalone desktop releases.
 - [ ] Evaluate 3D modelling and its viewport separately after the 2D workflow matures.

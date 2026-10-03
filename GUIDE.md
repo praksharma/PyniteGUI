@@ -348,6 +348,12 @@ Stability checks cover inadequate pins/rollers, custom restraints, translated
 coordinates, zero-stiffness and internal sway mechanisms, valid released beams,
 uniformly soft materials, nonfinite results in any combination, unrelated solver
 errors, and the dense-localization size limit.
+Larger-model benchmarks compare a twenty-segment mixed-material/section column
+against independently integrated bending/axial formulas. Four-storey, two-bay
+frames check global force/moment equilibrium, combination superposition,
+triangular beam loads, lateral floor loads and nodal moments, fixed/pinned/mixed
+supports, partial end releases, and endpoint reversal. These are numerical
+regression benchmarks, not wall-clock performance targets or design certification.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.
