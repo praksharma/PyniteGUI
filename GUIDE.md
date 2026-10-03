@@ -15,6 +15,18 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
 
 ## Workflow
 
+- File > Examples opens fresh, editable models: a simply supported beam,
+  distributed-load portal frame, cantilever with partial distributed/angled/tip
+  loads and a moment, partially loaded continuous beam, pitched frame with local
+  roof loads, and a two-storey gravity/wind frame with separate combinations.
+  Examples retain the current unit system and prompt before replacing unsaved
+  work. They start as unsaved projects, not as files to overwrite.
+- View > Appearance selects Light or Dark. The preference is saved between app
+  sessions, separately from project files. It updates all open editor/diagram
+  windows, including the grid, engineering symbols, labels, tables, and plots,
+  without changing units, undo history, results, inspection positions, or plot
+  zoom/navigation history. Printed reports remain light for paper/PDF output.
+  Properties scroll when the dock is too short for all fields.
 - Choose Imperial or SI from the unit selector at the bottom-right, or use
   Edit > Units. All dimensional inputs, inspectors, coordinate readouts, load
   labels, property tables, results, and open diagrams use the selected system.
@@ -297,6 +309,8 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/load_cases.py`: load-case manager and combination factor editor.
 - `src/pynitegui/qt/recovery.py`: per-window atomic recovery snapshots and validation.
 - `src/pynitegui/qt/reports.py`: unit-aware CSV exports and native printable reports.
+- `src/pynitegui/qt/examples.py`: fresh, canonical-unit example beam/frame models.
+- `src/pynitegui/qt/theme.py`: shared light/dark widget, canvas, and plot styling.
 - `tests/`: project, solver, diagram, and Qt interaction regression tests.
 
 ## Development
@@ -354,6 +368,11 @@ frames check global force/moment equilibrium, combination superposition,
 triangular beam loads, lateral floor loads and nodal moments, fixed/pinned/mixed
 supports, partial end releases, and endpoint reversal. These are numerical
 regression benchmarks, not wall-clock performance targets or design certification.
+Example checks solve every supplied model/combination, verify a cantilever's
+analytical reactions, and cover fresh copies, SI equivalence, menu loading,
+unsaved-state handling, and cancellation. Theme checks cover preference restore,
+live recoloring, multi-window synchronization, contrast, toolbar icons, compact
+inspector scrolling, pending input, and preservation of results/plot inspection.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

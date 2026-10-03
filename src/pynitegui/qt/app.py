@@ -5,18 +5,19 @@ from dataclasses import replace
 from pathlib import Path
 
 from PySide6.QtCore import QObject, QPointF, QRectF, Qt, QThread, Signal, QTimer, QStandardPaths, QSettings
-from PySide6.QtGui import QAction, QActionGroup, QColor, QPainter, QPalette, QPen, QUndoCommand, QUndoStack
+from PySide6.QtGui import QAction, QActionGroup, QColor, QIcon, QPainter, QPen, QUndoCommand, QUndoStack
 from PySide6.QtWidgets import (
     QApplication, QAbstractItemView, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDockWidget,
     QDoubleSpinBox, QFileDialog, QFormLayout, QGraphicsItem, QGraphicsScene, QGraphicsSimpleTextItem, QGraphicsView,
     QLabel, QMainWindow, QMessageBox, QPushButton,
-    QStyle, QTableWidget, QTableWidgetItem, QTreeWidget, QTreeWidgetItem,
+    QScrollArea, QStyle, QTableWidget, QTableWidgetItem, QTreeWidget, QTreeWidgetItem,
     QVBoxLayout, QWidget,
 )
 
 from .analysis import analyze
 from .model import Load, Project
 from .units import UNIT_SYSTEMS
+from .theme import colors, configure_theme, theme_name
 
 
 def number(value, minimum=-1e9, maximum=1e9, decimals=4):
@@ -124,11 +125,12 @@ class EngineeringSymbol(QGraphicsItem):
         return QRectF(-46, -46, 92, 92)
 
     def paint(self, painter, option, widget=None):
+        c = colors()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.setPen(QPen(QColor("#258451" if self.kind == "support" else "#bd3549"), 1.8))
+        painter.setPen(QPen(QColor(c["support"] if self.kind == "support" else c["load"]), 1.8))
         if self.kind == "hinge":
-            painter.setPen(QPen(QColor("#176b73"), 1.8))
-            painter.setBrush(QColor("#ffffff"))
+            painter.setPen(QPen(QColor(c["highlight"] if theme_name() == "light" else c["accent"]), 1.8))
+            painter.setBrush(QColor(c["canvas"]))
             dx, dy = self.value
             painter.drawEllipse(QPointF(dx * 9, dy * 9), 4, 4)
             return
@@ -189,7 +191,7 @@ class StructureView(QGraphicsView):
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setMouseTracking(True)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
-        self.setBackgroundBrush(QColor("#fafcfc"))
+        self.setBackgroundBrush(QColor(colors()["canvas"]))
         self.setSceneRect(-120, -360, 720, 600)
         self.setDragMode(QGraphicsView.DragMode.NoDrag)
 
@@ -198,7 +200,7 @@ class StructureView(QGraphicsView):
         spacing = self.window.project.grid
         while spacing * abs(self.transform().m11()) < 15:
             spacing *= 2
-        painter.setPen(QPen(QColor("#e2e7e8"), 0))
+        painter.setPen(QPen(QColor(colors()["grid"]), 0))
         x = math.floor(rect.left() / spacing) * spacing
         while x <= rect.right():
             painter.drawLine(QPointF(x, rect.top()), QPointF(x, rect.bottom()))
@@ -207,7 +209,7 @@ class StructureView(QGraphicsView):
         while y <= rect.bottom():
             painter.drawLine(QPointF(rect.left(), y), QPointF(rect.right(), y))
             y += spacing
-        painter.setPen(QPen(QColor("#a8b5b8"), 0))
+        painter.setPen(QPen(QColor(colors()["axis"]), 0))
         painter.drawLine(QPointF(0, rect.top()), QPointF(0, rect.bottom()))
         painter.drawLine(QPointF(rect.left(), 0), QPointF(rect.right(), 0))
 
@@ -261,7 +263,7 @@ class StructureView(QGraphicsView):
             xy = self.snapped(point)
             if self.start is None:
                 self.start = xy
-                self.preview = self.scene().addLine(xy[0], -xy[1], xy[0], -xy[1], QPen(QColor("#168b8b"), 0, Qt.PenStyle.DashLine))
+                self.preview = self.scene().addLine(xy[0], -xy[1], xy[0], -xy[1], QPen(QColor(colors()["accent"]), 0, Qt.PenStyle.DashLine))
             else:
                 start = self.start
                 self.cancel()
@@ -286,12 +288,12 @@ class StructureView(QGraphicsView):
             for item in self.drag_items:
                 self.scene().removeItem(item)
             self.drag_items.clear()
-            pen = QPen(QColor("#168b8b"), 0, Qt.PenStyle.DashLine)
+            pen = QPen(QColor(colors()["accent"]), 0, Qt.PenStyle.DashLine)
             for member in self.window.project.members.values():
                 if self.drag_node in (member.start, member.end):
                     other = self.window.project.nodes[member.end if member.start == self.drag_node else member.start]
                     self.drag_items.append(self.scene().addLine(other.x, -other.y, x, -y, pen))
-            dot = self.scene().addEllipse(-4, -4, 8, 8, QPen(QColor("#168b8b")), QColor("white"))
+            dot = self.scene().addEllipse(-4, -4, 8, 8, QPen(QColor(colors()["accent"])), QColor(colors()["canvas"]))
             dot.setFlag(dot.GraphicsItemFlag.ItemIgnoresTransformations)
             dot.setPos(x, -y)
             self.drag_items.append(dot)
@@ -322,9 +324,9 @@ class StructureView(QGraphicsView):
         self.fitInView(rect, Qt.AspectRatioMode.KeepAspectRatio)
         self.redraw()
 
-    def label(self, text, x, y, color="#47575c", offset=(7, 7)):
+    def label(self, text, x, y, color=None, offset=(7, 7)):
         item = self.scene().addSimpleText(text)
-        item.setBrush(QColor(color))
+        item.setBrush(QColor(color or colors()["label"]))
         item.setFlag(item.GraphicsItemFlag.ItemIgnoresTransformations)
         item.setPos(x, -y)
         item.setTransformOriginPoint(0, 0)
@@ -336,12 +338,13 @@ class StructureView(QGraphicsView):
     def redraw(self):
         self.cancel()
         scene, project = self.scene(), self.window.project
+        c = colors()
         units = project.units
         scene.clear()
         selected = self.window.selected
         for name, member in project.members.items():
             a, b = project.nodes[member.start], project.nodes[member.end]
-            pen = QPen(QColor("#168b8b" if selected == ("members", name) else "#32464d"), 3)
+            pen = QPen(QColor(c["accent"] if selected == ("members", name) else c["member"]), 3)
             pen.setCosmetic(True)
             scene.addLine(a.x, -a.y, b.x, -b.y, pen)
             length = math.hypot(b.x - a.x, b.y - a.y)
@@ -352,8 +355,8 @@ class StructureView(QGraphicsView):
                     symbol.setPos(node.x, -node.y)
             self.label(name, (a.x + b.x) / 2, (a.y + b.y) / 2, offset=(4, 8))
         for name, node in project.nodes.items():
-            color = QColor("#168b8b" if selected == ("nodes", name) else "#32464d")
-            dot = scene.addEllipse(-4, -4, 8, 8, QPen(QColor("white")), color)
+            color = QColor(c["accent"] if selected == ("nodes", name) else c["member"])
+            dot = scene.addEllipse(-4, -4, 8, 8, QPen(QColor(c["base"])), color)
             dot.setFlag(dot.GraphicsItemFlag.ItemIgnoresTransformations)
             dot.setPos(node.x, -node.y)
             self.label(name, node.x, node.y, offset=(8, -22))
@@ -366,7 +369,7 @@ class StructureView(QGraphicsView):
                     for item in scene.items() if isinstance(item, QGraphicsSimpleTextItem)]
         def load_label(text, x, y):
             from PySide6.QtGui import QTransform
-            item = self.label(text, x, y, "#bd3549", (8, -52))
+            item = self.label(text, x, y, c["load"], (8, -52))
             offset = -52
             obstacles = occupied + [symbol.deviceTransform(self.viewportTransform()).mapRect(symbol.boundingRect())
                                     for symbol in scene.items() if isinstance(symbol, EngineeringSymbol) and symbol.kind == "load"]
@@ -437,7 +440,7 @@ class StructureView(QGraphicsView):
             elif mode == "true":
                 scale = 1.0
             self.window.deformation_peak.setText(f"Factor {scale:.6g}x | Max {units.to_display(peak, 'length'):.6g} {units.length}")
-            pen = QPen(QColor("#bd3549"), 2)
+            pen = QPen(QColor(c["load"]), 2)
             pen.setCosmetic(True)
             for path in paths:
                 previous = None
@@ -452,6 +455,8 @@ class MainWindow(QMainWindow):
     def __init__(self, recovery_directory=None, settings=None):
         super().__init__()
         self.settings_store = settings
+        if settings is not None:
+            configure_theme(QApplication.instance(), settings.value("theme", "light"))
         self.recovery = None
         self.recovery_error = None
         self.last_autosave = None
@@ -509,9 +514,39 @@ class MainWindow(QMainWindow):
                 "zoom-fit-best": QStyle.StandardPixmap.SP_TitleBarMaxButton,
                 "media-playback-start": QStyle.StandardPixmap.SP_MediaPlay,
             }
-            action.setIcon(self.style().standardIcon(fallback[icon]))
+            action.setProperty("standard_pixmap", fallback[icon].value)
+            action.setIcon(self.standard_icon(fallback[icon]))
         action.triggered.connect(callback)
         return action
+
+    def standard_icon(self, standard):
+        icon = self.style().standardIcon(standard)
+        if theme_name() == "dark" and standard in (QStyle.StandardPixmap.SP_MediaPlay, QStyle.StandardPixmap.SP_TitleBarMaxButton):
+            pixmap = icon.pixmap(24, 24)
+            painter = QPainter(pixmap)
+            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+            painter.fillRect(pixmap.rect(), QColor(colors()["text"]))
+            painter.end()
+            icon = QIcon(pixmap)
+        return icon
+
+    def set_theme(self, name):
+        configure_theme(QApplication.instance(), name)
+        if self.settings_store is not None:
+            self.settings_store.setValue("theme", theme_name())
+
+    def apply_theme(self):
+        if not hasattr(self, "theme_actions"):
+            return
+        for key, action in self.theme_actions.items():
+            action.setChecked(key == theme_name())
+        for action in self.findChildren(QAction):
+            standard = action.property("standard_pixmap")
+            if standard is not None:
+                action.setIcon(self.standard_icon(QStyle.StandardPixmap(standard)))
+        self.view.setBackgroundBrush(QColor(colors()["canvas"]))
+        self.view.redraw()
+        self.view.viewport().update()
 
     def build_actions(self):
         file_menu = self.menuBar().addMenu("&File")
@@ -530,7 +565,11 @@ class MainWindow(QMainWindow):
         if self.recovery is not None:
             file_menu.addAction(self.action("Recover Autosave...", self.offer_recovery))
         file_menu.addSeparator()
-        file_menu.addAction(self.action("Simply Supported Example", self.example))
+        from .examples import EXAMPLES
+        self.examples_menu = file_menu.addMenu("Examples")
+        for key, label in EXAMPLES.items():
+            self.examples_menu.addAction(self.action(label, lambda checked=False, key=key: self.example(key)))
+        file_menu.addSeparator()
         file_menu.addAction(self.action("Exit", self.close, "Ctrl+Q"))
         edit_menu = self.menuBar().addMenu("&Edit")
         undo = self.undo.createUndoAction(self, "Undo")
@@ -604,6 +643,17 @@ class MainWindow(QMainWindow):
 
     def build_panels(self):
         self.menuBar_view = self.menuBar().addMenu("&View")
+        appearance = self.menuBar_view.addMenu("Appearance")
+        self.theme_group = QActionGroup(self)
+        self.theme_actions = {}
+        for key, label in (("light", "Light"), ("dark", "Dark")):
+            action = self.action(label, lambda checked=False, key=key: self.set_theme(key))
+            action.setCheckable(True)
+            action.setChecked(key == theme_name())
+            self.theme_group.addAction(action)
+            self.theme_actions[key] = action
+            appearance.addAction(action)
+        self.menuBar_view.addSeparator()
         self.tree = QTreeWidget()
         self.tree.setHeaderLabels(["Model", "Properties"])
         self.tree.setMinimumWidth(210)
@@ -621,7 +671,12 @@ class MainWindow(QMainWindow):
         self.form = QFormLayout(self.inspector)
         self.form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
         self.inspector.setMinimumWidth(240)
-        self.dock("Properties", self.inspector, Qt.DockWidgetArea.RightDockWidgetArea)
+        self.inspector_scroll = QScrollArea()
+        self.inspector_scroll.setWidgetResizable(True)
+        self.inspector_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        self.inspector_scroll.setMinimumWidth(260)
+        self.inspector_scroll.setWidget(self.inspector)
+        self.dock("Properties", self.inspector_scroll, Qt.DockWidgetArea.RightDockWidgetArea)
         self.results_table = QTableWidget(0, 7)
         self.results_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.results_table.setMinimumHeight(120)
@@ -1171,17 +1226,15 @@ class MainWindow(QMainWindow):
         self.update_title()
         return True
 
-    def example(self):
+    def example(self, key="simple_beam"):
         if not self.confirm_discard():
             return
-        project = Project(unit_system=self.project.unit_system)
-        project.add_member((0, 0), (420, 0))
-        project.nodes["N1"].support = "pin"
-        project.nodes["N2"].support = "roller"
-        project.loads["L1"] = Load("L1", "M1", "FY", -10, 0.5)
+        from .examples import EXAMPLES, example_project
+        project = example_project(key, self.project.unit_system)
         self.load_project(project)
         self.saved = Project().to_dict()
         self.update_title()
+        self.statusBar().showMessage(f"Example: {EXAMPLES[key]} | {project.units.summary}")
 
     def run_analysis(self):
         if self.thread is not None:
@@ -1401,54 +1454,6 @@ class MainWindow(QMainWindow):
             event.accept()
         else:
             event.ignore()
-
-
-def configure_theme(application):
-    # Use a complete palette so desktop dark themes cannot mix with light surfaces.
-    application.setStyle("Fusion")
-    palette = QPalette()
-    colors = {
-        QPalette.ColorRole.Window: "#f5f7f7",
-        QPalette.ColorRole.WindowText: "#24343b",
-        QPalette.ColorRole.Base: "#ffffff",
-        QPalette.ColorRole.AlternateBase: "#f2f6f6",
-        QPalette.ColorRole.Text: "#24343b",
-        QPalette.ColorRole.Button: "#edf1f2",
-        QPalette.ColorRole.ButtonText: "#24343b",
-        QPalette.ColorRole.Highlight: "#176b73",
-        QPalette.ColorRole.HighlightedText: "#ffffff",
-        QPalette.ColorRole.ToolTipBase: "#ffffff",
-        QPalette.ColorRole.ToolTipText: "#24343b",
-        QPalette.ColorRole.PlaceholderText: "#69777e",
-        QPalette.ColorRole.Link: "#176b73",
-        QPalette.ColorRole.LinkVisited: "#495c91",
-        QPalette.ColorRole.Light: "#ffffff",
-        QPalette.ColorRole.Midlight: "#e5ebed",
-        QPalette.ColorRole.Mid: "#bac6cb",
-        QPalette.ColorRole.Dark: "#86959c",
-        QPalette.ColorRole.Shadow: "#47575c",
-        QPalette.ColorRole.BrightText: "#ffffff",
-        QPalette.ColorRole.Accent: "#176b73",
-    }
-    for role, color in colors.items():
-        palette.setColor(role, QColor(color))
-    for role in (QPalette.ColorRole.WindowText, QPalette.ColorRole.Text, QPalette.ColorRole.ButtonText):
-        palette.setColor(QPalette.ColorGroup.Disabled, role, QColor("#69777e"))
-    palette.setColor(QPalette.ColorGroup.Disabled, QPalette.ColorRole.Base, QColor("#edf1f2"))
-    palette.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Highlight, QColor("#d5e8ea"))
-    palette.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.HighlightedText, QColor("#24343b"))
-    application.setPalette(palette)
-    application.setStyleSheet("""
-        QMainWindow { background: #f5f7f7; }
-        QToolBar { spacing: 4px; padding: 5px; background: #f5f7f7; color: #24343b; border-bottom: 1px solid #d1d9dc; }
-        QToolButton { padding: 4px; border: 1px solid transparent; border-radius: 3px; }
-        QToolButton:hover { background: #e0eded; }
-        QToolButton:checked { background: #d5e8ea; border-color: #62979c; }
-        QDockWidget::title { padding: 7px; background: #e5ebed; color: #24343b; }
-        QTreeWidget, QTableWidget { border: 0; alternate-background-color: #f2f6f6; }
-        QPushButton { padding: 5px 10px; }
-        QStatusBar { background: #e5ebed; color: #24343b; }
-    """)
 
 
 def main():

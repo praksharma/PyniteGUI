@@ -57,6 +57,7 @@ items are not promises of a particular release date.
 
 ## Project Quality
 
+- [x] Add a File > Examples catalog of editable, validated beam/frame models.
 - [x] Add recent projects and per-window atomic autosave/recovery.
 - [x] Expand validation for malformed project files and supported format migrations,
   including safe rejection of future versions.
@@ -77,5 +78,6 @@ items are not promises of a particular release date.
 - [x] Reaction/displacement tables and deformed-shape overlay.
 - [x] Whole-structure SFD/BMD with member detail plots.
 - [x] Correct discontinuity sampling and orientation-independent frame diagrams.
-- [x] Consistent light theme with readable labels and inputs.
+- [x] Persistent light/dark themes with readable widgets, engineering canvas,
+  and live result diagrams.
 - [x] Focused project, analytical solver, diagram, and Qt interaction tests.

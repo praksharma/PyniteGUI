@@ -10,6 +10,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QComboBox, QDialog, QDoubleSpinBox, QHBoxLayout, QLabel, QStyle, QTabWidget, QTableWidget, QTableWidgetItem, QToolButton, QVBoxLayout, QWidget
 
 from .analysis import model_signature
+from .theme import colors, restyle_figure, style_axes
 
 
 def member_breaks(project, name):
@@ -118,12 +119,13 @@ def draw_structure(ax, project, result, quantity, amplitude=20):
     xs, ys = [n.x for n in project.nodes.values()], [n.y for n in project.nodes.values()]
     extent = max(max(xs) - min(xs), max(ys) - min(ys), 1)
     factor = extent * amplitude / 100 / maximum if maximum > 1e-10 else 0
-    color = {"axial": "#3279a4", "shear": "#168b8b", "moment": "#b53c5b"}[quantity]
+    c = colors()
+    color = c[quantity]
     for name, row in data.items():
         base, values, normal = row["base"], row["values"], row["normal"]
         base = units.to_display(base, "length")
         offset = base + np.outer(units.to_display(values * factor, "length"), normal)
-        ax.plot(base[:, 0], base[:, 1], color="#32464d", linewidth=2, zorder=3)
+        ax.plot(base[:, 0], base[:, 1], color=c["member"], linewidth=2, zorder=3)
         ax.plot(offset[:, 0], offset[:, 1], color=color, linewidth=1.7)
         polygon = np.vstack((base[0], offset, base[-1]))
         ax.fill(polygon[:, 0], polygon[:, 1], color=color, alpha=0.12)
@@ -138,14 +140,14 @@ def draw_structure(ax, project, result, quantity, amplitude=20):
                 continue
             used.append(point)
             ax.annotate(f"{units.to_display(values[index], value_quantity):.4g}", point, xytext=(5, 5), textcoords="offset points", fontsize=8, color=color,
-                        bbox={"facecolor": "white", "edgecolor": "none", "alpha": 0.8, "pad": 1})
+                        bbox={"facecolor": c["canvas"], "edgecolor": "none", "alpha": 0.8, "pad": 1})
         midpoint = (base[0] + base[-1]) / 2
-        ax.annotate(name, midpoint, xytext=(5, -12), textcoords="offset points", fontsize=8, color="#32464d")
+        ax.annotate(name, midpoint, xytext=(5, -12), textcoords="offset points", fontsize=8, color=c["member"])
     for node in project.nodes.values():
         x, y = units.to_display(node.x, "length"), units.to_display(node.y, "length")
-        ax.plot(x, y, "o", color="#32464d", markersize=3, zorder=4)
+        ax.plot(x, y, "o", color=c["member"], markersize=3, zorder=4)
         if any(node.restraints):
-            ax.plot(x, y, marker="^" if node.support != "roller" else "o", color="#258451", fillstyle="none", markersize=9, zorder=4)
+            ax.plot(x, y, marker="^" if node.support != "roller" else "o", color=c["support"], fillstyle="none", markersize=9, zorder=4)
     for name, row in data.items():
         member = project.members[name]
         start, end = row["base"][0], row["base"][-1]
@@ -153,7 +155,7 @@ def draw_structure(ax, project, result, quantity, amplitude=20):
         for released, point, sign in ((member.release_start, start, 1), (member.release_end, end, -1)):
             if released:
                 marker = DrawingArea(8, 8)
-                marker.add_artist(Circle((4, 4), 3, facecolor="white", edgecolor="#176b73", linewidth=1.3))
+                marker.add_artist(Circle((4, 4), 3, facecolor=c["canvas"], edgecolor=c["accent"], linewidth=1.3))
                 ax.add_artist(AnnotationBbox(marker, units.to_display(point, "length"), xybox=tuple(sign * tangent * 9),
                                             boxcoords="offset points", frameon=False, pad=0, zorder=5))
     ax.set_title({"axial": f"Axial Force Diagram N ({units.force}; + compression)",
@@ -164,6 +166,7 @@ def draw_structure(ax, project, result, quantity, amplitude=20):
     ax.set_aspect("equal", adjustable="datalim")
     ax.margins(0.2)
     ax.grid(alpha=0.15)
+    style_axes(ax)
     return data
 
 
@@ -174,6 +177,7 @@ class DiagramDialog(QDialog):
         self.setWindowTitle(f"Force Diagrams | {result.combination}")
         self.resize(1000, 800)
         self.project, self.result = project.clone(), result
+        self.plot_colors = colors()
         self.source = str(getattr(parent, "path", None) or "Untitled")
         self.model_revision = getattr(parent, "revision", None)
         layout = QVBoxLayout(self)
@@ -306,12 +310,14 @@ class DiagramDialog(QDialog):
         self.update_results()
 
     def update_structure(self):
+        self.structure_canvas.setPalette(self.palette())
         self.structure_figure.clear()
         ax = self.structure_figure.add_subplot(111)
         draw_structure(ax, self.project, self.result, self.quantity.currentData(), self.amplitude.value())
         self.structure_canvas.draw_idle()
 
     def update_member(self):
+        self.member_canvas.setPalette(self.palette())
         self.member_figure.clear()
         name = self.member.currentText()
         if name != self.inspection_member:
@@ -325,16 +331,17 @@ class DiagramDialog(QDialog):
         self.distance.setValue(units.to_display(self.inspection_x, "length"))
         self.distance.blockSignals(False)
         self.probes = []
+        c = colors()
         shared = None
-        for index, (key, label, color) in enumerate((("axial", f"Axial N ({units.force})\n+ compression", "#3279a4"),
-                                                     ("shear", f"Shear Fy ({units.force})", "#168b8b"),
-                                                     ("moment", f"Moment Mz ({units.moment})", "#b53c5b"),
-                                                     ("deflection", f"Deflection dy ({units.length})", "#168b8b"))):
+        for index, (key, label, color) in enumerate((("axial", f"Axial N ({units.force})\n+ compression", c["axial"]),
+                                                     ("shear", f"Shear Fy ({units.force})", c["shear"]),
+                                                     ("moment", f"Moment Mz ({units.moment})", c["moment"]),
+                                                     ("deflection", f"Deflection dy ({units.length})", c["shear"]))):
             ax = self.member_figure.add_subplot(4, 1, index + 1, sharex=shared)
             if shared is None:
                 shared = ax
             ax.plot(units.to_display(data["x"], "length"), units.to_display(data[key], "length" if key == "deflection" else "moment" if key == "moment" else "force"), color=color)
-            ax.axhline(0, color="#869395", linewidth=0.6)
+            ax.axhline(0, color=c["axis"], linewidth=0.6)
             ax.set_ylabel(label, fontsize=8, rotation=0, ha="right", va="center", labelpad=12)
             ax.grid(alpha=0.2)
             if index == 0:
@@ -342,7 +349,19 @@ class DiagramDialog(QDialog):
             ax.tick_params(axis="x", labelbottom=index == 3)
             if index == 3:
                 ax.set_xlabel(f"Distance from start ({units.length})")
+            style_axes(ax)
         self.update_inspection()
+
+    def apply_theme(self):
+        if not hasattr(self, "member_canvas"):
+            return
+        for figure in (self.structure_figure, self.member_figure):
+            restyle_figure(figure, self.plot_colors)
+        self.plot_colors = colors()
+        self.structure_canvas.setPalette(self.palette())
+        self.member_canvas.setPalette(self.palette())
+        self.structure_canvas.draw_idle()
+        self.member_canvas.draw_idle()
 
     def inspect_distance(self):
         self.inspection_x = self.project.units.from_display(self.distance.value(), "length")
@@ -368,7 +387,7 @@ class DiagramDialog(QDialog):
         self.inspection_values.resizeColumnsToContents()
         for line in self.probes:
             line.remove()
-        self.probes = [ax.axvline(units.to_display(self.inspection_x, "length"), color="#47575c", linestyle="--", linewidth=0.8)
+        self.probes = [ax.axvline(units.to_display(self.inspection_x, "length"), color=colors()["label"], linestyle="--", linewidth=0.8)
                        for ax in self.member_figure.axes]
         self.member_canvas.draw_idle()
 
