@@ -56,7 +56,8 @@ items are not promises of a particular release date.
 ## Project Quality
 
 - [x] Add recent projects and per-window atomic autosave/recovery.
-- [ ] Expand validation for malformed project files and future format migrations.
+- [x] Expand validation for malformed project files and supported format migrations,
+  including safe rejection of future versions.
 - [ ] Add benchmark tests for multi-storey frames and varied support/load setups.
 - [ ] Test installation and desktop rendering on Windows and macOS.
 - [ ] Package standalone desktop releases.

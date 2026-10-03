@@ -6,6 +6,28 @@ import math
 from .units import UNIT_SYSTEMS
 
 
+def finite_number(value):
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
+
+def identifier(value):
+    return isinstance(value, str) and bool(value.strip()) and value == value.strip()
+
+
+def unique_json_object(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError(f"Duplicate JSON field or identifier: {key}.")
+        result[key] = value
+    return result
+
+
 @dataclass
 class Material:
     name: str
@@ -20,11 +42,11 @@ class Material:
     def validate(self):
         if not isinstance(self.name, str) or not self.name.strip() or self.name != self.name.strip():
             raise ValueError("Material name must be nonempty with no leading or trailing spaces.")
-        if not isinstance(self.E, (int, float)) or not math.isfinite(self.E) or self.E <= 0:
+        if not finite_number(self.E) or self.E <= 0:
             raise ValueError(f"Material {self.name}: E must be a positive finite number.")
-        if not isinstance(self.nu, (int, float)) or not math.isfinite(self.nu) or not -1 < self.nu < 0.5:
+        if not finite_number(self.nu) or not -1 < self.nu < 0.5:
             raise ValueError(f"Material {self.name}: Poisson ratio must be between -1 and 0.5.")
-        if not isinstance(self.rho, (int, float)) or not math.isfinite(self.rho) or self.rho < 0:
+        if not finite_number(self.rho) or self.rho < 0:
             raise ValueError(f"Material {self.name}: density must be finite and nonnegative.")
 
 
@@ -41,7 +63,7 @@ class Section:
             raise ValueError("Section name must be nonempty with no leading or trailing spaces.")
         for key in ("A", "Iy", "Iz", "J"):
             value = getattr(self, key)
-            if not isinstance(value, (int, float)) or not math.isfinite(value) or value <= 0:
+            if not finite_number(value) or value <= 0:
                 raise ValueError(f"Section {self.name}: {key} must be a positive finite number.")
 
 
@@ -166,7 +188,7 @@ class Project:
         for case, factor in factors.items():
             if case not in self.load_cases:
                 raise ValueError(f"Combination {name}: load case {case} does not exist.")
-            if not isinstance(factor, (int, float)) or not math.isfinite(factor):
+            if not finite_number(factor):
                 raise ValueError("Combination factors must be finite numbers.")
 
     def set_combination(self, name, factors, previous=None):
@@ -264,8 +286,35 @@ class Project:
 
     @classmethod
     def from_dict(cls, data):
-        if data.get("version") not in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10) or data.get("units") != "in-kip":
+        if not isinstance(data, dict):
+            raise ValueError("Project document must be a JSON object.")
+        version = data.get("version")
+        if type(version) is not int or version not in range(1, 11) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
+        required = {"grid", "nodes", "members", "loads"}
+        required.update({"E", "nu", "rho"} if version == 1 else {"materials", "default_material"})
+        required.update({"A", "Iy", "Iz", "J"} if version < 3 else {"sections", "default_section"})
+        if version >= 5:
+            required.update({"load_cases", "default_load_case", "combinations"})
+        if version >= 7:
+            required.add("unit_system")
+        missing = required - data.keys()
+        if missing:
+            raise ValueError("Missing project fields: " + ", ".join(sorted(missing)) + ".")
+
+        def entities(key, kind):
+            if not isinstance(data[key], dict):
+                raise ValueError(f"Project {key} must be an object keyed by identifiers.")
+            result = {}
+            for name, value in data[key].items():
+                if not identifier(name) or not isinstance(value, dict):
+                    raise ValueError(f"Invalid {key} entry: {name!r}. Expected an identifier and an object.")
+                try:
+                    result[name] = kind(**value)
+                except TypeError as error:
+                    raise ValueError(f"Invalid {key} entry {name}: {error}") from error
+            return result
+
         result = cls(grid=data["grid"])
         if data["version"] >= 7:
             result.unit_system = data["unit_system"]
@@ -274,21 +323,25 @@ class Project:
                 raise ValueError("Load cases must be a list of names.")
             result.load_cases = list(data["load_cases"])
             result.default_load_case = data["default_load_case"]
+            if not isinstance(data["combinations"], dict):
+                raise ValueError("Combinations must be an object keyed by names.")
+            if any(not isinstance(factors, dict) for factors in data["combinations"].values()):
+                raise ValueError("Each combination must be an object of load-case factors.")
             result.combinations = {name: dict(factors) for name, factors in data["combinations"].items()}
         if data["version"] < 3:
             result.default_section = "Project section"
             result.sections = {result.default_section: Section(result.default_section, data["A"], data["Iy"], data["Iz"], data["J"])}
         else:
             result.default_section = data["default_section"]
-            result.sections = {name: Section(**value) for name, value in data["sections"].items()}
+            result.sections = entities("sections", Section)
         if data["version"] == 1:
             result.default_material = "Project material"
             result.materials = {result.default_material: Material(result.default_material, data["E"], data["nu"], data["rho"])}
         else:
             result.default_material = data["default_material"]
-            result.materials = {name: Material(**value) for name, value in data["materials"].items()}
+            result.materials = entities("materials", Material)
         for key, kind in (("nodes", Node), ("members", Member), ("loads", Load)):
-            setattr(result, key, {name: kind(**value) for name, value in data[key].items()})
+            setattr(result, key, entities(key, kind))
         if data["version"] == 1:
             for member in result.members.values():
                 member.material = result.default_material
@@ -302,6 +355,14 @@ class Project:
         return self.from_dict(self.to_dict())
 
     def validate(self):
+        for key in ("nodes", "members", "loads", "materials", "sections", "combinations"):
+            if not isinstance(getattr(self, key), dict):
+                raise ValueError(f"Project {key} must be an object keyed by identifiers.")
+        for key in ("default_material", "default_section", "default_load_case"):
+            if not identifier(getattr(self, key)):
+                raise ValueError(f"Invalid {key} identifier.")
+        if set(self.nodes) & set(self.members):
+            raise ValueError("Node and member identifiers must be distinct to avoid ambiguous load targets.")
         if not isinstance(self.unit_system, str) or self.unit_system not in UNIT_SYSTEMS:
             raise ValueError("Unsupported unit system.")
         if not isinstance(self.load_cases, list) or not self.load_cases:
@@ -330,14 +391,14 @@ class Project:
             section.validate()
         for key in ("grid",):
             value = getattr(self, key)
-            if not isinstance(value, (float, int)) or not math.isfinite(value) or value <= 0:
+            if not finite_number(value) or value <= 0:
                 raise ValueError(f"{key} must be a positive finite number.")
         coords = set()
         for name, node in self.nodes.items():
-            if name != node.name or not name:
+            if name != node.name or not identifier(name):
                 raise ValueError("Invalid node identifier.")
-            if not all(math.isfinite(value) for value in (node.x, node.y)):
-                raise ValueError("Node coordinates must be finite.")
+            if not all(finite_number(value) for value in (node.x, node.y)):
+                raise ValueError(f"Node {name}: coordinates must be finite numbers.")
             if (node.x, node.y) in coords:
                 raise ValueError("Two nodes cannot occupy the same coordinates.")
             coords.add((node.x, node.y))
@@ -347,7 +408,9 @@ class Project:
                 raise ValueError("Support restraints must be boolean values.")
         connections = set()
         for name, member in self.members.items():
-            if name != member.name or not name or member.start not in self.nodes or member.end not in self.nodes:
+            references = (member.start, member.end, member.material, member.section)
+            if (name != member.name or not identifier(name) or not all(identifier(value) for value in references)
+                    or member.start not in self.nodes or member.end not in self.nodes):
                 raise ValueError("Invalid member or endpoint reference.")
             if member.start == member.end:
                 raise ValueError("A member needs two different nodes.")
@@ -362,7 +425,8 @@ class Project:
                 raise ValueError("Duplicate members connect the same nodes.")
             connections.add(connection)
         for name, load in self.loads.items():
-            if name != load.name or not name or load.target not in {*self.nodes, *self.members}:
+            if (name != load.name or not identifier(name) or not identifier(load.target)
+                    or load.target not in {*self.nodes, *self.members}):
                 raise ValueError("Invalid load target.")
             if load.case not in self.load_cases:
                 raise ValueError(f"Load {name}: load case {load.case} does not exist.")
@@ -370,16 +434,18 @@ class Project:
                 raise ValueError("Unsupported 2D load direction.")
             if load.direction.startswith("Local") and load.target not in self.members:
                 raise ValueError("Local forces require a member target.")
-            if not math.isfinite(load.angle) or not -360 <= load.angle <= 360:
+            if not finite_number(load.angle) or not -360 <= load.angle <= 360:
                 raise ValueError("Load angle must be finite and between -360 and 360 degrees.")
-            if not math.isfinite(load.magnitude) or not math.isfinite(load.position) or not 0 <= load.position <= 1:
+            if not finite_number(load.magnitude) or not finite_number(load.position) or not 0 <= load.position <= 1:
                 raise ValueError("Invalid load magnitude or position.")
+            if not finite_number(load.end_magnitude) or not finite_number(load.end_position):
+                raise ValueError(f"Load {name}: end intensity and position must be finite numbers.")
             if load.kind not in ("point", "distributed"):
                 raise ValueError("Unknown load type.")
             if load.kind == "distributed":
                 if load.target not in self.members or load.direction == "MZ":
                     raise ValueError("Distributed forces require a member and a force direction, not MZ.")
-                if not math.isfinite(load.end_magnitude) or not math.isfinite(load.end_position) or not load.position < load.end_position <= 1:
+                if not load.position < load.end_position <= 1:
                     raise ValueError("Distributed load requires finite intensities and 0 <= start < end <= 1.")
 
     def next_name(self, prefix, collection):
@@ -617,4 +683,8 @@ class Project:
     @classmethod
     def open(cls, path):
         with open(path, encoding="utf-8") as stream:
-            return cls.from_dict(json.load(stream))
+            try:
+                data = json.load(stream, object_pairs_hook=unique_json_object)
+            except json.JSONDecodeError as error:
+                raise ValueError(f"Invalid project JSON at line {error.lineno}, column {error.colno}: {error.msg}.") from error
+            return cls.from_dict(data)

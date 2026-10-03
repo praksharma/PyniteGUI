@@ -238,6 +238,13 @@ force directions and physical magnitudes.
 Older project loads retain their original directions and magnitudes. The JSON units field
 remains in-kip to identify the canonical storage units; unit_system controls
 presentation and input conversion.
+Malformed files are rejected before replacing the active project. Missing fields,
+incorrect collection/entity shapes, unknown entity fields, invalid references,
+boolean/string/nonfinite numerical values, and duplicate JSON keys produce
+readable errors. JSON syntax errors include their line and column. Supported
+versions 1 through 10 are migrated without modifying the input; unknown/future
+versions are rejected rather than guessed. Node and member identifiers must be
+distinct so load targets are unambiguous.
 Editing a definition updates all members assigned to it and
 invalidates analysis results.
 No self-weight is applied automatically. Drawing an intersection alone does not
@@ -321,6 +328,9 @@ conversion, SI input, persistence, and unedited angle/intensity precision.
 Export checks cover SI/imperial values, combination identity, undefined rotations,
 CSV quoting/formula safety, atomic failures, cancellation, stale-model rejection,
 retained snapshot exports, report escaping, and native PDF rendering.
+File-validation checks cover malformed shapes and values, duplicate keys,
+versions 1 through 10, future-version rejection, non-mutating migrations, and
+preservation of the active project and source file after a failed open.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.
