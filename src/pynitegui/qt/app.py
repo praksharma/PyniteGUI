@@ -4,13 +4,13 @@ import sys
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QPointF, QRectF, Qt, QThread, Signal, QTimer, QStandardPaths, QSettings
-from PySide6.QtGui import QAction, QActionGroup, QColor, QIcon, QPainter, QPen, QUndoCommand, QUndoStack
+from PySide6.QtCore import QObject, QPointF, QRect, QRectF, Qt, QThread, Signal, QTimer, QStandardPaths, QSettings
+from PySide6.QtGui import QAction, QActionGroup, QColor, QIcon, QPainter, QPainterPath, QPen, QUndoCommand, QUndoStack
 from PySide6.QtWidgets import (
     QApplication, QAbstractItemView, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDockWidget,
     QDoubleSpinBox, QFileDialog, QFormLayout, QGraphicsItem, QGraphicsScene, QGraphicsSimpleTextItem, QGraphicsView,
     QLabel, QMainWindow, QMessageBox, QPushButton,
-    QScrollArea, QStyle, QTableWidget, QTableWidgetItem, QTreeWidget, QTreeWidgetItem,
+    QRubberBand, QScrollArea, QStyle, QTableWidget, QTableWidgetItem, QTreeWidget, QTreeWidgetItem,
     QVBoxLayout, QWidget,
 )
 
@@ -115,9 +115,10 @@ class AnalysisWorker(QObject):
 
 
 class EngineeringSymbol(QGraphicsItem):
-    def __init__(self, kind, value=None, length=38):
+    def __init__(self, kind, value=None, length=38, highlighted=False):
         super().__init__()
         self.kind, self.value, self.length = kind, value, length
+        self.highlighted = highlighted
         self.setFlag(QGraphicsItem.GraphicsItemFlag.ItemIgnoresTransformations)
         self.setZValue(2)
 
@@ -127,7 +128,7 @@ class EngineeringSymbol(QGraphicsItem):
     def paint(self, painter, option, widget=None):
         c = colors()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.setPen(QPen(QColor(c["support"] if self.kind == "support" else c["load"]), 1.8))
+        painter.setPen(QPen(QColor(c["accent"] if self.highlighted else c["support"] if self.kind == "support" else c["load"]), 1.8))
         if self.kind == "hinge":
             painter.setPen(QPen(QColor(c["highlight"] if theme_name() == "light" else c["accent"]), 1.8))
             painter.setBrush(QColor(c["canvas"]))
@@ -188,6 +189,8 @@ class StructureView(QGraphicsView):
         self.preview = None
         self.drag_node = None
         self.drag_items = []
+        self.box_origin = None
+        self.rubber_band = QRubberBand(QRubberBand.Shape.Rectangle, self.viewport())
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setMouseTracking(True)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
@@ -240,6 +243,8 @@ class StructureView(QGraphicsView):
         return round(point.x() / grid) * grid, round(-point.y() / grid) * grid
 
     def cancel(self):
+        self.box_origin = None
+        self.rubber_band.hide()
         self.start = None
         self.drag_node = None
         for item in self.drag_items:
@@ -270,8 +275,23 @@ class StructureView(QGraphicsView):
                 self.window.edit("Add member", lambda project: project.add_member(start, xy))
         else:
             hit = self.hit(point)
-            self.window.select(hit)
-            if hit and hit[0] == "nodes":
+            additive = bool(event.modifiers() & (Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier))
+            if hit:
+                if additive:
+                    selections = list(self.window.selections)
+                    if hit in selections:
+                        selections.remove(hit)
+                    else:
+                        selections.append(hit)
+                    self.window.select_many(selections)
+                else:
+                    self.window.select(hit)
+            if not hit:
+                self.box_origin = event.position().toPoint()
+                self.box_previous = list(self.window.selections) if additive else []
+                self.rubber_band.setGeometry(QRect(self.box_origin, self.box_origin))
+                self.rubber_band.show()
+            elif hit[0] == "nodes" and not additive:
                 self.drag_node = hit[1]
                 self.drag_origin = event.position().toPoint()
                 self.drag_target = None
@@ -281,6 +301,9 @@ class StructureView(QGraphicsView):
         x, y = self.snapped(point)
         units = self.window.project.units
         self.window.coordinates.setText(f"X {units.to_display(x, 'length'):g} {units.length}   Y {units.to_display(y, 'length'):g} {units.length}")
+        if self.box_origin is not None:
+            self.rubber_band.setGeometry(QRect(self.box_origin, event.position().toPoint()).normalized())
+            return
         if self.preview is not None:
             self.preview.setLine(self.start[0], -self.start[1], x, -y)
         if self.drag_node and (event.position().toPoint() - self.drag_origin).manhattanLength() >= QApplication.startDragDistance():
@@ -300,6 +323,16 @@ class StructureView(QGraphicsView):
         super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton and self.box_origin is not None:
+            rectangle = QRect(self.box_origin, event.position().toPoint()).normalized()
+            previous = self.box_previous
+            self.cancel()
+            if rectangle.width() + rectangle.height() >= QApplication.startDragDistance():
+                area = self.mapToScene(rectangle).boundingRect()
+                self.window.select_many([*previous, *self.in_rectangle(area)])
+            else:
+                self.window.select_many(previous)
+            return
         if event.button() == Qt.MouseButton.LeftButton and self.drag_node:
             name, target = self.drag_node, self.drag_target
             self.cancel()
@@ -309,6 +342,21 @@ class StructureView(QGraphicsView):
                 self.window.edit(f"Move {name}", move)
             return
         super().mouseReleaseEvent(event)
+
+    def in_rectangle(self, area):
+        project = self.window.project
+        selections = [("nodes", name) for name, node in project.nodes.items()
+                      if area.contains(QPointF(node.x, -node.y))]
+        boundary = QPainterPath()
+        boundary.addRect(area)
+        for name, member in project.members.items():
+            a, b = project.nodes[member.start], project.nodes[member.end]
+            start, end = QPointF(a.x, -a.y), QPointF(b.x, -b.y)
+            segment = QPainterPath(start)
+            segment.lineTo(end)
+            if area.contains(start) or area.contains(end) or boundary.intersects(segment):
+                selections.append(("members", name))
+        return selections
 
     def wheelEvent(self, event):
         factor = 1.2 if event.angleDelta().y() > 0 else 1 / 1.2
@@ -341,10 +389,10 @@ class StructureView(QGraphicsView):
         c = colors()
         units = project.units
         scene.clear()
-        selected = self.window.selected
+        selected = set(self.window.selections)
         for name, member in project.members.items():
             a, b = project.nodes[member.start], project.nodes[member.end]
-            pen = QPen(QColor(c["accent"] if selected == ("members", name) else c["member"]), 3)
+            pen = QPen(QColor(c["accent"] if ("members", name) in selected else c["member"]), 3)
             pen.setCosmetic(True)
             scene.addLine(a.x, -a.y, b.x, -b.y, pen)
             length = math.hypot(b.x - a.x, b.y - a.y)
@@ -355,7 +403,7 @@ class StructureView(QGraphicsView):
                     symbol.setPos(node.x, -node.y)
             self.label(name, (a.x + b.x) / 2, (a.y + b.y) / 2, offset=(4, 8))
         for name, node in project.nodes.items():
-            color = QColor(c["accent"] if selected == ("nodes", name) else c["member"])
+            color = QColor(c["accent"] if ("nodes", name) in selected else c["member"])
             dot = scene.addEllipse(-4, -4, 8, 8, QPen(QColor(c["base"])), color)
             dot.setFlag(dot.GraphicsItemFlag.ItemIgnoresTransformations)
             dot.setPos(node.x, -node.y)
@@ -367,9 +415,9 @@ class StructureView(QGraphicsView):
                 symbol.setPos(node.x, -node.y)
         occupied = [item.deviceTransform(self.viewportTransform()).mapRect(item.boundingRect())
                     for item in scene.items() if isinstance(item, QGraphicsSimpleTextItem)]
-        def load_label(text, x, y):
+        def load_label(text, x, y, highlighted=False):
             from PySide6.QtGui import QTransform
-            item = self.label(text, x, y, c["load"], (8, -52))
+            item = self.label(text, x, y, c["accent"] if highlighted else c["load"], (8, -52))
             offset = -52
             obstacles = occupied + [symbol.deviceTransform(self.viewportTransform()).mapRect(symbol.boundingRect())
                                     for symbol in scene.items() if isinstance(symbol, EngineeringSymbol) and symbol.kind == "load"]
@@ -384,6 +432,7 @@ class StructureView(QGraphicsView):
             if not self.window.load_visible(definition):
                 continue
             load = definition
+            highlighted = definition is project.loads.get(definition.name) and ("loads", definition.name) in selected
             if self.window.result is not None:
                 factor = self.window.result.solver.load_combos[self.window.result.combination].factors.get(load.case, 0)
                 if factor == 0:
@@ -404,7 +453,7 @@ class StructureView(QGraphicsView):
                     intensity = load.magnitude + ratio * (load.end_magnitude - load.magnitude)
                     if abs(intensity) < maximum * 1e-8:
                         continue
-                    symbol = EngineeringSymbol("load", load_symbol(project, load, intensity), 38 * abs(intensity) / maximum)
+                    symbol = EngineeringSymbol("load", load_symbol(project, load, intensity), 38 * abs(intensity) / maximum, highlighted=highlighted)
                     scene.addItem(symbol)
                     symbol.setPos(a.x + (b.x - a.x) * fraction, -a.y - (b.y - a.y) * fraction)
                 midpoint = (load.position + load.end_position) / 2
@@ -412,16 +461,16 @@ class StructureView(QGraphicsView):
                 direction_label = f" @ {load.angle:g} deg" if load.direction == "Angle" else f" | {load.direction}" if load.direction.startswith("Local") else ""
                 if load.direction == "Local angle":
                     direction_label += f" {load.angle:g} deg"
-                load_label(f"{load.name}: {units.to_display(load.magnitude, 'intensity'):g} to {units.to_display(load.end_magnitude, 'intensity'):g} {units.intensity}{direction_label}", x, y)
+                load_label(f"{load.name}: {units.to_display(load.magnitude, 'intensity'):g} to {units.to_display(load.end_magnitude, 'intensity'):g} {units.intensity}{direction_label}", x, y, highlighted)
                 continue
-            symbol = EngineeringSymbol("load", load_symbol(project, load, load.magnitude))
+            symbol = EngineeringSymbol("load", load_symbol(project, load, load.magnitude), highlighted=highlighted)
             scene.addItem(symbol)
             symbol.setPos(x, -y)
             quantity = "moment" if load.direction == "MZ" else "force"
             angle_label = f" @ {load.angle:g} deg" if load.direction == "Angle" else ""
             if load.direction.startswith("Local"):
                 angle_label = f" | {load.direction}" + (f" {load.angle:g} deg" if load.direction == "Local angle" else "")
-            load_label(f"{load.name}: {units.to_display(load.magnitude, quantity):g} {getattr(units, quantity)}{angle_label}", x, y)
+            load_label(f"{load.name}: {units.to_display(load.magnitude, quantity):g} {getattr(units, quantity)}{angle_label}", x, y, highlighted)
         visible = bool(self.window.result and self.window.deformed_action.isChecked())
         self.window.deformation_mode.setEnabled(visible)
         self.window.deformation_scale.setEnabled(visible and self.window.deformation_mode.currentData() == "custom")
@@ -578,6 +627,7 @@ class MainWindow(QMainWindow):
         redo.setShortcuts(["Ctrl+Shift+Z", "Ctrl+Y"])
         edit_menu.addActions([undo, redo])
         edit_menu.addAction(self.action("Delete Selection", self.delete_selected, "Delete", "edit-delete"))
+        edit_menu.addAction(self.action("Select All", self.select_all, "Ctrl+A"))
         edit_menu.addAction(self.action("Model Tables...", self.manage_model_tables))
         edit_menu.addAction(self.action("Materials...", self.manage_materials))
         edit_menu.addAction(self.action("Sections...", self.manage_sections))
@@ -659,6 +709,7 @@ class MainWindow(QMainWindow):
         self.tree = QTreeWidget()
         self.tree.setHeaderLabels(["Model", "Properties"])
         self.tree.setMinimumWidth(210)
+        self.tree.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.tree.itemSelectionChanged.connect(self.tree_selection)
         structure_panel = QWidget()
         structure_layout = QVBoxLayout(structure_panel)
@@ -753,12 +804,12 @@ class MainWindow(QMainWindow):
         self.results_dock.setWindowTitle("Results - Outdated")
         self.deformed_action.setEnabled(False)
         self.deformed_action.setChecked(False)
-        if self.selected and self.selected[1] not in getattr(self.project, self.selected[0]):
-            self.selected = None
         self.refresh()
         self.statusBar().showMessage(f"Model updated | Results require analysis | {self.project.units.summary}")
 
     def refresh(self):
+        self.selections = [selection for selection in self.selections
+                           if selection[1] in getattr(self.project, selection[0])]
         units = self.project.units
         visible_case = self.load_filter.currentData()
         self.load_filter.blockSignals(True)
@@ -770,6 +821,9 @@ class MainWindow(QMainWindow):
         index = self.load_filter.findData(visible_case)
         self.load_filter.setCurrentIndex(max(0, index))
         self.load_filter.blockSignals(False)
+        self.selections = [selection for selection in self.selections if selection[0] != "loads"
+                           or self.load_visible(self.project.loads[selection[1]])]
+        selected = set(self.selections)
         self.unit_selector.blockSignals(True)
         self.unit_selector.setCurrentIndex(self.unit_selector.findData(self.project.unit_system))
         self.unit_selector.blockSignals(False)
@@ -784,6 +838,7 @@ class MainWindow(QMainWindow):
         self.tree.clear()
         for kind, title in (("nodes", "Nodes"), ("members", "Members"), ("loads", "Loads")):
             parent = QTreeWidgetItem(self.tree, [f"{title} ({len(getattr(self.project, kind))})"])
+            parent.setFlags(parent.flags() & ~Qt.ItemFlag.ItemIsSelectable)
             for name, entity in getattr(self.project, kind).items():
                 if kind == "loads" and not self.load_visible(entity):
                     continue
@@ -809,7 +864,7 @@ class MainWindow(QMainWindow):
                 item = QTreeWidgetItem(parent, [name, detail])
                 item.setToolTip(1, detail)
                 item.setData(0, Qt.ItemDataRole.UserRole, (kind, name))
-                if self.selected == (kind, name):
+                if (kind, name) in selected:
                     item.setSelected(True)
             parent.setExpanded(True)
         if self.project.self_weight_case is not None:
@@ -831,21 +886,55 @@ class MainWindow(QMainWindow):
         return case is None or (case is not False and load.case == case)
 
     def filter_loads(self):
-        if self.selected and self.selected[0] == "loads" and not self.load_visible(self.project.loads[self.selected[1]]):
-            self.selected = None
+        self.selections = [selection for selection in self.selections if selection[0] != "loads"
+                           or self.load_visible(self.project.loads[selection[1]])]
         self.refresh()
 
     def tree_selection(self):
         items = self.tree.selectedItems()
-        self.select(items[0].data(0, Qt.ItemDataRole.UserRole) if items else None)
+        self.select_many([item.data(0, Qt.ItemDataRole.UserRole) for item in items], sync_tree=False)
+
+    @property
+    def selected(self):
+        return self.selections[0] if len(self.selections) == 1 else None
+
+    @selected.setter
+    def selected(self, selection):
+        self.selections = [tuple(selection)] if selection else []
 
     def select(self, selection):
-        self.selected = tuple(selection) if selection else None
-        self.refresh()
+        self.select_many([selection] if selection else [])
+
+    def select_all(self):
+        self.select_many([(kind, name) for kind in ("nodes", "members", "loads")
+                          for name in getattr(self.project, kind)])
+
+    def select_many(self, selections, sync_tree=True):
+        self.selections = list(dict.fromkeys(tuple(selection) for selection in selections if selection
+                                           and selection[1] in getattr(self.project, selection[0])
+                                           and (selection[0] != "loads" or self.load_visible(self.project.loads[selection[1]]))))
+        if sync_tree:
+            selected = set(self.selections)
+            self.tree.blockSignals(True)
+            self.tree.clearSelection()
+            for index in range(self.tree.topLevelItemCount()):
+                parent = self.tree.topLevelItem(index)
+                for row in range(parent.childCount()):
+                    item = parent.child(row)
+                    identity = item.data(0, Qt.ItemDataRole.UserRole)
+                    if identity and tuple(identity) in selected:
+                        item.setSelected(True)
+            self.tree.blockSignals(False)
+        self.update_inspector()
+        self.view.redraw()
 
     def update_inspector(self):
         while self.form.rowCount():
             self.form.removeRow(0)
+        if len(self.selections) > 1:
+            from .bulk_edit import populate_bulk_inspector
+            populate_bulk_inspector(self)
+            return
         if not self.selected:
             self.form.addRow("Units", QLabel(self.project.units.label))
             self.form.addRow("Default material", QLabel(self.project.default_material))
@@ -1043,9 +1132,13 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "Model Check", "No geometry, connectivity, or release/load issues found.")
 
     def delete_selected(self):
-        if self.selected:
-            kind, name = self.selected
-            self.edit(f"Delete {name}", lambda project: project.delete(kind, name))
+        if self.selections:
+            selections = list(self.selections)
+            def mutate(project):
+                for kind, name in selections:
+                    if name in getattr(project, kind):
+                        project.delete(kind, name)
+            self.edit(f"Delete {len(selections)} selected" if len(selections) > 1 else f"Delete {selections[0][1]}", mutate)
 
     def add_load(self):
         if not self.selected or self.selected[0] not in ("nodes", "members"):

@@ -42,6 +42,26 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   or an existing node. Escape or right-click cancels an unfinished member.
 - Choose Select (V) and click a node or member, or select it in the structure
   tree. Edit properties in the inspector and press Apply.
+- In Select mode, Ctrl/Shift-click toggles nodes/members on the canvas. Drag an
+  empty area to box-select nodes and any members that cross the rectangle;
+  Ctrl/Shift adds that box to the current selection. Escape/right-click cancels
+  the box without changing the selection. A plain empty click clears it. The
+  tree supports Ctrl-click toggles and Shift-click ranges, including manual
+  loads. Edit > Select All (Ctrl+A) selects all geometry and visible manual loads;
+  generated self-weight remains read-only. Selected geometry and load arrows
+  are highlighted, and selections stay synchronized with the tree.
+  Multiple items show a bulk inspector: assign member materials/sections and
+  end hinges, node supports/custom restraints, or load cases and a signed
+  magnitude multiplier. The multiplier scales both distributed-load intensities,
+  preserving fractions, angles, and directions. Keep existing and partially
+  checked boxes leave properties unchanged; checked sets on and unchecked sets
+  off. Choose custom before editing restraint boxes; unmodified restraints retain
+  each node's effective previous support. Apply validates all selected edits in
+  one transaction; Delete Selection removes selected items and their dependents
+  in one undo step. Selection alone never invalidates results; actual bulk edits
+  do. Single-node dragging and single-entity commands still require one target.
+  Hiding a load case removes its loads from the selection without clearing
+  selected geometry. Opening another project clears the selection.
 - Edit > Model Tables opens draft Nodes, Members, and Loads tables. Enter signed
   coordinates and load values directly (scientific notation is accepted), choose
   endpoints/materials/sections/cases, and set custom restraints or end hinges.
@@ -351,6 +371,7 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/theme.py`: shared light/dark widget, canvas, and plot styling.
 - `src/pynitegui/qt/self_weight.py`: opt-in case/factor editor and weight preview.
 - `src/pynitegui/qt/model_tables.py`: atomic numerical geometry/load editing.
+- `src/pynitegui/qt/bulk_edit.py`: explicit multi-entity property assignments.
 - `tests/`: project, solver, diagram, and Qt interaction regression tests.
 
 ## Development
@@ -424,6 +445,10 @@ Model-table checks cover all unit presets, unchanged-value precision, force/mome
 intensity interpretation, custom restraints, assignments/releases, new references,
 dependent deletion, invalid drafts, the active numeric editor, cancellation,
 self-weight separation, and one-step undo/redo.
+Bulk-edit checks cover tree/canvas modifier selection, rectangle intersections,
+cancellation, selection synchronization, mixed entity types, preserved properties,
+all load quantities, atomic failure, cascading deletion, filtering, history,
+selected-load highlighting, and result preservation/invalidation.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

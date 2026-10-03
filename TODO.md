@@ -11,7 +11,8 @@ and verified PyNite extensions. This file remains the primary implementation lis
 ## Modelling and Editing
 
 - [x] Add node dragging with snapping and undo/redo.
-- [ ] Add multiple selection and bulk property editing.
+- [x] Add tree/canvas multiple selection, geometry box selection, and atomic
+  bulk support/member/load-property editing with one-step undo/redo.
 - [x] Add editable node/member/load tables with unit-aware numerical entry,
   row addition/removal, atomic validation, and one-step undo/redo.
 - [x] Add member splitting and an explicit connect-at-intersection operation.
