@@ -34,4 +34,5 @@ Whole-frame shear-force diagram.
 
 - [User and developer guide](GUIDE.md): workflows, units, engineering scope, and tests.
 - [Roadmap](TODO.md): completed and planned features.
+- [Secondary ideas](TODO_SECONDARY.md): interface inspiration and PyNite-compatible extensions.
 - [License](LICENSE): GNU AGPL v3.

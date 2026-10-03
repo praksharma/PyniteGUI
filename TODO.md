@@ -5,6 +5,9 @@ sections, custom global support restraints, global/member-local angled forces, d
 and named load cases/combinations. This list tracks remaining work;
 items are not promises of a particular release date.
 
+See [Secondary roadmap](TODO_SECONDARY.md) for Stabileo-inspired interface ideas
+and verified PyNite extensions. This file remains the primary implementation list.
+
 ## Modelling and Editing
 
 - [x] Add node dragging with snapping and undo/redo.
