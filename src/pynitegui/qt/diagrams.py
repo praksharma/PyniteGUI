@@ -10,6 +10,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QHBoxLayout, QLabel, QStyle, QTabWidget, QTableWidget, QTableWidgetItem, QToolButton, QVBoxLayout, QWidget
 
 from .analysis import model_signature
+from .diagram_labels import add_diagram_label
 from .theme import colors, restyle_figure, style_axes
 
 
@@ -144,13 +145,12 @@ def draw_structure(ax, project, result, quantity, amplitude=20, side=1, sign=1, 
         used = []
         for index in labels:
             point = offset[index]
-            if any(np.linalg.norm(point - previous) < units.to_display(extent * 0.025, "length") for previous in used):
+            if any(np.linalg.norm(point - previous) < units.to_display(extent * 1e-12, "length") for previous in used):
                 continue
             used.append(point)
-            ax.annotate(f"{units.to_display(values[index], value_quantity):.4g}", point, xytext=(5, 5), textcoords="offset points", fontsize=8, color=color,
-                        bbox={"facecolor": c["canvas"], "edgecolor": "none", "alpha": 0.8, "pad": 1})
+            add_diagram_label(ax, f"{units.to_display(values[index], value_quantity):.4g}", point, color, c["canvas"])
         midpoint = (base[0] + base[-1]) / 2
-        ax.annotate(name, midpoint, xytext=(5, -12), textcoords="offset points", fontsize=8, color=c["member"])
+        add_diagram_label(ax, name, midpoint, c["member"], c["canvas"], member=True)
     for node in project.nodes.values():
         x, y = units.to_display(node.x, "length"), units.to_display(node.y, "length")
         ax.plot(x, y, "o", color=c["member"], markersize=3, zorder=4)

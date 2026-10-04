@@ -8,7 +8,7 @@ Draw and edit frames or trusses, assign custom or library materials and sections
 distributed, or automatic self-weight loads. Analyze combinations and inspect
 reactions, deformed shapes, force diagrams, and envelopes across combinations. Supports
 SI/Imperial units, light/dark themes, undo/redo, and autosave recovery.
-Print selected model definitions, result tables, and force diagrams as a report.
+Print selected model definitions, result tables, envelopes, and force diagrams as a report.
 
 ## Quick Start
 

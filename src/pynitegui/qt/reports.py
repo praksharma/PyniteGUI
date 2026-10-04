@@ -8,10 +8,10 @@ import os
 from pathlib import Path
 import tempfile
 
-from PySide6.QtCore import QMarginsF, QUrl
+from PySide6.QtCore import QMarginsF, QUrl, Qt
 from PySide6.QtGui import QFont, QImage, QPageLayout, QPageSize, QTextDocument
 from PySide6.QtPrintSupport import QPrinter, QPrintPreviewDialog
-from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFileDialog, QFormLayout, QMenu, QMessageBox
+from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFileDialog, QFormLayout, QListWidget, QListWidgetItem, QMenu, QMessageBox
 
 from .analysis import model_signature
 from .diagrams import draw_structure, member_result_rows
@@ -27,6 +27,7 @@ class ReportOptions:
     side: int = 1
     sign: int = 1
     amplitude: float = 20
+    envelope_combinations: tuple[str, ...] = ()
 
     def validate(self):
         if any(type(value) is not bool for value in (self.model, self.nodes, self.members)):
@@ -35,7 +36,11 @@ class ReportOptions:
             raise ValueError("Unknown report diagram selection.")
         if len(set(self.diagrams)) != len(self.diagrams):
             raise ValueError("Duplicate report diagrams.")
-        if not any((self.model, self.nodes, self.members, self.diagrams)):
+        if (not isinstance(self.envelope_combinations, tuple) or
+                any(not isinstance(name, str) or not name for name in self.envelope_combinations) or
+                len(set(self.envelope_combinations)) != len(self.envelope_combinations)):
+            raise ValueError("Select distinct named envelope combinations.")
+        if not any((self.model, self.nodes, self.members, self.diagrams, self.envelope_combinations)):
             raise ValueError("Select at least one report section.")
         if type(self.side) is not int or self.side not in (-1, 1) or type(self.sign) is not int or self.sign not in (-1, 1):
             raise ValueError("Report diagram side/sign must be +1 or -1.")
@@ -49,20 +54,41 @@ class ReportOptionsDialog(QDialog):
         self.setWindowTitle("Analysis Report")
         self.resize(460, 360)
         self.definition = None
+        envelope_view = getattr(parent, "envelopes", None)
+        envelope_only = hasattr(parent, "selected_combinations")
+        if envelope_only:
+            envelope_view = parent
+        result = getattr(parent, "result", None)
         form = QFormLayout(self)
         self.sections = {}
         for key, label in (("model", "Model definitions"), ("nodes", "Node results"), ("members", "Member results")):
             widget = QCheckBox(label)
-            widget.setChecked(True)
+            widget.setChecked(not envelope_only)
             self.sections[key] = widget
             form.addRow(widget)
         self.diagrams = {}
         selected = parent.quantity.currentData() if hasattr(parent, "quantity") else "moment"
         for key, label in (("axial", "Axial-force diagram"), ("shear", "Shear-force diagram"), ("moment", "Bending-moment diagram")):
             widget = QCheckBox(label)
-            widget.setChecked(key == selected)
+            widget.setChecked(key == selected and not envelope_only)
             self.diagrams[key] = widget
             form.addRow(widget)
+        self.include_envelopes = QCheckBox("Combination envelopes")
+        self.include_envelopes.setChecked(envelope_only or
+                                         (envelope_view is not None and parent.tabs.currentWidget() is envelope_view))
+        self.include_envelopes.setEnabled(result is not None)
+        form.addRow(self.include_envelopes)
+        self.envelope_combinations = QListWidget()
+        self.envelope_combinations.setMaximumHeight(100)
+        checked = envelope_view.selected_combinations() if envelope_view is not None else ()
+        if result is not None:
+            for name in result.solver.load_combos:
+                item = QListWidgetItem(name, self.envelope_combinations)
+                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+                item.setCheckState(Qt.CheckState.Checked if name in checked or envelope_view is None else Qt.CheckState.Unchecked)
+        self.envelope_combinations.setEnabled(self.include_envelopes.isChecked())
+        self.include_envelopes.toggled.connect(self.envelope_combinations.setEnabled)
+        form.addRow("Envelope combinations", self.envelope_combinations)
         self.side = QComboBox()
         self.side.addItem("Default side", 1)
         self.side.addItem("Opposite side", -1)
@@ -84,10 +110,16 @@ class ReportOptionsDialog(QDialog):
         form.addRow(buttons)
 
     def accept(self):
+        combinations = tuple(self.envelope_combinations.item(index).text() for index in range(self.envelope_combinations.count())
+                             if self.envelope_combinations.item(index).checkState() == Qt.CheckState.Checked)
+        if self.include_envelopes.isChecked() and not combinations:
+            QMessageBox.warning(self, "Analysis Report", "Select at least one envelope combination.")
+            return
         options = ReportOptions(**{key: widget.isChecked() for key, widget in self.sections.items()},
                                 diagrams=tuple(key for key, widget in self.diagrams.items() if widget.isChecked()),
                                 side=self.side.currentData(), sign=-1 if self.sign.isChecked() else 1,
-                                amplitude=self.amplitude.value())
+                                amplitude=self.amplitude.value(),
+                                envelope_combinations=combinations if self.include_envelopes.isChecked() else ())
         try:
             options.validate()
         except ValueError as error:
@@ -218,6 +250,11 @@ def report_html(project, result, source="Untitled", options=None, *, image_urls=
         return html_table(headers, rows)
     factors = ", ".join(f"{case}: {factor:.6g}" for case, factor in result.solver.load_combos[result.combination].factors.items())
     weight = "Off" if project.self_weight_case is None else f"{project.self_weight_case}; factor {project.self_weight_factor:.6g}"
+    if options.envelope_combinations and not any((options.nodes, options.members, options.diagrams)):
+        combination_metadata = "<b>Envelope combinations:</b> " + escape(", ".join(options.envelope_combinations))
+    else:
+        label = "Single-combination results" if options.envelope_combinations else "Combination"
+        combination_metadata = f"<b>{label}:</b> {escape(result.combination)} | <b>Factors:</b> {escape(factors)}"
     sections = []
     if options.model:
         sections.append("<h2>Model Definitions</h2><p>Loads below are unfactored; results and diagrams use the selected combination. Member positions are start-to-end fractions. Global angles are counterclockwise from +X; local angles are from member +x.</p>")
@@ -231,6 +268,23 @@ def report_html(project, result, source="Untitled", options=None, *, image_urls=
         page = ' style="page-break-before: always"' if options.model or options.nodes else ""
         sections.append(f"<h2{page}>Member End Values and Extrema</h2>" +
                         "<p>Member values use local solver axes; N is positive in compression. Min/max columns are independent extrema, not forces at one shared station. Display amplification does not affect these results.</p>" + table("members"))
+    if options.envelope_combinations:
+        from .envelopes import HEADERS, display_rows, envelope_rows
+        rows = list(display_rows(project, envelope_rows(project, result, options.envelope_combinations)))
+        page = ' style="page-break-before: always"' if sections else ""
+        selected_factors = [(name, ", ".join(f"{case}: {factor:.6g}" for case, factor in result.solver.load_combos[name].factors.items()))
+                            for name in options.envelope_combinations]
+        sections.append(f"<h2{page}>Selected-Combination Envelopes</h2>" +
+                        "<p>These bounds compare the combinations below, independently of the single-combination sections. "
+                        "Each result has its own governing combination, not one simultaneous load state. "
+                        "Member extrema are solver extrema over the full member, in local axes with N positive in compression. "
+                        "First selected combination wins ties; undefined joint rotations remain n/a. "
+                        "Diagram side/sign settings do not change envelope results.</p>" +
+                        html_table(("Combination", "Case factors"), selected_factors) +
+                        "<h3>Node Envelopes</h3>" + html_table(HEADERS, [row for row in rows if row[0] == "Node"]))
+        sections.append('<h2 style="page-break-before: always">Member Envelopes</h2>' +
+                        "<p>Independent full-member solver extrema in the selected units; minimum and maximum combinations may differ.</p>" +
+                        html_table(HEADERS, [row for row in rows if row[0] == "Member"]))
     if image_urls is None:
         image_urls = {key: "data:image/png;base64," + base64.b64encode(data).decode("ascii")
                       for key, data in report_images(project, result, options).items()}
@@ -252,7 +306,7 @@ def report_html(project, result, source="Untitled", options=None, *, image_urls=
         <p><b>Source:</b> {escape(source)}<br>
         <b>Analysis ID:</b> {escape(result.snapshot_id)} | <b>Model:</b> {escape(result.model_signature[:12])}<br>
         <b>Analyzed (UTC):</b> {escape(result.analyzed_at)}<br>
-        <b>Combination:</b> {escape(result.combination)} | <b>Factors:</b> {escape(factors)}<br>
+        {combination_metadata}<br>
         <b>Units:</b> {escape(project.units.label)}<br>
         <b>Self-weight:</b> {escape(weight)}</p>
         {''.join(sections)}</body></html>'''
@@ -314,7 +368,9 @@ class ResultExportMenu(QMenu):
             printer = report_printer()
             printer.setDocName(f"PyniteGUI Results {result.snapshot_id}")
             preview = QPrintPreviewDialog(printer, self.parentWidget())
-            preview.setWindowTitle(f"Analysis Report | {result.combination} | {result.snapshot_id}")
+            options = choices.definition
+            scope = "Envelopes" if options.envelope_combinations and not any((options.nodes, options.members, options.diagrams)) else result.combination
+            preview.setWindowTitle(f"Analysis Report | {scope} | {result.snapshot_id}")
             preview.resize(1050, 750)
             preview.paintRequested.connect(document.print_)
             preview.exec()

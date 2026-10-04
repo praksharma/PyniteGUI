@@ -10,7 +10,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QComboBox, QDoubleSpinBox, QFileDialog, QHBoxLayout, QLabel, QListWidget,
-                               QListWidgetItem, QMessageBox, QStyle, QTabWidget,
+                               QListWidgetItem, QMenu, QMessageBox, QStyle, QTabWidget,
                                QTableWidget, QTableWidgetItem, QToolButton, QVBoxLayout, QWidget)
 
 from .analysis import model_signature
@@ -123,7 +123,12 @@ class EnvelopeWidget(QWidget):
         controls.addWidget(self.combinations, 1)
         self.export_button = QToolButton()
         self.export_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton))
-        self.export_button.setToolTip("Export envelope summary (CSV)")
+        self.export_button.setToolTip("Export or print envelope summaries")
+        self.export_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        menu = QMenu(self.export_button)
+        menu.addAction("Envelope summaries (CSV)...", self.export)
+        menu.addAction("Print envelopes...", self.print_report)
+        self.export_button.setMenu(menu)
         controls.addWidget(self.export_button)
         layout.addLayout(controls)
         self.views = QTabWidget()
@@ -178,7 +183,6 @@ class EnvelopeWidget(QWidget):
         self.distance.valueChanged.connect(self.inspect_distance)
         self.side.currentIndexChanged.connect(self.update_plot)
         self.canvas.mpl_connect("button_press_event", self.inspect_click)
-        self.export_button.clicked.connect(self.export)
         self.refresh()
 
     def selected_combinations(self):
@@ -272,3 +276,11 @@ class EnvelopeWidget(QWidget):
                 export_envelope_csv(filename, self.project, self.result, self.selected_combinations(), self.source)
             except (OSError, ValueError) as exc:
                 QMessageBox.warning(self, "Export failed", str(exc))
+
+    def print_report(self):
+        from .reports import ResultExportMenu
+        menu = ResultExportMenu(self, lambda: (self.project, self.result, self.source))
+        try:
+            menu.print_report()
+        finally:
+            menu.deleteLater()

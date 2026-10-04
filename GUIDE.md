@@ -187,6 +187,12 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   the convention in the title (+ tension for reversed axial diagrams).
   These per-window controls survive unit/combination/theme changes but do not
   change Member Detail, numerical tables, CSV, analysis results, or saved models.
+  Whole-structure labels use screen-space collision checks, prioritize member
+  IDs, and add leader lines when moved away from their values. If no readable
+  placement exists, a crowded label is omitted; zooming/resizing retries it.
+  Labels stay within the plot and use the same placement logic in print images.
+  Numerical tables and Member Detail remain the authoritative way to inspect
+  every value; label placement never changes geometry or computed results.
   New diagram windows start with the standard convention. Member Detail
   provides axial force, local shear, bending moment, and transverse deflection
   plots for any member, sharing one distance axis.
@@ -213,8 +219,17 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   Whole Structure placement/sign controls do not change envelopes.
   The envelope export icon saves both summary tables as CSV with units, source,
   snapshot identity, selected combinations/factors, and self-weight metadata.
-  Unit/theme changes retain the selection. Envelopes are window-local and are
-  not included in the single-combination print report or saved project.
+  Its export menu also offers Print envelopes, opening report choices with an
+  envelope-only selection and the currently checked combinations. General Print
+  Results can include envelopes alongside model definitions, single-combination
+  results, and force diagrams. Report combination checkboxes are independent
+  copies: changing them does not change the diagram window's selection.
+  Printed envelopes contain exact node/member summary bounds and governing
+  combinations, not sampled curves. Selected factors, units, conventions, and
+  analysis identity are included; undefined rotations remain n/a. In mixed
+  reports, single-combination sections and envelope sections are labelled
+  separately. Unit/theme changes retain the selection. Envelope choices are
+  window-local, not saved in the project.
 - File > Export Results saves node reactions/displacements or member end/extrema
   values as CSV in the selected units and combination. Files include source,
   analysis ID, UTC timestamp, model signature, and unit system. Undefined joint
@@ -461,6 +476,8 @@ and concentrated moments include both sides of each discontinuity.
   and sampling on both sides of force and moment discontinuities.
 - `src/pynitegui/qt/envelopes.py`: combination bounds, governing combinations,
   envelope tables/curves, exact station inspection, and atomic CSV export.
+- `src/pynitegui/qt/diagram_labels.py`: renderer-aware diagram label placement
+  for interactive views and printed images.
 - `src/pynitegui/qt/materials.py`: material definition manager and property editor.
 - `src/pynitegui/qt/sections.py`: section definition manager and property editor.
 - `src/pynitegui/qt/section_library.py`: offline catalog facts and axis mapping.

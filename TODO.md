@@ -46,7 +46,8 @@ and verified PyNite extensions. This file remains the primary implementation lis
 - [x] Add result envelopes across selected combinations: node bounds, exact
   solver member extrema, governing combinations, sampled member curves,
   one-sided station inspection, and snapshot-aware CSV export.
-- [ ] Include selected-combination envelopes in printable reports.
+- [x] Include selected-combination envelopes in printable reports: node/member
+  summaries, governing combinations, checked case factors, and snapshot identity.
 - [x] Add optional self-weight with an explicit load case, per-member weight
   density/area, multiplier, generated load display, and safe legacy migration.
 - [x] Add SI/imperial presets with validated dimensional input/output conversion,
@@ -64,7 +65,9 @@ and verified PyNite extensions. This file remains the primary implementation lis
   maximum sampled displacement shown in the selected project units.
 - [x] Add axial-force diagrams for the whole structure and Member Detail.
 - [x] Add interactive value inspection at a chosen distance along a member.
-- [ ] Improve label placement for dense structures and overlapping diagrams.
+- [x] Improve label placement for dense structures and overlapping diagrams.
+  Renderer-aware, member-ID-first placement with leader lines; crowded labels
+  are omitted and retried when zoomed/resized, including printed diagrams.
 - [x] Add diagram side/sign display preferences with clear conventions.
   Per-window whole-structure placement/sign controls; analytical tables and CSV
   retain solver signs, and report diagrams explicitly identify display conventions.
