@@ -56,10 +56,11 @@ def rigid_body_issue(project):
             "A pin alone does not prevent rotation; Y-only rollers do not prevent horizontal motion.")
 
 
-def stiffness_issue(model):
+def stiffness_issue(model, spatial=False):
     labels, indices = [], []
     for node in model.nodes.values():
-        for offset, direction in ((0, "DX"), (1, "DY"), (5, "RZ")):
+        directions = tuple(enumerate(("DX", "DY", "DZ", "RX", "RY", "RZ"))) if spatial else ((0, "DX"), (1, "DY"), (5, "RZ"))
+        for offset, direction in directions:
             if not getattr(node, "support_" + direction):
                 indices.append(node.ID * 6 + offset)
                 labels.append(f"{node.name} {direction}")
@@ -124,11 +125,17 @@ class AnalysisResult:
     snapshot_id: str = field(default_factory=lambda: uuid.uuid4().hex[:12])
     analyzed_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds"))
     model_signature: str = ""
+    spatial: bool = False
 
     @classmethod
-    def from_solver(cls, model, combination, inactive_rotations=frozenset()):
+    def from_solver(cls, model, combination, inactive_rotations=frozenset(), spatial=False):
         if combination not in model.load_combos:
             raise ValueError(f"Unknown result combination: {combination}")
+        if spatial:
+            return cls(model,
+                       {name: tuple(getattr(node, key)[combination] for key in ("DX", "DY", "DZ", "RX", "RY", "RZ")) for name, node in model.nodes.items()},
+                       {name: tuple(getattr(node, key)[combination] for key in ("RxnFX", "RxnFY", "RxnFZ", "RxnMX", "RxnMY", "RxnMZ")) for name, node in model.nodes.items()},
+                       combination, spatial=True)
         return cls(
             model,
             {name: (node.DX[combination], node.DY[combination], None if name in inactive_rotations else node.RZ[combination]) for name, node in model.nodes.items()},
@@ -138,12 +145,15 @@ class AnalysisResult:
         )
 
     def for_combination(self, combination):
-        return replace(self.from_solver(self.solver, combination, self.inactive_rotations),
+        return replace(self.from_solver(self.solver, combination, self.inactive_rotations, spatial=self.spatial),
                        snapshot_id=self.snapshot_id, analyzed_at=self.analyzed_at,
                        model_signature=self.model_signature)
 
 
 def analyze(project: Project, progress=None) -> AnalysisResult:
+    if getattr(project, "dimension", None) == "3D":
+        from .spatial_analysis import analyze_spatial
+        return analyze_spatial(project, progress)
     def phase(message):
         if progress is not None:
             progress(message)

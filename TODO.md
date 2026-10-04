@@ -1,6 +1,6 @@
 # PyniteGUI Roadmap
 
-Current scope: a 2D frame/truss editor with SI/imperial input and display, per-member materials and
+Current scope: a 2D frame/truss and linear 3D spatial-frame editor with SI/imperial input and display, per-member materials and
 sections, custom global support restraints, global/member-local angled forces, distributed loads,
 and named load cases/combinations. This list tracks remaining work;
 items are not promises of a particular release date.
@@ -98,7 +98,32 @@ and verified PyNite extensions. This file remains the primary implementation lis
 - [x] Add benchmark tests for multi-storey frames and varied support/load setups.
 - [ ] Test installation and desktop rendering on Windows and macOS.
 - [ ] Package standalone desktop releases.
-- [ ] Evaluate 3D modelling and its viewport separately after the 2D workflow matures.
+- [x] Add a separate 3D spatial-frame project and offline Three.js viewport,
+  keeping the established 2D editor and file format intact.
+
+## 3D Follow-Ups
+
+- [x] XYZ geometry, work-plane drawing/snapping, coordinate-based node insertion,
+  orbit/pan/zoom, orientation presets, selection, and local-axis display.
+- [x] Six global rigid restraints and bilateral support springs; member roll,
+  per-member material/section assignment, and atomic numerical model tables.
+- [x] Global/member-local point forces and moments, partial uniform/varying
+  distributed forces, self-weight, cases/combinations and cancellable analysis.
+- [x] All six nodal displacements/reactions, biaxial bending, shear and torsion
+  member diagrams, true/auto/custom spatial deformation, CSV and numerical reports.
+- [x] Editable 3D cantilever and space-frame examples; analytical benchmarks,
+  native light/dark rendering, and desktop/mobile browser interaction checks.
+- [ ] Whole-structure 3D axial/shear/bending/torsion overlays and image reports.
+- [ ] Spatial combination envelopes and interactive one-sided station inspection.
+- [ ] 3D member end releases and axial-only trusses, with mechanism benchmarks.
+- [ ] 3D node dragging, box selection, and bulk inspector assignments.
+- [ ] Spatial member splitting and explicit intersection connection workflows.
+- [ ] Explicit 2D-to-3D conversion with preserved loads/support conventions.
+- [ ] Spatial force-by-magnitude/azimuth/elevation entry and coordinate previews.
+- [ ] Dedicated 3D support/spring symbols with per-DOF hover inspection.
+- [ ] Large-model rendering benchmarks and cached analytical sampling.
+- [ ] Plate/shell modelling, mesh workflows, and nonlinear analysis as separate,
+  verified PyNite-supported milestones; no solids or design-code claims.
 
 ## Completed Foundation
 

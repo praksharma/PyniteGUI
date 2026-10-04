@@ -1,7 +1,7 @@
 [project]
 name = "pynitegui"
 version = "0.1.0"
-description = "A Qt desktop editor for 2D frame analysis with PyNite."
+description = "A Qt desktop editor for 2D and 3D frame analysis with PyNite."
 readme = "README.md"
 authors = [
     { name = "Prakhar" }

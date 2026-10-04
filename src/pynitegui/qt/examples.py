@@ -13,12 +13,17 @@ EXAMPLES = {
     "truss": "Triangular Truss - Joint Loads",
     "elastic": "Cantilever - Elastic Base",
     "shear_release": "Fixed-Guided Beam - Shear Release",
+    "3d_cantilever": "3D Cantilever - Biaxial Bending and Torsion",
+    "3d_space_frame": "3D Space Frame - Gravity and Wind",
 }
 
 
 def example_project(key, unit_system="imperial"):
     if key not in EXAMPLES:
         raise ValueError(f"Unknown example: {key}")
+    if key.startswith("3d_"):
+        from .spatial_examples import example_project as spatial_example
+        return spatial_example(key, unit_system)
     project = Project(unit_system=unit_system)
 
     def member(a, b):

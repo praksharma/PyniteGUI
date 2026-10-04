@@ -116,6 +116,13 @@ class ReportOptionsDialog(QDialog):
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
         form.addRow(buttons)
+        if getattr(getattr(parent, "project", None), "dimension", "2D") == "3D":
+            for widget in (*self.diagrams.values(), self.include_envelopes):
+                widget.setChecked(False)
+                widget.setEnabled(False)
+                form.setRowVisible(widget, False)
+            for widget in (self.envelope_combinations, self.side, self.sign, self.amplitude, self.supports, self.loads):
+                form.setRowVisible(widget, False)
 
     def accept(self):
         combinations = tuple(self.envelope_combinations.item(index).text() for index in range(self.envelope_combinations.count())
@@ -147,6 +154,9 @@ def html_table(headers, rows):
 
 
 def model_definition_tables(project):
+    if getattr(project, "dimension", "2D") == "3D":
+        from .spatial_results import definition_tables
+        return definition_tables(project)
     units = project.units
     show = units.to_display
     nodes = (["Node", f"X ({units.length})", f"Y ({units.length})", "Support", "DX", "DY", "RZ",
@@ -187,6 +197,8 @@ def model_definition_tables(project):
 
 
 def report_images(project, result, options):
+    if getattr(project, "dimension", "2D") == "3D" and options.diagrams:
+        raise ValueError("Whole-structure 3D diagram reports are not yet supported. Use spatial member diagrams or numerical reports.")
     from matplotlib.backends.backend_agg import FigureCanvasAgg
     from matplotlib.figure import Figure
     images = {}
@@ -205,6 +217,9 @@ def report_images(project, result, options):
 def result_table(project, result, kind):
     if result.model_signature != model_signature(project):
         raise ValueError("The project does not match this analysis snapshot. Analyze the current model or export from its retained diagram window.")
+    if getattr(project, "dimension", "2D") == "3D":
+        from .spatial_results import result_table as spatial_table
+        return spatial_table(project, result, kind)
     units = project.units
     if kind == "nodes":
         headers = ["Node", f"DX ({units.length})", f"DY ({units.length})", "RZ (rad)",
@@ -255,10 +270,24 @@ def export_csv(path, project, result, kind, source="Untitled"):
 def report_html(project, result, source="Untitled", options=None, *, image_urls=None):
     options = options or ReportOptions()
     options.validate()
+    spatial = getattr(project, "dimension", "2D") == "3D"
+    if spatial and (options.diagrams or options.envelope_combinations):
+        raise ValueError("3D reports currently support model definitions and numerical node/member results only.")
     # Check identity even when no numerical result tables are selected.
     result_table(project, result, "nodes")
     def table(kind):
         headers, rows = result_table(project, result, kind)
+        if spatial:
+            groups = ((("Translations and Rotations", tuple(range(7))),
+                       ("Forces and Moments", (0, *range(7, 13)))) if kind == "nodes" else
+                      (("Axial, Shear and Torsion", tuple(range(7))),
+                       ("Bending Moments and Transverse Deflection", (0, 1, 2, 7, 8, 9, 10))))
+            sections = []
+            for index, (title, indices) in enumerate(groups):
+                page = ' style="page-break-before: always"' if index else ""
+                sections.append(f"<h3{page}>{title}</h3>" + html_table([headers[i] for i in indices],
+                                [[row[i] for i in indices] for row in rows]))
+            return "".join(sections)
         return html_table(headers, rows)
     factors = ", ".join(f"{case}: {factor:.6g}" for case, factor in result.solver.load_combos[result.combination].factors.items())
     weight = "Off" if project.self_weight_case is None else f"{project.self_weight_case}; factor {project.self_weight_factor:.6g}"
@@ -269,13 +298,14 @@ def report_html(project, result, source="Untitled", options=None, *, image_urls=
         combination_metadata = f"<b>{label}:</b> {escape(result.combination)} | <b>Factors:</b> {escape(factors)}"
     sections = []
     if options.model:
-        sections.append("<h2>Model Definitions</h2><p>Loads below are unfactored; results and diagrams use the selected combination. Member positions are start-to-end fractions. Global angles are counterclockwise from +X; local angles are from member +x.</p>")
+        direction_note = "Uppercase force/moment directions use global XYZ; mixed-case directions use rolled member xyz axes. Y is vertical; self-weight acts in -Y." if spatial else "Global angles are counterclockwise from +X; local angles are from member +x."
+        sections.append("<h2>Model Definitions</h2><p>Loads below are unfactored; results use the selected combination. Member positions are start-to-end fractions. " + direction_note + "</p>")
         sections.extend(f"<h3>{escape(title)}</h3>{html_table(headers, rows)}" for title, headers, rows in model_definition_tables(project))
         sections.append(f"<p>Default material: {escape(project.default_material)} | Default section: {escape(project.default_section)} | Default load case: {escape(project.default_load_case)}</p>")
     if options.nodes:
         page = ' style="page-break-before: always"' if options.model else ""
         sections.append(f"<h2{page}>Node Displacements and Support Reactions</h2>" +
-                        "<p>RZ is n/a where released member ends have no shared nodal rotation.</p>" + table("nodes"))
+                        ("<p>All six displacements and reactions use global axes; rotations are radians.</p>" if spatial else "<p>RZ is n/a where released member ends have no shared nodal rotation.</p>") + table("nodes"))
     if options.members:
         page = ' style="page-break-before: always"' if options.model or options.nodes else ""
         sections.append(f"<h2{page}>Member End Values and Extrema</h2>" +
@@ -322,6 +352,7 @@ def report_html(project, result, source="Untitled", options=None, *, image_urls=
         <b>Analyzed (UTC):</b> {escape(result.analyzed_at)}<br>
         {combination_metadata}<br>
         <b>Units:</b> {escape(project.units.label)}<br>
+        <b>Dimension:</b> {"3D spatial frame" if spatial else "2D planar"}<br>
         <b>Self-weight:</b> {escape(weight)}</p>
         {''.join(sections)}</body></html>'''
 

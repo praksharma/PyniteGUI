@@ -1,0 +1,169 @@
+import * as THREE from 'three';
+import {OrbitControls} from './vendor/OrbitControls.js';
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 100000);
+const renderer = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+document.body.appendChild(renderer.domElement);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.screenSpacePanning = true;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x708080, 2));
+const light = new THREE.DirectionalLight(0xffffff, 2);
+light.position.set(1, 2, 3); scene.add(light);
+let group = new THREE.Group(), data = {nodes:[],members:[],loads:[],grid:12,mode:'select'}, picks=[], bridge=null, start=null, preview=null, span=240;
+scene.add(group);
+const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
+const vector = a => new THREE.Vector3(...a);
+const axisColors = [0xd65058,0x21955c,0x3786bd];
+function line(points, color, target=group) {
+  const obj = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color}));
+  target.add(obj); return obj;
+}
+function label(text, position, color, size=span*.035) {
+  if (!data.labels) return;
+  const canvas=document.createElement('canvas'), context=canvas.getContext('2d');
+  context.font='24px sans-serif'; const width=Math.ceil(context.measureText(text).width)+12;
+  canvas.width=width; canvas.height=36; context.font='24px sans-serif';context.fillStyle=color;context.fillText(text,6,26);
+  const texture=new THREE.CanvasTexture(canvas);
+  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,depthTest:false}));
+  sprite.position.copy(position); sprite.scale.set(size*width/36,size,1);
+  sprite.userData.labelRatio=width/36;group.add(sprite);
+}
+function cylinder(a,b,r,color,identity) {
+  const delta=b.clone().sub(a), mesh=new THREE.Mesh(new THREE.CylinderGeometry(r,r,delta.length(),10),new THREE.MeshStandardMaterial({color}));
+  mesh.position.copy(a).add(b).multiplyScalar(.5);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());
+  if(identity){mesh.userData.identity=identity;picks.push(mesh);}group.add(mesh);return mesh;
+}
+function dispose() {
+  group.traverse(obj=>{obj.geometry?.dispose();if(obj.material){obj.material.map?.dispose();obj.material.dispose();}});
+  scene.remove(group); group=new THREE.Group();scene.add(group);picks=[];preview=null;
+}
+function grid() {
+  const plane=data.plane||'XY', offset=data.offset||0, step=Math.max(data.grid,span/70), extent=Math.ceil(span*1.3/step)*step;
+  const center=controls.target.clone();
+  const point=(u,v)=>plane==='XY'?new THREE.Vector3(u,v,offset):plane==='XZ'?new THREE.Vector3(u,offset,v):new THREE.Vector3(offset,u,v);
+  const u=plane==='YZ'?center.y:center.x, v=plane==='XY'?center.y:center.z;
+  const cu=Math.round(u/step)*step, cv=Math.round(v/step)*step;
+  for(let value=-extent;value<=extent+.1;value+=step) {
+    line([point(cu+value,cv-extent),point(cu+value,cv+extent)],data.colors.grid);
+    line([point(cu-extent,cv+value),point(cu+extent,cv+value)],data.colors.grid);
+  }
+  const origin=new THREE.Vector3(0,0,0);
+  ['X','Y','Z'].forEach((text,i)=>{const dir=new THREE.Vector3().setComponent(i,1);group.add(new THREE.ArrowHelper(dir,origin,span*.16,axisColors[i],span*.025,span*.012));label(text,dir.multiplyScalar(span*.18),`#${axisColors[i].toString(16)}`);});
+}
+function loadArrow(position,dir,magnitude,length,identity) {
+  if(!magnitude)return;
+  const direction=dir.clone().multiplyScalar(Math.sign(magnitude));
+  const arrow=new THREE.ArrowHelper(direction,position.clone().addScaledVector(direction,-length),length,data.colors.load,span*.018,span*.009);
+  arrow.traverse(obj=>{obj.userData.identity=identity;if(obj.isLine||obj.isMesh)picks.push(obj);});group.add(arrow);
+}
+function moment(position,axis,value,identity) {
+  if(!value)return;
+  const normal=axis.clone().normalize().multiplyScalar(Math.sign(value));
+  const seed=Math.abs(normal.y)<.8?new THREE.Vector3(0,1,0):new THREE.Vector3(1,0,0);
+  const u=new THREE.Vector3().crossVectors(normal,seed).normalize(),v=new THREE.Vector3().crossVectors(normal,u),r=span*.038;
+  const points=Array.from({length:35},(_,i)=>position.clone().addScaledVector(u,r*Math.cos(i*5/34)).addScaledVector(v,r*Math.sin(i*5/34)));
+  const arc=line(points,data.colors.load);arc.userData.identity=identity;picks.push(arc);
+  const tangent=u.clone().multiplyScalar(-Math.sin(5)).addScaledVector(v,Math.cos(5));
+  group.add(new THREE.ArrowHelper(tangent,points.at(-1),span*.014,data.colors.load,span*.014,span*.008));
+}
+function update(payload) {
+  data=payload;const c=data.colors;scene.background=new THREE.Color(c.canvas);
+  const positions=data.nodes.map(n=>vector(n.position)),box=new THREE.Box3().setFromPoints(positions);
+  span=Math.max(box.isEmpty()?240:box.getSize(new THREE.Vector3()).length(),data.grid*8,1);
+  const r=span*.004;raycaster.params.Line.threshold=span*.012;
+  dispose();grid();
+  const nodes=new Map(data.nodes.map(n=>[n.name,n])), selected=(kind,name)=>data.selection.some(s=>s[0]===kind&&s[1]===name);
+  for(const member of data.members) {
+    const a=vector(nodes.get(member.start).position),b=vector(nodes.get(member.end).position);
+    cylinder(a,b,r,selected('members',member.name)?c.accent:c.member,['members',member.name]);
+    label(member.name,a.clone().lerp(b,.5).add(new THREE.Vector3(0,span*.023,0)),c.label);
+    if(data.deformed&&member.points)line(member.points.map((p,i)=>vector(p).addScaledVector(vector(member.displacements[i]),data.factor)),c.load);
+    if(data.localAxes&&selected('members',member.name))member.axes.forEach((axis,i)=>{const origin=a.clone().lerp(b,.5);group.add(new THREE.ArrowHelper(vector(axis),origin,span*.12,axisColors[i],span*.02,span*.01));label(['x','y','z'][i],origin.addScaledVector(vector(axis),span*.14),c.label);});
+  }
+  for(const node of data.nodes) {
+    const p=vector(node.position),mesh=new THREE.Mesh(new THREE.SphereGeometry(r*1.8,12,8),new THREE.MeshStandardMaterial({color:selected('nodes',node.name)?c.accent:c.member}));
+    mesh.position.copy(p);mesh.userData.identity=['nodes',node.name];picks.push(mesh);group.add(mesh);label(node.name,p.clone().add(new THREE.Vector3(span*.02,span*.025,0)),c.label);
+    node.restraints.forEach((fixed,i)=>{if(!fixed&&!node.springs[i])return;const axis=new THREE.Vector3().setComponent(i%3,1),color=node.springs[i]?c.axial:c.support;
+      if(i<3){const end=p.clone().addScaledVector(axis,-span*.045);cylinder(p,end,r*.6,color);const block=new THREE.Mesh(new THREE.BoxGeometry(r*5,r*5,r*5),new THREE.MeshStandardMaterial({color}));block.position.copy(end);group.add(block);}
+      else{const ring=new THREE.Mesh(new THREE.TorusGeometry(span*.022,r*.45,6,32),new THREE.MeshBasicMaterial({color}));ring.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),axis);ring.position.copy(p);group.add(ring);}});
+  }
+  for(const load of data.loads) {
+    let a,b;
+    if(nodes.has(load.target)){a=b=vector(nodes.get(load.target).position);}
+    else{const member=data.members.find(m=>m.name===load.target);a=vector(nodes.get(member.start).position);b=vector(nodes.get(member.end).position);}
+    const dir=vector(load.vector),identity=['loads',load.name], maximum=Math.max(Math.abs(load.magnitude),Math.abs(load.endMagnitude),1e-30);
+    if(load.kind==='distributed'){
+      for(let i=0;i<9;i++){const t=i/8,p=a.clone().lerp(b,load.position+t*(load.endPosition-load.position));const value=load.magnitude+t*(load.endMagnitude-load.magnitude);loadArrow(p,dir,value,span*.085*Math.abs(value)/maximum,identity);}
+    }else if(load.moment)moment(a.clone().lerp(b,load.position),dir,load.magnitude,identity);
+    else loadArrow(a.clone().lerp(b,load.position),dir,load.magnitude,span*.085,identity);
+    label(load.label,a.clone().lerp(b,load.position).addScaledVector(dir,-Math.sign(load.magnitude||load.endMagnitude)*span*.12),c.load,span*.028);
+  }
+  controls.mouseButtons.LEFT=data.mode==='pan'?THREE.MOUSE.PAN:THREE.MOUSE.ROTATE;
+  controls.enableRotate=data.mode!=='draw';renderer.domElement.style.cursor=data.mode==='draw'?'crosshair':'default';
+  if(start)preview=line([vector(start),vector(start)],c.accent);
+}
+function fit() {
+  resize();
+  stopMotion();
+  const points=data.nodes.map(n=>vector(n.position));
+  if(data.deformed)for(const m of data.members)if(m.points)points.push(...m.points.map((p,i)=>vector(p).addScaledVector(vector(m.displacements[i]),data.factor)));
+  const box=new THREE.Box3().setFromPoints(points),center=box.isEmpty()?new THREE.Vector3():box.getCenter(new THREE.Vector3());
+  const radius=Math.max(box.isEmpty()?120:box.getSize(new THREE.Vector3()).length()*.65,data.grid*5,1);
+  const distance=radius/Math.sin(THREE.MathUtils.degToRad(camera.fov/2))/Math.min(1,camera.aspect);
+  const direction=camera.position.clone().sub(controls.target).normalize();if(direction.length()<.1)direction.set(1,.7,1).normalize();
+  controls.target.copy(center);camera.position.copy(center).addScaledVector(direction,distance);camera.near=Math.max(distance/10000,.001);camera.far=distance*100;camera.updateProjectionMatrix();controls.update();
+}
+function orient(index) {
+  stopMotion();
+  const direction=[new THREE.Vector3(1,.7,1),new THREE.Vector3(0,0,1),new THREE.Vector3(0,1,.0001),new THREE.Vector3(1,0,0)][index];
+  camera.up.set(0,1,0);camera.position.copy(controls.target).add(direction);fit();
+}
+function stopMotion(){const damping=controls.enableDamping;controls.enableDamping=false;controls.update();controls.enableDamping=damping;}
+function ray(event) {
+  const rect=renderer.domElement.getBoundingClientRect();pointer.set((event.clientX-rect.left)/rect.width*2-1,-(event.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(pointer,camera);
+}
+function workPoint(event) {
+  ray(event);
+  const hits=raycaster.intersectObjects(picks).filter(h=>h.object.userData.identity?.[0]==='nodes');
+  if(hits.length)return data.nodes.find(n=>n.name===hits[0].object.userData.identity[1]).position;
+  const axis=(data.plane||'XY')==='XY'?2:data.plane==='XZ'?1:0;
+  const normal=new THREE.Vector3().setComponent(axis,1),p=new THREE.Vector3();
+  if(!raycaster.ray.intersectPlane(new THREE.Plane(normal,-(data.offset||0)),p))return null;
+  [0,1,2].filter(i=>i!==axis).forEach(i=>p.setComponent(i,Math.round(p.getComponent(i)/data.grid)*data.grid));return p.toArray();
+}
+let down=null;
+renderer.domElement.addEventListener('pointerdown',event=>{if(event.button===0)down=[event.clientX,event.clientY];});
+renderer.domElement.addEventListener('pointerup',event=>{
+  if(event.button!==0||!down||Math.hypot(event.clientX-down[0],event.clientY-down[1])>5)return;down=null;
+  if(data.mode==='draw'){
+    const point=workPoint(event);if(!point)return;
+    if(start){if(vector(start).distanceTo(vector(point))<1e-8)return;bridge?.draw(JSON.stringify([start,point]));window.dispatchEvent(new CustomEvent('memberDrawn',{detail:[start,point]}));cancel();}
+    else{start=point;preview=line([vector(point),vector(point)],data.colors.accent);}
+  }else if(data.mode==='select'){
+    ray(event);const hit=raycaster.intersectObjects(picks)[0],identity=hit?.object.userData.identity||['',''];
+    bridge?.select(...identity,event.ctrlKey||event.metaKey);window.dispatchEvent(new CustomEvent('modelSelected',{detail:identity}));
+  }
+});
+renderer.domElement.addEventListener('pointermove',event=>{const point=workPoint(event);if(!point)return;bridge?.coordinates(...point);if(preview&&start){preview.geometry.dispose();preview.geometry=new THREE.BufferGeometry().setFromPoints([vector(start),vector(point)]);}});
+function cancel(){start=null;if(preview){group.remove(preview);preview.geometry.dispose();preview.material.dispose();preview=null;}}
+addEventListener('keydown',event=>{if(event.key==='Escape')cancel();});
+function resize(){camera.aspect=innerWidth/Math.max(innerHeight,1);camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);}
+addEventListener('resize',resize);resize();camera.position.set(500,350,500);controls.update();
+function placeLabels(){
+  const occupied=[],factor=2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/innerHeight;
+  for(const sprite of group.children.filter(obj=>obj.isSprite)){
+    const view=sprite.position.clone().applyMatrix4(camera.matrixWorldInverse),scale=Math.max(0,-view.z)*factor*18;
+    sprite.scale.set(scale*sprite.userData.labelRatio,scale,1);
+    const screen=sprite.position.clone().project(camera),x=(screen.x+1)*innerWidth/2,y=(1-screen.y)*innerHeight/2;
+    const width=18*sprite.userData.labelRatio,rect=[x-width/2-3,y-12,x+width/2+3,y+12];
+    sprite.visible=view.z<0&&rect[0]>4&&rect[1]>4&&rect[2]<innerWidth-4&&rect[3]<innerHeight-4&&!occupied.some(r=>rect[0]<r[2]&&rect[2]>r[0]&&rect[1]<r[3]&&rect[3]>r[1]);
+    if(sprite.visible)occupied.push(rect);
+  }
+}
+function animate(){requestAnimationFrame(animate);controls.update();placeLabels();renderer.render(scene,camera);}animate();
+window.pyniteViewer={update,fit,orient,cancel,state:()=>({objects:group.children.length,drawCalls:renderer.info.render.calls,camera:camera.position.toArray(),target:controls.target.toArray(),selection:data.selection}),project:position=>{const p=vector(position).project(camera);return[(p.x+1)*innerWidth/2,(1-p.y)*innerHeight/2];}};
+if(window.qt){const connect=()=>{if(window.QWebChannel)new QWebChannel(qt.webChannelTransport,channel=>{bridge=channel.objects.bridge;bridge.ready();});else setTimeout(connect,20);};connect();}
+addEventListener('error',event=>{document.getElementById('error').textContent=event.message;});

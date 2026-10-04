@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PyniteGUI Spatial Frame</title>
+<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fafcfc}canvas{display:block;width:100%;height:100%;touch-action:none}#error{position:absolute;inset:16px;font:14px sans-serif;color:#bd3549;white-space:pre-wrap;pointer-events:none}</style>
+<script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
+</head><body><div id="error" role="alert"></div>
+<script>if(window.qt){const s=document.createElement('script');s.src='qrc:///qtwebchannel/qwebchannel.js';document.head.appendChild(s);}</script>
+<script>addEventListener('error',e=>document.getElementById('error').textContent='3D renderer could not start: '+e.message);</script>
+<script type="module" src="viewer.js"></script></body></html>

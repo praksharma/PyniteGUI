@@ -26,6 +26,19 @@ NUMERIC_FIELDS = {"x", "y", "magnitude", "position", "end_magnitude", "end_posit
 class ModelTablesDialog(QDialog):
     def __init__(self, parent, project):
         super().__init__(parent)
+        self.spatial = getattr(project, "dimension", None) == "3D"
+        self.fields = FIELDS
+        self.boolean_fields = BOOLEAN_FIELDS
+        self.numeric_fields = NUMERIC_FIELDS
+        self.constructors = {"nodes": Node, "members": Member, "loads": Load}
+        if self.spatial:
+            from .spatial_model import SpatialNode, SpatialMember, SpatialLoad, RESTRAINT_FIELDS, SPRING_FIELDS
+            self.fields = {"nodes": ("name", "x", "y", "z", "support", *RESTRAINT_FIELDS, *SPRING_FIELDS),
+                           "members": ("name", "start", "end", "material", "section", "roll"),
+                           "loads": tuple(key for key in FIELDS["loads"] if key != "angle")}
+            self.boolean_fields = set(RESTRAINT_FIELDS)
+            self.numeric_fields = NUMERIC_FIELDS | {"z", "roll", *SPRING_FIELDS}
+            self.constructors = {"nodes": SpatialNode, "members": SpatialMember, "loads": SpatialLoad}
         self.original = project.clone()
         self.definition = None
         self.setWindowTitle("Model Tables")
@@ -44,7 +57,14 @@ class ModelTablesDialog(QDialog):
             "loads": ["ID", "Target", "Case", "Type", "Direction", "Magnitude / start intensity",
                       "Start fraction", f"End intensity ({project.units.intensity})", "End fraction", "Angle (deg)", "Magnitude units"],
         }
-        for kind, fields in FIELDS.items():
+        if self.spatial:
+            from .spatial_model import DOFS
+            headers["nodes"] = ["ID", *(f"{axis} ({project.units.length})" for axis in ("X", "Y", "Z")), "Support",
+                                *("Restrain " + dof for dof in DOFS),
+                                *(f"Spring {dof} ({project.units.stiffness if index < 3 else project.units.rotational_stiffness})" for index, dof in enumerate(DOFS))]
+            headers["members"] = ["ID", "Start", "End", "Material", "Section", "Roll (deg)"]
+            headers["loads"] = [header for header in headers["loads"] if header != "Angle (deg)"]
+        for kind, fields in self.fields.items():
             panel = QWidget()
             panel_layout = QVBoxLayout(panel)
             table = QTableWidget(0, len(fields))
@@ -66,7 +86,7 @@ class ModelTablesDialog(QDialog):
             actions.addStretch()
             panel_layout.addLayout(actions)
             self.tabs.addTab(panel, kind.capitalize())
-        for kind in FIELDS:
+        for kind in self.fields:
             for entity in getattr(project, kind).values():
                 self.insert_entity(kind, entity)
         for kind, table in self.tables.items():
@@ -82,6 +102,9 @@ class ModelTablesDialog(QDialog):
         return [table.item(row, 0).text() for row in range(table.rowCount())]
 
     def choices(self, kind, key):
+        if self.spatial and key == "direction":
+            from .spatial_model import MEMBER_DIRECTIONS
+            return list(MEMBER_DIRECTIONS)
         if kind == "members" and key == "kind":
             return ["frame", "truss"]
         if key in ("start", "end"):
@@ -99,23 +122,23 @@ class ModelTablesDialog(QDialog):
                 "direction": ["FX", "FY", "MZ", "Angle", "Local x", "Local y", "Local angle"]}.get(key)
 
     def quantity(self, kind, key, direction="FY", load_kind="point"):
-        if key in ("x", "y"):
+        if key in ("x", "y", "z"):
             return "length"
-        if key in ("spring_x", "spring_y"):
+        if key in ("spring_x", "spring_y", "spring_z"):
             return "stiffness"
-        if key == "spring_rz":
+        if key in ("spring_rx", "spring_ry", "spring_rz"):
             return "rotational_stiffness"
         if key == "end_magnitude":
             return "intensity"
         if key == "magnitude":
-            return "intensity" if load_kind == "distributed" else "moment" if direction == "MZ" else "force"
+            return "intensity" if load_kind == "distributed" else "moment" if direction.upper().startswith("M") else "force"
         return None
 
     def insert_entity(self, kind, entity):
         table = self.tables[kind]
         row = table.rowCount()
         table.insertRow(row)
-        for column, key in enumerate(FIELDS[kind]):
+        for column, key in enumerate(self.fields[kind]):
             if key == "units":
                 item = QTableWidgetItem()
                 item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
@@ -129,34 +152,36 @@ class ModelTablesDialog(QDialog):
                 widget.setCurrentText(value)
                 if kind == "loads" and key in ("kind", "direction"):
                     widget.setToolTip("Changing type or direction reinterprets the entered magnitude in the row's displayed units.")
+                if self.spatial and key == "direction":
+                    widget.setToolTip(widget.toolTip() + "\nUppercase FX/FY/FZ/MX/MY/MZ: global XYZ. Mixed-case Fx/Fy/Fz/Mx/My/Mz: rolled member xyz. Nodes accept global only.")
                 table.setCellWidget(row, column, widget)
             else:
                 quantity = self.quantity(kind, key, getattr(entity, "direction", "FY"), getattr(entity, "kind", "point"))
                 shown = self.original.units.to_display(value, quantity) if quantity else value
-                text = f"{shown:.12g}" if key in NUMERIC_FIELDS else str(value)
+                text = f"{shown:.12g}" if key in self.numeric_fields else str(value)
                 item = QTableWidgetItem(text)
                 if key == "name":
                     item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEditable)
-                elif key in BOOLEAN_FIELDS:
+                elif key in self.boolean_fields:
                     item.setText("")
                     item.setFlags((item.flags() | Qt.ItemFlag.ItemIsUserCheckable) & ~Qt.ItemFlag.ItemIsEditable)
                     item.setCheckState(Qt.CheckState.Checked if value else Qt.CheckState.Unchecked)
                     item.setData(Qt.ItemDataRole.UserRole, value)
-                elif key in NUMERIC_FIELDS:
+                elif key in self.numeric_fields:
                     item.setData(Qt.ItemDataRole.UserRole, (value, text, quantity))
                     item.setToolTip("Finite signed number; scientific notation is accepted.")
                 table.setItem(row, column, item)
         if kind == "loads":
             for key in ("kind", "direction"):
-                widget = table.cellWidget(row, FIELDS[kind].index(key))
+                widget = table.cellWidget(row, self.fields[kind].index(key))
                 widget.currentTextChanged.connect(self.update_load_units)
             self.update_load_units()
         if kind == "nodes":
-            widget = table.cellWidget(row, FIELDS[kind].index("support"))
+            widget = table.cellWidget(row, self.fields[kind].index("support"))
             widget.currentTextChanged.connect(self.update_supports)
             self.update_supports()
-        if kind == "members":
-            widget = table.cellWidget(row, FIELDS[kind].index("kind"))
+        if kind == "members" and not self.spatial:
+            widget = table.cellWidget(row, self.fields[kind].index("kind"))
             widget.currentTextChanged.connect(self.update_member_types)
             self.update_member_types()
 
@@ -173,22 +198,23 @@ class ModelTablesDialog(QDialog):
     def update_load_units(self):
         table = self.tables["loads"]
         for row in range(table.rowCount()):
-            direction = table.cellWidget(row, FIELDS["loads"].index("direction")).currentText()
-            kind = table.cellWidget(row, FIELDS["loads"].index("kind")).currentText()
+            direction = table.cellWidget(row, self.fields["loads"].index("direction")).currentText()
+            kind = table.cellWidget(row, self.fields["loads"].index("kind")).currentText()
             quantity = self.quantity("loads", "magnitude", direction, kind)
-            table.item(row, FIELDS["loads"].index("units")).setText(getattr(self.original.units, quantity))
-            table.item(row, FIELDS["loads"].index("end_magnitude")).setToolTip(f"End intensity ({self.original.units.intensity}); used for distributed loads.")
+            table.item(row, self.fields["loads"].index("units")).setText(getattr(self.original.units, quantity))
+            table.item(row, self.fields["loads"].index("end_magnitude")).setToolTip(f"End intensity ({self.original.units.intensity}); used for distributed loads.")
 
     def update_supports(self):
         table = self.tables["nodes"]
         for row in range(table.rowCount()):
-            support = table.cellWidget(row, FIELDS["nodes"].index("support")).currentText()
-            for index, key in enumerate(("restraint_x", "restraint_y", "restraint_rz")):
-                item = table.item(row, FIELDS["nodes"].index(key))
+            support = table.cellWidget(row, self.fields["nodes"].index("support")).currentText()
+            keys = tuple(key for key in self.fields["nodes"] if key.startswith("restraint_"))
+            for index, key in enumerate(keys):
+                item = table.item(row, self.fields["nodes"].index(key))
                 flags = item.flags()
                 item.setFlags(flags | Qt.ItemFlag.ItemIsEnabled if support == "custom" else flags & ~Qt.ItemFlag.ItemIsEnabled)
                 if support != "custom":
-                    restrained = Node("", 0, 0, support).restraints[index]
+                    restrained = self.constructors["nodes"]("", 0, 0, support).restraints[index]
                     item.setCheckState(Qt.CheckState.Checked if restrained else Qt.CheckState.Unchecked)
                 item.setToolTip("Used only with a custom support.")
 
@@ -197,7 +223,7 @@ class ModelTablesDialog(QDialog):
             table = self.tables[kind]
             for row in range(table.rowCount()):
                 for key in keys:
-                    widget = table.cellWidget(row, FIELDS[kind].index(key))
+                    widget = table.cellWidget(row, self.fields[kind].index(key))
                     value, choices = widget.currentText(), self.choices(kind, key)
                     widget.clear()
                     widget.addItems(choices if value in choices else [*choices, value])
@@ -207,19 +233,19 @@ class ModelTablesDialog(QDialog):
         name = self.original.next_name({"nodes": "N", "members": "M", "loads": "L"}[kind],
                                        {*self.names("nodes"), *self.names("members"), *self.names("loads")})
         if kind == "nodes":
-            entity = Node(name, (len(self.names("nodes")) + 1) * self.original.grid, 0)
+            entity = self.constructors[kind](name, (len(self.names("nodes")) + 1) * self.original.grid, 0)
         elif kind == "members":
             nodes = self.names("nodes")
             if len(nodes) < 2:
                 QMessageBox.warning(self, "Model Tables", "Add at least two nodes first.")
                 return
-            entity = Member(name, nodes[0], nodes[-1], self.original.default_material, self.original.default_section)
+            entity = self.constructors[kind](name, nodes[0], nodes[-1], self.original.default_material, self.original.default_section)
         else:
             targets = [*self.names("members"), *self.names("nodes")]
             if not targets:
                 QMessageBox.warning(self, "Model Tables", "Add a node or member first.")
                 return
-            entity = Load(name, targets[0], case=self.original.default_load_case)
+            entity = self.constructors[kind](name, targets[0], case=self.original.default_load_case)
         self.insert_entity(kind, entity)
         self.refresh_references()
         self.tables[kind].resizeColumnsToContents()
@@ -233,21 +259,21 @@ class ModelTablesDialog(QDialog):
 
     def preview(self):
         candidate = self.original.clone()
-        for kind, constructor in (("nodes", Node), ("members", Member), ("loads", Load)):
+        for kind, constructor in self.constructors.items():
             table, entities = self.tables[kind], {}
             for row in range(table.rowCount()):
                 values = {}
-                for column, key in enumerate(FIELDS[kind]):
+                for column, key in enumerate(self.fields[kind]):
                     if key == "units":
                         continue
                     widget, item = table.cellWidget(row, column), table.item(row, column)
                     if widget is not None:
                         value = widget.currentText()
-                    elif key in BOOLEAN_FIELDS:
+                    elif key in self.boolean_fields:
                         value = item.checkState() == Qt.CheckState.Checked
                         if kind == "nodes" and values["support"] != "custom":
                             value = item.data(Qt.ItemDataRole.UserRole)
-                    elif key in NUMERIC_FIELDS:
+                    elif key in self.numeric_fields:
                         quantity = self.quantity(kind, key, values.get("direction", "FY"), values.get("kind", "point"))
                         original, shown, original_quantity = item.data(Qt.ItemDataRole.UserRole)
                         if item.text() == shown and quantity == original_quantity:

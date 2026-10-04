@@ -1,4 +1,4 @@
-"""Qt desktop editor for planar PyNite frames."""
+"""Qt desktop editor for planar and spatial PyNite frames."""
 import math
 import sys
 from dataclasses import replace
@@ -11,7 +11,7 @@ from PySide6.QtWidgets import (
     QDoubleSpinBox, QFileDialog, QFormLayout, QGraphicsItem, QGraphicsScene, QGraphicsSimpleTextItem, QGraphicsView,
     QLabel, QMainWindow, QMessageBox, QProgressBar, QPushButton, QToolButton,
     QRubberBand, QScrollArea, QStyle, QTableWidget, QTableWidgetItem, QTreeWidget, QTreeWidgetItem,
-    QVBoxLayout, QWidget,
+    QVBoxLayout, QWidget, QStackedWidget,
 )
 
 from .analysis_jobs import AnalysisWorker, CANCELLED
@@ -508,8 +508,12 @@ class MainWindow(QMainWindow):
         self.undo = QUndoStack(self)
         self.resize(1280, 820)
         self.setMinimumSize(820, 560)
-        self.view = StructureView(self)
-        self.setCentralWidget(self.view)
+        self.planar_view = StructureView(self)
+        self.spatial_view = None
+        self.view = self.planar_view
+        self.view_stack = QStackedWidget()
+        self.view_stack.addWidget(self.planar_view)
+        self.setCentralWidget(self.view_stack)
         self.build_actions()
         self.build_panels()
         self.analysis_phase = QLabel()
@@ -597,6 +601,7 @@ class MainWindow(QMainWindow):
         self.save_action = self.action("Save", self.save_project, "Ctrl+S", "document-save")
         for action in (self.new_action, self.open_action, self.save_action):
             file_menu.addAction(action)
+        file_menu.addAction(self.action("New 3D Frame", self.new_spatial_project))
         file_menu.addAction(self.action("Save As...", lambda: self.save_project(True), "Ctrl+Shift+S"))
         from .reports import ResultExportMenu
         self.export_menu = ResultExportMenu(self, lambda: (self.project, self.result, str(self.path or "Untitled")))
@@ -646,7 +651,7 @@ class MainWindow(QMainWindow):
             self.mode_actions[mode] = action
             toolbar.addAction(action)
         self.addAction(self.action("Cancel", lambda: self.set_mode("select"), "Escape"))
-        toolbar.addAction(self.action("Fit", self.view.fit, "F", "zoom-fit-best"))
+        toolbar.addAction(self.action("Fit", lambda: self.view.fit(), "F", "zoom-fit-best"))
         toolbar.addSeparator()
         toolbar.addAction(self.action("Load...", self.add_load, "L"))
         toolbar.addAction(self.action("Support...", self.assign_support))
@@ -659,7 +664,7 @@ class MainWindow(QMainWindow):
         self.addToolBarBreak()
         deformation_toolbar = self.addToolBar("Deformation")
         deformation_toolbar.setMovable(False)
-        self.deformed_action = self.action("Deformed", self.view.redraw)
+        self.deformed_action = self.action("Deformed", lambda: self.view.redraw())
         self.deformed_action.setCheckable(True)
         self.deformed_action.setEnabled(False)
         deformation_toolbar.addAction(self.deformed_action)
@@ -667,13 +672,13 @@ class MainWindow(QMainWindow):
         for label, key in (("Auto", "auto"), ("True Scale", "true"), ("Custom", "custom")):
             self.deformation_mode.addItem(label, key)
         self.deformation_mode.setToolTip("Auto: fit displacement to 15% of model extent; True Scale: 1x; Custom: chosen factor")
-        self.deformation_mode.currentIndexChanged.connect(self.view.redraw)
+        self.deformation_mode.currentIndexChanged.connect(lambda: self.view.redraw())
         deformation_toolbar.addWidget(self.deformation_mode)
         self.deformation_scale = number(100, 0.001, 1e9, 3)
         self.deformation_scale.setSuffix("x")
         self.deformation_scale.setToolTip("Custom displacement amplification factor")
         self.deformation_scale.setFixedWidth(140)
-        self.deformation_scale.valueChanged.connect(self.view.redraw)
+        self.deformation_scale.valueChanged.connect(lambda: self.view.redraw())
         self.deformation_scale_action = deformation_toolbar.addWidget(self.deformation_scale)
         self.deformation_peak = QLabel()
         self.deformation_peak.setMargin(6)
@@ -751,7 +756,7 @@ class MainWindow(QMainWindow):
         self.mode_actions[mode].setChecked(True)
         self.view.setDragMode(QGraphicsView.DragMode.ScrollHandDrag if mode == "pan" else QGraphicsView.DragMode.NoDrag)
         self.view.setCursor(Qt.CursorShape.CrossCursor if mode == "draw" else Qt.CursorShape.ArrowCursor)
-        self.statusBar().showMessage(f"{mode.capitalize()} | 2D frame | {self.project.units.summary}")
+        self.statusBar().showMessage(f"{mode.capitalize()} | {getattr(self.project, 'dimension', '2D')} frame | {self.project.units.summary}")
 
     def edit(self, title, mutate):
         before = self.project.clone()
@@ -804,6 +809,13 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f"Model updated | Results require analysis | {self.project.units.summary}")
 
     def refresh(self):
+        spatial = getattr(self.project, "dimension", "2D") == "3D"
+        if spatial and self.spatial_view is None:
+            from .spatial_view import SpatialView
+            self.spatial_view = SpatialView(self)
+            self.view_stack.addWidget(self.spatial_view)
+        self.view = self.spatial_view if spatial else self.planar_view
+        self.view_stack.setCurrentWidget(self.view)
         self.selections = [selection for selection in self.selections
                            if selection[1] in getattr(self.project, selection[0])]
         units = self.project.units
@@ -823,11 +835,22 @@ class MainWindow(QMainWindow):
         self.unit_selector.blockSignals(True)
         self.unit_selector.setCurrentIndex(self.unit_selector.findData(self.project.unit_system))
         self.unit_selector.blockSignals(False)
-        self.results_table.setHorizontalHeaderLabels(["Node", f"DX ({units.length})", f"DY ({units.length})", "RZ (rad)",
-                                                      f"FX ({units.force})", f"FY ({units.force})", f"MZ ({units.moment})"])
-        self.coordinates.setText(f"X 0 {units.length}   Y 0 {units.length}")
+        if spatial:
+            from .spatial_model import DOFS, FORCES
+            headers = ["Node", *(f"{dof} ({units.length if i < 3 else 'rad'})" for i, dof in enumerate(DOFS)),
+                       *(f"{force} ({units.force if i < 3 else units.moment})" for i, force in enumerate(FORCES))]
+        else:
+            headers = ["Node", f"DX ({units.length})", f"DY ({units.length})", "RZ (rad)",
+                       f"FX ({units.force})", f"FY ({units.force})", f"MZ ({units.moment})"]
+        self.results_table.setColumnCount(len(headers))
+        self.results_table.setHorizontalHeaderLabels(headers)
+        self.coordinates.setText("   ".join(f"{axis} 0 {units.length}" for axis in ("XYZ" if spatial else "XY")))
         from .diagrams import DiagramDialog
         for dialog in self.findChildren(DiagramDialog):
+            dialog.set_unit_system(self.project.unit_system)
+            dialog.update_snapshot_status()
+        from .spatial_diagrams import SpatialDiagramDialog
+        for dialog in self.findChildren(SpatialDiagramDialog):
             dialog.set_unit_system(self.project.unit_system)
             dialog.update_snapshot_status()
         self.tree.blockSignals(True)
@@ -839,17 +862,19 @@ class MainWindow(QMainWindow):
                 if kind == "loads" and not self.load_visible(entity):
                     continue
                 if kind == "nodes":
-                    detail = f"{units.to_display(entity.x, 'length'):g}, {units.to_display(entity.y, 'length'):g} {units.length} | {entity.support}"
+                    coordinates = entity.coords if spatial else (entity.x, entity.y)
+                    detail = ", ".join(f"{units.to_display(v, 'length'):g}" for v in coordinates) + f" {units.length} | {entity.support}"
+                    dofs = ("DX", "DY", "DZ", "RX", "RY", "RZ") if spatial else ("DX", "DY", "RZ")
                     if entity.support == "custom":
-                        detail += " " + ",".join(label for label, fixed in zip(("DX", "DY", "RZ"), entity.restraints) if fixed)
+                        detail += " " + ",".join(label for label, fixed in zip(dofs, entity.restraints) if fixed)
                     if any(entity.springs):
-                        detail += " | springs: " + ", ".join(label for label, k in zip(("DX", "DY", "RZ"), entity.springs) if k)
+                        detail += " | springs: " + ", ".join(label for label, k in zip(dofs, entity.springs) if k)
                 elif kind == "members":
                     detail = f"{entity.start} - {entity.end}"
                     if entity.kind == "truss":
                         detail += " | truss (axial only)"
                 else:
-                    quantity = "intensity" if entity.kind == "distributed" else "moment" if entity.direction == "MZ" else "force"
+                    quantity = "intensity" if entity.kind == "distributed" else "moment" if entity.direction.upper().startswith("M") else "force"
                     detail = f"{entity.target} | {entity.direction} {units.to_display(entity.magnitude, quantity):g}"
                     if entity.kind == "distributed":
                         detail += f" to {units.to_display(entity.end_magnitude, quantity):g}"
@@ -933,6 +958,10 @@ class MainWindow(QMainWindow):
     def update_inspector(self):
         while self.form.rowCount():
             self.form.removeRow(0)
+        if getattr(self.project, "dimension", "2D") == "3D":
+            from .spatial_editor import populate_inspector
+            populate_inspector(self)
+            return
         if len(self.selections) > 1:
             from .bulk_edit import populate_bulk_inspector
             populate_bulk_inspector(self)
@@ -1170,6 +1199,10 @@ class MainWindow(QMainWindow):
         if not self.selected or self.selected[0] not in ("nodes", "members"):
             QMessageBox.information(self, "Load", "Select a node or member first.")
             return
+        if getattr(self.project, "dimension", "2D") == "3D":
+            from .spatial_editor import add_load
+            add_load(self)
+            return
         kind, target = self.selected
         if kind == "members" and self.project.members[target].kind == "truss":
             QMessageBox.information(self, "Truss Load", "Truss members accept joint loads only. Select a node at a properly restrained or braced joint.")
@@ -1271,7 +1304,12 @@ class MainWindow(QMainWindow):
             def assign(project):
                 node = project.nodes[name]
                 if value == "custom" and node.support != "custom":
-                    node.restraint_x, node.restraint_y, node.restraint_rz = node.restraints
+                    if getattr(project, "dimension", "2D") == "3D":
+                        from .spatial_model import RESTRAINT_FIELDS
+                        for key, fixed in zip(RESTRAINT_FIELDS, node.restraints):
+                            setattr(node, key, fixed)
+                    else:
+                        node.restraint_x, node.restraint_y, node.restraint_rz = node.restraints
                 node.support = value
             self.edit("Assign support", assign)
 
@@ -1349,6 +1387,26 @@ class MainWindow(QMainWindow):
     def new_project(self):
         if self.confirm_discard():
             self.load_project(Project(unit_system=self.project.unit_system))
+
+    def new_spatial_project(self):
+        if self.confirm_discard():
+            from .spatial_model import SpatialProject
+            self.load_project(SpatialProject(unit_system=self.project.unit_system))
+
+    def add_spatial_node(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Add 3D Node")
+        form = QFormLayout(dialog)
+        fields = [unit_number(0, self.project.units, "length") for _ in range(3)]
+        for axis, field in zip("XYZ", fields):
+            form.addRow(f"{axis} ({self.project.units.length})", field)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        form.addRow(buttons)
+        if dialog.exec():
+            coordinates = [unit_value(field, self.project.units) for field in fields]
+            self.edit("Add 3D node", lambda project: project.node_at(*coordinates))
 
     def open_project(self):
         if not self.confirm_discard():
@@ -1462,6 +1520,9 @@ class MainWindow(QMainWindow):
         from .diagrams import DiagramDialog
         for dialog in self.findChildren(DiagramDialog):
             dialog.update_snapshot_status()
+        from .spatial_diagrams import SpatialDiagramDialog
+        for dialog in self.findChildren(SpatialDiagramDialog):
+            dialog.update_snapshot_status()
 
     def select_result_combination(self, name):
         if self.result is None or not name:
@@ -1472,7 +1533,9 @@ class MainWindow(QMainWindow):
         for row, (name, displacement) in enumerate(result.displacements.items()):
             for col, value in enumerate((name, *displacement, *result.reactions[name])):
                 if col and value is not None:
-                    value = self.project.units.to_display(value, ("length", "length", "rotation", "force", "force", "moment")[col - 1])
+                    quantities = (("length",) * 3 + ("rotation",) * 3 + ("force",) * 3 + ("moment",) * 3
+                                  if result.spatial else ("length", "length", "rotation", "force", "force", "moment"))
+                    value = self.project.units.to_display(value, quantities[col - 1])
                 item = QTableWidgetItem("n/a" if value is None else value if isinstance(value, str) else f"{value:.6g}")
                 if value is None:
                     item.setToolTip("Released member ends rotate independently; no shared nodal rotation is defined.")
@@ -1485,6 +1548,11 @@ class MainWindow(QMainWindow):
     def diagrams(self):
         if self.result is None:
             QMessageBox.information(self, "Diagrams", "Run analysis on the current model first.")
+            return
+        if getattr(self.project, "dimension", "2D") == "3D":
+            from .spatial_diagrams import SpatialDiagramDialog
+            selected = self.selected[1] if self.selected and self.selected[0] == "members" else None
+            SpatialDiagramDialog(self, self.project, self.result, selected).show()
             return
         from .diagrams import DiagramDialog
         selected = self.selected[1] if self.selected and self.selected[0] == "members" else None

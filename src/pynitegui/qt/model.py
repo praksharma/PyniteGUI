@@ -386,6 +386,11 @@ class Project:
     def from_dict(cls, data):
         if not isinstance(data, dict):
             raise ValueError("Project document must be a JSON object.")
+        if data.get("dimension") == "3D":
+            from .spatial_model import SpatialProject
+            return SpatialProject.from_dict(data)
+        if "dimension" in data:
+            raise ValueError("Unsupported project dimension.")
         version = data.get("version")
         if type(version) is not int or version not in range(1, 16) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")

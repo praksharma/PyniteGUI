@@ -2,7 +2,7 @@
 
 <img src="assets/PyniteGUI%20Structural%20Frame%20Logo.png" alt="PyniteGUI structural frame logo" width="480">
 
-A desktop editor for 2D frame and truss analysis, powered by PyNite and Qt.
+A desktop editor for 2D frames/trusses and 3D spatial frames, powered by PyNite and Qt.
 
 Draw and edit frames or trusses, assign custom or library materials and sections, and apply point,
 distributed, or automatic self-weight loads. Analyze combinations and inspect
@@ -11,6 +11,8 @@ SI/Imperial units, light/dark themes, undo/redo, and autosave recovery.
 Model elastic support springs and member-end axial, shear, or moment releases.
 Analysis shows progress phases and can be cancelled without losing valid results.
 Print selected model definitions, result tables, envelopes, and force diagrams as a report.
+3D mode adds an offline orbitable viewport, XYZ work planes, six-direction supports
+and loads, member roll, biaxial bending/torsion results, and spatial deformation.
 
 ## Quick Start
 
@@ -22,6 +24,7 @@ uv run pynitegui
 ```
 
 Try **File > Examples** to open a ready-to-analyze beam or frame.
+Start a spatial model with **File > New 3D Frame**, or try either **3D** example.
 
 ## Screenshots
 

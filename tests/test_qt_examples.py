@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+os.environ.setdefault("PYNITEGUI_NO_WEBENGINE", "1")
 from PySide6.QtWidgets import QApplication
 from pynitegui.qt.analysis import analyze
 from pynitegui.qt.app import MainWindow

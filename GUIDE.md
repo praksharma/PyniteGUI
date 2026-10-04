@@ -1,6 +1,6 @@
 # PyniteGUI Guide
 
-A Python desktop editor for 2D frame and truss analysis with PyNite.
+A Python desktop editor for 2D frames/trusses and linear 3D spatial frames with PyNite.
 
 ## Run
 
@@ -12,6 +12,73 @@ uv run pynitegui
 ```
 
 The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
+
+## Spatial Frames
+
+Use **File > New 3D Frame** for a new spatial project. **File > Examples** includes
+**3D Cantilever - Biaxial Bending and Torsion** and **3D Space Frame - Gravity and Wind**.
+The existing New command still creates a 2D project. Changing project dimensions
+does not reinterpret or convert existing geometry; open or create the intended mode.
+
+- The central viewport uses bundled Three.js and Qt WebEngine, offline. Drag to
+  orbit in Select mode, use Pan for translation, and wheel to zoom. Fit and the
+  isometric/front/top/side camera presets reframe the model.
+- In Member mode choose an XY, XZ or YZ work plane and its perpendicular offset.
+  Two clicks draw a snapped member. Existing picked nodes take priority over the
+  work plane, allowing connections between different planes. Escape cancels a
+  pending member. Add Node opens exact XYZ entry; Model Tables can define complete
+  node/member connectivity numerically. All engineering edits support undo/redo.
+- XYZ coordinates, grid and plane offset use the selected project length units.
+  SI/imperial selection preserves the physical model and valid results. Y is
+  vertical; automatic self-weight acts in global -Y using full 3D member length.
+- Nodes have DX, DY, DZ, RX, RY, RZ global degrees of freedom. Fixed restrains all
+  six; Pin restrains XYZ translations only; Roller restrains global Y only.
+  Custom exposes all six restraints. Positive bilateral springs are available
+  on each DOF; a spring and rigid restraint on the same DOF are rejected.
+- Members use per-member materials/sections and a roll angle about their local
+  x axis. Local x runs from start to end; local y/z follow PyNite's transformation
+  including roll. The inspector gives local-axis vectors in global XYZ, and the
+  Local axes toggle displays the selected member's triad. A/Iy/Iz/J remain section
+  properties; changing roll rotates the section without swapping stored values.
+- Loads accept global FX/FY/FZ/MX/MY/MZ and member-local Fx/Fy/Fz/Mx/My/Mz.
+  Load dialogs label the reference explicitly. In Model Tables, uppercase means
+  global and mixed case means local. Nodal loads use global directions only.
+  Uniform/varying distributed forces support partial spans; magnitudes are force
+  per full member length, not projected length. Distributed moments are excluded.
+- Background analysis solves all six DOFs without planar stabilizing restraints.
+  Insufficient restraints report affected global directions. Named cases,
+  combination factors, progress/cancellation and stale-result rejection are shared
+  with the 2D workflow. Reactions and nodal motions are global; rotations are radians.
+- Deformed shows all three translational components, sampled in rolled local axes
+  and transformed to global XYZ. Auto uses 15% of the largest coordinate extent;
+  True Scale uses 1x; Custom uses the chosen factor. Peak is the actual sampled
+  translational displacement magnitude, not an exact optimization or twist angle.
+  Fit includes displayed deformed paths. Torsional rotation is reported numerically;
+  this line-member viewport does not render cross-section twisting.
+- Diagrams opens a retained member snapshot with N, Vy, Vz, T, My, Mz, dy and dz.
+  Curves use local solver signs, with N positive in compression, and sample both
+  sides of point-load boundaries. Combination and member selectors are independent
+  of subsequent model edits. CSV includes all six global node responses and member
+  end values/extrema. Printable numerical reports split wide results into readable
+  tables; 2D whole-structure diagrams/envelopes are not offered for 3D reports.
+
+First-milestone scope is linear, unreleased 3D frame members. No spatial trusses,
+plates/shells, solids, nonlinear effects, member releases, force overlays/envelopes,
+node dragging, automatic member splitting/intersection connection, or 2D conversion
+are implemented in this mode yet. Multi-selection supports deletion; use Model
+Tables for coordinated property editing. Geometry requires explicit shared endpoints;
+overlaps, interior nodes, crossings without a shared joint and disconnected groups
+are rejected before analysis. Skew lines are not mistaken for intersecting members.
+Support markers show global translation restraints as stops and rotational restraints
+as rings; spring markers are blue. Exact DOFs/stiffnesses are in the inspector/table.
+
+Qt WebEngine is included with the full PySide6 dependency. Three.js 0.180.0 and
+OrbitControls are bundled unmodified under their MIT license in
+`src/pynitegui/qt/viewport3d/vendor/`; no CDN is used. The Chromium sandbox is not
+disabled by the application. On Linux Conda hosts with a mismatched Brotli common
+library, a narrowly scoped loader retries the system library only for the known
+missing-symbol import failure. Other import failures are displayed explicitly;
+numeric model editing remains available but rendering is unavailable.
 
 ## Workflow
 
@@ -469,7 +536,7 @@ Versions 1 through 4 migrate existing loads into Case 1 with the original
 Service combination. Version 3 point loads and version 4 distributed loads
 remain supported. Versions 1 through 5 migrate to rigid member ends.
 Versions 1 through 6 open in Imperial, preserving their original inch-kip values.
-New saves use version 15 and retain material/section definitions, member
+New 2D saves use version 15 and retain material/section definitions, member
 assignments, load cases, combination factors, the default load case, and each
 member end moment release, plus the selected unit system, point-load angle,
 and custom support restraints. Version 10 adds local force directions and
@@ -491,7 +558,9 @@ Malformed files are rejected before replacing the active project. Missing fields
 incorrect collection/entity shapes, unknown entity fields, invalid references,
 boolean/string/nonfinite numerical values, and duplicate JSON keys produce
 readable errors. JSON syntax errors include their line and column. Supported
-versions 1 through 15 are migrated without modifying the input; unknown/future
+planar versions 1 through 15 are migrated without modifying the input; spatial
+version 16 requires an explicit `dimension: "3D"` marker and is validated separately.
+Spatial files retain XYZ, all six restraints/springs, and roll. Unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be
 distinct so load targets are unambiguous.
 Editing a definition updates all members assigned to it and
@@ -501,8 +570,8 @@ connect it: use Edit > Connect Intersections to create explicit shared endpoints
 Analysis requires one connected structure and rejects overlapping members or
 nodes inside unsplit members, avoiding implicit solver connections. Geometry
 connections use an absolute tolerance of 1e-8 inches. Distributed intensity is
-force per unit member length, not projected length. Additional release types
-and 3D editing are future extensions.
+force per unit member length, not projected length. The connection/splitting commands
+in this section apply to 2D; spatial editing currently requires explicit segments.
 
 Results are invalidated after engineering edits and belong to the analyzed project revision.
 Unit selection changes presentation only and retains valid analysis results.
@@ -526,6 +595,10 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/annotations.py`: shared support/release symbols and factored load context.
 - `src/pynitegui/qt/released_member.py`: linear released-translation recovery using PyNite matrices.
 - `src/pynitegui/qt/analysis.py`: project-to-PyNite adapter and analysis results.
+- `src/pynitegui/qt/spatial_model.py`: separate six-DOF spatial definitions and format.
+- `src/pynitegui/qt/spatial_analysis.py`: linear spatial solver and mechanism checks.
+- `src/pynitegui/qt/spatial_view.py` and `viewport3d/`: native controls/bridge and Three.js.
+- `src/pynitegui/qt/spatial_results.py`, `spatial_diagrams.py`: spatial sampling/exports/plots.
 - `src/pynitegui/qt/analysis_jobs.py`: isolated solver processes, phase messages,
   thread-safe cancellation, and cleanup before publishing results.
 - `src/pynitegui/qt/app.py`: Qt graphics editor, inspector, undo commands,
@@ -564,6 +637,19 @@ inclined/reversed members, point-force/moment jumps, explicit member connections
 load preservation during splitting, rejection of invalid model topology,
 mixed-material/section stiffness, legacy-file migration, and material/section
 assignment with undo.
+
+Spatial regressions cover all six cantilever DOFs, biaxial tip moments, torsion,
+roll/inertia changes, oblique local/global transformations, uniform/varying loads,
+springs, missing out-of-plane restraints, self-weight, spatial combinations,
+version dispatch, units, editing history, snapshots and reports. Widget tests use
+`PYNITEGUI_NO_WEBENGINE=1` to avoid initializing Chromium; this is a test-only switch.
+For real viewport checks, install Playwright in a separate developer environment
+with its Chromium browser, then run `node tests/viewport3d.spec.cjs` with Playwright
+available to Node (or set `PLAYWRIGHT_MODULE` to its installed package directory).
+The script serves local assets temporarily and closes both browser/server after
+testing desktop/mobile canvas pixels, framing, orbit, node picking, all three
+work-plane drawing modes and dark appearance. Screenshots go to `/tmp/pynite-3d-qa`
+by default, configurable with `VIEWPORT_QA_OUTPUT`. It does not launch the user's GUI.
 Distributed-load checks cover analytical uniform/triangular beam responses,
 partial-span resultants, inclined global loading, orientation-independent
 diagrams, interpolated split loads, persistence, and editor creation/undo.
