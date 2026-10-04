@@ -4,6 +4,10 @@
 <style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#fafcfc}canvas{display:block;width:100%;height:100%;touch-action:none}#error{position:absolute;inset:16px;font:14px sans-serif;color:#bd3549;white-space:pre-wrap;pointer-events:none}</style>
 <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
 </head><body><div id="error" role="alert"></div>
-<script>if(window.qt){const s=document.createElement('script');s.src='qrc:///qtwebchannel/qwebchannel.js';document.head.appendChild(s);}</script>
-<script>addEventListener('error',e=>document.getElementById('error').textContent='3D renderer could not start: '+e.message);</script>
+<script>
+window.pyniteBridge=null;window.pyniteRendererReady=false;window.pyniteFailure=null;
+window.pyniteReportFailure=message=>{window.pyniteFailure=message;document.getElementById('error').textContent='3D renderer could not start: '+message;window.pyniteBridge?.failed(message);};
+addEventListener('error',event=>window.pyniteReportFailure(event.message));
+if(window.qt){const script=document.createElement('script');script.src='qrc:///qtwebchannel/qwebchannel.js';script.onload=()=>new QWebChannel(qt.webChannelTransport,channel=>{window.pyniteBridge=channel.objects.bridge;if(window.pyniteFailure)window.pyniteBridge.failed(window.pyniteFailure);else if(window.pyniteRendererReady)window.pyniteBridge.ready();});document.head.appendChild(script);}
+</script>
 <script type="module" src="viewer.js"></script></body></html>

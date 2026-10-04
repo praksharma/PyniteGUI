@@ -113,6 +113,8 @@ and verified PyNite extensions. This file remains the primary implementation lis
   member diagrams, true/auto/custom spatial deformation, CSV and numerical reports.
 - [x] Editable 3D cantilever and space-frame examples; analytical benchmarks,
   native light/dark rendering, and desktop/mobile browser interaction checks.
+- [x] Add startup software rendering, a persisted renderer preference and an
+  actionable native recovery panel for failed WebGL/graphics contexts.
 - [ ] Whole-structure 3D axial/shear/bending/torsion overlays and image reports.
 - [ ] Spatial combination envelopes and interactive one-sided station inspection.
 - [ ] 3D member end releases and axial-only trusses, with mechanism benchmarks.

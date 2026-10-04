@@ -12,7 +12,7 @@ controls.screenSpacePanning = true;
 scene.add(new THREE.HemisphereLight(0xffffff, 0x708080, 2));
 const light = new THREE.DirectionalLight(0xffffff, 2);
 light.position.set(1, 2, 3); scene.add(light);
-let group = new THREE.Group(), data = {nodes:[],members:[],loads:[],grid:12,mode:'select'}, picks=[], bridge=null, start=null, preview=null, span=240;
+let group = new THREE.Group(), data = {nodes:[],members:[],loads:[],grid:12,mode:'select'}, picks=[], start=null, preview=null, span=240, rendering=true;
 scene.add(group);
 const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
 const vector = a => new THREE.Vector3(...a);
@@ -140,14 +140,15 @@ renderer.domElement.addEventListener('pointerup',event=>{
   if(event.button!==0||!down||Math.hypot(event.clientX-down[0],event.clientY-down[1])>5)return;down=null;
   if(data.mode==='draw'){
     const point=workPoint(event);if(!point)return;
-    if(start){if(vector(start).distanceTo(vector(point))<1e-8)return;bridge?.draw(JSON.stringify([start,point]));window.dispatchEvent(new CustomEvent('memberDrawn',{detail:[start,point]}));cancel();}
+    if(start){if(vector(start).distanceTo(vector(point))<1e-8)return;window.pyniteBridge?.draw(JSON.stringify([start,point]));window.dispatchEvent(new CustomEvent('memberDrawn',{detail:[start,point]}));cancel();}
     else{start=point;preview=line([vector(point),vector(point)],data.colors.accent);}
   }else if(data.mode==='select'){
     ray(event);const hit=raycaster.intersectObjects(picks)[0],identity=hit?.object.userData.identity||['',''];
-    bridge?.select(...identity,event.ctrlKey||event.metaKey);window.dispatchEvent(new CustomEvent('modelSelected',{detail:identity}));
+    window.pyniteBridge?.select(...identity,event.ctrlKey||event.metaKey);window.dispatchEvent(new CustomEvent('modelSelected',{detail:identity}));
   }
 });
-renderer.domElement.addEventListener('pointermove',event=>{const point=workPoint(event);if(!point)return;bridge?.coordinates(...point);if(preview&&start){preview.geometry.dispose();preview.geometry=new THREE.BufferGeometry().setFromPoints([vector(start),vector(point)]);}});
+renderer.domElement.addEventListener('pointermove',event=>{const point=workPoint(event);if(!point)return;window.pyniteBridge?.coordinates(...point);if(preview&&start){preview.geometry.dispose();preview.geometry=new THREE.BufferGeometry().setFromPoints([vector(start),vector(point)]);}});
+renderer.domElement.addEventListener('webglcontextlost',()=>{rendering=false;window.pyniteReportFailure('The graphics context was lost. Restart with software rendering if this persists.');});
 function cancel(){start=null;if(preview){group.remove(preview);preview.geometry.dispose();preview.material.dispose();preview=null;}}
 addEventListener('keydown',event=>{if(event.key==='Escape')cancel();});
 function resize(){camera.aspect=innerWidth/Math.max(innerHeight,1);camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);}
@@ -163,7 +164,6 @@ function placeLabels(){
     if(sprite.visible)occupied.push(rect);
   }
 }
-function animate(){requestAnimationFrame(animate);controls.update();placeLabels();renderer.render(scene,camera);}animate();
+function animate(){if(!rendering)return;requestAnimationFrame(animate);controls.update();placeLabels();renderer.render(scene,camera);}animate();
 window.pyniteViewer={update,fit,orient,cancel,state:()=>({objects:group.children.length,drawCalls:renderer.info.render.calls,camera:camera.position.toArray(),target:controls.target.toArray(),selection:data.selection}),project:position=>{const p=vector(position).project(camera);return[(p.x+1)*innerWidth/2,(1-p.y)*innerHeight/2];}};
-if(window.qt){const connect=()=>{if(window.QWebChannel)new QWebChannel(qt.webChannelTransport,channel=>{bridge=channel.objects.bridge;bridge.ready();});else setTimeout(connect,20);};connect();}
-addEventListener('error',event=>{document.getElementById('error').textContent=event.message;});
+window.pyniteRendererReady=true;window.pyniteBridge?.ready();

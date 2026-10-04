@@ -80,6 +80,41 @@ library, a narrowly scoped loader retries the system library only for the known
 missing-symbol import failure. Other import failures are displayed explicitly;
 numeric model editing remains available but rendering is unavailable.
 
+### Graphics Recovery
+
+When a Linux graphics driver/EGL/Vulkan mismatch prevents WebGL2 from starting,
+close PyniteGUI after saving and launch with:
+
+```sh
+uv run pynitegui --software-rendering
+```
+
+This requests Chromium's CPU-based ANGLE/SwiftShader driver before Qt initializes,
+disables GPU compositing, and requests software OpenGL for Qt. Qt can select its
+platform-specific WebGL driver instead; the tested NVIDIA/Wayland configuration
+uses Mesa llvmpipe, while offscreen Qt selects the NVIDIA driver with CPU compositing.
+This is a compatibility mode, not a guarantee that every GPU operation is disabled.
+No `QT_QUICK_BACKEND` override is applied because
+Qt WebEngine's software GL driver is incompatible with that override on some hosts.
+This mode does not install drivers, alter the operating
+system, disable Chromium sandboxing, or enable the unsafe-WebGL fallback flag.
+The view uses only bundled local content. Some EGL/driver warnings may remain even
+when the viewport renders successfully. CPU rendering can be slower for large
+models. Qt's `--disable-gpu` workaround alone is insufficient for this WebGL2
+viewport; it may disable the context Three.js needs.
+
+**View > 3D Rendering > Software (CPU Compositing)** saves this preference for normal future
+launches; rendering changes require an application restart. A failed viewport
+also offers **Use Software Rendering on Restart**, keeping model data and unsaved
+work intact. **Automatic (GPU)** restores the normal backend on subsequent starts.
+The command-line options `--graphics=software` / `--graphics=auto` override saved
+preferences for one launch. Existing unrelated Chromium flags are retained;
+explicit software mode replaces conflicting graphics-disable/backend flags.
+
+Backend references: [Chromium SwiftShader driver documentation](https://chromium.googlesource.com/chromium/src/+/main/docs/gpu/swiftshader.md)
+and [Qt WebEngine hardware acceleration](https://doc.qt.io/qt-6.10/qtwebengine-features.html#hardware-acceleration).
+Terminal warning/output lines are not shell commands; paste only the command above.
+
 ## Workflow
 
 - The unit selector also offers SI (mm, N) and Imperial (ft, kip). The mm/N

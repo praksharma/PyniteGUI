@@ -25,6 +25,7 @@ uv run pynitegui
 
 Try **File > Examples** to open a ready-to-analyze beam or frame.
 Start a spatial model with **File > New 3D Frame**, or try either **3D** example.
+If 3D graphics fail to start, launch with `uv run pynitegui --software-rendering`.
 
 ## Screenshots
 

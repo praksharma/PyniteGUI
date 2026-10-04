@@ -22,7 +22,7 @@ const server = http.createServer((request,response)=>{
 
 (async()=>{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-  const browser = await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+  const browser = await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader']});
   try{
     const page = await browser.newPage();
     const errors=[];
@@ -75,6 +75,16 @@ const server = http.createServer((request,response)=>{
     await page.evaluate(payload=>{window.pyniteViewer.update(payload);window.pyniteViewer.orient(0);},dark);
     await page.waitForTimeout(300);await page.screenshot({path:path.join(output,'desktop-dark.png')});
     assert.deepEqual(errors,[]);
-    console.log('PASS: rendered geometry/deformation, desktop/mobile framing, orbit, node picking, XY/XZ/YZ snapped drawing, dark theme.');
+    await page.evaluate(()=>{
+      window.bridgeFailures=[];
+      window.pyniteBridge={failed:message=>window.bridgeFailures.push(message)};
+      document.querySelector('canvas').getContext('webgl2').getExtension('WEBGL_lose_context').loseContext();
+    });
+    await page.waitForFunction(()=>window.pyniteFailure);
+    const failure=await page.evaluate(()=>({message:window.pyniteFailure,bridge:window.bridgeFailures,error:document.querySelector('#error').textContent}));
+    assert.match(failure.message,/graphics context was lost/i);
+    assert.deepEqual(failure.bridge,[failure.message],'Context loss did not reach the native bridge');
+    assert(failure.error.includes(failure.message),'Context loss did not show browser fallback text');
+    console.log('PASS: rendered geometry/deformation, desktop/mobile framing, orbit, node picking, XY/XZ/YZ snapped drawing, dark theme, context-loss recovery.');
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;}).finally(()=>server.close());

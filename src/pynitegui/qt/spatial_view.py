@@ -6,8 +6,8 @@ import sys
 from pathlib import Path
 
 import numpy as np
-from PySide6.QtCore import QObject, QUrl, Slot
-from PySide6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QLabel, QToolButton, QVBoxLayout, QWidget
+from PySide6.QtCore import QObject, QUrl, Slot, Qt
+from PySide6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QLabel, QPushButton, QStyle, QToolButton, QVBoxLayout, QWidget
 
 from .annotations import combination_loads
 from .spatial_results import member_axes, sampled_member
@@ -70,8 +70,14 @@ class Bridge(QObject):
     @Slot()
     def ready(self):
         self.view.ready = True
+        self.view.failure_panel.hide()
+        self.view.web.show()
         self.view.redraw()
         self.view.fit()
+
+    @Slot(str)
+    def failed(self, message):
+        self.view.render_failure(message)
 
     @Slot(str, str, bool)
     def select(self, kind, name, extend):
@@ -162,6 +168,21 @@ class SpatialView(QWidget):
         toolbar.addWidget(add)
         layout.addLayout(toolbar)
         self.web = None
+        self.failure_panel = QWidget()
+        self.failure_panel.setObjectName("spatial_render_failure")
+        failure_layout = QVBoxLayout(self.failure_panel)
+        failure_layout.addStretch()
+        self.failure_message = QLabel()
+        self.failure_message.setTextFormat(Qt.TextFormat.PlainText)
+        self.failure_message.setWordWrap(True)
+        failure_layout.addWidget(self.failure_message)
+        recovery = QPushButton(self.style().standardIcon(QStyle.StandardPixmap.SP_BrowserReload), "Use Software Rendering on Restart")
+        recovery.setObjectName("spatial_software_restart")
+        recovery.clicked.connect(lambda: window.set_graphics_mode("software"))
+        failure_layout.addWidget(recovery)
+        failure_layout.addStretch()
+        self.failure_panel.hide()
+        layout.addWidget(self.failure_panel)
         if os.environ.get("PYNITEGUI_NO_WEBENGINE") == "1":
             layout.addWidget(QLabel("3D viewport disabled for automated widget tests."))
             return
@@ -174,6 +195,7 @@ class SpatialView(QWidget):
             self.bridge = Bridge(self)
             self.channel.registerObject("bridge", self.bridge)
             self.web.page().setWebChannel(self.channel)
+            self.web.page().renderProcessTerminated.connect(lambda status, code: self.render_failure(f"The 3D rendering process stopped (code {code})."))
             self.web.setUrl(QUrl.fromLocalFile(str(Path(__file__).parent / "viewport3d" / "index.html")))
             layout.addWidget(self.web)
         except ImportError as error:
@@ -185,6 +207,13 @@ class SpatialView(QWidget):
         self.orientation.currentIndexChanged.connect(lambda: self.call("orient", self.orientation.currentIndex()))
         self.labels.toggled.connect(self.redraw)
         self.axes.toggled.connect(self.redraw)
+
+    def render_failure(self, message):
+        self.ready = False
+        self.failure_message.setText("3D graphics could not start or were interrupted.\n\n" + str(message)[:600])
+        self.failure_panel.show()
+        if self.web:
+            self.web.hide()
 
     def call(self, method, value=None):
         if self.web and self.ready:

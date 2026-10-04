@@ -581,6 +581,16 @@ class MainWindow(QMainWindow):
         if self.settings_store is not None:
             self.settings_store.setValue("theme", theme_name())
 
+    def set_graphics_mode(self, name):
+        from .graphics import graphics_mode
+        name = graphics_mode(name)
+        if self.settings_store is not None:
+            self.settings_store.setValue("graphics", name)
+        for key, action in self.graphics_actions.items():
+            action.setChecked(key == name)
+        QMessageBox.information(self, "3D Rendering", "Rendering changes take effect after restarting PyniteGUI. Save your project before closing.\n\n"
+                                + ("Software mode uses CPU compositing and requests a software graphics backend. Qt may choose a platform-specific WebGL driver." if name == "software" else "Automatic mode uses the default graphics backend."))
+
     def apply_theme(self):
         if not hasattr(self, "theme_actions"):
             return
@@ -705,6 +715,21 @@ class MainWindow(QMainWindow):
             self.theme_group.addAction(action)
             self.theme_actions[key] = action
             appearance.addAction(action)
+        self.menuBar_view.addSeparator()
+        rendering = self.menuBar_view.addMenu("3D Rendering")
+        self.graphics_group = QActionGroup(self)
+        self.graphics_actions = {}
+        from .graphics import graphics_mode
+        saved_graphics = self.settings_store.value("graphics", "auto") if self.settings_store is not None else "auto"
+        active_graphics = graphics_mode(QApplication.instance().property("pynitegui_graphics") or saved_graphics)
+        for key, label in (("auto", "Automatic (GPU)"), ("software", "Software (CPU Compositing)")):
+            action = self.action(label, lambda checked=False, key=key: self.set_graphics_mode(key))
+            action.setCheckable(True)
+            action.setChecked(key == active_graphics)
+            action.setToolTip("Requires application restart")
+            self.graphics_group.addAction(action)
+            self.graphics_actions[key] = action
+            rendering.addAction(action)
         self.menuBar_view.addSeparator()
         self.tree = QTreeWidget()
         self.tree.setHeaderLabels(["Model", "Properties"])
@@ -1701,11 +1726,19 @@ class MainWindow(QMainWindow):
 def main():
     from multiprocessing import freeze_support
     freeze_support()
-    application = QApplication.instance() or QApplication(sys.argv)
+    from .graphics import configure_graphics, launch_options
+    settings = QSettings("PyniteGUI", "PyniteGUI")
+    mode, arguments = launch_options(sys.argv, settings.value("graphics", "auto"))
+    try:
+        configure_graphics(mode)
+    except ValueError as error:
+        raise SystemExit("Invalid QTWEBENGINE_CHROMIUM_FLAGS: " + str(error)) from error
+    application = QApplication.instance() or QApplication(arguments)
+    application.setProperty("pynitegui_graphics", mode)
     application.setApplicationName("PyniteGUI")
     configure_theme(application)
     recovery_directory = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppDataLocation)) / "recovery"
-    window = MainWindow(recovery_directory, QSettings("PyniteGUI", "PyniteGUI"))
+    window = MainWindow(recovery_directory, settings)
     window.show()
     QTimer.singleShot(0, window.offer_recovery)
     sys.exit(application.exec())
