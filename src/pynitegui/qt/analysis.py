@@ -8,6 +8,8 @@ import uuid
 
 import numpy as np
 from Pynite import FEModel3D
+from scipy.sparse import diags
+from scipy.sparse.linalg import ArpackNoConvergence, eigsh
 
 from .model import Project
 
@@ -61,20 +63,36 @@ def stiffness_issue(model):
                 labels.append(f"{node.name} {direction}")
     if not indices:
         return None
-    if len(indices) > 600:
-        return None
     combination = next(iter(model.load_combos))
     stiffness = model.Ke(combination, check_stability=False, sparse=True).tocsr()
-    matrix = stiffness[indices, :][:, indices].toarray()
-    diagonal = np.diag(matrix)
+    matrix = stiffness[indices, :][:, indices]
+    if not np.all(np.isfinite(matrix.data)):
+        raise ValueError("The stiffness matrix contains nonfinite values.")
+    diagonal = matrix.diagonal()
     missing = diagonal <= 0
     if np.any(missing):
         return "No effective joint stiffness at: " + affected_dofs(labels, missing) + "."
     # Diagonal scaling compares translations and rotations without mixing their units.
-    scale = np.sqrt(diagonal)
-    normalized = matrix / np.outer(scale, scale)
-    eigenvalues, modes = np.linalg.eigh((normalized + normalized.T) / 2)
-    tolerance = 10 * np.finfo(float).eps * len(indices) * max(1.0, abs(eigenvalues[-1]))
+    scale = diags(1 / np.sqrt(diagonal))
+    normalized = scale @ ((matrix + matrix.T) * 0.5) @ scale
+    if len(indices) <= 600:
+        eigenvalues, modes = np.linalg.eigh(normalized.toarray())
+        bound = max(1.0, abs(eigenvalues[-1]))
+    else:
+        # An absolute row-sum bound avoids a second spectral solve. A small
+        # negative shift keeps exact mechanisms factorable while targeting the
+        # near-zero modes of this positive-semidefinite elastic stiffness.
+        bound = max(1.0, float(np.asarray(abs(normalized).sum(axis=1)).max()))
+        tolerance = 10 * np.finfo(float).eps * len(indices) * bound
+        try:
+            eigenvalues, modes = eigsh(normalized, k=6, sigma=-max(1e-8, 100 * tolerance), which="LM",
+                                       tol=1e-9, maxiter=max(1000, 5 * len(indices)),
+                                       v0=np.random.default_rng(0).normal(size=len(indices)))
+        except ArpackNoConvergence as error:
+            if error.eigenvalues is None or not np.any(error.eigenvalues <= tolerance):
+                raise ValueError("The sparse stability check did not converge. Results were not accepted; review stiffness contrasts and model geometry.") from error
+            eigenvalues, modes = error.eigenvalues, error.eigenvectors
+    tolerance = 10 * np.finfo(float).eps * len(indices) * bound
     unstable = eigenvalues <= tolerance
     if np.any(unstable):
         participation = np.linalg.norm(modes[:, unstable], axis=1)
@@ -91,8 +109,7 @@ def instability_details(model):
     except Exception:
         # Diagnostic failure must never replace the original analysis failure.
         pass
-    return ("The solver could not localize the instability. Check supports, member end releases, and very small stiffnesses. "
-            "Joint localization is limited to 600 free planar degrees of freedom.")
+    return "The solver could not localize the instability. Check supports, member end releases, and very small stiffnesses."
 
 
 @dataclass
@@ -124,7 +141,11 @@ class AnalysisResult:
                        model_signature=self.model_signature)
 
 
-def analyze(project: Project) -> AnalysisResult:
+def analyze(project: Project, progress=None) -> AnalysisResult:
+    def phase(message):
+        if progress is not None:
+            progress(message)
+    phase("Checking model and supports")
     project.validate()
     if not project.members:
         raise ValueError("Add at least one member before running analysis.")
@@ -137,6 +158,7 @@ def analyze(project: Project) -> AnalysisResult:
     if issue:
         raise ValueError(issue)
     inactive_rotations = project.inactive_rotations()
+    phase("Building the analysis model")
     model = FEModel3D()
     for material in project.materials.values():
         model.add_material(material.name, material.E, material.G, material.nu, material.rho)
@@ -177,13 +199,16 @@ def analyze(project: Project) -> AnalysisResult:
                     model.add_member_pt_load(load.target, direction, magnitude, length * load.position, case=load.case)
     for name, factors in project.combinations.items():
         model.add_load_combo(name, dict(factors))
+    phase(f"Solving {len(project.combinations)} combination(s)")
     try:
         model.analyze_linear(check_stability=True, check_statics=True)
     except Exception as error:
         if not any(word in str(error).lower() for word in ("unstable", "singular", "instability")):
             raise
+        phase("Checking instability details")
         raise ValueError("Structure is unstable.\n" + instability_details(model) +
                          "\nCheck supports and member releases; no extra restraints were added.") from error
+    phase("Checking results and stiffness")
     if any(not math.isfinite(value) for node in model.nodes.values()
            for key in ("DX", "DY", "RZ", "RxnFX", "RxnFY", "RxnMZ")
            for value in getattr(node, key).values()):
@@ -192,6 +217,7 @@ def analyze(project: Project) -> AnalysisResult:
     if issue:
         raise ValueError("The stiffness matrix is singular or numerically ill-conditioned; the structure may be unstable.\n" +
                          issue + "\nCheck supports, member releases, and stiffness contrasts; no extra restraints were added.")
+    phase("Collecting result snapshot")
     result = AnalysisResult.from_solver(model, next(iter(project.combinations)), inactive_rotations)
     result.model_signature = model_signature(project)
     return result

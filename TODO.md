@@ -55,9 +55,12 @@ and verified PyNite extensions. This file remains the primary implementation lis
 - [x] Add mm/N and ft/kip unit presets alongside the original in/kip and m/kN.
 - [ ] Add custom length/force unit choices.
 - [x] Improve instability messages with affected nodes and degrees of freedom.
-- [ ] Add scalable sparse mechanism checks/localization beyond 600 free planar
-  degrees of freedom.
-- [ ] Add an analysis progress indicator and cancellation for large models.
+- [x] Add scalable sparse mechanism checks/localization beyond 600 free planar
+  degrees of freedom: scaled near-zero modes, direct zero-stiffness checks,
+  affected joint directions, and no acceptance of incomplete diagnostics.
+- [x] Add an analysis progress indicator and cancellation for large models.
+  Isolated cancellable solver processes, real phase messages, previous-result
+  preservation, stale-reply rejection, and safe close/unsaved-change handling.
 
 ## Results and Presentation
 

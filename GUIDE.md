@@ -172,7 +172,18 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   changing any numerical property makes the definition custom.
   Edit > Grid changes the drawing grid spacing.
 - Use Pan (P) to drag the view, the mouse wheel to zoom, and Fit (F) to frame it.
-- Analyze (F5) runs PyNite in a worker thread. Reactions and nodal displacements
+- Analyze (F5) runs PyNite in an isolated worker process supervised off the GUI
+  thread. The status bar shows a busy indicator and actual phases: checking the
+  model/supports, building the model, solving combinations, checking stiffness,
+  and collecting the snapshot. It does not invent a percentage or completion
+  time. The stop icon cancels even during numerical solves or diagnostics and
+  waits for worker cleanup; editing remains available while analysis runs.
+  A rerun retains the last valid results until a new snapshot succeeds. Cancelled
+  or failed reruns do not remove them; engineering edits still invalidate results
+  normally, and stale worker replies are rejected. Unit-only changes can be made
+  during a solve without changing the physical model. Closing while analysis
+  runs cancels the worker first, then uses the normal unsaved-change prompt.
+  Reactions and nodal displacements
   appear in Results. Choose a combination above the result table to update
   reactions, displacements, deformation, and factored load annotations without
   another analysis. Deformed overlays the displaced members. Its toolbar offers
@@ -355,15 +366,19 @@ mechanisms are not hidden by adding translational restraints.
 Analysis checks whether the actual supports prevent planar rigid-body motion
 and lists affected global DX/DY/RZ directions when they do not. Solver
 instability errors are translated into joint-level messages where possible.
-For models with at most 600 free planar degrees of freedom, a diagonally scaled
-stiffness check also rejects singular/numerically ill-conditioned results even
-when the solver returns finite values. Candidate mechanism directions are
-diagnostic hints, not a unique identification of the defective member. Very
-large stiffness contrasts can cause poor conditioning without a physical
-mechanism. For larger models, solver checks and rejection of nonfinite results
-remain active, but detailed spectral checks/localization are skipped to avoid
-an expensive dense calculation. These are linear-model checks, not buckling
-or nonlinear stability verification.
+A diagonally scaled stiffness check rejects singular/numerically ill-conditioned
+results even when the solver returns finite values. Up to 600 free planar degrees
+of freedom it uses a dense spectral check. Larger models retain sparse matrices
+and inspect up to six near-zero modes with a shifted sparse eigensolver. This
+targets mechanisms in the positive-semidefinite elastic stiffness, not buckling
+modes. Zero-stiffness directions are detected directly, including in large
+models. Diagnostics show up to 24 affected node/direction labels; these are hints,
+not a unique identification of every defective member. Very large stiffness
+contrasts can cause poor conditioning without a physical mechanism. An incomplete
+sparse check does not certify the model: a found mechanism is reported, otherwise
+results are rejected with a convergence message. Nonfinite-result checks remain
+active. These are linear-model checks, not nonlinear stability verification;
+sparse factorization can still consume substantial memory for large models.
 
 Each member references a reusable material definition. Editing that definition
 updates every member assigned to it and invalidates results. Split member
@@ -470,6 +485,8 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/model.py`: validated, serializable project data.
 - `src/pynitegui/qt/units.py`: canonical-to-display conversion factors and presets.
 - `src/pynitegui/qt/analysis.py`: project-to-PyNite adapter and analysis results.
+- `src/pynitegui/qt/analysis_jobs.py`: isolated solver processes, phase messages,
+  thread-safe cancellation, and cleanup before publishing results.
 - `src/pynitegui/qt/app.py`: Qt graphics editor, inspector, undo commands,
   background analysis, and a consistent light application theme.
 - `src/pynitegui/qt/diagrams.py`: whole-frame axial/SFD/BMD views, member detail plots,

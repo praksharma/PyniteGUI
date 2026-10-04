@@ -5,6 +5,7 @@ import math
 import unittest
 from unittest.mock import patch
 from types import SimpleNamespace
+from scipy.sparse import csr_matrix, eye
 
 from pynitegui.qt.analysis import analyze, stiffness_issue
 from pynitegui.qt.model import Load, Project
@@ -118,7 +119,9 @@ class StabilityTests(unittest.TestCase):
         expected = -10 * 120**3 / (3 * project.E * project.Iz) * (0.5**2 * (3 - 0.5) / 2)
         self.assertAlmostEqual(result.displacements["N2"][1] / expected, 1)
 
-    def test_large_model_skips_dense_localization(self):
+    def test_large_model_uses_sparse_localization(self):
         model = SimpleNamespace(nodes={str(i): SimpleNamespace(ID=i, name=str(i), support_DX=False,
-                                                               support_DY=False, support_RZ=False) for i in range(201)})
-        self.assertIsNone(stiffness_issue(model))
+                                                               support_DY=False, support_RZ=False) for i in range(201)},
+                                load_combos={"Service": None}, Ke=lambda *a, **k: eye(1206, format="csr"))
+        with patch.object(csr_matrix, "toarray", side_effect=AssertionError("Dense matrix conversion")):
+            self.assertIsNone(stiffness_issue(model))

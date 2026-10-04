@@ -487,6 +487,7 @@ dependencies = [
     { name = "numpy" },
     { name = "pynitefea" },
     { name = "pyside6" },
+    { name = "scipy" },
 ]
 
 [package.metadata]
@@ -495,6 +496,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.5.3" },
     { name = "pynitefea", specifier = ">=3.0.0" },
     { name = "pyside6", specifier = ">=6.8,<7" },
+    { name = "scipy", specifier = ">=1.18.1" },
 ]
 
 [[package]]

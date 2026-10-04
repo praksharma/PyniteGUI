@@ -4,17 +4,17 @@ import sys
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QPointF, QRect, QRectF, Qt, QThread, Signal, QTimer, QStandardPaths, QSettings
+from PySide6.QtCore import QPointF, QRect, QRectF, Qt, QThread, QTimer, QStandardPaths, QSettings
 from PySide6.QtGui import QAction, QActionGroup, QColor, QIcon, QPainter, QPainterPath, QPen, QUndoCommand, QUndoStack
 from PySide6.QtWidgets import (
     QApplication, QAbstractItemView, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDockWidget,
     QDoubleSpinBox, QFileDialog, QFormLayout, QGraphicsItem, QGraphicsScene, QGraphicsSimpleTextItem, QGraphicsView,
-    QLabel, QMainWindow, QMessageBox, QPushButton,
+    QLabel, QMainWindow, QMessageBox, QProgressBar, QPushButton, QToolButton,
     QRubberBand, QScrollArea, QStyle, QTableWidget, QTableWidgetItem, QTreeWidget, QTreeWidgetItem,
     QVBoxLayout, QWidget,
 )
 
-from .analysis import analyze
+from .analysis_jobs import AnalysisWorker, CANCELLED
 from .model import Load, Project
 from .units import UNIT_SYSTEMS
 from .theme import colors, configure_theme, theme_name
@@ -98,20 +98,6 @@ class Edit(QUndoCommand):
 
     def undo(self):
         self.window.replace_project(self.before)
-
-
-class AnalysisWorker(QObject):
-    finished = Signal(object, str)
-
-    def __init__(self, project):
-        super().__init__()
-        self.project = project
-
-    def run(self):
-        try:
-            self.finished.emit(analyze(self.project), "")
-        except Exception as error:
-            self.finished.emit(None, str(error))
 
 
 class EngineeringSymbol(QGraphicsItem):
@@ -526,6 +512,9 @@ class MainWindow(QMainWindow):
         self.result = None
         self.revision = 0
         self.thread = None
+        self.worker = None
+        self.analysis_cancel_requested = False
+        self.close_after_analysis = False
         self.undo = QUndoStack(self)
         self.resize(1280, 820)
         self.setMinimumSize(820, 560)
@@ -533,6 +522,16 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.view)
         self.build_actions()
         self.build_panels()
+        self.analysis_phase = QLabel()
+        self.analysis_phase.setMaximumWidth(300)
+        self.analysis_progress = QProgressBar()
+        self.analysis_progress.setRange(0, 0)
+        self.analysis_progress.setFixedWidth(100)
+        self.analysis_cancel_button = QToolButton()
+        self.analysis_cancel_button.setDefaultAction(self.cancel_analysis_action)
+        for widget in (self.analysis_phase, self.analysis_progress, self.analysis_cancel_button):
+            self.statusBar().addPermanentWidget(widget)
+            widget.hide()
         self.coordinates = QLabel()
         self.statusBar().addPermanentWidget(self.coordinates)
         self.unit_selector = QComboBox()
@@ -565,6 +564,7 @@ class MainWindow(QMainWindow):
                 "edit-delete": QStyle.StandardPixmap.SP_TrashIcon,
                 "zoom-fit-best": QStyle.StandardPixmap.SP_TitleBarMaxButton,
                 "media-playback-start": QStyle.StandardPixmap.SP_MediaPlay,
+                "media-playback-stop": QStyle.StandardPixmap.SP_MediaStop,
             }
             action.setProperty("standard_pixmap", fallback[icon].value)
             action.setIcon(self.standard_icon(fallback[icon]))
@@ -573,7 +573,7 @@ class MainWindow(QMainWindow):
 
     def standard_icon(self, standard):
         icon = self.style().standardIcon(standard)
-        if theme_name() == "dark" and standard in (QStyle.StandardPixmap.SP_MediaPlay, QStyle.StandardPixmap.SP_TitleBarMaxButton):
+        if theme_name() == "dark" and standard in (QStyle.StandardPixmap.SP_MediaPlay, QStyle.StandardPixmap.SP_MediaStop, QStyle.StandardPixmap.SP_TitleBarMaxButton):
             pixmap = icon.pixmap(24, 24)
             painter = QPainter(pixmap)
             painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
@@ -663,6 +663,8 @@ class MainWindow(QMainWindow):
         toolbar.addSeparator()
         self.analyze_action = self.action("Analyze", self.run_analysis, "F5", "media-playback-start")
         toolbar.addAction(self.analyze_action)
+        self.cancel_analysis_action = self.action("Cancel Analysis", self.cancel_analysis, icon="media-playback-stop")
+        self.cancel_analysis_action.setEnabled(False)
         toolbar.addAction(self.action("Diagrams...", self.diagrams))
         self.addToolBarBreak()
         deformation_toolbar = self.addToolBar("Deformation")
@@ -1386,39 +1388,60 @@ class MainWindow(QMainWindow):
         if self.thread is not None:
             return
         self.view.cancel()
-        self.result = None
-        self.export_menu.setEnabled(False)
-        self.result_combination.setEnabled(False)
-        self.result_combination.clear()
-        self.results_table.setRowCount(0)
-        self.deformed_action.setChecked(False)
-        self.deformed_action.setEnabled(False)
-        self.view.redraw()
         self.analysis_revision = self.revision
+        self.analysis_cancel_requested = False
         self.analyze_action.setEnabled(False)
-        self.statusBar().showMessage("Analyzing...")
+        self.cancel_analysis_action.setEnabled(True)
+        self.analysis_phase.setText("Starting analysis")
+        for widget in (self.analysis_phase, self.analysis_progress, self.analysis_cancel_button):
+            widget.show()
+        self.statusBar().showMessage("Analyzing | Previous results retained" if self.result is not None else "Analyzing...")
         self.thread = QThread(self)
         self.worker = AnalysisWorker(self.project.clone())
         self.worker.moveToThread(self.thread)
         self.thread.started.connect(self.worker.run)
+        self.worker.progress.connect(self.analysis_progressed)
         self.worker.finished.connect(self.analysis_finished)
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.analysis_stopped)
         self.thread.start()
 
+    def analysis_progressed(self, phase):
+        if self.thread is not None and not self.analysis_cancel_requested:
+            self.analysis_phase.setText(phase)
+            self.analysis_phase.setToolTip(phase)
+
+    def cancel_analysis(self):
+        if self.thread is None or self.worker is None:
+            return
+        self.analysis_cancel_requested = True
+        self.worker.cancel()
+        self.cancel_analysis_action.setEnabled(False)
+        self.analysis_phase.setText("Cancelling analysis")
+        self.statusBar().showMessage("Cancelling analysis...")
+
     def analysis_stopped(self):
         self.thread.deleteLater()
         self.thread = None
         self.worker = None
         self.analyze_action.setEnabled(True)
+        self.cancel_analysis_action.setEnabled(False)
+        for widget in (self.analysis_phase, self.analysis_progress, self.analysis_cancel_button):
+            widget.hide()
+        if self.close_after_analysis:
+            self.close_after_analysis = False
+            QTimer.singleShot(0, self.close)
 
     def analysis_finished(self, result, error):
+        if self.analysis_cancel_requested or error == CANCELLED:
+            self.statusBar().showMessage("Analysis cancelled | Previous results retained" if self.result is not None else "Analysis cancelled")
+            return
         if self.analysis_revision != self.revision:
             self.statusBar().showMessage("Model changed during analysis. Run analysis again.")
             return
         if error:
-            self.statusBar().showMessage("Analysis failed")
+            self.statusBar().showMessage("Analysis failed | Previous results retained" if self.result is not None else "Analysis failed")
             QMessageBox.warning(self, "Analysis", error)
             return
         self.result = result
@@ -1592,7 +1615,8 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         if self.thread is not None:
-            QMessageBox.information(self, "Analysis Running", "Wait for analysis to finish before closing.")
+            self.close_after_analysis = True
+            self.cancel_analysis()
             event.ignore()
         elif self.confirm_discard():
             self.clear_autosave()
@@ -1603,6 +1627,8 @@ class MainWindow(QMainWindow):
 
 
 def main():
+    from multiprocessing import freeze_support
+    freeze_support()
     application = QApplication.instance() or QApplication(sys.argv)
     application.setApplicationName("PyniteGUI")
     configure_theme(application)
