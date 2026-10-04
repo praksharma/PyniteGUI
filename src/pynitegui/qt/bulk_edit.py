@@ -2,12 +2,13 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QCheckBox, QComboBox, QLabel, QPushButton
 
-from .app import number
+from .app import number, unit_number, unit_value
 
 
 def populate_bulk_inspector(window):
     selections = list(window.selections)
     fields = {}
+    springs = {}
     window.form.addRow("Selection", QLabel(f"{len(selections)} items"))
 
     def choice(key, label, options):
@@ -41,6 +42,16 @@ def populate_bulk_inspector(window):
                 widget.setEnabled(support.currentData() == "custom")
         support.currentIndexChanged.connect(update_support)
         update_support()
+        for key, label, quantity in (("spring_x", "Spring DX", "stiffness"), ("spring_y", "Spring DY", "stiffness"),
+                                     ("spring_rz", "Spring RZ", "rotational_stiffness")):
+            enabled = QCheckBox(f"{label} ({getattr(window.project.units, quantity)})")
+            enabled.setObjectName("bulk_change_" + key)
+            value = unit_number(0, window.project.units, quantity, 0)
+            value.setObjectName("bulk_" + key)
+            value.setEnabled(False)
+            enabled.toggled.connect(value.setEnabled)
+            window.form.addRow(enabled, value)
+            springs[key] = enabled, value
     if "members" in kinds:
         window.form.addRow(QLabel(f"Members ({sum(kind == 'members' for kind, name in selections)})"))
         choice("material", "Material", window.project.materials)
@@ -48,6 +59,9 @@ def populate_bulk_inspector(window):
         choice("kind", "Type", ("frame", "truss"))
         boolean("release_start", "Start hinge")
         boolean("release_end", "End hinge")
+        for key, label in (("release_start_x", "Start axial DX"), ("release_end_x", "End axial DX"),
+                           ("release_start_y", "Start shear DY"), ("release_end_y", "End shear DY")):
+            boolean(key, label + " (local)")
     if "loads" in kinds:
         window.form.addRow(QLabel(f"Loads ({sum(kind == 'loads' for kind, name in selections)})"))
         choice("case", "Load case", window.project.load_cases)
@@ -71,13 +85,17 @@ def populate_bulk_inspector(window):
                 if widget.checkState() != Qt.CheckState.PartiallyChecked:
                     values[key] = widget.isChecked()
         factor = fields["factor"].value() if "scale" in fields and fields["scale"].isChecked() else None
+        for key, (enabled, widget) in springs.items():
+            if enabled.isChecked():
+                values[key] = unit_value(widget, window.project.units)
         def mutate(project):
             for kind, name in selections:
                 entity = getattr(project, kind)[name]
                 if kind == "nodes" and values.get("support") == "custom":
                     entity.restraint_x, entity.restraint_y, entity.restraint_rz = entity.restraints
-                keys = {"nodes": ("support", "restraint_x", "restraint_y", "restraint_rz"),
-                        "members": ("material", "section", "kind", "release_start", "release_end"),
+                keys = {"nodes": ("support", "restraint_x", "restraint_y", "restraint_rz", "spring_x", "spring_y", "spring_rz"),
+                        "members": ("material", "section", "kind", "release_start", "release_end",
+                                    "release_start_x", "release_end_x", "release_start_y", "release_end_y"),
                         "loads": ("case",)}[kind]
                 for key in keys:
                     if key in values:

@@ -11,10 +11,13 @@ class LabelLayout(Artist):
         self.set_zorder(6)
         self.set_in_layout(False)
         self.occupied = []
+        self.obstacles = []
 
     def draw(self, renderer):
         # Axes limits and constrained layout are final by the time artists draw.
         self.occupied.clear()
+        self.occupied.extend(artist.get_window_extent(renderer).padded(renderer.points_to_pixels(2))
+                             for artist in self.obstacles if artist.get_visible())
         self.stale = False
 
 
@@ -65,3 +68,9 @@ def add_diagram_label(ax, text, point, color, background, member=False):
     label = DiagramLabel(text, point, layout, color, background, member)
     ax.add_artist(label)
     return label
+
+
+def reserve_annotation(ax, artist):
+    layout = getattr(ax, "_diagram_label_layout", None)
+    if layout is not None:
+        layout.obstacles.append(artist)

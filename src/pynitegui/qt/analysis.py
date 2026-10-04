@@ -12,6 +12,7 @@ from scipy.sparse import diags
 from scipy.sparse.linalg import ArpackNoConvergence, eigsh
 
 from .model import Project
+from .released_member import recover_released_translations
 
 
 def model_signature(project):
@@ -36,7 +37,8 @@ def rigid_body_issue(project):
     constraints, motions, labels = [], [], []
     for node in nodes:
         x, y = (node.x - origin_x) / span, (node.y - origin_y) / span
-        for direction, restrained, motion in zip(("DX", "DY", "RZ"), node.restraints,
+        for direction, restrained, motion in zip(("DX", "DY", "RZ"),
+                                                 (fixed or stiffness > 0 for fixed, stiffness in zip(node.restraints, node.springs)),
                                                  ((1, 0, -y), (0, 1, x), (0, 0, 1))):
             if restrained:
                 constraints.append(motion)
@@ -152,7 +154,7 @@ def analyze(project: Project, progress=None) -> AnalysisResult:
     issues = project.analysis_topology_issues() + project.analysis_release_issues()
     if issues:
         raise ValueError("\n\n".join(issues))
-    if not any(any(node.restraints) for node in project.nodes.values()):
+    if not any(any(node.restraints) or any(node.springs) for node in project.nodes.values()):
         raise ValueError("Assign supports before running analysis.")
     issue = rigid_body_issue(project)
     if issue:
@@ -178,10 +180,15 @@ def analyze(project: Project, progress=None) -> AnalysisResult:
             # restraint cannot transfer moment through its released members.
             support_RZ=restraint_rz or node.name in inactive_rotations,
         )
+        for direction, stiffness in zip(("DX", "DY", "RZ"), node.springs):
+            if stiffness:
+                model.def_support_spring(node.name, direction, stiffness)
     for member in project.members.values():
         model.add_member(member.name, member.start, member.end, member.material, member.section)
         release_start, release_end = member.moment_releases
-        model.def_releases(member.name, Rzi=release_start, Rzj=release_end)
+        model.def_releases(member.name, Rzi=release_start, Rzj=release_end,
+                           Dxi=member.release_start_x, Dxj=member.release_end_x,
+                           Dyi=member.release_start_y, Dyj=member.release_end_y)
     for load in (*project.loads.values(), *project.self_weight_loads()):
         if load.target in project.nodes:
             for direction, magnitude in load.components(project):
@@ -218,6 +225,7 @@ def analyze(project: Project, progress=None) -> AnalysisResult:
         raise ValueError("The stiffness matrix is singular or numerically ill-conditioned; the structure may be unstable.\n" +
                          issue + "\nCheck supports, member releases, and stiffness contrasts; no extra restraints were added.")
     phase("Collecting result snapshot")
+    recover_released_translations(model)
     result = AnalysisResult.from_solver(model, next(iter(project.combinations)), inactive_rotations)
     result.model_signature = model_signature(project)
     return result

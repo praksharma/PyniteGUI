@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
 )
 
 from .analysis_jobs import AnalysisWorker, CANCELLED
+from .annotations import combination_loads, load_label as annotation_load_label, support_label, support_geometry, spring_geometry, release_geometry, moment_geometry
 from .model import Load, Project
 from .units import UNIT_SYSTEMS
 from .theme import colors, configure_theme, theme_name
@@ -114,47 +115,35 @@ class EngineeringSymbol(QGraphicsItem):
     def paint(self, painter, option, widget=None):
         c = colors()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        painter.setPen(QPen(QColor(c["accent"] if self.highlighted else c["support"] if self.kind == "support" else c["load"]), 1.8))
+        painter.setPen(QPen(QColor(c["accent"] if self.highlighted else c["support"] if self.kind in ("support", "spring") else c["load"]), 1.8))
         if self.kind == "hinge":
             painter.setPen(QPen(QColor(c["highlight"] if theme_name() == "light" else c["accent"]), 1.8))
             painter.setBrush(QColor(c["canvas"]))
             dx, dy = self.value
             painter.drawEllipse(QPointF(dx * 9, dy * 9), 4, 4)
             return
-        if self.kind == "support":
-            if isinstance(self.value, tuple):
-                _, rx, ry, rz = self.value
-                if rx:
-                    painter.drawLine(QPointF(-9, -12), QPointF(-9, 12))
-                    for y in (-10, -4, 2, 8):
-                        painter.drawLine(QPointF(-9, y), QPointF(-14, y + 4))
-                if ry:
-                    painter.drawLine(QPointF(-12, 9), QPointF(12, 9))
-                    for x in (-10, -4, 2, 8):
-                        painter.drawLine(QPointF(x, 9), QPointF(x - 4, 14))
-                if rz:
-                    painter.drawRect(QRectF(-4, -4, 8, 8))
-                return
-            if self.value in ("pin", "roller"):
-                painter.drawLine(QPointF(0, 0), QPointF(-9, 15))
-                painter.drawLine(QPointF(-9, 15), QPointF(9, 15))
-                painter.drawLine(QPointF(9, 15), QPointF(0, 0))
-                ground = 18
-                if self.value == "roller":
-                    painter.drawEllipse(QRectF(-7, 17, 5, 5))
-                    painter.drawEllipse(QRectF(2, 17, 5, 5))
-                    ground = 25
+        if self.kind in ("support", "spring", "release"):
+            if self.kind == "support":
+                support = self.value[0] if isinstance(self.value, tuple) else self.value
+                geometry = support_geometry(support, self.value[1:] if isinstance(self.value, tuple) else ())
+            elif self.kind == "spring":
+                geometry = spring_geometry(self.value)
             else:
-                ground = 4
-            painter.drawLine(QPointF(-12, ground), QPointF(12, ground))
-            for x in (-10, -4, 2, 8):
-                painter.drawLine(QPointF(x, ground), QPointF(x - 4, ground + 5))
+                painter.setPen(QPen(QColor(c["accent"]), 1.8))
+                geometry = release_geometry(self.value[:2], *self.value[2:])
+            paths, circles = geometry
+            for path in paths:
+                for start, end in zip(path, path[1:]):
+                    painter.drawLine(QPointF(*start), QPointF(*end))
+            for x, y, radius in circles:
+                painter.drawEllipse(QPointF(x, y), radius, radius)
         else:
             direction, magnitude = self.value[:2]
             sign = 1 if magnitude >= 0 else -1
             if direction == "MZ":
-                painter.drawArc(QRectF(-14, -14, 28, 28), 30 * 16, sign * 280 * 16)
-                painter.drawLine(QPointF(12, -7), QPointF(7, -8))
+                for path in moment_geometry(magnitude)[0]:
+                    for start, end in zip(path, path[1:]):
+                        painter.drawLine(QPointF(*start), QPointF(*end))
                 return
             dx, dy = (sign, 0) if direction == "FX" else (0, -sign)
             if direction == "Angle":
@@ -388,6 +377,13 @@ class StructureView(QGraphicsView):
             for released, node, sign in ((release_start, a, 1), (release_end, b, -1)):
                 if released:
                     symbol = EngineeringSymbol("hinge", (sign * (b.x - a.x) / length, -sign * (b.y - a.y) / length))
+                    symbol.setToolTip(f"{name}: local RZ moment released")
+                    scene.addItem(symbol)
+                    symbol.setPos(node.x, -node.y)
+            for flags, node, sign in zip(member.end_releases, (a, b), (1, -1)):
+                if any(flags[:2]):
+                    symbol = EngineeringSymbol("release", (sign * (b.x - a.x) / length, -sign * (b.y - a.y) / length, *flags[:2]))
+                    symbol.setToolTip(f"{name}: local " + ", ".join(label for label, released in zip(("DX", "DY", "RZ"), flags) if released) + " released")
                     scene.addItem(symbol)
                     symbol.setPos(node.x, -node.y)
             self.label(name, (a.x + b.x) / 2, (a.y + b.y) / 2, offset=(4, 8))
@@ -396,10 +392,15 @@ class StructureView(QGraphicsView):
             dot = scene.addEllipse(-4, -4, 8, 8, QPen(QColor(c["base"])), color)
             dot.setFlag(dot.GraphicsItemFlag.ItemIgnoresTransformations)
             dot.setPos(node.x, -node.y)
-            self.label(name, node.x, node.y, offset=(8, -22))
+            self.label(name, node.x, node.y, offset=(-30, -25) if node.spring_rz else (8, -22))
             if any(node.restraints):
                 symbol = EngineeringSymbol("support", ("custom", *node.restraints) if node.support == "custom" else node.support)
-                symbol.setToolTip("Restrained: " + ", ".join(label for label, fixed in zip(("DX", "DY", "RZ"), node.restraints) if fixed))
+                symbol.setToolTip(support_label(project, node))
+                scene.addItem(symbol)
+                symbol.setPos(node.x, -node.y)
+            if any(node.springs):
+                symbol = EngineeringSymbol("spring", node.springs)
+                symbol.setToolTip(support_label(project, node))
                 scene.addItem(symbol)
                 symbol.setPos(node.x, -node.y)
         occupied = [item.deviceTransform(self.viewportTransform()).mapRect(item.boundingRect())
@@ -417,16 +418,12 @@ class StructureView(QGraphicsView):
                     break
                 offset -= item.boundingRect().height() + 4
                 item.setTransform(QTransform.fromTranslate(8, offset))
-        for definition in (*project.loads.values(), *project.self_weight_loads()):
+        loads = combination_loads(project, self.window.result) if self.window.result is not None else (*project.loads.values(), *project.self_weight_loads())
+        for definition in loads:
             if not self.window.load_visible(definition):
                 continue
             load = definition
-            highlighted = definition is project.loads.get(definition.name) and ("loads", definition.name) in selected
-            if self.window.result is not None:
-                factor = self.window.result.solver.load_combos[self.window.result.combination].factors.get(load.case, 0)
-                if factor == 0:
-                    continue
-                load = replace(load, magnitude=load.magnitude * factor, end_magnitude=load.end_magnitude * factor)
+            highlighted = definition.name in project.loads and ("loads", definition.name) in selected
             if load.target in project.nodes:
                 node = project.nodes[load.target]
                 x, y = node.x, node.y
@@ -447,19 +444,12 @@ class StructureView(QGraphicsView):
                     symbol.setPos(a.x + (b.x - a.x) * fraction, -a.y - (b.y - a.y) * fraction)
                 midpoint = (load.position + load.end_position) / 2
                 x, y = a.x + (b.x - a.x) * midpoint, a.y + (b.y - a.y) * midpoint
-                direction_label = f" @ {load.angle:g} deg" if load.direction == "Angle" else f" | {load.direction}" if load.direction.startswith("Local") else ""
-                if load.direction == "Local angle":
-                    direction_label += f" {load.angle:g} deg"
-                load_label(f"{load.name}: {units.to_display(load.magnitude, 'intensity'):g} to {units.to_display(load.end_magnitude, 'intensity'):g} {units.intensity}{direction_label}", x, y, highlighted)
+                load_label(annotation_load_label(project, load), x, y, highlighted)
                 continue
             symbol = EngineeringSymbol("load", load_symbol(project, load, load.magnitude), highlighted=highlighted)
             scene.addItem(symbol)
             symbol.setPos(x, -y)
-            quantity = "moment" if load.direction == "MZ" else "force"
-            angle_label = f" @ {load.angle:g} deg" if load.direction == "Angle" else ""
-            if load.direction.startswith("Local"):
-                angle_label = f" | {load.direction}" + (f" {load.angle:g} deg" if load.direction == "Local angle" else "")
-            load_label(f"{load.name}: {units.to_display(load.magnitude, quantity):g} {getattr(units, quantity)}{angle_label}", x, y, highlighted)
+            load_label(annotation_load_label(project, load), x, y, highlighted)
         visible = bool(self.window.result and self.window.deformed_action.isChecked())
         self.window.deformation_mode.setEnabled(visible)
         self.window.deformation_scale.setEnabled(visible and self.window.deformation_mode.currentData() == "custom")
@@ -728,6 +718,7 @@ class MainWindow(QMainWindow):
         self.inspector = QWidget()
         self.form = QFormLayout(self.inspector)
         self.form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
+        self.form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
         self.inspector.setMinimumWidth(240)
         self.inspector_scroll = QScrollArea()
         self.inspector_scroll.setWidgetResizable(True)
@@ -851,6 +842,8 @@ class MainWindow(QMainWindow):
                     detail = f"{units.to_display(entity.x, 'length'):g}, {units.to_display(entity.y, 'length'):g} {units.length} | {entity.support}"
                     if entity.support == "custom":
                         detail += " " + ",".join(label for label, fixed in zip(("DX", "DY", "RZ"), entity.restraints) if fixed)
+                    if any(entity.springs):
+                        detail += " | springs: " + ", ".join(label for label, k in zip(("DX", "DY", "RZ"), entity.springs) if k)
                 elif kind == "members":
                     detail = f"{entity.start} - {entity.end}"
                     if entity.kind == "truss":
@@ -863,9 +856,10 @@ class MainWindow(QMainWindow):
                     detail += f" {getattr(units, quantity)}"
                     if entity.direction in ("Angle", "Local angle"):
                         detail += f" @ {entity.angle:g} deg"
-                if kind == "members" and entity.kind == "frame" and (entity.release_start or entity.release_end):
-                    ends = ", ".join(end for end, released in (("start", entity.release_start), ("end", entity.release_end)) if released)
-                    detail += f" | hinge: {ends}"
+                if kind == "members" and entity.kind == "frame":
+                    for end, label in zip(("start", "end"), entity.release_labels):
+                        if label != "None":
+                            detail += f" | {end} releases: {label} (local)"
                 if kind == "loads":
                     detail += f" | {entity.case}"
                 item = QTreeWidgetItem(parent, [name, detail])
@@ -979,6 +973,13 @@ class MainWindow(QMainWindow):
                         fields[key].setChecked(replace(entity, support=fields["support"].currentText()).restraints[index])
             fields["support"].currentTextChanged.connect(update_support)
             update_support()
+            for key, label, quantity in (("spring_x", "Spring DX", "stiffness"),
+                                          ("spring_y", "Spring DY", "stiffness"),
+                                          ("spring_rz", "Spring RZ", "rotational_stiffness")):
+                fields[key] = unit_number(getattr(entity, key), self.project.units, quantity, 0)
+                fields[key].setObjectName(key)
+                fields[key].setToolTip("Global bilateral support spring. Zero means no spring; free this direction before assigning a positive stiffness.")
+                self.form.addRow(f"{label} ({getattr(self.project.units, quantity)})", fields[key])
         elif kind == "members":
             for key in ("start", "end"):
                 fields[key] = QComboBox()
@@ -1004,14 +1005,17 @@ class MainWindow(QMainWindow):
             fields["kind"].addItems(["frame", "truss"])
             fields["kind"].setCurrentText(entity.kind)
             self.form.addRow("Type", fields["kind"])
-            for key, label in (("release_start", f"Start moment ({entity.start})"), ("release_end", f"End moment ({entity.end})")):
-                fields[key] = QCheckBox("Released (hinge)")
+            release_fields = (("release_start_x", "Start axial DX"), ("release_start_y", "Start shear DY"),
+                              ("release_start", "Start moment RZ"), ("release_end_x", "End axial DX"),
+                              ("release_end_y", "End shear DY"), ("release_end", "End moment RZ"))
+            for key, label in release_fields:
+                fields[key] = QCheckBox("Released")
                 fields[key].setObjectName(key)
                 fields[key].setChecked(getattr(entity, key))
-                fields[key].setToolTip("Release member-end moment about Z; translations remain connected.")
+                fields[key].setToolTip("Member-local end release: DX axial, DY transverse shear, RZ in-plane moment. Does not change the joint support.")
                 self.form.addRow(label, fields[key])
             def update_member_type():
-                for key in ("release_start", "release_end"):
+                for key, label in release_fields:
                     self.form.setRowVisible(fields[key], fields["kind"].currentText() == "frame")
             fields["kind"].currentTextChanged.connect(update_member_type)
             update_member_type()

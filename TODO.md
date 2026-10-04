@@ -21,7 +21,8 @@ and verified PyNite extensions. This file remains the primary implementation lis
 - [x] Add in-plane member end moment releases for hinges and pin-jointed frames.
 - [x] Add explicit axial-only truss members, joint-load validation, lumped
   self-weight, mixed frame/truss analysis, and a joint-loaded example.
-- [ ] Add additional member release degrees of freedom beyond in-plane moment hinges.
+- [x] Add member-local axial DX and transverse DY end releases, validated release
+  combinations, released-end deformation recovery, and editing/report support.
 - [x] Add per-member materials with reusable definitions and legacy-file migration.
 - [x] Add a unit-aware material library with reference elastic/weight-density
   presets, safe imports, provenance, and custom classification after edits.
@@ -31,7 +32,9 @@ and verified PyNite extensions. This file remains the primary implementation lis
   previews, persisted provenance, and custom classification after property edits.
 - [ ] Expand the section library with additional regional catalogs and sizes.
 - [x] Add configurable global DX, DY, and RZ support degrees of freedom.
-- [ ] Add inclined support orientation and elastic support springs.
+- [x] Add global bilateral DX, DY, and RZ support springs with unit-aware
+  stiffness entry, reaction/deformation benchmarks, and model persistence.
+- [ ] Add inclined support orientation (separate constrained-coordinate feasibility work).
 
 ## Loads and Analysis
 
@@ -74,7 +77,11 @@ and verified PyNite extensions. This file remains the primary implementation lis
 - [x] Add diagram side/sign display preferences with clear conventions.
   Per-window whole-structure placement/sign controls; analytical tables and CSV
   retain solver signs, and report diagrams explicitly identify display conventions.
-- [ ] Show supports and load annotations consistently across result views.
+- [x] Show supports, springs, releases, and factored manual/self-weight loads
+  across the editor, whole-structure results, and report diagrams; selected
+  member context includes end supports/releases and combination loads.
+  Result/report visibility controls never change analytical results. Envelopes
+  retain combination provenance instead of depicting one misleading load state.
 - [x] Add result tables for member end forces and extrema.
 - [x] Add explicit result snapshot identification in open diagram windows.
 - [x] Export reactions, forces, and displacements as CSV and a printable report.

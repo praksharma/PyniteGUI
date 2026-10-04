@@ -28,9 +28,11 @@ class ReportOptions:
     sign: int = 1
     amplitude: float = 20
     envelope_combinations: tuple[str, ...] = ()
+    supports: bool = True
+    loads: bool = True
 
     def validate(self):
-        if any(type(value) is not bool for value in (self.model, self.nodes, self.members)):
+        if any(type(value) is not bool for value in (self.model, self.nodes, self.members, self.supports, self.loads)):
             raise ValueError("Report section choices must be boolean values.")
         if not isinstance(self.diagrams, tuple) or any(key not in ("axial", "shear", "moment") for key in self.diagrams):
             raise ValueError("Unknown report diagram selection.")
@@ -103,6 +105,12 @@ class ReportOptionsDialog(QDialog):
         form.addRow("Diagram side", self.side)
         form.addRow(self.sign)
         form.addRow("Diagram amplitude", self.amplitude)
+        self.supports = QCheckBox("Diagram supports and springs")
+        self.loads = QCheckBox("Diagram factored loads")
+        for key, source in (("supports", "show_supports"), ("loads", "show_loads")):
+            widget = getattr(self, key)
+            widget.setChecked(getattr(parent, source).isChecked() if hasattr(parent, source) else True)
+            form.addRow(widget)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Preview")
         buttons.accepted.connect(self.accept)
@@ -119,6 +127,7 @@ class ReportOptionsDialog(QDialog):
                                 diagrams=tuple(key for key, widget in self.diagrams.items() if widget.isChecked()),
                                 side=self.side.currentData(), sign=-1 if self.sign.isChecked() else 1,
                                 amplitude=self.amplitude.value(),
+                                supports=self.supports.isChecked(), loads=self.loads.isChecked(),
                                 envelope_combinations=combinations if self.include_envelopes.isChecked() else ())
         try:
             options.validate()
@@ -140,12 +149,15 @@ def html_table(headers, rows):
 def model_definition_tables(project):
     units = project.units
     show = units.to_display
-    nodes = (["Node", f"X ({units.length})", f"Y ({units.length})", "Support", "DX", "DY", "RZ"],
+    nodes = (["Node", f"X ({units.length})", f"Y ({units.length})", "Support", "DX", "DY", "RZ",
+              f"Spring DX ({units.stiffness})", f"Spring DY ({units.stiffness})", f"Spring RZ ({units.rotational_stiffness})"],
              [[node.name, show(node.x, "length"), show(node.y, "length"), node.support,
-               *("Fixed" if fixed else "Free" for fixed in node.restraints)] for node in project.nodes.values()])
-    members = (["Member", "Start", "End", "Type", "Material", "Section", "Start hinge", "End hinge"],
+               *("Fixed" if fixed else "Free" for fixed in node.restraints),
+               show(node.spring_x, "stiffness"), show(node.spring_y, "stiffness"), show(node.spring_rz, "rotational_stiffness")]
+              for node in project.nodes.values()])
+    members = (["Member", "Start", "End", "Type", "Material", "Section", "Start hinge", "End hinge", "Start releases (local)", "End releases (local)"],
                [[m.name, m.start, m.end, m.kind, m.material, m.section,
-                 *("Yes" if release else "No" for release in m.moment_releases)] for m in project.members.values()])
+                 *("Yes" if release else "No" for release in m.moment_releases), *m.release_labels] for m in project.members.values()])
     materials = (["Material", f"E ({units.stress})", "Poisson ratio", f"G ({units.stress})", f"Weight ({units.density})", "Source"],
                  [[m.name, show(m.E, "stress"), m.nu, show(m.G, "stress"), show(m.rho, "density"), m.source_label]
                   for m in project.materials.values()])
@@ -182,7 +194,7 @@ def report_images(project, result, options):
         figure = Figure(figsize=(9, 4.8), layout="constrained")
         FigureCanvasAgg(figure)
         draw_structure(figure.add_subplot(111), project, result, quantity, options.amplitude,
-                       options.side, options.sign, palette=LIGHT)
+                       options.side, options.sign, palette=LIGHT, supports=options.supports, loads=options.loads)
         stream = io.BytesIO()
         figure.savefig(stream, format="png", dpi=160)
         images[quantity] = stream.getvalue()
@@ -295,6 +307,8 @@ def report_html(project, result, source="Untitled", options=None, *, image_urls=
         sections.append(f'<h2 style="page-break-before: always">{titles[quantity]}</h2>'
                         f'<p>Analysis {escape(result.snapshot_id)} | {escape(result.combination)} | {escape(project.units.label)}<br>'
                         f'Placement: {side} side | Diagram display signs: {sign} | Amplitude: {options.amplitude:g}%<br>'
+                        f'Supports/springs: {"shown" if options.supports else "hidden"} | '
+                        f'Factored combination loads: {"shown" if options.loads else "hidden"}<br>'
                         'Member tables and CSV keep the local solver signs.</p>'
                         f'<img src="{escape(image_urls[quantity], quote=True)}" width="800" height="427">')
     return f'''<html><head><style>

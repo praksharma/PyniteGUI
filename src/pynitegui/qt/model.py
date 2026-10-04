@@ -113,6 +113,13 @@ class Node:
     restraint_x: bool = False
     restraint_y: bool = False
     restraint_rz: bool = False
+    spring_x: float = 0.0
+    spring_y: float = 0.0
+    spring_rz: float = 0.0
+
+    @property
+    def springs(self):
+        return self.spring_x, self.spring_y, self.spring_rz
 
     @property
     def restraints(self):
@@ -132,6 +139,21 @@ class Member:
     release_start: bool = False
     release_end: bool = False
     kind: str = "frame"
+    release_start_x: bool = False
+    release_end_x: bool = False
+    release_start_y: bool = False
+    release_end_y: bool = False
+
+    @property
+    def end_releases(self):
+        start, end = self.moment_releases
+        return ((self.release_start_x, self.release_start_y, start),
+                (self.release_end_x, self.release_end_y, end))
+
+    @property
+    def release_labels(self):
+        return tuple(", ".join(label for label, released in zip(("DX", "DY", "RZ"), flags) if released) or "None"
+                     for flags in self.end_releases)
 
     @property
     def moment_releases(self):
@@ -358,14 +380,14 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 14, "units": "in-kip", **asdict(self)}
+        return {"version": 15, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
         if not isinstance(data, dict):
             raise ValueError("Project document must be a JSON object.")
         version = data.get("version")
-        if type(version) is not int or version not in range(1, 15) or data.get("units") != "in-kip":
+        if type(version) is not int or version not in range(1, 16) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         required = {"grid", "nodes", "members", "loads"}
         required.update({"E", "nu", "rho"} if version == 1 else {"materials", "default_material"})
@@ -491,6 +513,11 @@ class Project:
                 raise ValueError("Unknown support type.")
             if any(type(value) is not bool for value in (node.restraint_x, node.restraint_y, node.restraint_rz)):
                 raise ValueError("Support restraints must be boolean values.")
+            for label, stiffness, fixed in zip(("DX", "DY", "RZ"), node.springs, node.restraints):
+                if not finite_number(stiffness) or stiffness < 0:
+                    raise ValueError(f"Node {name}: {label} spring stiffness must be finite and nonnegative; zero means no spring.")
+                if stiffness and fixed:
+                    raise ValueError(f"Node {name}: {label} cannot have both a rigid restraint and a spring. Set its spring stiffness to zero or free that direction.")
         connections = set()
         for name, member in self.members.items():
             references = (member.start, member.end, member.material, member.section)
@@ -499,10 +526,19 @@ class Project:
                 raise ValueError("Invalid member or endpoint reference.")
             if member.start == member.end:
                 raise ValueError("A member needs two different nodes.")
-            if type(member.release_start) is not bool or type(member.release_end) is not bool:
-                raise ValueError(f"Member {name}: moment releases must be true or false.")
+            if any(type(value) is not bool for value in (member.release_start, member.release_end,
+                    member.release_start_x, member.release_end_x, member.release_start_y, member.release_end_y)):
+                raise ValueError(f"Member {name}: end releases must be true or false.")
             if member.kind not in ("frame", "truss"):
                 raise ValueError(f"Member {name}: type must be frame or truss.")
+            if member.kind == "truss" and any((member.release_start_x, member.release_end_x, member.release_start_y, member.release_end_y)):
+                raise ValueError(f"Member {name}: truss bars cannot have axial/shear releases. Clear these frame releases before changing type.")
+            if member.release_start_x and member.release_end_x:
+                raise ValueError(f"Member {name}: axial DX cannot be released at both ends.")
+            # The released bending block must remain invertible for static condensation.
+            bending = (member.release_start_y, member.release_end_y, *member.moment_releases)
+            if sum(bending) > 2 or (member.release_start_y and member.release_end_y):
+                raise ValueError(f"Member {name}: incompatible DY/RZ releases leave the member internally unstable. Release at most two bending directions, and not DY at both ends.")
             if member.material not in self.materials:
                 raise ValueError(f"Member {name}: material {member.material} does not exist.")
             if member.section not in self.sections:
@@ -632,7 +668,11 @@ class Project:
             segment = name if index == 0 else self.next_name("M", self.members)
             self.members[segment] = replace(original, name=segment, start=start, end=end,
                                             release_start=original.release_start if index == 0 else False,
-                                            release_end=original.release_end if index == len(nodes) - 2 else False)
+                                            release_end=original.release_end if index == len(nodes) - 2 else False,
+                                            release_start_x=original.release_start_x if index == 0 else False,
+                                            release_end_x=original.release_end_x if index == len(nodes) - 2 else False,
+                                            release_start_y=original.release_start_y if index == 0 else False,
+                                            release_end_y=original.release_end_y if index == len(nodes) - 2 else False)
             segments.append(segment)
         for load in list(self.loads.values()):
             if load.target != name:
@@ -699,7 +739,7 @@ class Project:
                 active.add(member.start)
             if not release_end:
                 active.add(member.end)
-        return {name for name in connected - active if not self.nodes[name].restraints[2]}
+        return {name for name in connected - active if not self.nodes[name].restraints[2] and not self.nodes[name].spring_rz}
 
     def analysis_release_issues(self):
         issues = []

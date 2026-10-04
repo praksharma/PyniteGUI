@@ -88,12 +88,18 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   Splitting and connecting are each a single undoable edit.
 - Edit > Check Model reports overlapping members, interior-node connections that
   need splitting, and disconnected groups. Analysis also runs these checks.
-- Select a member and check Released (hinge) for its Start or End moment in
+- Select a member and check Released for its Start or End moment RZ in
   the inspector, then press Apply. Hollow circles mark released member ends.
   These releases disconnect in-plane moment transfer at the member connection;
   they do not change node supports or disconnect axial/shear translations.
   Splitting and connecting preserve releases at original outer ends only;
   newly created internal connections stay rigid.
+- Member properties also offer axial DX and transverse shear DY releases at
+  either end, in member-local axes. Two crossbars mark an axial release; a hollow
+  square marks a shear release. Hover for the released directions. The editor
+  rejects internally unstable combinations: DX at both ends, DY at both ends,
+  or more than two DY/RZ releases on one member. Joint mechanisms are still checked
+  during analysis. Clear axial/shear releases before converting a frame to truss.
 - Assign a node support using Support, or select a node/member and use Load (L).
 - The desktop app keeps a separate autosave snapshot of unsaved changes every
   30 seconds in Qt's per-user application-data recovery directory. These files
@@ -107,6 +113,13 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   restrained. Existing free/pin/roller/fixed presets remain available. Custom
   support symbols show horizontal/vertical restraint lines and a square for
   rotational restraint; hovering identifies the restrained degrees of freedom.
+- Node properties include Spring DX, DY, and RZ stiffness. Zero means absent;
+  positive values create bilateral springs along global X/Y or about global Z.
+  Translational stiffness uses force/length; rotational stiffness uses moment/rad
+  in the selected unit system. A rigid restraint and a spring cannot occupy the
+  same direction: explicitly free that direction or set its spring to zero.
+  Springs and releases are also editable atomically through bulk properties and
+  Model Tables, with normal undo/redo and result invalidation.
 - In Select mode, drag a node to move it with snapping. Dashed connected members
   preview the move; releasing creates one undoable edit. Escape/right-click
   cancels. Coincident nodes and collapsed members are rejected without changing
@@ -207,6 +220,15 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   New diagram windows start with the standard convention. Member Detail
   provides axial force, local shear, bending moment, and transverse deflection
   plots for any member, sharing one distance axis.
+  Supports and Loads toggles show/hide rigid restraints, spring symbols/stiffness,
+  and combination-factored manual/generated loads on Whole Structure. Moment
+  arrows respect the global clockwise/counterclockwise sign. Symbols share their
+  geometry with the editor; spring/load labels avoid other text and symbols.
+  Member Detail shows end support/spring and local-release context plus loads on
+  that member and its end joints; longer load summaries are available by hovering.
+  Joint loads in this context describe applied loads, not the member's share.
+  Printed diagram choices inherit these toggles. Envelopes do not depict a single
+  load state because their bounds can come from different combinations.
   In Member Detail, enter a distance or click a plot to inspect N, Fy, Mz, and dy.
   Left/Right side selects one-sided values at point-load jumps. Dashed cursors
   align all four plots. Member Results lists start/end values and solver minimum/
@@ -251,7 +273,7 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
   Print Results first opens content choices for model definitions, node/member
   results, and selected axial/SFD/BMD diagrams, then opens native print preview.
   Model definitions include nodes/effective supports, frame/truss assignments
-  and hinges, materials/section properties and provenance, manual and generated
+  and local releases, spring stiffnesses, materials/section properties and provenance, manual and generated
   unfactored loads, defaults, and load combinations. Diagrams use the selected
   analyzed combination, snapshot ID, units, and explicitly labelled display
   side/sign/amplitude. Printing from a diagram window starts with its current
@@ -307,8 +329,11 @@ Dimensional inputs and results use the selected system listed above.
 The editor models frames in the global XY plane. Out-of-plane translation and
 rotations are restrained at every node. A pin restrains X/Y translation, a
 roller restrains Y translation, and a fixed support also restrains Z rotation.
-Custom supports independently restrain global DX, DY, and RZ; inclined supports
-and elastic springs are not implemented yet. Point loads support global FX, FY,
+Custom supports independently restrain global DX, DY, and RZ. Bilateral elastic
+springs may resist any otherwise free global DX/DY/RZ direction. Spring reactions
+are the opposing stiffness times displacement/rotation and are included in all
+reaction tables, envelopes, and exports. Inclined supports, one-sided springs,
+and semi-rigid member-end springs are not implemented. Point loads support global FX, FY,
 MZ, and signed angled forces. Member point/distributed forces additionally
 support local x/y and member-relative angles. Nodal forces use global axes only;
 distributed moments are not implemented.
@@ -336,8 +361,20 @@ Member moment releases act about local Z, normal to the XY frame. End releases
 are independent: one member may hinge at a shared node while other members
 retain a rigid connection. Releasing both ends supports pin-jointed frames with
 nodal loads, but the member remains a beam and can still bend under transverse
-member loads; it is not a separate axial-only truss element. Axial/shear,
-out-of-plane, and partial-stiffness releases are not exposed in this editor.
+member loads; it is not a separate axial-only truss element. Axial DX and shear DY
+releases disconnect their corresponding member-end translations without changing
+joint supports or other members at that node. Released member ends can therefore
+move relative to the joint: node tables show joint displacement while member
+deflections show the member side of the release. Out-of-plane and partial-stiffness
+releases are not exposed in this editor.
+
+PyNite 3.0.0 condenses translational releases correctly for forces but its member
+deflection reconstruction otherwise uses joint translations at released ends.
+The linear-analysis adapter recovers the eliminated end displacements from
+PyNite's uncondensed stiffness and fixed-end vectors with zero released-end force,
+then uses PyNite's own deflection/extrema routines. It does not alter the global
+solve or nodal reactions. Analytical axial-release and fixed-guided bending
+benchmarks cover this behavior, including split members and result transport.
 
 Choose Type = truss in the member inspector, bulk inspector, or Model Tables
 for an explicitly axial-only member. Truss ends are implicitly pinned; saved
@@ -354,13 +391,13 @@ must be properly restrained or braced: an unbraced intermediate joint generally
 introduces a transverse mechanism. Mixed frame/truss structures are supported;
 a rigid frame connection at a shared joint retains its rotational DOF.
 
-When every connected member end at a node without an RZ restraint is hinged, the shared
+When every connected member end at a node without an RZ restraint or spring is hinged, the shared
 rotation has no stiffness. Analysis removes that unused rotation from the
 unknowns without restraining translations or transferring connection moments.
 Results show RZ as n/a for those joints, not a physical zero rotation. Individual
 member end rotations and deformations remain governed by the released beam.
 A net nodal MZ on such a joint is rejected for each analyzed combination unless
-a moment-resisting connection or rotational support restraint is provided. Real translational
+a moment-resisting connection, rotational support restraint, or RZ spring is provided. Real translational
 mechanisms are not hidden by adding translational restraints.
 
 Analysis checks whether the actual supports prevent planar rigid-body motion
@@ -432,7 +469,7 @@ Versions 1 through 4 migrate existing loads into Case 1 with the original
 Service combination. Version 3 point loads and version 4 distributed loads
 remain supported. Versions 1 through 5 migrate to rigid member ends.
 Versions 1 through 6 open in Imperial, preserving their original inch-kip values.
-New saves use version 14 and retain material/section definitions, member
+New saves use version 15 and retain material/section definitions, member
 assignments, load cases, combination factors, the default load case, and each
 member end moment release, plus the selected unit system, point-load angle,
 and custom support restraints. Version 10 adds local force directions and
@@ -445,6 +482,8 @@ Older files retain their exact numerical properties as custom definitions.
 Version 13 adds material-library provenance; older materials remain custom.
 Version 14 adds the frame/truss member type. Earlier files keep frame behavior,
 including any existing end moment releases, without changing their response.
+Version 15 adds global support-spring stiffnesses and member-local axial/shear
+releases. Older files default to zero springs and connected translations.
 Older project loads retain their original directions and magnitudes. The JSON units field
 remains in-kip to identify the canonical storage units; unit_system controls
 presentation and input conversion.
@@ -452,7 +491,7 @@ Malformed files are rejected before replacing the active project. Missing fields
 incorrect collection/entity shapes, unknown entity fields, invalid references,
 boolean/string/nonfinite numerical values, and duplicate JSON keys produce
 readable errors. JSON syntax errors include their line and column. Supported
-versions 1 through 14 are migrated without modifying the input; unknown/future
+versions 1 through 15 are migrated without modifying the input; unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be
 distinct so load targets are unambiguous.
 Editing a definition updates all members assigned to it and
@@ -484,6 +523,8 @@ and concentrated moments include both sides of each discontinuity.
 
 - `src/pynitegui/qt/model.py`: validated, serializable project data.
 - `src/pynitegui/qt/units.py`: canonical-to-display conversion factors and presets.
+- `src/pynitegui/qt/annotations.py`: shared support/release symbols and factored load context.
+- `src/pynitegui/qt/released_member.py`: linear released-translation recovery using PyNite matrices.
 - `src/pynitegui/qt/analysis.py`: project-to-PyNite adapter and analysis results.
 - `src/pynitegui/qt/analysis_jobs.py`: isolated solver processes, phase messages,
   thread-safe cancellation, and cleanup before publishing results.
@@ -554,7 +595,7 @@ Export checks cover SI/imperial values, combination identity, undefined rotation
 CSV quoting/formula safety, atomic failures, cancellation, stale-model rejection,
 retained snapshot exports, report escaping, and native PDF rendering.
 File-validation checks cover malformed shapes and values, duplicate keys,
-versions 1 through 14, future-version rejection, non-mutating migrations, and
+versions 1 through 15, future-version rejection, non-mutating migrations, and
 preservation of the active project and source file after a failed open.
 Stability checks cover inadequate pins/rollers, custom restraints, translated
 coordinates, zero-stiffness and internal sway mechanisms, valid released beams,
@@ -600,6 +641,14 @@ Presentation/report checks cover placement and sign independence, unchanged
 solver probes, unit/combination updates, model definition conversions and HTML
 escaping, selected sections, embedded light-palette images, inherited diagram
 settings, invalid/empty choices, snapshot validation, and cancellation.
+Elastic-support/release checks cover parallel axial stiffness, a spring-only
+cantilever base, hinged-joint rotational springs, opposing reactions, weak-support
+rejection, all 64 planar release patterns, released axial/bending deflection,
+split/combination equivalence, isolated-result transport, all unit presets,
+legacy migration, atomic editor failures, glyphs, reports, and undo/redo.
+Annotation checks cover distinct support/spring geometry, signed moment arrows,
+factored loads/self-weight, partial spans, unchanged force diagrams under
+visibility changes, collision-free text/symbols, member context, and report choices.
 
 Keep workflow and engineering-scope changes documented here. Track remaining
 features and known limitations in [TODO.md](TODO.md), updating it as work lands.

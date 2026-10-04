@@ -12,13 +12,15 @@ from .model import Load, Member, Node
 
 
 FIELDS = {
-    "nodes": ("name", "x", "y", "support", "restraint_x", "restraint_y", "restraint_rz"),
-    "members": ("name", "start", "end", "material", "section", "release_start", "release_end", "kind"),
+    "nodes": ("name", "x", "y", "support", "restraint_x", "restraint_y", "restraint_rz", "spring_x", "spring_y", "spring_rz"),
+    "members": ("name", "start", "end", "material", "section", "release_start", "release_end", "kind",
+                "release_start_x", "release_end_x", "release_start_y", "release_end_y"),
     "loads": ("name", "target", "case", "kind", "direction", "magnitude", "position",
               "end_magnitude", "end_position", "angle", "units"),
 }
-BOOLEAN_FIELDS = {"restraint_x", "restraint_y", "restraint_rz", "release_start", "release_end"}
-NUMERIC_FIELDS = {"x", "y", "magnitude", "position", "end_magnitude", "end_position", "angle"}
+BOOLEAN_FIELDS = {"restraint_x", "restraint_y", "restraint_rz", "release_start", "release_end",
+                  "release_start_x", "release_end_x", "release_start_y", "release_end_y"}
+NUMERIC_FIELDS = {"x", "y", "magnitude", "position", "end_magnitude", "end_position", "angle", "spring_x", "spring_y", "spring_rz"}
 
 
 class ModelTablesDialog(QDialog):
@@ -34,8 +36,11 @@ class ModelTablesDialog(QDialog):
         self.tables = {}
         headers = {
             "nodes": ["ID", f"X ({project.units.length})", f"Y ({project.units.length})",
-                      "Support", "Restrain DX", "Restrain DY", "Restrain RZ"],
-            "members": ["ID", "Start", "End", "Material", "Section", "Start hinge", "End hinge", "Type"],
+                      "Support", "Restrain DX", "Restrain DY", "Restrain RZ",
+                      f"Spring DX ({project.units.stiffness})", f"Spring DY ({project.units.stiffness})",
+                      f"Spring RZ ({project.units.rotational_stiffness})"],
+            "members": ["ID", "Start", "End", "Material", "Section", "Start hinge", "End hinge", "Type",
+                        "Start axial DX", "End axial DX", "Start shear DY", "End shear DY"],
             "loads": ["ID", "Target", "Case", "Type", "Direction", "Magnitude / start intensity",
                       "Start fraction", f"End intensity ({project.units.intensity})", "End fraction", "Angle (deg)", "Magnitude units"],
         }
@@ -96,6 +101,10 @@ class ModelTablesDialog(QDialog):
     def quantity(self, kind, key, direction="FY", load_kind="point"):
         if key in ("x", "y"):
             return "length"
+        if key in ("spring_x", "spring_y"):
+            return "stiffness"
+        if key == "spring_rz":
+            return "rotational_stiffness"
         if key == "end_magnitude":
             return "intensity"
         if key == "magnitude":
@@ -155,11 +164,11 @@ class ModelTablesDialog(QDialog):
         table = self.tables["members"]
         for row in range(table.rowCount()):
             frame = table.cellWidget(row, FIELDS["members"].index("kind")).currentText() == "frame"
-            for key in ("release_start", "release_end"):
+            for key in ("release_start", "release_end", "release_start_x", "release_end_x", "release_start_y", "release_end_y"):
                 item = table.item(row, FIELDS["members"].index(key))
                 flags = item.flags()
                 item.setFlags(flags | Qt.ItemFlag.ItemIsEnabled if frame else flags & ~Qt.ItemFlag.ItemIsEnabled)
-                item.setToolTip("Frame moment release; truss ends are always pinned. Stored frame settings are retained.")
+                item.setToolTip("Member-local frame release. Truss ends are pinned; clear axial/shear releases before changing to truss.")
 
     def update_load_units(self):
         table = self.tables["loads"]

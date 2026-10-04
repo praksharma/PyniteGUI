@@ -5,12 +5,14 @@ import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.offsetbox import AnnotationBbox, DrawingArea
 from matplotlib.patches import Circle
+from matplotlib.lines import Line2D
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QHBoxLayout, QLabel, QStyle, QTabWidget, QTableWidget, QTableWidgetItem, QToolButton, QVBoxLayout, QWidget
 
 from .analysis import model_signature
-from .diagram_labels import add_diagram_label
+from .diagram_labels import add_diagram_label, reserve_annotation
+from .annotations import combination_loads, load_label, support_label, support_geometry, spring_geometry, release_geometry, moment_geometry
 from .theme import colors, restyle_figure, style_axes
 
 
@@ -116,7 +118,79 @@ def structure_data(project, result, quantity):
     return data
 
 
-def draw_structure(ax, project, result, quantity, amplitude=20, side=1, sign=1, palette=None):
+def add_symbol(ax, point, geometry, color, background, identity):
+    paths, circles = geometry
+    if not paths and not circles:
+        return None
+    points = [point for path in paths for point in path]
+    points.extend((x + sign * r, y + sign * r) for x, y, r in circles for sign in (-1, 1))
+    left, right = min(p[0] for p in points) - 2, max(p[0] for p in points) + 2
+    top, bottom = min(p[1] for p in points) - 2, max(p[1] for p in points) + 2
+    width, height = right - left, bottom - top
+    marker = DrawingArea(width * 0.75, height * 0.75)
+    def xy(x, y):
+        return (x - left) * 0.75, (bottom - y) * 0.75
+    for path in paths:
+        line = np.asarray([xy(*p) for p in path])
+        marker.add_artist(Line2D(line[:, 0], line[:, 1], color=color, linewidth=1.2))
+    for x, y, radius in circles:
+        marker.add_artist(Circle(xy(x, y), radius * 0.75, edgecolor=color, facecolor=background, linewidth=1.2))
+    artist = AnnotationBbox(marker, point, xybox=(0, 0), boxcoords="offset points",
+                            box_alignment=(-left / width, bottom / height), frameon=False, pad=0, zorder=5)
+    artist.set_gid(identity)
+    ax.add_artist(artist)
+    reserve_annotation(ax, artist)
+    return artist
+
+
+def draw_context(ax, project, result, palette, supports=True, loads=True):
+    units, c = project.units, palette
+    def point(x, y):
+        return units.to_display(np.array([x, y]), "length")
+    if supports:
+        for node in project.nodes.values():
+            location = point(node.x, node.y)
+            add_symbol(ax, location, support_geometry(node.support, node.restraints), c["support"], c["canvas"], "support-" + node.name)
+            add_symbol(ax, location, spring_geometry(node.springs), c["support"], c["canvas"], "spring-" + node.name)
+            if any(node.springs):
+                text = "\n".join(support_label(project, node).split(" | ")[1:])
+                add_diagram_label(ax, text, location, c["support"], c["canvas"], member=True)
+    if not loads:
+        return
+    for load in combination_loads(project, result):
+        if load.target in project.nodes:
+            node = project.nodes[load.target]
+            start, end = np.array([node.x, node.y]), None
+        else:
+            member = project.members[load.target]
+            a, b = project.nodes[member.start], project.nodes[member.end]
+            start, end = np.array([a.x, a.y]), np.array([b.x, b.y])
+        maximum = max(abs(load.magnitude), abs(load.end_magnitude)) if load.kind == "distributed" else abs(load.magnitude)
+        fractions = np.linspace(load.position, load.end_position, 9) if load.kind == "distributed" else [load.position]
+        for index, fraction in enumerate(fractions):
+            ratio = index / 8 if load.kind == "distributed" else 0
+            magnitude = load.magnitude + ratio * (load.end_magnitude - load.magnitude)
+            if not magnitude or abs(magnitude) < maximum * 1e-8:
+                continue
+            location = point(*(start if end is None else start + fraction * (end - start)))
+            if load.direction == "MZ":
+                add_symbol(ax, location, moment_geometry(magnitude), c["load"], c["canvas"], "load-" + load.name)
+            else:
+                angle = math.radians(load.resolved_angle(project))
+                sign = 1 if magnitude >= 0 else -1
+                length = 28.5 * abs(magnitude) / maximum
+                artist = ax.annotate("", location, xytext=(-sign * math.cos(angle) * length, -sign * math.sin(angle) * length),
+                                     textcoords="offset points", arrowprops={"arrowstyle": "->", "color": c["load"],
+                                     "linewidth": 1.2, "shrinkA": 0, "shrinkB": 0,
+                                     "mutation_scale": min(10, length * 0.6)}, zorder=5)
+                artist.set_gid("load-" + load.name)
+                reserve_annotation(ax, artist)
+        fraction = (load.position + load.end_position) / 2 if load.kind == "distributed" else load.position
+        location = point(*(start if end is None else start + fraction * (end - start)))
+        add_diagram_label(ax, load_label(project, load), location, c["load"], c["canvas"], member=True)
+
+
+def draw_structure(ax, project, result, quantity, amplitude=20, side=1, sign=1, palette=None, supports=True, loads=True):
     if type(side) is not int or side not in (-1, 1) or type(sign) is not int or sign not in (-1, 1):
         raise ValueError("Diagram side and sign must be +1 or -1.")
     data = structure_data(project, result, quantity)
@@ -154,8 +228,8 @@ def draw_structure(ax, project, result, quantity, amplitude=20, side=1, sign=1, 
     for node in project.nodes.values():
         x, y = units.to_display(node.x, "length"), units.to_display(node.y, "length")
         ax.plot(x, y, "o", color=c["member"], markersize=3, zorder=4)
-        if any(node.restraints):
-            ax.plot(x, y, marker="^" if node.support != "roller" else "o", color=c["support"], fillstyle="none", markersize=9, zorder=4)
+        add_diagram_label(ax, node.name, (x, y), c["member"], c["canvas"], member=True)
+    draw_context(ax, project, result, c, supports, loads)
     for name, row in data.items():
         member = project.members[name]
         start, end = row["base"][0], row["base"][-1]
@@ -167,6 +241,9 @@ def draw_structure(ax, project, result, quantity, amplitude=20, side=1, sign=1, 
                 marker.add_artist(Circle((4, 4), 3, facecolor=c["canvas"], edgecolor=c["accent"], linewidth=1.3))
                 ax.add_artist(AnnotationBbox(marker, units.to_display(point, "length"), xybox=tuple(offset_sign * tangent * 9),
                                             boxcoords="offset points", frameon=False, pad=0, zorder=5))
+        for flags, point, offset_sign in zip(member.end_releases, (start, end), (1, -1)):
+            add_symbol(ax, units.to_display(point, "length"), release_geometry(offset_sign * tangent * np.array([1, -1]), *flags[:2]),
+                       c["accent"], c["canvas"], "release-" + name)
     ax.set_title({"axial": f"Axial Force Diagram N ({units.force}; + {'compression' if sign == 1 else 'tension'})",
                   "shear": f"Shear Force Diagram V ({units.force})",
                   "moment": f"Bending Moment Diagram M ({units.moment})"}[quantity] +
@@ -248,6 +325,14 @@ class DiagramDialog(QDialog):
         self.reverse_sign = QCheckBox("Reverse display signs")
         self.reverse_sign.setToolTip("Whole-structure diagrams only. Member Detail, result tables, and CSV keep solver signs.")
         display.addWidget(self.reverse_sign)
+        self.show_supports = QCheckBox("Supports")
+        self.show_supports.setChecked(True)
+        self.show_supports.setToolTip("Show rigid restraints and global support springs on the analyzed model.")
+        self.show_loads = QCheckBox("Loads")
+        self.show_loads.setChecked(True)
+        self.show_loads.setToolTip("Show manual and self-weight loads, factored for the selected combination.")
+        display.addWidget(self.show_supports)
+        display.addWidget(self.show_loads)
         display.addStretch()
         structure_layout.addLayout(display)
         self.structure_figure = Figure(figsize=(9, 7), layout="constrained")
@@ -262,6 +347,10 @@ class DiagramDialog(QDialog):
         if selected in project.members:
             self.member.setCurrentText(selected)
         detail_layout.addWidget(self.member)
+        self.member_context = QLabel()
+        self.member_context.setTextFormat(Qt.TextFormat.PlainText)
+        self.member_context.setWordWrap(True)
+        detail_layout.addWidget(self.member_context)
         inspection = QHBoxLayout()
         inspection.addWidget(QLabel("Distance"))
         self.distance = QDoubleSpinBox()
@@ -301,6 +390,8 @@ class DiagramDialog(QDialog):
         self.amplitude.valueChanged.connect(self.update_structure)
         self.diagram_side.currentIndexChanged.connect(self.update_structure)
         self.reverse_sign.toggled.connect(self.update_structure)
+        self.show_supports.toggled.connect(self.update_structure)
+        self.show_loads.toggled.connect(self.update_structure)
         self.member.currentTextChanged.connect(self.update_member)
         self.distance.valueChanged.connect(self.inspect_distance)
         self.inspection_side.currentIndexChanged.connect(self.update_inspection)
@@ -351,13 +442,24 @@ class DiagramDialog(QDialog):
         self.structure_figure.clear()
         ax = self.structure_figure.add_subplot(111)
         draw_structure(ax, self.project, self.result, self.quantity.currentData(), self.amplitude.value(),
-                       self.diagram_side.currentData(), -1 if self.reverse_sign.isChecked() else 1)
+                       self.diagram_side.currentData(), -1 if self.reverse_sign.isChecked() else 1,
+                       supports=self.show_supports.isChecked(), loads=self.show_loads.isChecked())
         self.structure_canvas.draw_idle()
 
     def update_member(self):
         self.member_canvas.setPalette(self.palette())
         self.member_figure.clear()
         name = self.member.currentText()
+        member = self.project.members[name]
+        context = [support_label(self.project, self.project.nodes[node]) for node in (member.start, member.end)]
+        context.append("Local releases: start " + member.release_labels[0] + " | end " + member.release_labels[1])
+        relevant = [load_label(self.project, load) for load in combination_loads(self.project, self.result)
+                    if load.target in (name, member.start, member.end)]
+        context.append(self.result.combination + " loads: " + ("; ".join(relevant) or "None"))
+        full_context = "\n".join(context)
+        self.member_context.setText("\n".join(context[:3]) + "\n" +
+                                    (context[3] if len(context[3]) <= 200 else context[3][:197] + "..."))
+        self.member_context.setToolTip(full_context)
         if name != self.inspection_member:
             self.inspection_x = 0
             self.inspection_member = name

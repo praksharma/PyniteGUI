@@ -177,6 +177,8 @@ an audit of Stabileo's engineering calculations. PRO is labelled beta.
   signs, and mechanism checks need dedicated tests. Imposed displacements are
   model-level in this API, not automatically case-specific loads. Primary owner
   for springs: elastic support springs in TODO.md; inclined supports are separate.
+  Bilateral springs are now implemented and benchmarked in the primary roadmap;
+  imposed settlements/rotations remain future work.
 - [ ] **Explicit truss/member behaviour (Adapter).** Add a clear pin-ended truss
   workflow using supported end releases, then optional tension/compression-only
   behaviour via member flags and iterative `analyze`, not `analyze_linear`.

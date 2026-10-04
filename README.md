@@ -8,6 +8,7 @@ Draw and edit frames or trusses, assign custom or library materials and sections
 distributed, or automatic self-weight loads. Analyze combinations and inspect
 reactions, deformed shapes, force diagrams, and envelopes across combinations. Supports
 SI/Imperial units, light/dark themes, undo/redo, and autosave recovery.
+Model elastic support springs and member-end axial, shear, or moment releases.
 Analysis shows progress phases and can be cancelled without losing valid results.
 Print selected model definitions, result tables, envelopes, and force diagrams as a report.
 

@@ -205,7 +205,7 @@ class ReleaseTests(unittest.TestCase):
         project = beam()
         ax = Figure().add_subplot(111)
         draw_structure(ax, project, solve(project), "moment")
-        self.assertEqual(sum(isinstance(item, AnnotationBbox) for item in ax.artists), 2)
+        self.assertEqual(sum(isinstance(item, AnnotationBbox) and item.get_gid() is None for item in ax.artists), 2)
 
 
 class ReleaseEditorTests(unittest.TestCase):
