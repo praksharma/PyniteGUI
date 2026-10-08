@@ -115,6 +115,41 @@ Backend references: [Chromium SwiftShader driver documentation](https://chromium
 and [Qt WebEngine hardware acceleration](https://doc.qt.io/qt-6.10/qtwebengine-features.html#hardware-acceleration).
 Terminal warning/output lines are not shell commands; paste only the command above.
 
+### NVIDIA Hardware Rendering on Linux
+
+`nvidia-smi` confirms the NVIDIA driver is running, but Qt and its embedded browser
+must also select compatible graphics backends. On the tested Ubuntu Wayland host
+with a Quadro RTX 4000 and driver 580.178.04, automatic EGL selection chose Mesa
+llvmpipe, causing WebGL2 to be blocklisted. Selecting NVIDIA EGL alone enabled
+WebGL but left Qt unable to create its OpenGL context. Selecting NVIDIA EGL and
+Vulkan together rendered the frame with GPU compositing enabled:
+
+```sh
+env -u QT_OPENGL -u QT_QUICK_BACKEND -u QTWEBENGINE_CHROMIUM_FLAGS \
+  QSG_RHI_BACKEND=vulkan \
+  __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/10_nvidia.json \
+  VK_DRIVER_FILES=/usr/share/vulkan/icd.d/nvidia_icd.json \
+  uv run --python /usr/bin/python3 pynitegui --graphics=auto
+```
+
+Run from the project directory after saving and closing the existing app. These
+environment settings apply only to this process; no system graphics configuration
+or browser blocklist/sandbox is changed. `--graphics=auto` overrides a saved
+software preference for this launch. The driver JSON paths must exist on your
+distribution. The system Python selection avoids the stale Conda-based environment
+found on the test host; uv may recreate the project's environment and sync its
+dependencies when the interpreter changes.
+
+For diagnostics, add `QT_LOGGING_RULES='qt.webenginecontext=true;qt.webengine.compositor=true'`
+to the command. Successful hardware rendering should report the Quadro as the
+`QSG RHI Device`, NVIDIA in `GL Renderer`, and `GPU Compositing: Enabled`; viewing
+the model must also succeed. A working context alone does not prove Qt can display it.
+Use software rendering if this configuration does not work on another machine.
+
+References: [Qt NVIDIA graphics integration](https://doc.qt.io/qt-6.10/qtwebengine-features.html#nvidia-on-linux),
+[NVIDIA EGL vendor selection](https://github.com/NVIDIA/libglvnd/blob/master/src/EGL/icd_enumeration.md),
+and [Vulkan driver selection](https://github.com/KhronosGroup/Vulkan-Loader/blob/main/docs/LoaderDriverInterface.md).
+
 ## Workflow
 
 - The unit selector also offers SI (mm, N) and Imperial (ft, kip). The mm/N

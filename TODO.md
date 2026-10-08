@@ -115,6 +115,10 @@ and verified PyNite extensions. This file remains the primary implementation lis
   native light/dark rendering, and desktop/mobile browser interaction checks.
 - [x] Add startup software rendering, a persisted renderer preference and an
   actionable native recovery panel for failed WebGL/graphics contexts.
+- [x] Verify and document NVIDIA hardware rendering on Wayland with matched
+  EGL/Vulkan drivers, visible geometry, and GPU compositing enabled.
+- [ ] Display the actual viewport GPU/driver/backend in graphics diagnostics,
+  distinguishing selected preferences from the renderer Qt actually uses.
 - [ ] Whole-structure 3D axial/shear/bending/torsion overlays and image reports.
 - [ ] Spatial combination envelopes and interactive one-sided station inspection.
 - [ ] 3D member end releases and axial-only trusses, with mechanism benchmarks.
