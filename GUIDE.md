@@ -4,12 +4,18 @@ A Python desktop editor for 2D frames/trusses and linear 3D spatial frames with 
 
 ## Run
 
-Install Python 3.12+ and uv, then run from the repository:
+Install uv, then run from the repository. uv installs and manages Python as well
+as the project dependencies; Conda and a separately installed system Python are
+not needed:
 
 ```sh
-uv sync
+uv python install 3.12
+uv sync --managed-python
 uv run pynitegui
 ```
+
+The project sets uv's `python-preference` to `only-managed`, so normal launches
+also use uv-managed Python instead of discovering a Conda or system interpreter.
 
 The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
 
@@ -129,16 +135,20 @@ env -u QT_OPENGL -u QT_QUICK_BACKEND -u QTWEBENGINE_CHROMIUM_FLAGS \
   QSG_RHI_BACKEND=vulkan \
   __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/10_nvidia.json \
   VK_DRIVER_FILES=/usr/share/vulkan/icd.d/nvidia_icd.json \
-  uv run --python /usr/bin/python3 pynitegui --graphics=auto
+  VK_LOADER_LAYERS_DISABLE='~implicit~' \
+  uv run pynitegui --graphics=auto
 ```
 
 Run from the project directory after saving and closing the existing app. These
 environment settings apply only to this process; no system graphics configuration
 or browser blocklist/sandbox is changed. `--graphics=auto` overrides a saved
 software preference for this launch. The driver JSON paths must exist on your
-distribution. The system Python selection avoids the stale Conda-based environment
-found on the test host; uv may recreate the project's environment and sync its
-dependencies when the interpreter changes.
+distribution. Use the uv-managed environment from the setup instructions above;
+the stale Conda-based environment on the test host has been replaced.
+On this host, the managed-Python launch also required disabling optional implicit
+Vulkan layers: without that setting, the native Vulkan loader crashed during
+`vkCreateInstance`. The layer setting is launch-scoped, not a system-wide change,
+and does not disable the Chromium sandbox or GPU blocklist.
 
 For diagnostics, add `QT_LOGGING_RULES='qt.webenginecontext=true;qt.webengine.compositor=true'`
 to the command. Successful hardware rendering should report the Quadro as the
@@ -149,6 +159,7 @@ Use software rendering if this configuration does not work on another machine.
 References: [Qt NVIDIA graphics integration](https://doc.qt.io/qt-6.10/qtwebengine-features.html#nvidia-on-linux),
 [NVIDIA EGL vendor selection](https://github.com/NVIDIA/libglvnd/blob/master/src/EGL/icd_enumeration.md),
 and [Vulkan driver selection](https://github.com/KhronosGroup/Vulkan-Loader/blob/main/docs/LoaderDriverInterface.md).
+See also [Vulkan layer filtering](https://github.com/KhronosGroup/Vulkan-Loader/blob/main/docs/LoaderLayerInterface.md).
 
 ## Workflow
 

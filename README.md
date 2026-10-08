@@ -16,10 +16,11 @@ and loads, member roll, biaxial bending/torsion results, and spatial deformation
 
 ## Quick Start
 
-With Python 3.12+ and uv installed, run from this repository:
+With uv installed, run from this repository:
 
 ```sh
-uv sync
+uv python install 3.12
+uv sync --managed-python
 uv run pynitegui
 ```
 

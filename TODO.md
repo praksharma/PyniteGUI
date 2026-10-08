@@ -91,6 +91,8 @@ and verified PyNite extensions. This file remains the primary implementation lis
 
 ## Project Quality
 
+- [x] Use uv-managed Python and locked project dependencies without relying on
+  Conda or a system interpreter; document setup and normal uv launches.
 - [x] Add a File > Examples catalog of editable, validated beam/frame models.
 - [x] Add recent projects and per-window atomic autosave/recovery.
 - [x] Expand validation for malformed project files and supported format migrations,
