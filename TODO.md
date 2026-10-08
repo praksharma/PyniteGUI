@@ -119,6 +119,8 @@ and verified PyNite extensions. This file remains the primary implementation lis
   actionable native recovery panel for failed WebGL/graphics contexts.
 - [x] Verify and document NVIDIA hardware rendering on Wayland with matched
   EGL/Vulkan drivers, visible geometry, and GPU compositing enabled.
+- [x] Apply the verified NVIDIA profile automatically for one NVIDIA display-driving
+  GPU on Wayland, preserving software mode, hybrid setups, and explicit overrides.
 - [ ] Display the actual viewport GPU/driver/backend in graphics diagnostics,
   distinguishing selected preferences from the renderer Qt actually uses.
 - [ ] Whole-structure 3D axial/shear/bending/torsion overlays and image reports.

@@ -123,6 +123,15 @@ Terminal warning/output lines are not shell commands; paste only the command abo
 
 ### NVIDIA Hardware Rendering on Linux
 
+Automatic rendering now applies the verified NVIDIA/Wayland configuration before
+Qt starts when exactly one GPU drives connected displays, that GPU is NVIDIA,
+both driver manifests exist, and no explicit graphics overrides are present.
+On that setup, launch normally with `uv run pynitegui`; New 3D Frame needs no
+additional terminal settings. A saved software preference remains respected:
+select View > 3D Rendering > Automatic (GPU) and restart to use hardware rendering.
+Connected hybrid/multiple-GPU displays, non-Wayland sessions, and explicit backend
+settings are left untouched rather than guessed.
+
 `nvidia-smi` confirms the NVIDIA driver is running, but Qt and its embedded browser
 must also select compatible graphics backends. On the tested Ubuntu Wayland host
 with a Quadro RTX 4000 and driver 580.178.04, automatic EGL selection chose Mesa
@@ -135,7 +144,7 @@ env -u QT_OPENGL -u QT_QUICK_BACKEND -u QTWEBENGINE_CHROMIUM_FLAGS \
   QSG_RHI_BACKEND=vulkan \
   __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/10_nvidia.json \
   VK_DRIVER_FILES=/usr/share/vulkan/icd.d/nvidia_icd.json \
-  VK_LOADER_LAYERS_DISABLE='~implicit~' \
+  VK_LOADER_LAYERS_DISABLE='*MESA*' \
   uv run pynitegui --graphics=auto
 ```
 
@@ -145,10 +154,10 @@ or browser blocklist/sandbox is changed. `--graphics=auto` overrides a saved
 software preference for this launch. The driver JSON paths must exist on your
 distribution. Use the uv-managed environment from the setup instructions above;
 the stale Conda-based environment on the test host has been replaced.
-On this host, the managed-Python launch also required disabling optional implicit
-Vulkan layers: without that setting, the native Vulkan loader crashed during
+On this host, the managed-Python launch also required disabling Mesa Vulkan
+layers: without that setting, the native Vulkan loader crashed during
 `vkCreateInstance`. The layer setting is launch-scoped, not a system-wide change,
-and does not disable the Chromium sandbox or GPU blocklist.
+preserves unrelated layers, and does not disable the Chromium sandbox or GPU blocklist.
 
 For diagnostics, add `QT_LOGGING_RULES='qt.webenginecontext=true;qt.webengine.compositor=true'`
 to the command. Successful hardware rendering should report the Quadro as the

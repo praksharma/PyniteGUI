@@ -14,6 +14,7 @@ from PySide6.QtWidgets import QApplication, QMessageBox, QPushButton
 from pynitegui.qt.app import MainWindow
 from pynitegui.qt.examples import example_project
 from pynitegui.qt.graphics import configure_graphics, graphics_mode, launch_options
+from pynitegui.qt import graphics
 from pynitegui.qt.spatial_view import Bridge
 
 
@@ -75,6 +76,83 @@ class GraphicsLaunchTests(unittest.TestCase):
     def test_invalid_cli_option_rejected(self):
         with patch("sys.stderr"), self.assertRaises(SystemExit):
             launch_options(["pynitegui", "--graphics=missing"])
+
+
+class AutomaticNvidiaTests(unittest.TestCase):
+    def setUp(self):
+        self.directory = tempfile.TemporaryDirectory()
+        self.root = Path(self.directory.name)
+        self.egl, self.vulkan = self.root / "egl.json", self.root / "vulkan.json"
+        self.egl.write_text("{}")
+        self.vulkan.write_text("{}")
+        self.paths = patch.multiple(graphics, DRM_ROOT=self.root, NVIDIA_EGL=self.egl, NVIDIA_VULKAN=self.vulkan)
+        self.paths.start()
+        self.platform = patch.object(graphics.sys, "platform", "linux")
+        self.platform.start()
+        self.environment = {"WAYLAND_DISPLAY": "wayland-0"}
+        self.card(0, "0x10de", "connected")
+
+    def tearDown(self):
+        self.platform.stop()
+        self.paths.stop()
+        self.directory.cleanup()
+
+    def card(self, number, vendor, status):
+        device = self.root / f"card{number}" / "device"
+        device.mkdir(parents=True, exist_ok=True)
+        (device / "vendor").write_text(vendor)
+        connector = self.root / f"card{number}-DP-1"
+        connector.mkdir(exist_ok=True)
+        (connector / "status").write_text(status)
+
+    def test_normal_automatic_launch_selects_matched_nvidia_drivers(self):
+        self.card(1, "0x8086", "disconnected")
+        configure_graphics("auto", self.environment)
+        self.assertEqual(self.environment["QSG_RHI_BACKEND"], "vulkan")
+        self.assertEqual(self.environment["__EGL_VENDOR_LIBRARY_FILENAMES"], str(self.egl))
+        self.assertEqual(self.environment["VK_DRIVER_FILES"], str(self.vulkan))
+        self.assertEqual(self.environment["VK_LOADER_LAYERS_DISABLE"], "*MESA*")
+        self.assertNotIn("QTWEBENGINE_CHROMIUM_FLAGS", self.environment)
+        once = self.environment.copy()
+        configure_graphics("auto", self.environment)
+        self.assertEqual(self.environment, once)
+
+    def test_connected_hybrid_and_multiple_nvidia_gpus_are_not_guessed(self):
+        for vendor in ("0x8086", "0x1002", "0x10de"):
+            self.card(1, vendor, "connected")
+            self.assertFalse(graphics.nvidia_wayland_available(self.environment))
+
+    def test_no_connected_displays_are_not_guessed(self):
+        self.card(0, "0x10de", "disconnected")
+        self.assertFalse(graphics.nvidia_wayland_available(self.environment))
+
+    def test_missing_driver_manifest_is_not_guessed(self):
+        self.egl.unlink()
+        self.assertFalse(graphics.nvidia_wayland_available(self.environment))
+
+    def test_non_linux_non_wayland_and_explicit_other_platform_are_unchanged(self):
+        with patch.object(graphics.sys, "platform", "win32"):
+            self.assertFalse(graphics.nvidia_wayland_available(self.environment))
+        self.assertFalse(graphics.nvidia_wayland_available({"XDG_SESSION_TYPE": "x11"}))
+        for platform in ("offscreen", "xcb", "minimal"):
+            self.assertFalse(graphics.nvidia_wayland_available({**self.environment, "QT_QPA_PLATFORM": platform}))
+
+    def test_unreadable_display_information_is_not_guessed(self):
+        with patch.object(Path, "read_text", side_effect=OSError("unavailable")):
+            self.assertFalse(graphics.nvidia_wayland_available(self.environment))
+
+    def test_every_explicit_graphics_override_is_preserved(self):
+        for key in graphics.GRAPHICS_OVERRIDES:
+            environment = {**self.environment, key: "explicit"}
+            before = environment.copy()
+            configure_graphics("auto", environment)
+            self.assertEqual(environment, before)
+
+    def test_software_does_not_enable_nvidia_hardware_profile(self):
+        configure_graphics("software", self.environment)
+        self.assertEqual(self.environment["QT_OPENGL"], "software")
+        self.assertNotIn("QSG_RHI_BACKEND", self.environment)
+        self.assertNotIn("VK_DRIVER_FILES", self.environment)
 
 
 class GraphicsRecoveryTests(unittest.TestCase):
