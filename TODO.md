@@ -14,8 +14,8 @@ Audited 2026-10-09 against our application adapters, schemas and documented
 workflows, plus the locked **PyniteFEA 3.0.0** source. The
 [upstream capability list](https://github.com/JWock82/Pynite#current-capabilities)
 describes the engine, not features automatically available in this GUI.
-**Done** means usable in our current frame-focused scope; **Partial** identifies
-the exact missing part. Summary: **7 done, 4 partial, 7 pending**.
+**Done** means usable in the stated application workflow; **Partial** identifies
+the exact missing part. Summary: **8 done, 4 partial, 6 pending**.
 
 | Engine capability | GUI status | Coverage or remaining task |
 | --- | --- | --- |
@@ -31,10 +31,10 @@ the exact missing part. Summary: **7 done, 4 partial, 7 pending**.
 | Node-to-node spring elements | Pending | Add separate spring entities, axial stiffness units and bilateral/tension-only/compression-only behaviour; support springs are not spring elements. |
 | Bilateral/unilateral support springs | Partial | Bilateral global DX/DY/RZ springs in 2D and all six DOFs in 3D are implemented. One-way support springs and iterative activation remain pending. |
 | DKMQ quadrilaterals | Partial | Separate experimental rectangular transverse-plate workspace: thickness/E/nu, uniform pressure, edge supports, cancellable solve, nodal displacement/reaction CSV and centre moment/shear contours with Navier refinement benchmarks. General membrane/shell editing and frame coupling remain pending. |
-| Polynomial rectangles | Pending | Expose the separate rectangular plate formulation with geometry/orientation checks and formulation-specific tests. |
-| Shape/opening meshing | Partial | PyNite rectangular quad mesh preview/regeneration preserves surface-owned pressure and boundary supports in the separate pilot. Openings, control lines, curved generators, general geometry and shared connectivity remain pending. |
+| Polynomial rectangles | Partial | Quad/Rect choice for rectangular plate bending (including openings) with centre-coordinate recovery, deflection comparison and equilibrium regressions. General membrane/shell workflows and additional formulation-specific benchmarks remain pending. |
+| Shape/opening meshing | Done | All seven concrete PyNite generators with shape-specific/common options, bounded checks, control lines/openings, offline 3D geometry preview, recipes/undo and connectivity export. Curved-shell analysis and frame assembly remain distinct pending capabilities. |
 | Support reactions | Done | Unit-aware reaction tables, CSV and printable output; all six components for spatial frames, including bilateral support springs. |
-| Geometry/load/deformation rendering | Done | Current 2D/3D frame geometry, supports, case-filtered loads, factored combinations and scaled deformed shapes. Plate pilot adds planar mesh/contours; 3D surface/deformed-mesh rendering remains pending. |
+| Geometry/load/deformation rendering | Done | Current frame/truss geometry, supports, loads and deformed shapes; plate pilot has planar contours and mesh catalog has orbitable 3D surfaces. 3D surface analysis/deformed-mesh rendering remains pending. |
 | Shear walls and mats | Pending | Add dedicated wall/foundation definitions, meshing, openings, soil/support input and specialized results; verify the locked engine before exposing workflows. |
 | Model/result PDF output | Done | Native printable model definitions/results with save-to-PDF; 2D diagrams and numerical envelopes; 3D six-component diagrams with selectable orthographic views and numerical envelopes. |
 
@@ -64,13 +64,22 @@ below and the secondary interface wishlist retain their more specific scope.
 - [ ] Integrate surfaces into versioned spatial projects and the Three.js editor,
   explicitly handling mixed frame/surface connectivity, shared node ownership,
   topology checks, editing/deletion, results, autosave and MCP contracts.
-- [ ] Add rectangular openings and control lines with boundary/pressure retention,
-  mesh quality previews and convergence/independent opening benchmarks.
+- [x] Add rectangular openings/control lines with geometry-owned assignments,
+  Quad/Rect analysis, origin/options transfer, version 1 plate-file migration,
+  basic mesh-quality checks and net-area pressure/reaction regressions.
+- [x] Expose all seven concrete PyNite mesh generators and applicable parameters,
+  including ring/transition helpers, families, origins, numbering and modifiers;
+  add 3D geometry previews, recipes/undo/export and all-axis/option/browser tests.
+- [ ] Independently benchmark opening deflection/moment recovery and refinement;
+  extend formulation-specific Rect bending/shear benchmarks.
 - [ ] Extend the plate pilot to general membrane behaviour, multiple surface load
   cases/combinations, surface self-weight and detailed local result inspection;
   independently benchmark moment/shear recovery before engineering claims.
-- [ ] Add curved/annular generators and richer 2D geometry only as independently
-  validated capabilities; do not imply arbitrary CAD or unstructured meshing.
+- [ ] Add annular/curved-shell boundary/load definitions, membrane behaviour,
+  normal-pressure orientation, reaction/result inspection and independent shell
+  benchmarks before enabling analysis for nonrectangular catalog meshes.
+- [ ] Add richer 2D geometry as independently validated capabilities; do not imply
+  arbitrary CAD or unstructured meshing beyond PyNite's supported generators.
 
 ## Modelling and Editing
 

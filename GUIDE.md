@@ -35,6 +35,72 @@ sections, cases/combinations and self-weight. Diagrams and deformation stay
 disabled until a valid snapshot exists. The same commands remain accessible
 through the menus and existing keyboard shortcuts.
 
+### Experimental Surface Meshing
+
+Post-1.0.0rc1 development adds **Tools > Surface Meshing (Experimental)**.
+It exposes all seven concrete generators in the locked PyNite Mesh module,
+without another solver or meshing dependency. Mesh geometry is independent of
+frame projects. The published rc1 wheel does not contain this workspace.
+
+| Generator | Shape-specific options | Element families |
+| --- | --- | --- |
+| Rectangle | Width, height, XY/XZ/YZ plane, local x/y control lines, named rectangular openings | Quad, Rect |
+| Annulus | Inner/outer radii, X/Y/Z axis, target size; automatic radial/circumferential refinement | Quad |
+| Annular ring | Inner/outer radii, axis, circumferential divisions; one radial course | Quad |
+| Annular transition ring | Inner/outer radii, axis, inner divisions; transitions to three times as many outer divisions | Quad |
+| Cylinder | Radius, height, axis, target size; automatic or explicit circumferential divisions | Quad, Rect |
+| Cylinder ring | Radius, height, axis, explicit divisions; one axial course | Quad, Rect |
+| Conical frustum | Large/small radii, height, axis, target size | Quad |
+
+All recipes expose mesh/material names, thickness, E/nu/weight density,
+local stiffness modifiers `kx_mod`/`ky_mod`, XYZ origin and starting node/element
+numbers. Modifiers retain the selected upstream element formulation's semantics;
+do not assume they modify only bending or only membrane stiffness identically
+for Quad and Rect. Target size is disabled for direct ring generators, which
+use explicit counts. Quad is DKMQ; Rect is the rectangular polynomial element.
+
+Use the Geometry and Mesh/Material tabs to edit the definition, then
+**Apply / Generate Mesh**. Rectangle's Control Lines tab uses typed axis/coordinate
+rows; Openings uses name/left/bottom/width/height rows in local rectangle units.
+Openings may meet an exterior edge but cannot cut completely across the rectangle,
+overlap or touch another opening. Opening boundaries become control lines automatically.
+The displayed face edges are the actual four-node element connectivity. Orbit,
+orientation gizmo, Faces/Nodes toggles and Fit use the offline Three.js viewport.
+Existing application software/hardware rendering settings also apply here.
+
+Save/Open uses a strict, versioned `.pynitemesh` recipe. Undo/redo covers applied
+definitions and generator changes. Changing generator starts its shape parameters
+and target size from defaults and clears rectangle-only options; undo restores
+the previous recipe. Units affect inputs without changing physical dimensions.
+**Export generated mesh** writes neutral JSON containing canonical inch-kip node
+coordinates, named four-node connectivity, element family/properties and the
+recipe. It is not a frame project or an analyzed result file.
+
+The single-mesh workspace has a 1,024-element budget, checked before allocation
+(before removing rectangle openings). Generated meshes are checked for finite
+coordinates, nondegenerate/coplanar faces, positive Gauss-point Jacobians and
+edge-length ratios up to 20; these are basic safeguards, not a mesh-quality
+certificate. Very coarse annular meshes that would divide by zero in the locked
+engine are rejected. Inner/small radii must remain positive: no full disk or cone
+apex is implied. PyNite's frustum places the large-radius rim at the origin and
+the small rim in the negative axis direction. This is preserved, not flipped.
+
+The adapter generates at zero and translates all nodes afterward to avoid the
+locked cylinder generator dropping transverse offsets or treating axial origin
+as its terminal height. It also preserves requested per-element stiffness modifiers
+and uniformly numbers generated nodes/elements from the selected starts. These
+behaviours are regression-tested for every generator, both available families and
+all axes. The source engine and user definitions are not modified.
+
+**Analyze rectangular plate** transfers Rectangle recipes into the separate
+plate workspace below. Curved/annular meshes currently offer geometry, recipes
+and export only: boundary conditions, surface-normal pressure, membrane/shell
+analysis and curved result recovery need separate benchmarks. The planar pilot's
+in-plane restraints must not be applied to curved shells. Shear-wall and mat
+foundation workflows are specialized model builders, not additional mesh choices
+in this catalog, and remain pending. Frame/surface assembly, autosave and MCP
+integration are also pending.
+
 ### Experimental Rectangular Plates
 
 Post-1.0.0rc1 development adds **Tools > Rectangular Plate (Experimental)**.
@@ -44,7 +110,9 @@ wheel does not include this pilot.
 
 Define width, height, thickness, material E/Poisson ratio and target mesh size.
 Choose XY, XZ or YZ and assign each boundary as Free, Simply supported or Clamped.
-**Apply / Preview Mesh** uses PyNite's RectangleMesh with DKMQ quads. Supported
+**Apply / Preview Mesh** uses PyNite's RectangleMesh. **Mesh Options** exposes
+Quad/Rect family, XYZ origin, names/numbering, control lines, openings and modifiers
+using the same recipe editor. Supported
 edges are green: dashed for simply supported, solid for clamped. Width follows
 global X in XY/XZ and Z in YZ; height follows Y in XY/YZ and Z in XZ.
 
@@ -63,12 +131,13 @@ deformed 3D shell view. Export CSV contains local node coordinates, signed norma
 displacements/reactions and case/factor identity. The plot toolbar exports images.
 
 Save/Open uses separate `.pyniteplate` files with canonical inch-kip values and
-strict format/version validation. Undo/redo covers applied definitions, not
+strict format/version validation. Version 2 stores advanced mesh options;
+existing version 1 plate files migrate to the original defaults. Undo/redo covers applied definitions, not
 individual keystrokes. Changing inputs clears results; Apply validates before
 changing the definition. Units affect inputs/plots/CSV, not physical geometry.
 This workspace has its own unsaved-change prompt, not frame autosave/recovery.
 
-Pilot limits: one axis-aligned rectangular surface at the global origin, up to
+Pilot limits: one axis-aligned rectangular surface at a specified origin, up to
 1,024 elements, aspect ratios up to 20, linear small-displacement elastic bending,
 one uniform normal pressure case and one factor. In-plane translations and the
 drilling rotation are explicitly restrained everywhere; this is **not** general
@@ -76,7 +145,9 @@ membrane/shell analysis. A simply supported edge restrains normal translation;
 a clamped edge additionally restrains both bending rotations. Rigid transverse
 mechanisms are rejected and normal-force equilibrium is checked. Large deflection
 relative to thickness is flagged but does not enable geometric nonlinearity.
-Openings, arbitrary outlines, curved surfaces, frame/surface coupling, nodal loads,
+Opening edges are free; outer edge supports and pressure are reapplied after
+refinement. Pressure resultant uses net area after openings, and result coordinates
+remain local to the origin. Arbitrary outlines, curved surface analysis, frame/surface coupling, nodal loads,
 surface self-weight, multi-case combinations, MCP, PDF and recovery integration
 remain separate milestones. Do not substitute this pilot for verified engineering
 design or assume the listed limits certify element quality.
@@ -85,6 +156,21 @@ Regression coverage includes independent Navier square-plate deflection and mesh
 refinement, a zero-Poisson cantilever strip's closed-form deflection/moment,
 equilibrium/sign and plane invariance, clamped/cantilever support
 cases, mesh regeneration, persistence, units, undo, stale results and cancellation.
+Rect polynomial deflection is compared to the independently benchmarked Quad
+solution; both families are checked for opening net-load/reaction equilibrium.
+This does not constitute an independent hole-deflection or curved-shell benchmark.
+
+Mesh-specific checks:
+
+```sh
+uv run --locked --extra mcp python -B -m unittest discover -s tests -p '*mesh*.py' -v
+uv run --locked --extra mcp python -B -m unittest discover -s tests -p '*plate*.py' -v
+node tests/mesh_viewport.spec.cjs
+```
+
+The optional browser check uses an installed Playwright (`PLAYWRIGHT_MODULE` can
+point to it) and writes screenshots under `/tmp/pynite-mesh-qa`. It checks real
+generator geometry, nonblank desktop pixels, fit/orbit and bounded rebuilds.
 
 ### Optional MCP Automation
 

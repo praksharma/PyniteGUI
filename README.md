@@ -32,9 +32,10 @@ Start a spatial model with **File > New 3D Frame**, use **Create 3D Copy** for a
 existing unreleased 2D model, or try the **3D** examples.
 If 3D graphics fail to start, launch with `uv run pynitegui --software-rendering`.
 
-Current development also includes **Tools > Rectangular Plate (Experimental)**:
-rectangular quad meshing and transverse plate analysis in a separate workspace.
-See [scope and limits](GUIDE.md#experimental-rectangular-plates); it is not in the rc1 wheel.
+Current development includes **Tools > Surface Meshing (Experimental)** with
+PyNite's seven generators, options, 3D previews and recipe/export files; rectangles
+with openings support the separate plate-analysis workspace.
+See [scope and limits](GUIDE.md#experimental-surface-meshing); these are not in the rc1 wheel.
 
 For the release wheel, install the downloaded file without cloning:
 

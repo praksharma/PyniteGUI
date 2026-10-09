@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- PyNite surface-mesh catalog: Rectangle, Annulus, Annular Ring, Annular Transition
+  Ring, Cylinder, Cylinder Ring and Conical Frustum. Exposes applicable families,
+  controls/openings, placement, counts, material/modifiers and numbering; provides
+  bounded validation, offline Three.js preview, recipe persistence/undo and neutral
+  connectivity export. Curved/annular analysis is not yet enabled.
+- Rectangular plate analysis now accepts Quad/Rect families, openings, control
+  lines and origin/options from the mesh catalog; old plate files migrate to the
+  new schema. Retains pressure/support ownership and net-area equilibrium checks.
 - Experimental separate rectangular DKMQ transverse-plate workspace under Tools:
   PyNite mesh preview, geometry-owned pressure/edge supports, unit-aware input,
   separate plate files, undo/redo and cancellable analysis. Includes displacement

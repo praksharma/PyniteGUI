@@ -5,10 +5,10 @@ import math
 from pathlib import Path
 
 import numpy as np
-from Pynite import FEModel3D
 
 from .model import Material, finite_number, unique_json_object
 from .units import UNIT_SYSTEMS
+from .mesh_model import MeshDefinition, generate_mesh
 
 
 PLANES = {"XY": (0, 1, 2, 1), "XZ": (0, 2, 1, -1), "YZ": (2, 1, 0, -1)}
@@ -29,6 +29,24 @@ class PlateDefinition:
     load_factor: float = 1.0
     edges: dict = field(default_factory=lambda: dict.fromkeys(EDGES, "Simply supported"))
     unit_system: str = "imperial"
+    element_type: str = "Quad"
+    origin: list = field(default_factory=lambda: [0., 0., 0.])
+    x_control: list = field(default_factory=list)
+    y_control: list = field(default_factory=list)
+    openings: list = field(default_factory=list)
+    kx_mod: float = 1.
+    ky_mod: float = 1.
+    node_start: int = 1
+    element_start: int = 1
+    mesh_name: str = "Surface"
+
+    def mesh_definition(self):
+        return MeshDefinition(name=self.mesh_name, parameters={"width": self.width, "height": self.height},
+            mesh_size=self.mesh_size, thickness=self.thickness, material=self.material,
+            element_type=self.element_type, origin=list(self.origin), plane=self.plane,
+            x_control=list(self.x_control), y_control=list(self.y_control), openings=list(self.openings),
+            kx_mod=self.kx_mod, ky_mod=self.ky_mod, node_start=self.node_start,
+            element_start=self.element_start, unit_system=self.unit_system)
 
     def validate(self):
         for key in ("width", "height", "thickness", "mesh_size"):
@@ -57,18 +75,21 @@ class PlateDefinition:
             raise ValueError("Element aspect ratio exceeds 20; use a smaller mesh size or revise the geometry.")
         if not finite_number(self.width / self.height) or max(self.width / self.height, self.height / self.width) > 1e6:
             raise ValueError("Plate dimensions are too disproportionate.")
+        self.mesh_definition().validate()
 
     def to_dict(self):
         self.validate()
-        return {"format": "pynitegui-rectangular-plate", "version": 1, "units": "in-kip", **asdict(self)}
+        return {"format": "pynitegui-rectangular-plate", "version": 2, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or data.get("format") != "pynitegui-rectangular-plate" or type(data.get("version")) is not int or data["version"] != 1 or data.get("units") != "in-kip":
+        if not isinstance(data, dict) or data.get("format") != "pynitegui-rectangular-plate" or type(data.get("version")) is not int or data["version"] not in (1, 2) or data.get("units") != "in-kip":
             raise ValueError("Unsupported rectangular plate file.")
         values = {key: value for key, value in data.items() if key not in ("format", "version", "units")}
-        if set(values) != {item.name for item in fields(cls)}:
-            raise ValueError("Plate file fields do not match the version 1 schema.")
+        added = {"element_type", "origin", "x_control", "y_control", "openings", "kx_mod", "ky_mod", "node_start", "element_start", "mesh_name"}
+        expected = {item.name for item in fields(cls)} - (added if data["version"] == 1 else set())
+        if set(values) != expected:
+            raise ValueError("Plate file fields do not match the declared version schema.")
         try:
             values["material"] = Material(**values["material"])
             result = cls(**values)
@@ -96,17 +117,12 @@ class PlateDefinition:
 def build_plate(definition):
     """Always regenerate from geometry; mesh node IDs never own assignments."""
     definition.validate()
-    model = FEModel3D()
-    material = definition.material
-    model.add_material(material.name, material.E, material.G, material.nu, material.rho)
-    model.add_rectangle_mesh("Surface", definition.mesh_size, definition.width, definition.height,
-                             definition.thickness, material.name, plane=definition.plane, element_type="Quad")
-    model.meshes["Surface"].generate()
+    model = generate_mesh(definition.mesh_definition())
     u, v, normal, _ = PLANES[definition.plane]
     # This transverse plate pilot explicitly restrains all in-plane motions and
     # drilling rotation. It does not model membrane loading or mixed frames.
     for node in model.nodes.values():
-        coords = (node.X, node.Y, node.Z)
+        coords = tuple(value-origin for value, origin in zip((node.X, node.Y, node.Z), definition.origin))
         on_edges = (math.isclose(coords[u], 0, abs_tol=1e-8),
                     math.isclose(coords[u], definition.width, rel_tol=1e-10, abs_tol=1e-8),
                     math.isclose(coords[v], 0, abs_tol=1e-8),
@@ -119,8 +135,9 @@ def build_plate(definition):
             fixed[u + 3] = fixed[v + 3] = True
         model.def_support(node.name, **dict(zip(("support_DX", "support_DY", "support_DZ",
                                                "support_RX", "support_RY", "support_RZ"), fixed)))
-    for quad in model.quads.values():
-        model.add_quad_surface_pressure(quad.name, definition.pressure, definition.load_case)
+    for element in model.meshes[definition.mesh_name].elements.values():
+        add_pressure = model.add_plate_surface_pressure if definition.element_type == "Rect" else model.add_quad_surface_pressure
+        add_pressure(element.name, definition.pressure, definition.load_case)
     model.add_load_combo("Plate", {definition.load_case: definition.load_factor})
     return model
 
@@ -129,15 +146,15 @@ def plate_geometry(model, definition):
     names = list(model.nodes)
     indices = {name: i for i, name in enumerate(names)}
     u, v, _, _ = PLANES[definition.plane]
-    points = np.array([(node.X, node.Y, node.Z) for node in model.nodes.values()])[:, [u, v]]
+    points = (np.array([(node.X, node.Y, node.Z) for node in model.nodes.values()])-definition.origin)[:, [u, v]]
     cells = np.array([[indices[node.name] for node in (quad.i_node, quad.j_node, quad.m_node, quad.n_node)]
-                      for quad in model.quads.values()], dtype=int)
+                      for quad in model.meshes[definition.mesh_name].elements.values()], dtype=int)
     return names, points, cells
 
 
 def analyze_plate(definition, progress=None):
     phase = progress or (lambda message: None)
-    phase("Generating DKMQ mesh")
+    phase(f"Generating {definition.element_type} mesh")
     model = build_plate(definition)
     names, points, cells = plate_geometry(model, definition)
     _, _, normal_axis, sign = PLANES[definition.plane]
@@ -157,11 +174,14 @@ def analyze_plate(definition, progress=None):
         raise ValueError("Plate analysis returned nonfinite nodal results.")
     displacement = np.array([getattr(model.nodes[name], ("DX", "DY", "DZ")[normal_axis])["Plate"] * sign for name in names])
     reactions = np.array([getattr(model.nodes[name], ("RxnFX", "RxnFY", "RxnFZ")[normal_axis])["Plate"] * sign for name in names])
-    moments = np.array([quad.moment(0, 0, combo_name="Plate").ravel() for quad in model.quads.values()])
-    shears = np.array([quad.shear(0, 0, combo_name="Plate").ravel() for quad in model.quads.values()])
+    elements = list(model.meshes[definition.mesh_name].elements.values())
+    stations = [(element.width()/2, element.height()/2) if definition.element_type == "Rect" else (0, 0) for element in elements]
+    moments = np.array([element.moment(*station, combo_name="Plate").ravel() for element, station in zip(elements, stations)])
+    shears = np.array([element.shear(*station, combo_name="Plate").ravel() for element, station in zip(elements, stations)])
     if any(not np.isfinite(values).all() for values in (displacement, reactions, moments, shears)):
         raise ValueError("Plate analysis returned nonfinite results.")
-    applied = definition.pressure * definition.load_factor * definition.width * definition.height
+    net_area = definition.width*definition.height - sum(opening["width"]*opening["height"] for opening in definition.openings)
+    applied = definition.pressure * definition.load_factor * net_area
     if abs(reactions.sum() + applied) > 1e-7 * max(1, abs(applied)):
         raise ValueError("Plate normal-force equilibrium check failed.")
     return {"names": names, "points": points, "cells": cells, "displacement": displacement,

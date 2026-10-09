@@ -39,7 +39,7 @@ class PlateModelTests(unittest.TestCase):
                         {"edges": {}}, {"load_case": ""}):
             with self.subTest(changes=changes), self.assertRaises(ValueError):
                 replace(PlateDefinition(), **changes).validate()
-        for changes in ({"version": 2}, {"version": True}, {"nodes": {}}, {"units": "m-N"}):
+        for changes in ({"version": 3}, {"version": True}, {"nodes": {}}, {"units": "m-N"}):
             with self.assertRaises(ValueError):
                 PlateDefinition.from_dict({**PlateDefinition().to_dict(), **changes})
 

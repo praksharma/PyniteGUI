@@ -676,6 +676,7 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.action("Connect Intersections", self.connect_intersections))
         edit_menu.addAction(self.action("Check Model", self.check_model))
         tools_menu = self.menuBar().addMenu("&Tools")
+        tools_menu.addAction(self.action("Surface Meshing (Experimental)...", self.show_mesh_workspace))
         tools_menu.addAction(self.action("Rectangular Plate (Experimental)...", self.show_plate_workspace))
         tools_menu.addAction(self.action("Automation Server...", self.show_automation_server))
         from .toolbar_icons import tool_icon
@@ -1633,6 +1634,10 @@ class MainWindow(QMainWindow):
         self.saved = Project().to_dict()
         self.update_title()
         self.statusBar().showMessage(f"Example: {EXAMPLES[key]} | {project.units.summary}")
+
+    def show_mesh_workspace(self):
+        from .mesh_workspace import MeshWorkspace
+        MeshWorkspace(self, self.project.unit_system).exec()
 
     def show_plate_workspace(self):
         from .plate_workspace import PlateWorkspace

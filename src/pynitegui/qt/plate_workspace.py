@@ -42,11 +42,11 @@ class PlateEdit(QUndoCommand):
 
 
 class PlateWorkspace(QDialog):
-    def __init__(self, parent=None, unit_system="imperial"):
+    def __init__(self, parent=None, unit_system="imperial", definition=None):
         super().__init__(parent)
         self.setWindowTitle("Rectangular Plate (Experimental)")
         self.resize(1100, 760)
-        self.definition = PlateDefinition(unit_system=unit_system)
+        self.definition = PlateDefinition.from_dict(definition.to_dict()) if definition else PlateDefinition(unit_system=unit_system)
         self.result, self.thread, self.worker, self.path = None, None, None, None
         self.pending, self.loading = False, False
         self.saved = self.definition.to_dict()
@@ -68,6 +68,8 @@ class PlateWorkspace(QDialog):
         self.export_action = toolbar.addAction("Export CSV", self.export_csv)
         self.export_action.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton))
         self.export_action.setEnabled(False)
+        mesh_action = toolbar.addAction(self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogDetailedView), "Mesh Options", self.configure_mesh)
+        mesh_action.setToolTip("Element family, placement, control lines and openings")
         splitter = QSplitter()
         root.addWidget(splitter, 1)
         self.controls = QWidget()
@@ -270,7 +272,7 @@ class PlateWorkspace(QDialog):
         u, v, _, _ = PLANES[self.definition.plane]
         ax.set_xlabel(f"Local x / Global {'XYZ'[u]} ({units.length})")
         ax.set_ylabel(f"Local y / Global {'XYZ'[v]} ({units.length})")
-        ax.set_title(self.component.currentText() + " | DKMQ quads")
+        ax.set_title(self.component.currentText() + (" | DKMQ quads" if self.definition.element_type == "Quad" else " | Polynomial rectangles"))
         ax.autoscale()
         ax.set_aspect("equal")
         for axis in self.figure.axes:
@@ -278,14 +280,24 @@ class PlateWorkspace(QDialog):
         self.figure.tight_layout()
         self.canvas.draw_idle()
         if self.result is None:
-            self.status.setText(f"{len(points)} nodes | {len(cells)} quads | Transverse bending only | In-plane motion restrained")
+            self.status.setText(f"{len(points)} nodes | {len(cells)} {self.definition.element_type} elements | Transverse bending only | In-plane motion restrained")
         else:
             peak = max(abs(self.result["displacement"])) * units.length_factor
             reaction = self.result["reactions"].sum() * units.force_factor
-            self.status.setText(f"{len(cells)} quads | Max |normal displacement| {peak:.6g} {units.length} | "
+            self.status.setText(f"{len(cells)} {self.definition.element_type} elements | Max |normal displacement| {peak:.6g} {units.length} | "
                                 f"Normal reaction sum {reaction:.6g} {units.force} | {self.definition.load_case} x {self.definition.load_factor:g}")
             if max(abs(self.result["displacement"])) > self.definition.thickness / 2:
                 self.status.setText(self.status.text() + " | Large deflection: linear plate assumptions may be invalid")
+
+    def configure_mesh(self):
+        if self.thread is not None or not self.apply():
+            return
+        from .mesh_workspace import MeshWorkspace, transfer_rectangle
+        dialog = MeshWorkspace(self, definition=self.definition.mesh_definition(), selection_only=True)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            candidate = PlateDefinition.from_dict(self.definition.to_dict())
+            transfer_rectangle(dialog.definition, candidate)
+            self.undo.push(PlateEdit(self, self.definition.to_dict(), candidate.to_dict()))
 
     def run_analysis(self):
         if self.thread is not None or not self.apply():

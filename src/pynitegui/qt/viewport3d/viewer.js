@@ -7,6 +7,7 @@ import {drawSupports, SupportTooltip} from './supports.js';
 import {attachNodeDrag,planeAxis} from './node_drag.js';
 import {drawFrame,hitIdentity,recolorFrame} from './frame_meshes.js';
 import {LabelTextures} from './label_textures.js';
+import {drawSurfaces} from './surfaces.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 100000);
@@ -126,7 +127,8 @@ function update(payload,dragPreview=false) {
   const r=span*.004;raycaster.params.Line.threshold=span*.012;
   dispose();if(!data.labels)labelTextures.clearUnused();grid();
   const nodes=new Map(data.nodes.map(n=>[n.name,n])), selected=(kind,name)=>data.selection.some(s=>s[0]===kind&&s[1]===name);
-  drawFrame(data,r,group,picks);
+  if(data.showNodes!==false)drawFrame(data,r,group,picks);
+  drawSurfaces(data,group);
   for(const member of data.members) {
     const a=vector(nodes.get(member.start).position),b=vector(nodes.get(member.end).position);
     label(member.name+(member.kind==='truss'?' [truss]':''),a.clone().lerp(b,.5).add(new THREE.Vector3(0,span*.023,0)),c.label);
