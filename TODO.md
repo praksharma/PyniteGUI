@@ -219,7 +219,8 @@ below and the secondary interface wishlist retain their more specific scope.
 - [ ] Explicit 2D-to-3D conversion with preserved loads/support conventions.
 - [x] Spatial point/distributed forces by magnitude, global azimuth/elevation,
   XYZ component previews, angled arrows, editable tables and versioned persistence.
-- [ ] Dedicated 3D support/spring symbols with per-DOF hover inspection.
+- [x] Dedicated global 3D rigid/spring symbols for all six DOFs, unit-aware
+  per-DOF hover inspection, node-linked picking and non-analytical visibility.
 - [ ] Large-model rendering benchmarks and cached analytical sampling.
 - [ ] Implement the pending solver milestones in **PyNite Capability Coverage**
   above; keep plates/meshes and nonlinear methods independently benchmarked.

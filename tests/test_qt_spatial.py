@@ -528,6 +528,40 @@ class SpatialWidgetTests(unittest.TestCase):
         self.assertEqual(len(payload["members"][0]["points"]),len(payload["members"][0]["displacements"]))
         json.dumps(payload,allow_nan=False)
 
+    def test_support_hover_details_all_dofs_units_and_visibility_do_not_edit(self):
+        from pynitegui.qt.spatial_model import SPRING_FIELDS
+        node = self.window.project.nodes["N2"]
+        node.support = "custom"
+        node.restraint_y = True
+        for index, key in enumerate(SPRING_FIELDS):
+            setattr(node, key, 0 if index == 1 else (index + 1) * 10.)
+        self.window.project.validate()
+        before = self.window.project.to_dict()
+        undo_count = self.window.undo.count()
+        for key in UNIT_SYSTEMS:
+            self.window.project.unit_system = key
+            payload = viewport_payload(self.window)
+            item = next(item for item in payload["nodes"] if item["name"] == "N2")
+            self.assertEqual(item["springs"], list(node.springs))
+            self.assertEqual([row["dof"] for row in item["supportDetails"]], ["DX", "DY", "DZ", "RX", "RY", "RZ"])
+            self.assertEqual(item["supportDetails"][1]["state"], "Fixed")
+            for index in (0, 2, 3, 4, 5):
+                quantity = "stiffness" if index < 3 else "rotational_stiffness"
+                units = self.window.project.units
+                expected = f"Bilateral spring: {units.to_display(node.springs[index], quantity):.6g} {getattr(units, quantity)}"
+                self.assertEqual(item["supportDetails"][index]["state"], expected)
+            self.assertTrue(payload["supports"])
+            json.dumps(payload, allow_nan=False)
+        self.window.project.unit_system = before["unit_system"]
+        self.window.view.show_supports.setChecked(False)
+        self.assertFalse(viewport_payload(self.window)["supports"])
+        self.assertEqual(self.window.project.to_dict(), before)
+        self.assertEqual(self.window.undo.count(), undo_count)
+        node.support = "free"
+        for key in SPRING_FIELDS:
+            setattr(node, key, 0.)
+        self.assertTrue(all(row["state"] == "Free" for row in viewport_payload(self.window)["nodes"][1]["supportDetails"]))
+
     def test_deformation_controls_are_enabled_and_custom_factor_is_used(self):
         self.window.project.loads["L1"] = SpatialLoad("L1","N2","FZ",2)
         self.result()

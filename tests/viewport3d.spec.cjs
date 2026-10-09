@@ -127,6 +127,72 @@ const server = http.createServer((request,response)=>{
     const dark={...payload,colors:{...payload.colors,canvas:'#191c1f',grid:'#30373b',member:'#d1dbe0',label:'#c4cdd3',text:'#eef1f2',accent:'#4cc9c0',support:'#73d89c',load:'#ff7b8a',axial:'#79bdf1',shear:'#4cc9c0',moment:'#ff91ad'}};
     await page.evaluate(payload=>{window.pyniteViewer.update(payload);window.pyniteViewer.orient(0);},dark);
     await page.waitForTimeout(300);await page.screenshot({path:path.join(output,'desktop-dark.png')});
+    // Every global DOF gets its own pickable symbol; spring geometry is distinct.
+    await page.evaluate(payload=>{window.pyniteViewer.update(payload);window.pyniteViewer.orient(0);},payload.qaSupports);
+    await page.waitForTimeout(250);
+    const supportSymbols=await page.evaluate(()=>window.pyniteViewer.supportSymbols());
+    assert.equal(supportSymbols.length,12,'Mixed support presets produced incorrect DOF symbols');
+    const springSymbols=supportSymbols.filter(symbol=>symbol.node==='N1');
+    assert.deepEqual(springSymbols.map(symbol=>symbol.dof),['DX','DY','DZ','RX','RY','RZ']);
+    assert(springSymbols.every(symbol=>symbol.kind==='spring'));
+    assert.equal(supportSymbols.filter(symbol=>symbol.node==='N3').length,3,'Pin restrained rotations');
+    assert.deepEqual(supportSymbols.filter(symbol=>symbol.node==='N5').map(symbol=>symbol.dof),['DY'],'Roller restrained wrong global axis');
+    assert.deepEqual(supportSymbols.filter(symbol=>symbol.node==='N7').map(symbol=>symbol.dof),['DX','RZ']);
+    for(const symbol of springSymbols){
+      const point=await page.evaluate(position=>window.pyniteViewer.project(position),symbol.center);
+      await page.mouse.move(...point);
+      await page.waitForFunction(()=>!document.getElementById('support-tooltip').hidden);
+      const details=await page.locator('#support-tooltip').innerText();
+      assert(details.includes('N1 | Global supports')&&details.includes('Bilateral spring: 10 kip/in'));
+      assert.equal(await page.locator('#support-tooltip .active-dof td').first().innerText(),symbol.dof,'Symbol hover highlighted the wrong DOF');
+      assert.equal(await page.locator('#support-tooltip tr').count(),6);
+    }
+    await page.screenshot({path:path.join(output,'desktop-support-springs-light.png')});
+    const symbolShape=await page.evaluate(async()=>{
+      const THREE=await import('three'),{drawSupports}=await import('./supports.js');
+      const shape=(springs)=>{
+        const group=new THREE.Group(),picks=[];
+        drawSupports({name:'Test',position:[0,0,0],restraints:springs?Array(6).fill(false):Array(6).fill(true),springs:springs?Array(6).fill(1):Array(6).fill(0)},100,{support:'#00aa00',axial:'#0000aa'},group,picks);
+        const sizes=picks.map(object=>object.geometry.attributes.position.count);
+        const tags=picks.map(object=>object.userData.identity);
+        group.traverse(object=>{object.geometry?.dispose();object.material?.dispose();});
+        return {sizes,tags};
+      };
+      return {spring:shape(true),fixed:shape(false)};
+    });
+    assert(symbolShape.spring.sizes.includes(51),'Translational spring coil missing');
+    assert(symbolShape.spring.sizes.includes(65),'Rotational spring spiral missing');
+    assert(!symbolShape.fixed.sizes.includes(51)&&!symbolShape.fixed.sizes.includes(65),'Rigid supports rendered as springs');
+    assert(symbolShape.spring.tags.every(tag=>tag[0]==='nodes'&&tag[1]==='Test'),'Support picks not linked to node inspector');
+    await page.mouse.down();
+    assert(await page.locator('#support-tooltip').isHidden(),'Tooltip remained during drag');
+    await page.mouse.up();
+    const hoverPoint=await page.evaluate(position=>window.pyniteViewer.project(position),springSymbols[0].center);
+    await page.mouse.move(...hoverPoint);
+    await page.waitForFunction(()=>!document.getElementById('support-tooltip').hidden);
+    await page.keyboard.down('Shift');
+    await page.mouse.down();
+    assert(await page.locator('#support-tooltip').isHidden(),'Box-selection capture left a stale tooltip');
+    await page.keyboard.press('Escape');await page.mouse.up();await page.keyboard.up('Shift');
+    await page.evaluate(payload=>window.pyniteViewer.update({...payload,supports:false}),payload.qaSupports);
+    assert.equal((await page.evaluate(()=>window.pyniteViewer.supportSymbols())).length,0,'Support visibility did not clear geometry');
+    assert(await page.locator('#support-tooltip').isHidden(),'Redraw left a stale support tooltip');
+    await page.evaluate(({payload,colors})=>{window.pyniteViewer.update({...payload,colors});window.pyniteViewer.orient(0);},{payload:payload.qaSupportsSI,colors:dark.colors});
+    await page.waitForTimeout(250);
+    const siNode=payload.qaSupportsSI.nodes.find(node=>node.name==='N1');
+    const siPoint=await page.evaluate(position=>window.pyniteViewer.project(position),siNode.position);
+    await page.mouse.move(...siPoint);
+    await page.waitForFunction(()=>!document.getElementById('support-tooltip').hidden);
+    for(const row of siNode.supportDetails)assert((await page.locator('#support-tooltip').innerText()).includes(row.state),'SI tooltip stiffness units incorrect');
+    const tooltip=await page.locator('#support-tooltip').boundingBox();
+    assert(tooltip.x>=8&&tooltip.y>=8&&tooltip.x+tooltip.width<=1272&&tooltip.y+tooltip.height<=712,'Support tooltip clipped');
+    assert.equal(await page.locator('#support-tooltip').evaluate(element=>getComputedStyle(element).color),'rgb(238, 241, 242)');
+    await page.screenshot({path:path.join(output,'desktop-support-springs-dark-si.png')});
+    await page.keyboard.press('Escape');
+    assert(await page.locator('#support-tooltip').isHidden(),'Escape left support tooltip open');
+    await page.mouse.move(1100,40);
+    assert(await page.locator('#support-tooltip').isHidden(),'Empty-space hover left tooltip open');
+    await page.evaluate(payload=>{window.pyniteViewer.update(payload);window.pyniteViewer.orient(0);},dark);
     for(const [type,index,direction] of [['posX',3,[1,0,0]],['posY',2,[0,1,0]],['posZ',1,[0,0,1]],['negX',6,[-1,0,0]],['negY',5,[0,-1,0]],['negZ',4,[0,0,-1]]]){
       await page.evaluate(()=>{window.pyniteViewer.orient(0);window.viewEvent=-1;});
       const before=await page.evaluate(()=>window.pyniteViewer.state());
@@ -187,6 +253,6 @@ const server = http.createServer((request,response)=>{
     assert.match(failure.message,/graphics context was lost/i);
     assert.deepEqual(failure.bridge,[failure.message],'Context loss did not reach the native bridge');
     assert(failure.error.includes(failure.message),'Context loss did not show browser fallback text');
-    console.log('PASS: desktop geometry, gizmo, orbit/picking, contained/crossing/additive/cancelled box selection, drawing, result overlays, PNG, diagnostics and dark/context-loss states.');
+    console.log('PASS: desktop geometry, six-DOF supports/springs/hover/visibility, gizmo, orbit/picking, contained/crossing/additive/cancelled box selection, drawing, result overlays, PNG, diagnostics and dark/context-loss states.');
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;}).finally(()=>server.close());

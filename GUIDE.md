@@ -103,6 +103,20 @@ does not reinterpret or convert existing geometry; open or create the intended m
   Insufficient restraints report affected global directions. Named cases,
   combination factors, progress/cancellation and stale-result rejection are shared
   with the 2D workflow. Reactions and nodal motions are global; rotations are radians.
+- The viewport **Supports** toggle controls global rigid-restraint and bilateral
+  spring symbols without changing the model or results. Each constrained DOF has
+  its own symbol: translational rigid stems end at grounded pads, rotational rigid
+  restraints use stopped rings, translational springs use coils and rotational
+  springs use spirals. Rotation symbols sit farther along the same negative global
+  axis to distinguish them from translation symbols. Symbol sizes are illustrative,
+  not physical dimensions or stiffness magnitudes. Rigid restraints use the support
+  color; springs use the spring/axial color in both themes.
+  Hover a symbol to highlight its DOF in a six-row global support tooltip, or hover
+  a node to inspect all DX/DY/DZ/RX/RY/RZ states. Spring stiffnesses use the selected
+  force/length or moment/radian units. Clicking a symbol selects its node for editing.
+  Hover details remain available on nodes when symbols or labels are hidden.
+  Tooltips disappear during navigation/drawing and are not part of PNG exports;
+  visible support symbols are included in the exported viewport image.
 - Deformed shows all three translational components, sampled in rolled local axes
   and transformed to global XYZ. Auto uses 15% of the largest coordinate extent;
   True Scale uses 1x; Custom uses the chosen factor. Peak is the actual sampled

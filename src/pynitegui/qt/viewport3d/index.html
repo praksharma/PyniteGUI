@@ -7,6 +7,7 @@
 </head><body><div id="error" role="alert"></div>
 <style>#selection-box{position:absolute;box-sizing:border-box;border:1px solid #168b8b;background:rgba(120,160,165,.12);pointer-events:none}</style>
 <style>#result-legend{position:absolute;left:12px;top:12px;padding:8px 10px;font:12px/18px sans-serif;max-width:calc(100% - 44px);pointer-events:none;opacity:.95;overflow-wrap:anywhere}</style>
+<style>#support-tooltip{position:absolute;z-index:3;pointer-events:none;border:1px solid;padding:9px 11px;border-radius:4px;max-width:calc(100% - 40px);font:12px/18px sans-serif;overflow-wrap:anywhere}#support-tooltip[hidden]{display:none}#support-tooltip table{border-spacing:0;margin-top:4px}#support-tooltip td{padding:1px 8px 1px 0;vertical-align:top}#support-tooltip .active-dof{font-weight:bold;text-decoration:underline}</style>
 <script>
 window.pyniteBridge=null;window.pyniteRendererReady=false;window.pyniteFailure=null;
 window.pyniteReportFailure=message=>{window.pyniteFailure=message;document.getElementById('error').textContent='3D renderer could not start: '+message;window.pyniteBridge?.failed(message);};

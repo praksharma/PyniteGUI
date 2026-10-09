@@ -12,13 +12,24 @@ from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QCheckBox, QComboBox, QFileDialog, QHBoxLayout, QLabel, QMessageBox, QPushButton, QStyle, QToolButton, QVBoxLayout, QWidget
 
 from .annotations import combination_loads
+from .spatial_model import DOFS
 from .spatial_results import LABELS, QUANTITIES, diagram_metadata, member_axes, sampled_member
 from .theme import colors
 
 
 def viewport_payload(window):
     project, result = window.project, window.result
-    nodes = [{"name": n.name, "position": list(n.coords), "restraints": list(n.restraints), "springs": list(n.springs)}
+    units = project.units
+    def support_details(node):
+        rows = []
+        for index, (dof, fixed, stiffness) in enumerate(zip(DOFS, node.restraints, node.springs)):
+            quantity = "stiffness" if index < 3 else "rotational_stiffness"
+            state = "Fixed" if fixed else (f"Bilateral spring: {units.to_display(stiffness, quantity):.6g} {getattr(units, quantity)}"
+                                          if stiffness else "Free")
+            rows.append({"dof": dof, "state": state})
+        return rows
+    nodes = [{"name": n.name, "position": list(n.coords), "restraints": list(n.restraints), "springs": list(n.springs),
+              "supportDetails": support_details(n)}
              for n in project.nodes.values()]
     members, peak, samples = [], 0., []
     kind = window.view.diagram.currentData()
@@ -74,6 +85,7 @@ def viewport_payload(window):
             "diagram": diagram,
             "selection": [list(s) for s in window.selections], "mode": window.mode,
             "deformed": visible, "factor": factor,
+            "supports": window.view.show_supports.isChecked(),
             "unit": project.units.length, "displayFactor": project.units.to_display(1, "length")}
 
 
@@ -229,6 +241,10 @@ class SpatialView(QWidget):
         self.show_loads = QCheckBox("Loads")
         self.show_loads.setChecked(True)
         results.addWidget(self.show_loads)
+        self.show_supports = QCheckBox("Supports")
+        self.show_supports.setChecked(True)
+        self.show_supports.setToolTip("Show global rigid-restraint and bilateral support-spring symbols")
+        results.addWidget(self.show_supports)
         self.box_select = QCheckBox("Box select")
         self.box_select.setToolTip("Drag in Select mode. Left-to-right: enclosed; right-to-left: crossing. Ctrl adds. Shift-drag also starts a box.")
         self.box_select.toggled.connect(self.redraw)
@@ -244,6 +260,7 @@ class SpatialView(QWidget):
         self.diagram_scale.valueChanged.connect(self.redraw)
         self.diagram_values.toggled.connect(self.redraw)
         self.show_loads.toggled.connect(self.redraw)
+        self.show_supports.toggled.connect(self.redraw)
         self.diagram.setEnabled(False)
         self.diagram_scale.setEnabled(False)
         self.diagram_values.setEnabled(False)

@@ -3,6 +3,7 @@ import {OrbitControls} from './vendor/OrbitControls.js';
 import {OrientationGizmo} from './gizmo.js';
 import {diagramPoints, drawDiagram, legendLines} from './diagrams.js';
 import {attachBoxSelection} from './selection.js';
+import {drawSupports, SupportTooltip} from './supports.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 100000);
@@ -20,12 +21,15 @@ controls.screenSpacePanning = true;
 scene.add(new THREE.HemisphereLight(0xffffff, 0x708080, 2));
 const light = new THREE.DirectionalLight(0xffffff, 2);
 light.position.set(1, 2, 3); scene.add(light);
-let group = new THREE.Group(), data = {nodes:[],members:[],loads:[],grid:12,mode:'select'}, picks=[], start=null, preview=null, span=240, rendering=true;
+let group = new THREE.Group(), data = {nodes:[],members:[],loads:[],grid:12,mode:'select'}, picks=[], supports=[], start=null, preview=null, span=240, rendering=true;
+const supportTooltip=new SupportTooltip();
+controls.addEventListener('start',()=>supportTooltip.hide());
+controls.addEventListener('change',()=>supportTooltip.hide());
 scene.add(group);
 const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
 const vector = a => new THREE.Vector3(...a);
 const axisColors = [0xd65058,0x21955c,0x3786bd];
-const boxSelection=attachBoxSelection(renderer.domElement,camera,controls,()=>data,()=>{gizmo.cancel();stopMotion();},
+const boxSelection=attachBoxSelection(renderer.domElement,camera,controls,()=>data,()=>{supportTooltip.hide();gizmo.cancel();stopMotion();},
   (selections,extend)=>{window.pyniteBridge?.select_many(JSON.stringify(selections),extend);window.dispatchEvent(new CustomEvent('modelBoxSelected',{detail:{selections,extend}}));},selectAt);
 const legend=document.createElement('div');legend.id='result-legend';document.body.appendChild(legend);
 function line(points, color, target=group) {
@@ -82,6 +86,7 @@ function moment(position,axis,value,identity) {
 }
 function update(payload) {
   boxSelection.cancel();
+  supportTooltip.hide();supports=[];
   data=payload;const c=data.colors;scene.background=new THREE.Color(c.canvas);
   legend.replaceChildren(...legendLines(data.diagram).map(text=>{const row=document.createElement('div');row.textContent=text;return row;}));
   legend.hidden=!data.diagram;legend.style.color=c.text||c.label;legend.style.background=c.canvas;
@@ -101,9 +106,7 @@ function update(payload) {
   for(const node of data.nodes) {
     const p=vector(node.position),mesh=new THREE.Mesh(new THREE.SphereGeometry(r*1.8,12,8),new THREE.MeshStandardMaterial({color:selected('nodes',node.name)?c.accent:c.member}));
     mesh.position.copy(p);mesh.userData.identity=['nodes',node.name];picks.push(mesh);group.add(mesh);label(node.name,p.clone().add(new THREE.Vector3(span*.02,span*.025,0)),c.label);
-    node.restraints.forEach((fixed,i)=>{if(!fixed&&!node.springs[i])return;const axis=new THREE.Vector3().setComponent(i%3,1),color=node.springs[i]?c.axial:c.support;
-      if(i<3){const end=p.clone().addScaledVector(axis,-span*.045);cylinder(p,end,r*.6,color);const block=new THREE.Mesh(new THREE.BoxGeometry(r*5,r*5,r*5),new THREE.MeshStandardMaterial({color}));block.position.copy(end);group.add(block);}
-      else{const ring=new THREE.Mesh(new THREE.TorusGeometry(span*.022,r*.45,6,32),new THREE.MeshBasicMaterial({color}));ring.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),axis);ring.position.copy(p);group.add(ring);}});
+    if(data.supports!==false)supports.push(...drawSupports(node,span,c,group,picks));
   }
   for(const load of data.loads) {
     let a,b;
@@ -122,8 +125,10 @@ function update(payload) {
 }
 function fit() {
   resize();
+  supportTooltip.hide();
   stopMotion();
   const points=data.nodes.map(n=>vector(n.position));
+  for(const symbol of supports)for(const sign of [-1,1])points.push(symbol.center.clone().addScalar(sign*span*.02));
   if(data.deformed)for(const m of data.members)if(m.points)points.push(...m.points.map((p,i)=>vector(p).addScaledVector(vector(m.displacements[i]),data.factor)));
   for(const member of data.members)points.push(...diagramPoints(member,data.diagram));
   const box=new THREE.Box3().setFromPoints(points),center=box.isEmpty()?new THREE.Vector3():box.getCenter(new THREE.Vector3());
@@ -169,11 +174,26 @@ renderer.domElement.addEventListener('pointerup',event=>{
     selectAt(event);
   }
 });
-renderer.domElement.addEventListener('pointermove',event=>{const point=workPoint(event);if(!point)return;window.pyniteBridge?.coordinates(...point);if(preview&&start){preview.geometry.dispose();preview.geometry=new THREE.BufferGeometry().setFromPoints([vector(start),vector(point)]);}});
-renderer.domElement.addEventListener('webglcontextlost',()=>{rendering=false;window.pyniteReportFailure('The graphics context was lost. Restart with software rendering if this persists.');});
-function cancel(){boxSelection.cancel();start=null;if(preview){group.remove(preview);preview.geometry.dispose();preview.material.dispose();preview=null;}}
+renderer.domElement.addEventListener('pointermove',event=>{
+  supportTooltip.hide();
+  ray(event);
+  if(!event.buttons&&data.mode!=='draw'){
+    const hit=raycaster.intersectObjects(picks)[0],identity=hit?.object.userData.identity;
+    if(identity?.[0]==='nodes'){
+      const node=data.nodes.find(node=>node.name===identity[1]);
+      if(node)supportTooltip.show(node,hit.object.userData.supportDof,event,data.colors);
+    }
+  }
+  const point=workPoint(event);if(!point)return;
+  window.pyniteBridge?.coordinates(...point);
+  if(preview&&start){preview.geometry.dispose();preview.geometry=new THREE.BufferGeometry().setFromPoints([vector(start),vector(point)]);}
+});
+renderer.domElement.addEventListener('pointerleave',()=>supportTooltip.hide());
+renderer.domElement.addEventListener('pointerdown',()=>supportTooltip.hide(),true);
+renderer.domElement.addEventListener('webglcontextlost',()=>{supportTooltip.hide();rendering=false;window.pyniteReportFailure('The graphics context was lost. Restart with software rendering if this persists.');});
+function cancel(){supportTooltip.hide();boxSelection.cancel();start=null;if(preview){group.remove(preview);preview.geometry.dispose();preview.material.dispose();preview=null;}}
 addEventListener('keydown',event=>{if(event.key==='Escape')cancel();});
-function resize(){camera.aspect=innerWidth/Math.max(innerHeight,1);camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);}
+function resize(){supportTooltip.hide();camera.aspect=innerWidth/Math.max(innerHeight,1);camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);}
 addEventListener('resize',resize);resize();camera.position.set(500,350,500);controls.update();
 function placeLabels(){
   const occupied=[],factor=2*Math.tan(THREE.MathUtils.degToRad(camera.fov/2))/innerHeight;
@@ -214,4 +234,5 @@ window.pyniteViewer.diagnostics=()=>{
 };
 window.pyniteViewer.diagramPoints=()=>data.members.map(member=>({name:member.name,points:diagramPoints(member,data.diagram).map(point=>point.toArray())}));
 window.pyniteViewer.gizmoAxes=()=>gizmo.axes();
+window.pyniteViewer.supportSymbols=()=>supports.map(symbol=>({node:symbol.node,dof:symbol.dof,kind:symbol.kind,center:symbol.center.toArray()}));
 window.pyniteRendererReady=true;window.pyniteBridge?.ready();
