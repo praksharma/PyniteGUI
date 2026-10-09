@@ -82,6 +82,24 @@ again. Closing the source window does not close the copy.
   work plane, allowing connections between different planes. Escape cancels a
   pending member. Add Node opens exact XYZ entry; Model Tables can define complete
   node/member connectivity numerically. All engineering edits support undo/redo.
+- In Select mode, enable **Move nodes**, choose **XY**, **XZ** or **YZ**, then drag
+  a node sphere. Only the two in-plane coordinates move; the perpendicular
+  coordinate stays at that node's original value, independently of the drawing
+  offset. The preview grid temporarily follows this plane through the node.
+  In-plane coordinates snap to the canonical model grid in every unit preset.
+  Clicks still select; dragging empty space still orbits. Box select takes priority
+  and the two explicit toggles are mutually exclusive; Shift-drag still starts a box.
+  Escape, lost pointer capture, camera/viewport changes or an incoming model redraw
+  cancel the preview without changing the project. An edge-on work plane shows
+  feedback instead of guessing coordinates; choose its matching front/top/right view.
+  Preview hides analytical overlays, loads and local-axis arrows until release or
+  cancellation. Release validates one atomic move and one undo command; duplicate
+  node positions and zero-length members are rejected without dropping results.
+  Stale revisions/coordinates, disabled tools and out-of-plane/off-grid requests
+  are rejected. A successful move selects the node and invalidates results.
+  Supports, IDs, assignments, roll and manual load fractions are retained;
+  self-weight is regenerated using the new lengths. Moving does not merge nodes
+  or connect crossings; use the explicit topology commands and reanalyze.
 - Select a member and choose **Split...** in its inspector or **Edit > Split
   Selected Member**. Enter a fraction measured from its start. The first segment
   retains the original member ID; new segments preserve material, section and roll.
@@ -242,7 +260,7 @@ again. Closing the source window does not close the copy.
 
 Current spatial scope is linear, unreleased frame members and bilateral axial-only
 trusses. No plates/shells, solids, nonlinear effects, manual frame member releases,
-node dragging, or implicit physical-member segmentation
+or implicit physical-member segmentation
 are implemented in this mode yet. Multi-selection supports bulk assignments and
 deletion; use Model Tables for coordinated geometry editing. Geometry requires explicit shared endpoints;
 overlaps, interior nodes, crossings without a shared joint and disconnected groups

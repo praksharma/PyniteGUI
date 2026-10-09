@@ -124,6 +124,54 @@ const server = http.createServer((request,response)=>{
       assert(drawn,`${plane} work plane did not draw`);
       drawn.forEach((point,i)=>point.forEach((value,j)=>assert(Math.abs(value-points[i][j])<1e-6,`${plane} snap mismatch`)));
     }
+    for(const [plane,orientation,target] of [['XY',1,[24,168,0]],['XZ',2,[24,144,24]],['YZ',3,[0,168,24]]]){
+      await page.evaluate(({payload,plane,orientation})=>{
+        window.pyniteViewer.update({...payload,mode:'select',plane,offset:999,boxSelect:false,moveNodes:true,deformed:true});
+        window.pyniteViewer.orient(orientation);window.moveEvent=null;
+        addEventListener('nodeMoved',event=>window.moveEvent=event.detail,{once:true});
+      }, {payload:payload.qaDiagrams.moment_z,plane,orientation});
+      await page.waitForTimeout(100);
+      const node=payload.nodes.find(node=>node.name==='N2');
+      const from=await page.evaluate(point=>window.pyniteViewer.project(point),node.position);
+      const to=await page.evaluate(point=>window.pyniteViewer.project(point),target);
+      const camera=await page.evaluate(()=>window.pyniteViewer.state().camera);
+      await page.mouse.move(...from);await page.mouse.down();await page.mouse.move(...to,{steps:10});
+      const preview=await page.evaluate(()=>window.pyniteViewer.state());
+      assert(preview.dragging,`${plane} node drag did not start`);
+      assert.deepEqual(preview.nodes.find(node=>node.name==='N2').position,target,`${plane} preview did not snap or preserve the frozen coordinate`);
+      assert.equal(await page.evaluate(()=>window.moveEvent),null,'Preview committed an engineering edit');
+      assert(await page.locator('#result-legend').isHidden(),'Old result overlay remained during geometry preview');
+      assert(preview.camera.every((value,i)=>Math.abs(value-camera[i])<1e-6),'Moving a node orbited the camera');
+      if(plane==='XY')await page.screenshot({path:path.join(output,'desktop-node-drag-preview.png')});
+      await page.mouse.up();
+      const moved=await page.evaluate(()=>window.moveEvent);
+      assert.deepEqual(moved,{node:'N2',start:node.position,target,plane,revision:payload.revision},`${plane} drag emitted an invalid native request`);
+      assert.deepEqual((await page.evaluate(()=>window.pyniteViewer.state())).nodes.find(node=>node.name==='N2').position,node.position,
+        'Browser preview was not restored pending native validation');
+    }
+    await page.evaluate(payload=>{
+      window.pyniteViewer.update({...payload,mode:'select',plane:'XY',boxSelect:false,moveNodes:true});window.pyniteViewer.orient(1);
+      window.moveEvent=null;addEventListener('nodeMoved',event=>window.moveEvent=event.detail);
+    },payload.qaDiagrams.moment_z);
+    let dragFrom=await page.evaluate(()=>window.pyniteViewer.project([0,144,0]));
+    let dragTo=await page.evaluate(()=>window.pyniteViewer.project([24,168,0]));
+    await page.mouse.move(...dragFrom);await page.mouse.down();await page.mouse.move(...dragTo,{steps:5});
+    await page.keyboard.press('Escape');await page.mouse.up();
+    assert.equal(await page.evaluate(()=>window.moveEvent),null,'Cancelled node drag committed');
+    assert.deepEqual((await page.evaluate(()=>window.pyniteViewer.state())).nodes.find(node=>node.name==='N2').position,[0,144,0]);
+    assert(!(await page.locator('#result-legend').isHidden()),'Cancellation did not restore the analyzed overlay');
+    // A native redraw/change of work plane cancels the old gesture without committing it.
+    await page.mouse.move(...dragFrom);await page.mouse.down();await page.mouse.move(...dragTo,{steps:5});
+    await page.evaluate(payload=>window.pyniteViewer.update({...payload,mode:'select',plane:'XZ',moveNodes:true}),payload);
+    await page.mouse.up();
+    assert.equal(await page.evaluate(()=>window.moveEvent),null,'Native update committed a stale gesture');
+    // An edge-on work plane cannot produce a stable move intersection.
+    await page.evaluate(payload=>{window.pyniteViewer.update({...payload,mode:'select',plane:'XZ',moveNodes:true});window.pyniteViewer.orient(1);window.unavailable=false;
+      addEventListener('nodeMoveUnavailable',()=>window.unavailable=true,{once:true});},payload);
+    dragFrom=await page.evaluate(()=>window.pyniteViewer.project([0,144,0]));
+    await page.mouse.move(...dragFrom);await page.mouse.down();await page.mouse.move(dragFrom[0]+40,dragFrom[1]+40);await page.mouse.up();
+    assert(await page.evaluate(()=>window.unavailable),'Edge-on move did not give feedback');
+    assert.equal(await page.evaluate(()=>window.moveEvent),null,'Edge-on gesture committed geometry');
     const dark={...payload,colors:{...payload.colors,canvas:'#191c1f',grid:'#30373b',member:'#d1dbe0',label:'#c4cdd3',text:'#eef1f2',accent:'#4cc9c0',support:'#73d89c',load:'#ff7b8a',axial:'#79bdf1',shear:'#4cc9c0',moment:'#ff91ad'}};
     await page.evaluate(payload=>{window.pyniteViewer.update(payload);window.pyniteViewer.orient(0);},dark);
     await page.waitForTimeout(300);await page.screenshot({path:path.join(output,'desktop-dark.png')});
@@ -292,6 +340,11 @@ const server = http.createServer((request,response)=>{
       await page.screenshot({path:path.join(output,`desktop-converted-cantilever-${name}.png`)});
     }
     assert.deepEqual(errors,[]);
+    await page.evaluate(payload=>{window.pyniteViewer.update({...payload,mode:'select',plane:'XY',moveNodes:true});window.pyniteViewer.orient(1);window.moveEvent=null;},payload);
+    dragFrom=await page.evaluate(()=>window.pyniteViewer.project([0,144,0]));
+    dragTo=await page.evaluate(()=>window.pyniteViewer.project([24,168,0]));
+    await page.mouse.move(...dragFrom);await page.mouse.down();await page.mouse.move(...dragTo,{steps:5});
+    assert((await page.evaluate(()=>window.pyniteViewer.state())).dragging,'Context-loss test did not start a node drag');
     await page.evaluate(()=>{
       window.bridgeFailures=[];
       window.pyniteBridge={failed:message=>window.bridgeFailures.push(message)};
@@ -302,6 +355,9 @@ const server = http.createServer((request,response)=>{
     assert.match(failure.message,/graphics context was lost/i);
     assert.deepEqual(failure.bridge,[failure.message],'Context loss did not reach the native bridge');
     assert(failure.error.includes(failure.message),'Context loss did not show browser fallback text');
-    console.log('PASS: desktop geometry, six-DOF supports/springs/hover/visibility, gizmo, orbit/picking, contained/crossing/additive/cancelled box selection, drawing, result overlays, PNG, diagnostics and dark/context-loss states.');
+    await page.mouse.up();
+    assert(!(await page.evaluate(()=>window.pyniteViewer.state())).dragging,'Graphics loss left an active node drag');
+    assert.equal(await page.evaluate(()=>window.moveEvent),null,'Graphics loss committed a node move');
+    console.log('PASS: desktop geometry, six-DOF supports/springs/hover/visibility, gizmo, orbit/picking, contained/crossing/additive/cancelled box selection, drawing, constrained node dragging/cancellation/stale updates, result overlays, PNG, diagnostics and dark/context-loss states.');
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;}).finally(()=>server.close());

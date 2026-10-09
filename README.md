@@ -12,7 +12,8 @@ Model elastic support springs and 2D member-end axial, shear, or moment releases
 Analysis shows progress phases and can be cancelled without losing valid results.
 Print selected definitions, results, envelopes, and 2D/3D force diagrams as a report.
 3D mode adds an offline orbitable viewport, XYZ work planes, six-direction supports
-and loads, member roll, biaxial bending/torsion results, and spatial deformation.
+and loads, constrained node dragging, member roll, biaxial bending/torsion results,
+and spatial deformation.
 
 ## Quick Start
 

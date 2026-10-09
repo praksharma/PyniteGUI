@@ -82,6 +82,7 @@ def viewport_payload(window):
     if diagram:
         diagram["values"] = window.view.diagram_values.isChecked()
     return {"nodes": nodes, "members": members, "loads": loads if window.view.show_loads.isChecked() else [], "grid": project.grid, "colors": colors(),
+            "revision": window.revision,
             "diagram": diagram,
             "selection": [list(s) for s in window.selections], "mode": window.mode,
             "deformed": visible, "factor": factor,
@@ -154,6 +155,45 @@ class Bridge(QObject):
         except (ValueError, TypeError):
             return
         window.edit("Draw 3D member", lambda p: p.add_member(*points))
+
+    @Slot()
+    def move_unavailable(self):
+        if self.view.window.view is self.view:
+            self.view.window.statusBar().showMessage("Move nodes: the work plane is edge-on. Choose a different camera view.")
+
+    @Slot(str)
+    def move_node(self, data):
+        window = self.view.window
+        try:
+            request = json.loads(data)
+            if (window.view is not self.view or window.mode != "select" or not self.view.move_nodes.isChecked()
+                    or self.view.box_select.isChecked() or getattr(window.project, "dimension", "2D") != "3D"
+                    or not isinstance(request, dict) or set(request) != {"node", "start", "target", "plane", "revision"}
+                    or type(request["revision"]) is not int or request["revision"] != window.revision
+                    or request["plane"] not in ("XY", "XZ", "YZ") or request["plane"] != self.view.plane.currentText()
+                    or not isinstance(request["node"], str) or request["node"] not in window.project.nodes):
+                return
+            start, target = request["start"], request["target"]
+            if any(not isinstance(point, list) or len(point) != 3 or any(isinstance(value, bool)
+                   or not isinstance(value, (int, float)) or not math.isfinite(value) for value in point) for point in (start, target)):
+                return
+            original = window.project.nodes[request["node"]].coords
+            axis = {"XY": 2, "XZ": 1, "YZ": 0}[request["plane"]]
+            if (any(abs(value - current) > 1e-8 for value, current in zip(start, original))
+                    or target[axis] != original[axis]
+                    or any(abs(value - round(value / window.project.grid) * window.project.grid) > 1e-8
+                           for index, value in enumerate(target) if index != axis)):
+                return
+            def mutate(project):
+                node = project.nodes[request["node"]]
+                node.x, node.y, node.z = target
+            window.edit("Move 3D node", mutate)
+            if window.revision != request["revision"]:
+                window.select(("nodes", request["node"]))
+        except (ValueError, TypeError, OverflowError):
+            return
+        finally:
+            self.view.redraw()
 
     @Slot(float, float, float)
     def coordinates(self, x, y, z):
@@ -249,6 +289,12 @@ class SpatialView(QWidget):
         self.box_select.setToolTip("Drag in Select mode. Left-to-right: enclosed; right-to-left: crossing. Ctrl adds. Shift-drag also starts a box.")
         self.box_select.toggled.connect(self.redraw)
         results.addWidget(self.box_select)
+        self.move_nodes = QCheckBox("Move nodes")
+        self.move_nodes.setToolTip("Select mode: drag a node in the chosen XY/XZ/YZ plane through its original position; grid snapping; Escape cancels. Drawing offset is not used.")
+        self.move_nodes.toggled.connect(lambda checked: self.box_select.setChecked(False) if checked else None)
+        self.box_select.toggled.connect(lambda checked: self.move_nodes.setChecked(False) if checked else None)
+        self.move_nodes.toggled.connect(self.redraw)
+        results.addWidget(self.move_nodes)
         results.addStretch()
         self.export_button = QToolButton()
         self.export_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton))
@@ -328,6 +374,7 @@ class SpatialView(QWidget):
         self.diagram_values.setEnabled(payload["diagram"] is not None)
         self.export_button.setEnabled(self.ready and self.web is not None)
         self.box_select.setEnabled(self.window.mode == "select")
+        self.move_nodes.setEnabled(self.window.mode == "select")
         from .app import unit_value
         units = self.window.project.units
         previous = self.offset.property("unit_system")
@@ -341,7 +388,7 @@ class SpatialView(QWidget):
             self.offset.blockSignals(False)
         self.offset.setProperty("unit_system", units.key)
         self.offset_label.setText(units.length)
-        payload.update(plane=self.plane.currentText(), offset=unit_value(self.offset, units), labels=self.labels.isChecked(), localAxes=self.axes.isChecked(), boxSelect=self.box_select.isChecked())
+        payload.update(plane=self.plane.currentText(), offset=unit_value(self.offset, units), labels=self.labels.isChecked(), localAxes=self.axes.isChecked(), boxSelect=self.box_select.isChecked(), moveNodes=self.move_nodes.isChecked())
         self.call("update", payload)
         if self.pending_fit and self.ready:
             self.pending_fit = False

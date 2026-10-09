@@ -222,7 +222,11 @@ below and the secondary interface wishlist retain their more specific scope.
   handling, released-end motion recovery and independent mechanism benchmarks.
 - [x] 3D contained/crossing box selection, additive selection and cancellation;
   atomic bulk material/section/roll, six-DOF restraint/spring and load assignments.
-- [ ] 3D node dragging with explicit work-plane constraints, snapping and undo.
+- [x] 3D node dragging behind an explicit Select-mode tool: XY/XZ/YZ plane through
+  the original node, frozen perpendicular coordinate, grid snapping, preview
+  without stale analytical/load graphics, edge-on feedback, cancellation,
+  revision/coordinate validation, collision rejection and single-command undo.
+  Native edit/unit/result regressions and desktop gesture/graphics-loss checks.
 - [x] Spatial member splitting and explicit XYZ crossing/T-junction/interior-node
   connections, preserving roll/assignments and point/distributed loads, with
   overlap rejection, atomic validation and one-step undo.

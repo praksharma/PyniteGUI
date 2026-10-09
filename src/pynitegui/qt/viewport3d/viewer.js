@@ -4,6 +4,7 @@ import {OrientationGizmo} from './gizmo.js';
 import {diagramPoints, drawDiagram, legendLines} from './diagrams.js';
 import {attachBoxSelection} from './selection.js';
 import {drawSupports, SupportTooltip} from './supports.js';
+import {attachNodeDrag,planeAxis} from './node_drag.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 100000);
@@ -29,6 +30,19 @@ scene.add(group);
 const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
 const vector = a => new THREE.Vector3(...a);
 const axisColors = [0xd65058,0x21955c,0x3786bd];
+const nodeDrag=attachNodeDrag(renderer.domElement,camera,controls,()=>data,event=>{
+  ray(event);const hit=raycaster.intersectObjects(picks).find(hit=>hit.object.userData.dragNode);
+  return hit?data.nodes.find(node=>node.name===hit.object.userData.dragNode):null;
+},event=>{ray(event);return raycaster.ray;},()=>{supportTooltip.hide();gizmo.cancel();stopMotion();},
+  (name,position,snapshot)=>{
+    update({...snapshot,nodes:snapshot.nodes.map(node=>node.name===name?{...node,position}:node),
+      members:snapshot.members.map(member=>({...member,points:undefined,displacements:undefined,diagramValues:undefined})),
+      selection:[['nodes',name]],offset:position[planeAxis(snapshot.plane)],deformed:false,diagram:null,loads:[],localAxes:false},true);
+    window.pyniteBridge?.coordinates(...position);
+  },snapshot=>update(snapshot,true),request=>{
+    window.pyniteBridge?.move_node(JSON.stringify(request));
+    window.dispatchEvent(new CustomEvent('nodeMoved',{detail:request}));
+  },()=>{window.pyniteBridge?.move_unavailable();window.dispatchEvent(new CustomEvent('nodeMoveUnavailable'));});
 const boxSelection=attachBoxSelection(renderer.domElement,camera,controls,()=>data,()=>{supportTooltip.hide();gizmo.cancel();stopMotion();},
   (selections,extend)=>{window.pyniteBridge?.select_many(JSON.stringify(selections),extend);window.dispatchEvent(new CustomEvent('modelBoxSelected',{detail:{selections,extend}}));},selectAt);
 const legend=document.createElement('div');legend.id='result-legend';document.body.appendChild(legend);
@@ -84,7 +98,8 @@ function moment(position,axis,value,identity) {
   const tangent=u.clone().multiplyScalar(-Math.sin(5)).addScaledVector(v,Math.cos(5));
   group.add(new THREE.ArrowHelper(tangent,points.at(-1),span*.014,data.colors.load,span*.014,span*.008));
 }
-function update(payload) {
+function update(payload,dragPreview=false) {
+  if(!dragPreview)nodeDrag.cancel(false);
   boxSelection.cancel();
   supportTooltip.hide();supports=[];
   data=payload;const c=data.colors;scene.background=new THREE.Color(c.canvas);
@@ -105,7 +120,7 @@ function update(payload) {
   }
   for(const node of data.nodes) {
     const p=vector(node.position),mesh=new THREE.Mesh(new THREE.SphereGeometry(r*1.8,12,8),new THREE.MeshStandardMaterial({color:selected('nodes',node.name)?c.accent:c.member}));
-    mesh.position.copy(p);mesh.userData.identity=['nodes',node.name];picks.push(mesh);group.add(mesh);label(node.name,p.clone().add(new THREE.Vector3(span*.02,span*.025,0)),c.label);
+    mesh.position.copy(p);mesh.userData.identity=['nodes',node.name];mesh.userData.dragNode=node.name;picks.push(mesh);group.add(mesh);label(node.name,p.clone().add(new THREE.Vector3(span*.02,span*.025,0)),c.label);
     if(data.supports!==false)supports.push(...drawSupports(node,span,c,group,picks));
   }
   for(const load of data.loads) {
@@ -120,10 +135,11 @@ function update(payload) {
     label(load.label,a.clone().lerp(b,load.position).addScaledVector(dir,-Math.sign(load.magnitude||load.endMagnitude)*span*.12),c.load,span*.028);
   }
   controls.mouseButtons.LEFT=data.mode==='pan'?THREE.MOUSE.PAN:THREE.MOUSE.ROTATE;
-  controls.enableRotate=data.mode!=='draw';renderer.domElement.style.cursor=data.mode==='draw'||(data.mode==='select'&&data.boxSelect)?'crosshair':'default';
+  controls.enableRotate=data.mode!=='draw';renderer.domElement.style.cursor=data.mode==='draw'||(data.mode==='select'&&data.boxSelect)?'crosshair':data.mode==='select'&&data.moveNodes?'move':'default';
   if(start)preview=line([vector(start),vector(start)],c.accent);
 }
 function fit() {
+  nodeDrag.cancel();
   resize();
   supportTooltip.hide();
   stopMotion();
@@ -139,6 +155,7 @@ function fit() {
 }
 function orient(index) {
   if(index<0||index>6)return;
+  nodeDrag.cancel();
   gizmo.cancel();
   stopMotion();
   const direction=[new THREE.Vector3(1,.7,1),new THREE.Vector3(0,0,1),new THREE.Vector3(0,1,0),new THREE.Vector3(1,0,0),new THREE.Vector3(0,0,-1),new THREE.Vector3(0,-1,0),new THREE.Vector3(-1,0,0)][index];
@@ -163,6 +180,10 @@ function selectAt(event){
   ray(event);const hit=raycaster.intersectObjects(picks)[0],identity=hit?.object.userData.identity||['',''];
   window.pyniteBridge?.select(...identity,event.ctrlKey||event.metaKey||event.shiftKey);window.dispatchEvent(new CustomEvent('modelSelected',{detail:identity}));
 }
+renderer.domElement.addEventListener('nodeDragClicked',event=>{
+  const identity=['nodes',event.detail];window.pyniteBridge?.select(...identity,false);
+  window.dispatchEvent(new CustomEvent('modelSelected',{detail:identity}));
+});
 renderer.domElement.addEventListener('pointerdown',event=>{if(event.button===0)down=[event.clientX,event.clientY];});
 renderer.domElement.addEventListener('pointerup',event=>{
   if(event.button!==0||!down||Math.hypot(event.clientX-down[0],event.clientY-down[1])>5)return;down=null;
@@ -190,8 +211,8 @@ renderer.domElement.addEventListener('pointermove',event=>{
 });
 renderer.domElement.addEventListener('pointerleave',()=>supportTooltip.hide());
 renderer.domElement.addEventListener('pointerdown',()=>supportTooltip.hide(),true);
-renderer.domElement.addEventListener('webglcontextlost',()=>{supportTooltip.hide();rendering=false;window.pyniteReportFailure('The graphics context was lost. Restart with software rendering if this persists.');});
-function cancel(){supportTooltip.hide();boxSelection.cancel();start=null;if(preview){group.remove(preview);preview.geometry.dispose();preview.material.dispose();preview=null;}}
+renderer.domElement.addEventListener('webglcontextlost',()=>{nodeDrag.cancel(false);supportTooltip.hide();rendering=false;window.pyniteReportFailure('The graphics context was lost. Restart with software rendering if this persists.');});
+function cancel(){nodeDrag.cancel();supportTooltip.hide();boxSelection.cancel();down=null;start=null;if(preview){group.remove(preview);preview.geometry.dispose();preview.material.dispose();preview=null;}}
 addEventListener('keydown',event=>{if(event.key==='Escape')cancel();});
 function resize(){supportTooltip.hide();camera.aspect=innerWidth/Math.max(innerHeight,1);camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);}
 addEventListener('resize',resize);resize();camera.position.set(500,350,500);controls.update();
@@ -224,7 +245,7 @@ function exportImage(){
   }
   return canvas.toDataURL('image/png');
 }
-window.pyniteViewer={update,fit,orient,cancel,state:()=>({objects:group.children.length,drawCalls:renderer.info.render.calls,camera:camera.position.toArray(),target:controls.target.toArray(),selection:data.selection}),project:position=>{const p=vector(position).project(camera);return[(p.x+1)*innerWidth/2,(1-p.y)*innerHeight/2];}};
+window.pyniteViewer={update,fit,orient,cancel,state:()=>({objects:group.children.length,drawCalls:renderer.info.render.calls,camera:camera.position.toArray(),target:controls.target.toArray(),selection:data.selection,dragging:nodeDrag.active(),nodes:data.nodes.map(node=>({name:node.name,position:node.position}))}),project:position=>{const p=vector(position).project(camera);return[(p.x+1)*innerWidth/2,(1-p.y)*innerHeight/2];}};
 window.pyniteViewer.exportImage=exportImage;
 window.pyniteViewer.diagnostics=()=>{
   const gl=renderer.getContext(),debug=gl.getExtension('WEBGL_debug_renderer_info');
