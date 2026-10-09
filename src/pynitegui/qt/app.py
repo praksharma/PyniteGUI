@@ -1,6 +1,7 @@
 """Qt desktop editor for planar and spatial PyNite frames."""
 import math
 import sys
+import uuid
 from dataclasses import replace
 from pathlib import Path
 
@@ -501,6 +502,12 @@ class MainWindow(QMainWindow):
         self.mode = "select"
         self.result = None
         self.revision = 0
+        self.project_session = uuid.uuid4().hex
+        self.automation_revision = 0
+        self.automation_server = self.automation_panel = None
+        self.analysis_job_id = self.analysis_job_session = None
+        self.analysis_error = ""
+        self.analysis_remote = False
         self.thread = None
         self.worker = None
         self.analysis_cancel_requested = False
@@ -661,6 +668,8 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.action("Connect Member Midpoints...", lambda: self.construct_connection("midpoints")))
         edit_menu.addAction(self.action("Connect Intersections", self.connect_intersections))
         edit_menu.addAction(self.action("Check Model", self.check_model))
+        tools_menu = self.menuBar().addMenu("&Tools")
+        tools_menu.addAction(self.action("Automation Server...", self.show_automation_server))
         from .toolbar_icons import tool_icon
         def icon_action(action, name, tooltip):
             action.setProperty("tool_icon", name)
@@ -866,6 +875,8 @@ class MainWindow(QMainWindow):
 
     def replace_project(self, project):
         before, after = self.project.to_dict(), project.to_dict()
+        if before != after:
+            self.automation_revision += 1
         before.pop("unit_system")
         after.pop("unit_system")
         units_only = before == after and self.project.unit_system != project.unit_system
@@ -1507,6 +1518,8 @@ class MainWindow(QMainWindow):
         return answer == QMessageBox.StandardButton.Discard
 
     def load_project(self, project, path=None):
+        self.project_session = uuid.uuid4().hex
+        self.automation_revision = 0
         self.selected = None
         self.replace_project(project)
         self.undo.clear()
@@ -1611,11 +1624,24 @@ class MainWindow(QMainWindow):
         self.update_title()
         self.statusBar().showMessage(f"Example: {EXAMPLES[key]} | {project.units.summary}")
 
-    def run_analysis(self, *, automatic=False):
+    def show_automation_server(self):
+        from .automation_server import AutomationServer, AutomationPanel
+        if self.automation_server is None:
+            self.automation_server = AutomationServer(self)
+            self.automation_panel = AutomationPanel(self, self.automation_server)
+        self.automation_panel.show()
+        self.automation_panel.raise_()
+        self.automation_panel.activateWindow()
+
+    def run_analysis(self, *, automatic=False, automation=False):
         if self.thread is not None:
             return
         self.live_analysis.discard()
         self.analysis_automatic = automatic
+        self.analysis_remote = automation
+        self.analysis_error = ""
+        self.analysis_job_id = uuid.uuid4().hex
+        self.analysis_job_session = self.project_session
         if not automatic:
             self.view.cancel()
         self.analysis_revision = self.revision
@@ -1677,6 +1703,7 @@ class MainWindow(QMainWindow):
             self.live_analysis.try_start()
 
     def analysis_finished(self, result, error):
+        self.analysis_error = error or ""
         if self.analysis_cancel_requested or error == CANCELLED:
             if self.live_analysis.pending:
                 self.results_panel.set_analysis_state("Pending", "Waiting to analyze the latest model revision.")
@@ -1684,7 +1711,9 @@ class MainWindow(QMainWindow):
             self.results_panel.set_analysis_state("Cancelled")
             self.statusBar().showMessage("Analysis cancelled | Previous results retained" if self.result is not None else "Analysis cancelled")
             return
-        if self.analysis_revision != self.revision:
+        if self.analysis_revision != self.revision or (self.analysis_job_session is not None and
+                self.analysis_job_session != self.project_session):
+            self.analysis_error = "Model changed during analysis; the result was discarded."
             if self.live_analysis.pending:
                 self.results_panel.set_analysis_state("Pending", "Waiting to analyze the latest model revision.")
                 return
@@ -1698,7 +1727,7 @@ class MainWindow(QMainWindow):
             self.results_panel.set_analysis_state("Failed", error)
             self.show_model_findings(error.split("\n\n"), "Analysis failed")
             self.statusBar().showMessage("Analysis failed | Previous results retained" if self.result is not None else "Analysis failed")
-            if not self.analysis_automatic:
+            if not self.analysis_automatic and not self.analysis_remote:
                 QMessageBox.warning(self, "Analysis", error)
             return
         self.result = result
@@ -1893,6 +1922,8 @@ class MainWindow(QMainWindow):
             self.cancel_analysis()
             event.ignore()
         elif self.confirm_discard():
+            if self.automation_server is not None:
+                self.automation_server.stop()
             self.clear_autosave()
             self.autosave_timer.stop()
             event.accept()

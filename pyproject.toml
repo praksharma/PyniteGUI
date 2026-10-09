@@ -18,6 +18,12 @@ dependencies = [
 [project.scripts]
 pynitegui = "pynitegui:main"
 
+[project.optional-dependencies]
+mcp = [
+    "mcp>=2.3,<3",
+    "uvicorn>=0.35,<1",
+]
+
 [tool.uv]
 python-preference = "only-managed"
 

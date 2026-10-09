@@ -29,6 +29,123 @@ sections, cases/combinations and self-weight. Diagrams and deformation stay
 disabled until a valid snapshot exists. The same commands remain accessible
 through the menus and existing keyboard shortcuts.
 
+### Optional MCP Automation
+
+Install the optional extra and launch with it from the repository:
+
+```sh
+uv sync --extra mcp
+uv run --extra mcp pynitegui
+```
+
+A normal installation needs no MCP/server packages. **Tools > Automation Server**
+opens a native panel for this project window. The server starts off; choose a
+port (default 8765), then **Start**. It binds only `127.0.0.1` and uses the official
+MCP Python SDK's Streamable HTTP transport at `http://127.0.0.1:8765/mcp`.
+Missing dependencies and occupied ports appear in the panel without installing
+anything automatically. Use a separate port for each project window.
+
+Use **Copy configuration** for clients accepting the common `mcpServers` format,
+or copy the endpoint and token into a client's Streamable HTTP settings. Clients
+must support an `Authorization: Bearer <token>` header. For example (replace the
+placeholder with the copied token; use the actual port):
+
+```json
+{
+  "mcpServers": {
+    "PyniteGUI": {
+      "url": "http://127.0.0.1:8765/mcp",
+      "headers": {"Authorization": "Bearer <copied-token>"}
+    }
+  }
+}
+```
+
+Every start generates a new token. Nothing saves it to disk automatically. The
+panel masks the token and logs only fixed request names/status codes, omitting
+arguments, model values, paths and credentials. Status shows the last authenticated
+request and its count, rather than claiming a persistent client connection.
+Closing the panel leaves the server running; **Stop** or closing the project
+window stops access. Stop invalidates queued commands immediately. A solve already
+started continues under the normal GUI controls; cancel it separately.
+
+Both a permission group and its individual tool switch must be enabled. Model
+and result reads start enabled; edits and analysis start disabled. Switches take
+effect during discovery, on every call and again before GUI-thread dispatch.
+The server rejects non-loopback peers, invalid Host/Origin headers and missing,
+incorrect or duplicate authorization headers. Requests are limited to 1 MiB,
+batches to 512 KiB/500 operations, and the GUI queue to 64 commands. Queued
+commands time out after 30 seconds; read the current model before retrying a
+mutation whose response was lost.
+
+| Tool | Behavior |
+| --- | --- |
+| `read_model` | Canonical project JSON, session ID, automation revision and engineering model revision. |
+| `read_units` | Display unit definitions and conversion factors. Requires the current session. |
+| `apply_batch` | Validate the complete batch, update the GUI and create one undo step. Requires session and expected automation revision. |
+| `run_analysis` | Start the existing background solver and return its job ID. Requires session and expected revision. |
+| `analysis_status` | Read running state, progress phase, failure, job identity and snapshot metadata. Optional job ID rejects replaced jobs. |
+| `cancel_analysis` | Cancel the identified running job through the existing cancellation workflow. |
+| `read_results` | Read node/member report rows with snapshot ID, units and current/stale analysis state. Supports solved combination, offset and limit (1–1000). |
+
+Read the model first. Use its `session_id` for subsequent calls and its `revision`
+as `expected_revision` for edits/analysis. Opening another project changes the
+session; intervening GUI edits, undo/redo and display-unit changes invalidate the
+expected revision. Engineering edits clear the active result; display-unit changes
+preserve its snapshot identity and convert its report values. Failed or cancelled
+reruns can retain previous results, so inspect `analysis_state` before treating a
+snapshot as current. Supply `snapshot_id` to reject a replaced snapshot. Responses use
+`{"ok": true, "data": ...}` or `{"ok": false, "error": {"code": ..., "message": ...}}`;
+MCP tool errors also set `isError`. Remote analysis failures populate Model Findings
+and job status without opening a warning popup.
+
+Batch inputs use canonical inch-kip units, degrees for angles and member fractions
+for load positions. Supports are fields on nodes. `put` merges existing entity
+fields or creates an entity using its normal defaults; `delete` requires explicit
+dependent-reference updates in the same batch. Numeric material/section edits clear
+preset/catalog provenance unless explicitly supplied. Project validation runs once
+after all operations, so a rejected batch creates no partial changes or undo step.
+For example, after obtaining the current session and revision:
+
+```json
+{
+  "session_id": "<read_model.session_id>",
+  "expected_revision": 7,
+  "operations": [
+    {"op": "put", "collection": "nodes", "key": "N2", "value": {"x": 480}},
+    {"op": "put", "collection": "load_cases", "key": "Wind"},
+    {"op": "put", "collection": "combinations", "key": "Service", "value": {"Wind": 1}}
+  ]
+}
+```
+
+Entity collections are `nodes`, `members`, `loads`, `materials`, `sections` and
+`combinations`; cases use `load_cases` with no value. For `settings`, use `op: "set"`
+and a value containing only `unit_system`, `grid`, `default_material`,
+`default_section`, `default_load_case`, `self_weight_case` or `self_weight_factor`.
+Model reads expose the entity fields for each project's 2D/3D dimension. Active
+input drafts, gestures and editing dialogs block remote edits/analysis. Accepted
+edits follow the existing live-recalculation preference, including automatic solves
+when live mode is enabled. Analysis progress/cancellation uses the existing isolated
+worker and preserves previous results on failure/cancellation.
+
+There are no arbitrary Python/shell execution, project file-management or separate
+REST tools. The user opens and saves files normally. Optional viewport capture
+remains a follow-up. The server controller and command bridge use only base desktop
+imports; optional SDK/HTTP imports occur on Start. The HTTP thread queues commands
+onto Qt's main thread, where permissions, session and revision are checked before
+using the existing undo/analysis/report workflows.
+
+Automation tests cover base imports without optional packages, missing-extra
+messages, lifecycle/port conflicts, token rotation, HTTP authentication/Host/Origin
+validation, request limits, permission revocation, queued cancellation, GUI-thread
+dispatch, atomic edits/undo, stale revisions/sessions, result pagination and live
+wire analysis success/cancellation. Install the extra to include SDK wire tests:
+
+```sh
+uv run --extra mcp python -B -m unittest discover -s tests -p 'test_qt_automation*.py'
+```
+
 ### Optional Live Recalculation
 
 Manual **Analyze (F5)** is the default in every window. Enable **Live
