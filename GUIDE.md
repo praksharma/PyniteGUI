@@ -1,6 +1,6 @@
 # PyniteGUI Guide
 
-A Python desktop editor for 2D frames/trusses and linear 3D spatial frames with PyNite.
+A Python desktop editor for 2D/3D frames and axial-only trusses with PyNite.
 
 For an audited comparison of PyNite engine capabilities with features actually
 exposed here, see [PyNite Capability Coverage](TODO.md#pynite-capability-coverage).
@@ -39,6 +39,7 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
 
 Use **File > New 3D Frame** for a new spatial project. **File > Examples** includes
 **3D Cantilever - Biaxial Bending and Torsion** and **3D Space Frame - Gravity and Wind**.
+**3D Truss Tripod - Joint Load** provides a pin-jointed spatial benchmark.
 The existing New command still creates a 2D project. Changing project dimensions
 does not reinterpret or convert existing geometry; open or create the intended mode.
 
@@ -120,6 +121,23 @@ does not reinterpret or convert existing geometry; open or create the intended m
   Insufficient restraints report affected global directions. Named cases,
   combination factors, progress/cancellation and stale-result rejection are shared
   with the 2D workflow. Reactions and nodal motions are global; rotations are radians.
+- Choose **Type = truss** in the spatial member inspector, bulk inspector or Model
+  Tables for a bilateral axial-only element. PyNite releases both bending planes
+  and torsion at one end; the element transfers axial force only. E and A determine
+  stiffness; Iy/Iz/J and roll do not add bending/torsion stiffness. Truss members
+  use thinner spring/axial-colored lines and a `[truss]` label. This is not a
+  tension-only or compression-only element.
+  Manual member loads are rejected; apply forces at braced/restraint-compatible
+  joints. Conversion to truss never silently removes existing member loads.
+  Self-weight is lumped half to each end joint; frame self-weight remains distributed.
+  At a truss-only joint, unsprung/unrestrained rotations are inactive and reported
+  as **n/a**. Numerical elimination of these unused rotations cannot restrain
+  translations or transfer moments through trusses. Explicit rotational supports
+  and springs can react joint moments; moments on an inactive rotation are rejected.
+  A joint shared with a frame retains its frame rotation DOFs. Shear, torsion and
+  bending truss results are zero; deformed truss lines interpolate joint translations
+  linearly, without a bending curve. Splitting a truss introduces a joint that must
+  be appropriately braced; an unbraced intermediate joint is a real mechanism.
 - The viewport **Supports** toggle controls global rigid-restraint and bilateral
   spring symbols without changing the model or results. Each constrained DOF has
   its own symbol: translational rigid stems end at grounded pads, rotational rigid
@@ -181,8 +199,8 @@ does not reinterpret or convert existing geometry; open or create the intended m
   excluded. Whole-structure 3D PDF diagram reports remain pending; numerical
   envelopes are available in the retained diagram window.
 
-First-milestone scope is linear, unreleased 3D frame members. No spatial trusses,
-plates/shells, solids, nonlinear effects, member releases,
+Current spatial scope is linear, unreleased frame members and bilateral axial-only
+trusses. No plates/shells, solids, nonlinear effects, manual frame member releases,
 node dragging, implicit physical-member segmentation, or 2D conversion
 are implemented in this mode yet. Multi-selection supports bulk assignments and
 deletion; use Model Tables for coordinated geometry editing. Geometry requires explicit shared endpoints;
@@ -779,10 +797,12 @@ incorrect collection/entity shapes, unknown entity fields, invalid references,
 boolean/string/nonfinite numerical values, and duplicate JSON keys produce
 readable errors. JSON syntax errors include their line and column. Supported
 planar versions 1 through 15 are migrated without modifying the input; spatial
-versions 16/17 require an explicit `dimension: "3D"` marker and are validated separately.
+versions 16/17/18 require an explicit `dimension: "3D"` marker and are validated separately.
 Spatial version 17 adds global angular forces with azimuth (`angle`) and
 `elevation`; version 16 axis-based loads migrate without changing their physics.
 Unsupported future versions and angular fields in version 16 are rejected.
+Spatial version 18 adds axial-only truss members; versions 16/17 remain frame-only
+inputs and migrate without changing their geometry, supports or loads.
 Spatial files retain XYZ, all six restraints/springs, and roll. Unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be
 distinct so load targets are unambiguous.

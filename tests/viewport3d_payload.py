@@ -59,6 +59,13 @@ if __name__ == "__main__":
     window.view.diagram.setCurrentIndex(window.view.diagram.findData("moment_z"))
     payload["qaSplit"] = viewport_payload(window)
     payload["qaSplit"].update(plane="XY", offset=0, labels=True)
+    window.load_project(example_project("3d_tripod"))
+    with contextlib.redirect_stdout(io.StringIO()):
+        window.result = analyze(window.project)
+    window.deformed_action.setChecked(True)
+    window.view.diagram.setCurrentIndex(window.view.diagram.findData("axial"))
+    payload["qaTruss"] = viewport_payload(window)
+    payload["qaTruss"].update(plane="XZ", offset=0, labels=True)
     print(json.dumps(payload, allow_nan=False))
     window.saved = window.project.to_dict()
     window.close()

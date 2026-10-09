@@ -96,7 +96,7 @@ class SpatialModelTests(unittest.TestCase):
         self.assertEqual(Project().to_dict()["version"], 15)
 
     def test_schema_rejects_future_missing_and_unknown_fields(self):
-        for key, value in (("version", 18), ("version", True), ("dimension", "4D"), ("units", "m-kN"), ("extra", 1)):
+        for key, value in (("version", 19), ("version", True), ("dimension", "4D"), ("units", "m-kN"), ("extra", 1)):
             data = beam().to_dict()
             data[key] = value
             with self.subTest(key=key, value=value), self.assertRaises(ValueError):
@@ -110,7 +110,7 @@ class SpatialModelTests(unittest.TestCase):
         for kind, name, key, value in (("nodes", "N2", "z", float("nan")), ("nodes", "N2", "restraint_z", 1),
                                       ("nodes", "N2", "spring_rx", -1), ("members", "M1", "start", []),
                                       ("members", "M1", "material", []), ("members", "M1", "roll", 361),
-                                      ("members", "M1", "release_end", True), ("members", "M1", "kind", "truss")):
+                                      ("members", "M1", "release_end", True), ("members", "M1", "kind", "unsupported")):
             project = beam()
             setattr(getattr(project, kind)[name], key, value)
             with self.subTest(key=key), self.assertRaises(ValueError):

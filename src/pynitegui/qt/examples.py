@@ -15,6 +15,7 @@ EXAMPLES = {
     "shear_release": "Fixed-Guided Beam - Shear Release",
     "3d_cantilever": "3D Cantilever - Biaxial Bending and Torsion",
     "3d_space_frame": "3D Space Frame - Gravity and Wind",
+    "3d_tripod": "3D Truss Tripod - Joint Load",
 }
 
 

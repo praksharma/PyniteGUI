@@ -1,4 +1,5 @@
 """Spatial examples with true out-of-plane loading."""
+import math
 from .spatial_model import SpatialLoad, SpatialProject
 
 
@@ -14,6 +15,12 @@ def example_project(key, unit_system="imperial"):
         load("N2", "FZ", 0.5)
         load("N2", "MX", 5)
         load(member, "Fy", -0.005, kind="distributed", position=0, end_magnitude=-0.01)
+    elif key == "3d_tripod":
+        for point in ((60, 0, 0), (-30, 0, 30 * math.sqrt(3)), (-30, 0, -30 * math.sqrt(3))):
+            member = project.add_member(point, (0, 80, 0))
+            project.members[member].kind = "truss"
+            project.nodes[project.members[member].start].support = "pin"
+        load(project.node_at(0, 80, 0), "FY", -3)
     elif key == "3d_space_frame":
         project.set_load_case("Gravity", "Case 1")
         project.set_load_case("Wind")

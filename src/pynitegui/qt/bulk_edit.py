@@ -63,6 +63,7 @@ def populate_bulk_inspector(window):
         choice("material", "Material", window.project.materials)
         choice("section", "Section", window.project.sections)
         if spatial:
+            choice("kind", "Type", ("frame", "truss"))
             roll_enabled = QCheckBox("Set roll (deg)")
             roll_enabled.setObjectName("bulk_change_roll")
             roll = number(0, -360, 360, 6)
@@ -112,7 +113,7 @@ def populate_bulk_inspector(window):
                     for key, fixed in zip(restraint_fields, entity.restraints):
                         setattr(entity, key, fixed)
                 keys = {"nodes": ("support", *restraint_fields, *spring_fields),
-                        "members": ("material", "section", "roll") if spatial else ("material", "section", "kind", "release_start", "release_end",
+                        "members": ("material", "section", "roll", "kind") if spatial else ("material", "section", "kind", "release_start", "release_end",
                                     "release_start_x", "release_end_x", "release_start_y", "release_end_y"),
                         "loads": ("case",)}[kind]
                 for key in keys:

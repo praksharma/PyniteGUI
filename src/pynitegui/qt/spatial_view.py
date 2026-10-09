@@ -36,7 +36,7 @@ def viewport_payload(window):
     axes = {}
     for member in project.members.values():
         axes[member.name] = member_axes(project, member.name, result)
-        definition = {"name": member.name, "start": member.start, "end": member.end, "axes": axes[member.name].tolist()}
+        definition = {"name": member.name, "start": member.start, "end": member.end, "kind": member.kind, "axes": axes[member.name].tolist()}
         if result is not None:
             positions, values, displacement = sampled_member(project, result, member.name)
             a, b = np.array(project.nodes[member.start].coords), np.array(project.nodes[member.end].coords)

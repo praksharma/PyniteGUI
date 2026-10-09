@@ -2,7 +2,7 @@
 
 <img src="assets/PyniteGUI%20Structural%20Frame%20Logo.png" alt="PyniteGUI structural frame logo" width="480">
 
-A desktop editor for 2D frames/trusses and 3D spatial frames, powered by PyNite and Qt.
+A desktop editor for 2D/3D frames and axial-only trusses, powered by PyNite and Qt.
 
 Draw and edit frames or trusses, assign custom or library materials and sections, and apply point,
 distributed, or automatic self-weight loads. Analyze combinations and inspect

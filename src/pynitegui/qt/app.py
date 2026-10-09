@@ -1227,13 +1227,13 @@ class MainWindow(QMainWindow):
         if not self.selected or self.selected[0] not in ("nodes", "members"):
             QMessageBox.information(self, "Load", "Select a node or member first.")
             return
-        if getattr(self.project, "dimension", "2D") == "3D":
-            from .spatial_editor import add_load
-            add_load(self)
-            return
         kind, target = self.selected
         if kind == "members" and self.project.members[target].kind == "truss":
             QMessageBox.information(self, "Truss Load", "Truss members accept joint loads only. Select a node at a properly restrained or braced joint.")
+            return
+        if getattr(self.project, "dimension", "2D") == "3D":
+            from .spatial_editor import add_load
+            add_load(self)
             return
         dialog = QDialog(self)
         dialog.setWindowTitle(f"Load on {target}")

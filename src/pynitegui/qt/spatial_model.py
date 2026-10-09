@@ -68,11 +68,11 @@ class SpatialProject(Project):
     dimension: str = "3D"
 
     def to_dict(self):
-        return {"version": 17, "units": "in-kip", **asdict(self)}
+        return {"version": 18, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
+        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
             raise ValueError("Unsupported spatial project version, dimension, or units.")
         unknown = data.keys() - {f.name for f in fields(cls)} - {"version", "units"}
         if unknown:
@@ -91,6 +91,8 @@ class SpatialProject(Project):
                     raise ValueError(f"Invalid spatial {key} entry: {name!r}.")
                 if key == "loads" and data["version"] == 16 and ("elevation" in value or value.get("direction") == "Angle"):
                     raise ValueError("Spatial angle forces require project version 17.")
+                if key == "members" and data["version"] < 18 and value.get("kind", "frame") != "frame":
+                    raise ValueError("Spatial trusses require project version 18.")
                 try:
                     entities[name] = constructor(**value)
                 except TypeError as error:
@@ -136,8 +138,9 @@ class SpatialProject(Project):
                 raise ValueError(f"Member {name}: length must be finite and endpoints must be distinct.")
             if not identifier(member.material) or not identifier(member.section) or member.material not in self.materials or member.section not in self.sections:
                 raise ValueError(f"Member {name}: invalid material or section reference.")
-            if member.kind != "frame" or any(flag is not False for end in member.end_releases for flag in end):
-                raise ValueError(f"Member {name}: this 3D milestone supports unreleased frame members only.")
+            release_fields = ("release_start", "release_end", "release_start_x", "release_end_x", "release_start_y", "release_end_y")
+            if member.kind not in ("frame", "truss") or any(getattr(member, key) is not False for key in release_fields):
+                raise ValueError(f"Member {name}: choose an unreleased frame or axial-only truss; manual 3D releases are not supported yet.")
             if not finite_number(member.roll) or not -360 <= member.roll <= 360:
                 raise ValueError(f"Member {name}: roll must be between -360 and 360 degrees.")
             if self.self_weight_case is not None and not finite_number(self.materials[member.material].rho * self.sections[member.section].A * self.self_weight_factor):
@@ -162,6 +165,8 @@ class SpatialProject(Project):
                 raise ValueError(f"Load {name}: position must be between zero and one.")
             if load.kind == "distributed" and (load.target not in self.members or load.is_moment or not 0 <= load.position < load.end_position <= 1):
                 raise ValueError(f"Load {name}: distributed forces require a member and 0 <= start < end <= 1; distributed moments are not supported.")
+            if load.target in self.members and self.members[load.target].kind == "truss":
+                raise ValueError(f"Load {name}: truss members accept joint loads only.")
 
     def node_at(self, x, y, z=0):
         for name, node in self.nodes.items():
@@ -184,19 +189,35 @@ class SpatialProject(Project):
     def self_weight_loads(self):
         if self.self_weight_case is None:
             return []
-        return [SpatialLoad(f"SW {member.name}", member.name, "FY", magnitude, 0, "distributed", magnitude, 1, self.self_weight_case)
-                for member in self.members.values()
-                if (magnitude := -self.materials[member.material].rho * self.sections[member.section].A * self.self_weight_factor)]
+        loads = []
+        for member in self.members.values():
+            magnitude = -self.materials[member.material].rho * self.sections[member.section].A * self.self_weight_factor
+            if not magnitude:
+                continue
+            if member.kind == "truss":
+                half = magnitude * math.dist(self.nodes[member.start].coords, self.nodes[member.end].coords) / 2
+                loads.extend(SpatialLoad(f"SW {member.name} {end}", target, "FY", half, case=self.self_weight_case)
+                             for end, target in (("i", member.start), ("j", member.end)))
+            else:
+                loads.append(SpatialLoad(f"SW {member.name}", member.name, "FY", magnitude, 0, "distributed", magnitude, 1, self.self_weight_case))
+        return loads
 
     def self_weight_total(self):
-        return -sum(load.magnitude * math.dist(self.nodes[self.members[load.target].start].coords,
-                                              self.nodes[self.members[load.target].end].coords) for load in self.self_weight_loads())
+        return -sum(load.magnitude if load.target in self.nodes else load.magnitude *
+                    math.dist(self.nodes[self.members[load.target].start].coords,
+                              self.nodes[self.members[load.target].end].coords) for load in self.self_weight_loads())
 
     def inactive_rotations(self):
-        return set()
+        frame_nodes = {node for member in self.members.values() if member.kind == "frame" for node in (member.start, member.end)}
+        connected = {node for member in self.members.values() for node in (member.start, member.end)}
+        return {(name, dof) for name in connected - frame_nodes for index, dof in enumerate(DOFS[3:], 3)
+                if not self.nodes[name].restraints[index] and not self.nodes[name].springs[index]}
 
     def analysis_release_issues(self):
-        return []
+        inactive = self.inactive_rotations()
+        return [f"Load {load.name}: {load.direction} has no rotational stiffness at truss-only joint {load.target}."
+                for load in self.loads.values() if load.target in self.nodes and load.is_moment
+                and (load.target, 'R' + load.direction[-1]) in inactive and load.magnitude]
 
     def member_position(self, name, x, y, z):
         member = self.members[name]

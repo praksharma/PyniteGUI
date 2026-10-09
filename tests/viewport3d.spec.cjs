@@ -258,6 +258,24 @@ const server = http.createServer((request,response)=>{
     const jointPoint=await page.evaluate(position=>window.pyniteViewer.project(position),joint.position);
     await page.mouse.click(...jointPoint);
     assert.deepEqual(await page.evaluate(()=>window.selectedEvent),['nodes',joint.name],'New split joint could not be picked');
+    const truss=payload.qaTruss;
+    assert(truss.members.every(member=>member.kind==='truss'),'Missing truss type in viewport');
+    assert(truss.members.every(member=>member.diagramValues.every(value=>Math.abs(value-1.25)<1e-7)),'Tripod axial diagram differs from analytical force');
+    await page.evaluate(payload=>{window.pyniteViewer.update(payload);window.pyniteViewer.orient(0);},truss);
+    await page.waitForTimeout(200);
+    assert((await page.evaluate(()=>window.pyniteViewer.state())).drawCalls>10,'Truss viewport is empty');
+    for(const member of truss.members){
+      assert.equal(member.displacements.length,member.points.length);
+      const first=member.displacements[0],last=member.displacements.at(-1);
+      for(const [i,motion] of member.displacements.entries()){
+        const fraction=i/(member.displacements.length-1);
+        motion.forEach((value,j)=>assert(Math.abs(value-first[j]-fraction*(last[j]-first[j]))<1e-9,'Truss deformation is not linear between joints'));
+      }
+    }
+    await page.screenshot({path:path.join(output,'desktop-truss-tripod.png')});
+    await page.evaluate(({payload,colors})=>window.pyniteViewer.update({...payload,colors}),{payload:truss,colors:dark.colors});
+    await page.waitForTimeout(100);
+    await page.screenshot({path:path.join(output,'desktop-truss-tripod-dark.png')});
     assert.deepEqual(errors,[]);
     await page.evaluate(()=>{
       window.bridgeFailures=[];

@@ -20,7 +20,8 @@ def choices(values, selected, name=None):
 def load_fields(form, project, load):
     from .app import number, unit_number, unit_value
     fields = {}
-    fields["target"] = choices(list(project.members) if load.kind == "distributed" else [*project.nodes, *project.members], load.target, "spatial_load_target")
+    frame_members = [name for name, member in project.members.items() if member.kind == "frame"]
+    fields["target"] = choices(frame_members if load.kind == "distributed" else [*project.nodes, *frame_members], load.target, "spatial_load_target")
     fields["case"] = choices(project.load_cases, load.case, "spatial_load_case")
     fields["direction"] = QComboBox()
     fields["direction"].setObjectName("spatial_load_direction")
@@ -157,6 +158,8 @@ def populate_inspector(window):
             fields[key].setObjectName(key)
             form.addRow(f"Spring {dof} ({getattr(project.units, quantity)})", fields[key])
     elif kind == "members":
+        fields["kind"] = choices(("frame", "truss"), entity.kind, "spatial_member_kind")
+        form.addRow("Type", fields["kind"])
         for key, label, values in (("start", "Start", project.nodes), ("end", "End", project.nodes),
                                   ("material", "Material", project.materials), ("section", "Section", project.sections)):
             fields[key] = choices(values, getattr(entity, key), "spatial_" + key)

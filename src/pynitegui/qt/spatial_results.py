@@ -47,9 +47,19 @@ def member_axes(project, name, result=None):
 
 def member_values(result, name, distance):
     member, combo = result.solver.members[name], result.combination
+    if getattr(member, "_pynitegui_truss", False):
+        local = truss_motion(result, name, distance)
+        return (member.axial(distance, combo), 0., 0., 0., 0., 0., local[1], local[2])
     return (member.axial(distance, combo), member.shear("Fy", distance, combo), member.shear("Fz", distance, combo),
             member.torque(distance, combo), member.moment("My", distance, combo), member.moment("Mz", distance, combo),
             member.deflection("dy", distance, combo), member.deflection("dz", distance, combo))
+
+
+def truss_motion(result, name, distance):
+    member = result.solver.members[name]
+    a, b = (np.array(result.displacements[node.name][:3]) for node in (member.i_node, member.j_node))
+    # Linear axial elements carry joint translations, not a bending curve.
+    return (a + distance / member.L() * (b - a)) @ member.T()[:3, :3].T
 
 
 def member_breaks(project, name):
@@ -86,6 +96,11 @@ def inspect_member(project, result, name, distance, side="right"):
 
 def member_extrema(result, name, prefix):
     member, combo = result.solver.members[name], result.combination
+    if getattr(member, "_pynitegui_truss", False):
+        ends = [truss_motion(result, name, x) for x in (0., member.L())]
+        bound = min if prefix == "min" else max
+        return (getattr(member, prefix + "_axial")(combo), 0., 0., 0., 0., 0.,
+                *(bound(end[index] for end in ends) for index in (1, 2)))
     return (getattr(member, prefix + "_axial")(combo),
             *(getattr(member, prefix + "_shear")(axis, combo) for axis in ("Fy", "Fz")),
             getattr(member, prefix + "_torque")(combo),
@@ -108,7 +123,8 @@ def sampled_member(project, result, name):
         queries.extend(q)
     values = np.array([member_values(result, name, x) for x in queries])
     solver = result.solver.members[name]
-    local = np.array([[solver.deflection(axis, x, result.combination) for axis in ("dx", "dy", "dz")] for x in queries])
+    local = (np.array([truss_motion(result, name, x) for x in queries]) if project.members[name].kind == "truss" else
+             np.array([[solver.deflection(axis, x, result.combination) for axis in ("dx", "dy", "dz")] for x in queries]))
     return np.array(points), values, local @ solver.T()[:3, :3]
 
 
@@ -118,7 +134,7 @@ def result_table(project, result, kind):
         headers = ["Node", *(f"{dof} ({units.length if i < 3 else 'rad'})" for i, dof in enumerate(DOFS)),
                    *(f"{force} ({units.force if i < 3 else units.moment})" for i, force in enumerate(FORCES))]
         quantities = ("length",) * 3 + ("rotation",) * 3 + ("force",) * 3 + ("moment",) * 3
-        return headers, [[name, *(units.to_display(value, quantity) for value, quantity in
+        return headers, [[name, *("n/a" if value is None else units.to_display(value, quantity) for value, quantity in
                                  zip((*displacement, *result.reactions[name]), quantities))] for name, displacement in result.displacements.items()]
     if kind != "members":
         raise ValueError("Unknown spatial export type.")
@@ -147,8 +163,8 @@ def definition_tables(project):
                ", ".join(dof for dof, fixed in zip(DOFS, node.restraints) if fixed) or "None",
                "; ".join(f"{dof}: {units.to_display(k, 'stiffness' if i < 3 else 'rotational_stiffness'):.6g} {units.stiffness if i < 3 else units.rotational_stiffness}"
                          for i, (dof, k) in enumerate(zip(DOFS, node.springs)) if k) or "None"] for node in project.nodes.values()])
-    members = (["Member", "Start", "End", "Material", "Section", "Roll (deg)"],
-               [[member.name, member.start, member.end, member.material, member.section, member.roll] for member in project.members.values()])
+    members = (["Member", "Start", "End", "Material", "Section", "Roll (deg)", "Type"],
+               [[member.name, member.start, member.end, member.material, member.section, member.roll, member.kind] for member in project.members.values()])
     def loads(definitions):
         rows = []
         for load in definitions:

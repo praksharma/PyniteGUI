@@ -1,6 +1,6 @@
 # PyniteGUI Roadmap
 
-Current scope: a 2D frame/truss and linear 3D spatial-frame editor with SI/imperial input and display, per-member materials and
+Current scope: a 2D/3D frame and bilateral axial-only truss editor with SI/imperial input and display, per-member materials and
 sections, custom global support restraints, global/member-local angled forces, distributed loads,
 and named load cases/combinations. This list tracks remaining work;
 items are not promises of a particular release date.
@@ -19,7 +19,7 @@ the exact missing part. Summary: **7 done, 2 partial, 9 pending**.
 
 | Engine capability | GUI status | Coverage or remaining task |
 | --- | --- | --- |
-| Elastic 3D statics | Done | Linear spatial-frame analysis, six DOFs, rolled members, materials/sections and validated results. |
+| Elastic 3D statics | Done | Linear spatial-frame and axial-only truss analysis, six DOFs, rolled frame members, materials/sections and validated results. |
 | Frame P-Delta | Pending | Add a separate analysis method, convergence feedback, method-labelled snapshots and second-order benchmarks. |
 | Frame modal analysis | Pending | Add an explicit mass source, gravity/unit conversion, frequencies, mode shapes and a separate modal result workflow. |
 | Steel-frame pushover | Pending | Add yield/plastic section data, push/control settings, load steps, convergence and capacity-curve results; benchmark supported steel assumptions. |
@@ -27,7 +27,7 @@ the exact missing part. Summary: **7 done, 2 partial, 9 pending**.
 | Cases and factored combinations | Done | Named cases, combination editing, selected-combination results and visible factored loads in 2D/3D. |
 | Member shear, moment and deflection output | Done | Member detail curves in 2D/3D; spatial biaxial shear/bending, torsion and deformation; whole-frame force/moment overlays. |
 | Physical-member internal joints | Partial | Explicit load-preserving split/connect workflows exist in 2D/3D. Automatic solver-only internal-node handling is not exposed; connections require explicit segments and shared endpoints. |
-| Unilateral member behaviour | Pending | Add tension-only/compression-only flags, iterative active-set analysis and activation/mechanism benchmarks; ordinary 2D trusses are not unilateral members. |
+| Unilateral member behaviour | Pending | Add tension-only/compression-only flags, iterative active-set analysis and activation/mechanism benchmarks; ordinary 2D/3D trusses are not unilateral members. |
 | Node-to-node spring elements | Pending | Add separate spring entities, axial stiffness units and bilateral/tension-only/compression-only behaviour; support springs are not spring elements. |
 | Bilateral/unilateral support springs | Partial | Bilateral global DX/DY/RZ springs in 2D and all six DOFs in 3D are implemented. One-way support springs and iterative activation remain pending. |
 | DKMQ quadrilaterals | Pending | Add shell geometry/thickness/material input, surface loads, connectivity checks and plate-result visualization with independent benchmarks. |
@@ -211,7 +211,11 @@ below and the secondary interface wishlist retain their more specific scope.
   all six global node motions/reactions, eight local member components, exact
   solver extrema, governing combinations, sampled curves, snapshot-aware CSV
   and printable numerical envelope summaries.
-- [ ] 3D member end releases and axial-only trusses, with mechanism benchmarks.
+- [x] 3D bilateral axial-only trusses, joint-load validation, lumped self-weight,
+  inactive rotation reporting, mixed frame/truss joints, analytical/mechanism
+  benchmarks, type editing, numerical exports and a spatial tripod example.
+- [ ] General 3D frame member end releases, with oblique-axis joint-rotation
+  handling, released-end motion recovery and independent mechanism benchmarks.
 - [x] 3D contained/crossing box selection, additive selection and cancellation;
   atomic bulk material/section/roll, six-DOF restraint/spring and load assignments.
 - [ ] 3D node dragging with explicit work-plane constraints, snapping and undo.

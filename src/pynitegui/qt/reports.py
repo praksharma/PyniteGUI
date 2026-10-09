@@ -305,7 +305,7 @@ def report_html(project, result, source="Untitled", options=None, *, image_urls=
     if options.nodes:
         page = ' style="page-break-before: always"' if options.model else ""
         sections.append(f"<h2{page}>Node Displacements and Support Reactions</h2>" +
-                        ("<p>All six displacements and reactions use global axes; rotations are radians.</p>" if spatial else "<p>RZ is n/a where released member ends have no shared nodal rotation.</p>") + table("nodes"))
+                        ("<p>All six displacements and reactions use global axes; rotations are radians. Unrestrained, unsprung rotations at truss-only joints are n/a, not measured zero rotations.</p>" if spatial else "<p>RZ is n/a where released member ends have no shared nodal rotation.</p>") + table("nodes"))
     if options.members:
         page = ' style="page-break-before: always"' if options.model or options.nodes else ""
         sections.append(f"<h2{page}>Member End Values and Extrema</h2>" +

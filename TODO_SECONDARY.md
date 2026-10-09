@@ -14,7 +14,7 @@ inspection are not new tasks just because Stabileo also has them.
 
 Checked against the installed **PyniteFEA 3.0.0** source, not only the latest
 online documentation. Our application now exposes linear static 2D frames/trusses
-and 3D spatial frames; solver capability does not mean a feature is already usable
+and 3D spatial frames/axial-only trusses; solver capability does not mean a feature is already usable
 here. See the primary [capability audit](TODO.md#pynite-capability-coverage) for
 current engine-feature coverage, partial support and future solver milestones.
 

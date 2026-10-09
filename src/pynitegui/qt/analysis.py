@@ -121,7 +121,7 @@ class AnalysisResult:
     displacements: dict
     reactions: dict
     combination: str = "Service"
-    inactive_rotations: frozenset[str] = field(default_factory=frozenset)
+    inactive_rotations: frozenset[str | tuple[str, str]] = field(default_factory=frozenset)
     snapshot_id: str = field(default_factory=lambda: uuid.uuid4().hex[:12])
     analyzed_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds"))
     model_signature: str = ""
@@ -133,9 +133,12 @@ class AnalysisResult:
             raise ValueError(f"Unknown result combination: {combination}")
         if spatial:
             return cls(model,
-                       {name: tuple(getattr(node, key)[combination] for key in ("DX", "DY", "DZ", "RX", "RY", "RZ")) for name, node in model.nodes.items()},
-                       {name: tuple(getattr(node, key)[combination] for key in ("RxnFX", "RxnFY", "RxnFZ", "RxnMX", "RxnMY", "RxnMZ")) for name, node in model.nodes.items()},
-                       combination, spatial=True)
+                       {name: tuple(None if (name, key) in inactive_rotations else getattr(node, key)[combination]
+                                    for key in ("DX", "DY", "DZ", "RX", "RY", "RZ")) for name, node in model.nodes.items()},
+                       {name: tuple(0. if key.startswith("RxnM") and (name, "R" + key[-1]) in inactive_rotations
+                                    else getattr(node, key)[combination]
+                                    for key in ("RxnFX", "RxnFY", "RxnFZ", "RxnMX", "RxnMY", "RxnMZ")) for name, node in model.nodes.items()},
+                       combination, inactive_rotations, spatial=True)
         return cls(
             model,
             {name: (node.DX[combination], node.DY[combination], None if name in inactive_rotations else node.RZ[combination]) for name, node in model.nodes.items()},

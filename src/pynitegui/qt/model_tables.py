@@ -34,7 +34,7 @@ class ModelTablesDialog(QDialog):
         if self.spatial:
             from .spatial_model import SpatialNode, SpatialMember, SpatialLoad, RESTRAINT_FIELDS, SPRING_FIELDS
             self.fields = {"nodes": ("name", "x", "y", "z", "support", *RESTRAINT_FIELDS, *SPRING_FIELDS),
-                           "members": ("name", "start", "end", "material", "section", "roll"),
+                           "members": ("name", "start", "end", "material", "section", "roll", "kind"),
                            "loads": (*FIELDS["loads"][:-1], "elevation", "units")}
             self.boolean_fields = set(RESTRAINT_FIELDS)
             self.numeric_fields = NUMERIC_FIELDS | {"z", "roll", "elevation", *SPRING_FIELDS}
@@ -62,7 +62,7 @@ class ModelTablesDialog(QDialog):
             headers["nodes"] = ["ID", *(f"{axis} ({project.units.length})" for axis in ("X", "Y", "Z")), "Support",
                                 *("Restrain " + dof for dof in DOFS),
                                 *(f"Spring {dof} ({project.units.stiffness if index < 3 else project.units.rotational_stiffness})" for index, dof in enumerate(DOFS))]
-            headers["members"] = ["ID", "Start", "End", "Material", "Section", "Roll (deg)"]
+            headers["members"] = ["ID", "Start", "End", "Material", "Section", "Roll (deg)", "Type"]
             headers["loads"] = [*headers["loads"][:-2], "Azimuth (deg)", "Elevation (deg)", "Magnitude units"]
         for kind, fields in self.fields.items():
             panel = QWidget()
