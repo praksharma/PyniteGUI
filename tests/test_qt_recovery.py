@@ -104,7 +104,7 @@ class RecoveryEditorTests(unittest.TestCase):
         self.assertTrue(self.window.recovery.path.exists())
         self.assertTrue(self.window.save_project())
         self.assertFalse(self.window.recovery.path.exists())
-        self.assertEqual(self.settings.value("recent_projects", [], type=list), [str(filename)])
+        self.assertEqual(self.settings.value("recent_projects", [], type=list), [str(filename.resolve())])
         self.window.record_recent(filename)
         self.assertEqual(len(self.window.recent_menu.actions()), 1)
 
