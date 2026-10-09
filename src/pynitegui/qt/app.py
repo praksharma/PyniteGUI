@@ -691,9 +691,8 @@ class MainWindow(QMainWindow):
             toolbar.setMovable(False)
             toolbar.setIconSize(QSize(20, 20))
             toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
-            label = QLabel(title)
-            label.setMargin(2)
-            toolbar.addWidget(label)
+            if title != "File":
+                toolbar.addSeparator()
             return toolbar
         group("File").addActions([self.new_action, self.open_action, self.save_action])
         toolbar = group("View")

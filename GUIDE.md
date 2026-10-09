@@ -28,8 +28,8 @@ also use uv-managed Python instead of discovering a Conda or system interpreter.
 
 The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
 
-The compact toolbar groups **File**, **View**, **Edit**, **Loads**, **Analysis**
-and **Results**. Hover an icon for its command and shortcut. Select/Member/Pan
+The compact toolbar uses icon-only file, view, edit, load, analysis and result
+groups separated by vertical dividers. Hover an icon for its command and shortcut. Select/Member/Pan
 show the active mode; the properties menu opens model tables, materials,
 sections, cases/combinations and self-weight. Diagrams and deformation stay
 disabled until a valid snapshot exists. The same commands remain accessible

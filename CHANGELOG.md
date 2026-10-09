@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Main toolbar groups use icons with tooltips and vertical separators, without
+  repeated File/View/Edit/Loads/Analysis/Results labels; the menu bar is unchanged.
 - PyNite surface-mesh catalog: Rectangle, Annulus, Annular Ring, Annular Transition
   Ring, Cylinder, Cylinder Ring and Conical Frustum. Exposes applicable families,
   controls/openings, placement, counts, material/modifiers and numbering; provides

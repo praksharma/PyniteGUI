@@ -10,7 +10,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 os.environ.setdefault("PYNITEGUI_NO_WEBENGINE", "1")
 from PySide6.QtCore import Qt
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication, QDoubleSpinBox, QLineEdit, QToolBar, QToolButton
+from PySide6.QtWidgets import QApplication, QDoubleSpinBox, QLabel, QLineEdit, QToolBar, QToolButton
 from pynitegui.qt.analysis import analyze
 from pynitegui.qt.analysis_jobs import analysis_child
 from pynitegui.qt.app import MainWindow
@@ -179,6 +179,8 @@ class LiveAnalysisTests(unittest.TestCase):
         self.assertTrue({"File", "View", "Edit", "Loads", "Analysis", "Results"} <= set(groups))
         for key in ("File", "View", "Edit", "Loads", "Analysis", "Results"):
             self.assertEqual(groups[key].toolButtonStyle(), Qt.ToolButtonStyle.ToolButtonIconOnly)
+            self.assertEqual(groups[key].actions()[0].isSeparator(), key != "File")
+            self.assertFalse(groups[key].findChildren(QLabel))
             for action in groups[key].actions():
                 button = groups[key].widgetForAction(action)
                 if isinstance(button, QToolButton):

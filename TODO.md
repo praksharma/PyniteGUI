@@ -152,7 +152,8 @@ below and the secondary interface wishlist retain their more specific scope.
 ## Results and Presentation
 
 - [x] Group compact desktop toolbar controls for file/view/edit/load/analysis/
-  results, with theme-aware icons, tooltips, active modes and solved-result gating.
+  results, with theme-aware icons, tooltips, vertical separators instead of group
+  labels, active modes and solved-result gating.
 - [x] Add auto, true-scale, and custom deformed-shape amplification with actual
   maximum sampled displacement shown in the selected project units.
 - [x] Add axial-force diagrams for the whole structure and Member Detail.

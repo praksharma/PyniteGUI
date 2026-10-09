@@ -65,6 +65,7 @@ def configure_theme(application, name="light"):
     application.setStyleSheet(f"""
         QMainWindow {{ background: {c['window']}; }}
         QToolBar {{ spacing: 4px; padding: 5px; background: {c['window']}; color: {c['text']}; border-bottom: 1px solid {c['border']}; }}
+        QToolBar::separator {{ background: {c['border']}; width: 1px; margin: 5px 2px; }}
         QToolButton {{ padding: 4px; border: 1px solid transparent; border-radius: 3px; }}
         QToolButton:hover {{ background: {c['hover']}; }}
         QToolButton:checked {{ background: {c['selection']}; border-color: {c['checked_border']}; }}
