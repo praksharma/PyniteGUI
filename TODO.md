@@ -135,6 +135,10 @@ below and the secondary interface wishlist retain their more specific scope.
   results dock: two-way geometry/tree selection, lazy member extrema, unit and
   combination refresh, multi-selection and Member Detail activation in 2D/3D.
 - [x] Add explicit result snapshot identification in open diagram windows.
+- [x] Show global equilibrium totals, residuals and tolerances for planar/spatial
+  combinations, including manual and generated self-weight loads; label analysis
+  lifecycle states and retained snapshots explicitly in the results dock.
+- [ ] Link analysis failure diagnostics to affected geometry where identifiable.
 - [x] Export reactions, forces, and displacements as CSV and a printable report.
 - [x] Extend printable reports with model definitions and selected diagrams.
   Select definitions/result tables/axial/SFD/BMD diagrams; retain snapshot identity,

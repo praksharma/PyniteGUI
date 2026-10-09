@@ -675,6 +675,21 @@ and snapshot. Unit and combination changes refresh the tables while preserving
 entity selection. Engineering edits clear all active result tables until another
 analysis; retained diagram windows continue to identify their own snapshots.
 
+The **Equilibrium** tab compares global applied loads and support reactions for
+the selected combination, including generated self-weight and partial distributed
+loads. Planar models show FX, FY and MZ; spatial models show all six components.
+Moments are taken about the first project node, whose coordinates are displayed.
+Residuals and tolerances use the selected units. Each tolerance is `1e-7` times
+the sum of absolute component contributions, plus an absolute floor of `1e-8`
+kip for forces or `1e-6` kip-in for moments. Balance alone does not verify
+structural design or modelling assumptions.
+
+The dock labels analysis as analyzing, cancelling, cancelled, failed, current or
+outdated. If a previous snapshot is retained during a new attempt, its identity
+and combination remain explicit. Engineering edits clear its tables. A failed
+attempt leaves the previous valid snapshot available, with failure details in
+the status tooltip.
+
 ## Units
 
 Use **Edit > Units** to choose length (mm, cm, m, in, ft) and force
@@ -938,7 +953,9 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/analysis_jobs.py`: isolated solver processes, phase messages,
   thread-safe cancellation, and cleanup before publishing results.
 - `src/pynitegui/qt/results_panel.py`: native sortable result tabs, entity links,
-  lazy member tables and snapshot identity.
+  lazy member tables, equilibrium display and analysis/snapshot status.
+- `src/pynitegui/qt/equilibrium.py`: independent global load resultants and
+  reaction balance with explicit force/moment tolerances.
 - `src/pynitegui/qt/app.py`: Qt graphics editor, inspector, undo commands,
   background analysis, and a consistent light application theme.
 - `src/pynitegui/qt/diagrams.py`: whole-frame axial/SFD/BMD views, member detail plots,

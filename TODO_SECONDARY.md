@@ -142,13 +142,12 @@ an audit of Stabileo's engineering calculations. PRO is labelled beta.
   results, include interior extrema and discontinuities rather than only ends,
   and export the filtered query with snapshot/combination metadata. Extend the
   linked tables and envelope tasks above instead of duplicating them.
-- [ ] **Visible equilibrium and analysis status (UI).** Present planar sums of
-  applied forces/moments and reactions, residuals, tolerances, and units beside
-  results. Include manual loads and generated self-weight, combination factors,
-  and distributed-load resultants. Show pending/current/stale/failed state and
-  offer navigation to affected geometry. An equilibrium pass is not a design
-  approval or proof that the modelling assumptions are correct. Extend the
-  free-body inspector below.
+- [x] **Visible equilibrium and analysis status (UI).** Promoted and completed in
+  the primary roadmap: planar/spatial global totals, residuals, tolerances and
+  units, including combination factors, manual/self-weight loads and distributed
+  resultants. Analysis lifecycle states identify retained snapshots explicitly.
+  Balance is not design approval. Navigation from failure diagnostics to affected
+  geometry remains a separate primary TODO; extend the free-body inspector below.
 - [ ] **Plain storey displacement/drift table (UI).** For explicitly paired
   nodes at successive levels, calculate horizontal displacement difference and
   drift ratio from PyNite nodal results. Report pairs, height, combination, and

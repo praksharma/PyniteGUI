@@ -926,7 +926,7 @@ class MainWindow(QMainWindow):
                 item.setToolTip(1, f"{load.name}: generated from material weight density and section area; configure via Edit > Self-Weight.")
             parent.setExpanded(True)
         self.tree.blockSignals(False)
-        self.results_panel.sync_selection(self.selections)
+        self.results_panel.sync_selection(self.selections, reveal=False)
         self.update_inspector()
         self.view.redraw()
         self.update_title()
@@ -1509,6 +1509,7 @@ class MainWindow(QMainWindow):
         self.analyze_action.setEnabled(False)
         self.cancel_analysis_action.setEnabled(True)
         self.analysis_phase.setText("Starting analysis")
+        self.results_panel.set_analysis_state("Analyzing", "Starting analysis")
         for widget in (self.analysis_phase, self.analysis_progress, self.analysis_cancel_button):
             widget.show()
         self.statusBar().showMessage("Analyzing | Previous results retained" if self.result is not None else "Analyzing...")
@@ -1527,6 +1528,7 @@ class MainWindow(QMainWindow):
         if self.thread is not None and not self.analysis_cancel_requested:
             self.analysis_phase.setText(phase)
             self.analysis_phase.setToolTip(phase)
+            self.results_panel.set_analysis_state("Analyzing", phase)
 
     def cancel_analysis(self):
         if self.thread is None or self.worker is None:
@@ -1535,6 +1537,7 @@ class MainWindow(QMainWindow):
         self.worker.cancel()
         self.cancel_analysis_action.setEnabled(False)
         self.analysis_phase.setText("Cancelling analysis")
+        self.results_panel.set_analysis_state("Cancelling")
         self.statusBar().showMessage("Cancelling analysis...")
 
     def analysis_stopped(self):
@@ -1551,16 +1554,20 @@ class MainWindow(QMainWindow):
 
     def analysis_finished(self, result, error):
         if self.analysis_cancel_requested or error == CANCELLED:
+            self.results_panel.set_analysis_state("Cancelled")
             self.statusBar().showMessage("Analysis cancelled | Previous results retained" if self.result is not None else "Analysis cancelled")
             return
         if self.analysis_revision != self.revision:
+            self.results_panel.set_analysis_state("Outdated", "Model changed during analysis; run analysis again.")
             self.statusBar().showMessage("Model changed during analysis. Run analysis again.")
             return
         if error:
+            self.results_panel.set_analysis_state("Failed", error)
             self.statusBar().showMessage("Analysis failed | Previous results retained" if self.result is not None else "Analysis failed")
             QMessageBox.warning(self, "Analysis", error)
             return
         self.result = result
+        self.results_panel.set_analysis_state("Current")
         self.export_menu.setEnabled(True)
         self.result_combination.blockSignals(True)
         self.result_combination.clear()
@@ -1586,7 +1593,10 @@ class MainWindow(QMainWindow):
         self.results_panel.update_results(self.project, result)
         self.results_dock.setWindowTitle(f"Results - {result.combination}")
         self.view.redraw()
-        self.statusBar().showMessage(f"Analysis complete | {result.combination} | {self.project.units.summary}")
+        if self.results_panel.analysis_state == "Current":
+            self.statusBar().showMessage(f"Analysis complete | {result.combination} | {self.project.units.summary}")
+        else:
+            self.statusBar().showMessage(f"{self.results_panel.analysis_state} | Showing previous {result.combination} results | {self.project.units.summary}")
 
     def open_result_member(self, name):
         self.select(("members", name))

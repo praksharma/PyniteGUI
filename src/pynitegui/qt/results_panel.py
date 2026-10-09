@@ -36,6 +36,9 @@ class ResultsPanel(QWidget):
         self.syncing = False
         self.source_table = None
         self.members_loaded = False
+        self.analysis_state = "Not analyzed"
+        self.state_detail = ""
+        self.equilibrium = None
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         self.snapshot = QLabel("Run analysis to show results.")
@@ -61,6 +64,20 @@ class ResultsPanel(QWidget):
             self.tabs.addTab(table, title)
         self.tables["members"].itemDoubleClicked.connect(self.activate_member)
         self.tables["members"].setToolTip("Select rows to highlight members. Double-click for Member Detail. Minimum/Maximum columns are independent extrema, not one common station.")
+        equilibrium_page = QWidget()
+        equilibrium_layout = QVBoxLayout(equilibrium_page)
+        equilibrium_layout.setContentsMargins(0, 0, 0, 0)
+        self.equilibrium_summary = QLabel("Run analysis to check global equilibrium.")
+        self.equilibrium_summary.setWordWrap(True)
+        self.equilibrium_summary.setTextFormat(Qt.TextFormat.PlainText)
+        equilibrium_layout.addWidget(self.equilibrium_summary)
+        self.equilibrium_table = QTableWidget()
+        self.equilibrium_table.setObjectName("result_equilibrium")
+        self.equilibrium_table.setItemDelegate(ResultDelegate(self.equilibrium_table))
+        self.equilibrium_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.equilibrium_table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+        equilibrium_layout.addWidget(self.equilibrium_table)
+        self.tabs.addTab(equilibrium_page, "Equilibrium")
         self.tabs.currentChanged.connect(self.tab_changed)
         self.tabs.setEnabled(False)
         layout.addWidget(self.tabs)
@@ -85,6 +102,7 @@ class ResultsPanel(QWidget):
 
     def clear(self, project):
         self.project, self.result = project, None
+        self.equilibrium = None
         self.selections = []
         self.members_loaded = False
         for table in self.tables.values():
@@ -92,12 +110,16 @@ class ResultsPanel(QWidget):
             table.setRowCount(0)
             table.blockSignals(False)
         self.set_headers(project)
-        self.snapshot.setText("Model changed | Run analysis to show current results.")
+        self.equilibrium_table.setRowCount(0)
+        self.equilibrium_summary.setText("Run analysis to check global equilibrium.")
+        self.set_analysis_state("Outdated", "Model changed; run analysis to show current results.")
         self.tabs.setEnabled(False)
 
     def update_results(self, project, result):
         from .reports import result_table
         headers, rows = result_table(project, result, "nodes")
+        if self.result is None or self.result.snapshot_id != result.snapshot_id:
+            self.analysis_state, self.state_detail = "Current", ""
         self.project, self.result = project, result
         self.members_loaded = False
         self.set_headers(project)
@@ -110,15 +132,20 @@ class ResultsPanel(QWidget):
         table.setRowCount(0)
         table.blockSignals(False)
         self.tabs.setEnabled(True)
-        self.snapshot.setText(f"Current | Analysis {result.snapshot_id} | {result.combination} | {project.units.summary}")
-        self.snapshot.setToolTip(f"Analyzed (UTC): {result.analyzed_at}\nModel signature: {result.model_signature}")
+        self.set_analysis_state(self.analysis_state, self.state_detail)
+        self.update_equilibrium()
         if self.tabs.currentWidget() is table:
             self.load_members()
-        self.sync_selection(self.selections)
+        self.sync_selection(self.selections, reveal=False)
 
     def fill(self, key, headers, rows, kind):
         table = self.tables[key]
+        self.populate(table, headers, rows, kind)
+
+    @staticmethod
+    def populate(table, headers, rows, kind=None):
         table.blockSignals(True)
+        sorting = table.isSortingEnabled()
         table.setSortingEnabled(False)
         table.clearContents()
         table.setColumnCount(len(headers))
@@ -127,10 +154,10 @@ class ResultsPanel(QWidget):
         for row, values in enumerate(rows):
             for column, value in enumerate(values):
                 item = ResultItem(value)
-                if column == 0:
+                if column == 0 and kind is not None:
                     item.setData(IDENTITY_ROLE, (kind, values[0]))
                 table.setItem(row, column, item)
-        table.setSortingEnabled(True)
+        table.setSortingEnabled(sorting)
         table.resizeColumnsToContents()
         table.blockSignals(False)
 
@@ -156,7 +183,7 @@ class ResultsPanel(QWidget):
         finally:
             self.source_table = None
 
-    def sync_selection(self, selections):
+    def sync_selection(self, selections, reveal=True):
         self.selections = list(selections)
         if self.result is None or self.syncing:
             return
@@ -164,10 +191,11 @@ class ResultsPanel(QWidget):
         try:
             selected = set(tuple(selection) for selection in selections)
             kinds = {kind for kind, _ in selected}
-            if kinds == {"members"}:
+            if reveal and kinds == {"members"}:
                 self.tabs.setCurrentWidget(self.tables["members"])
                 self.load_members()
-            elif kinds == {"nodes"} and self.tabs.currentWidget() is self.tables["members"]:
+            elif reveal and kinds == {"nodes"} and self.tabs.currentWidget() not in (
+                    self.tables["nodes"], self.tables["displacements"], self.tables["reactions"]):
                 self.tabs.setCurrentWidget(self.tables["nodes"])
             for table in self.tables.values():
                 if table is self.source_table:
@@ -195,9 +223,40 @@ class ResultsPanel(QWidget):
     def tab_changed(self, _):
         if self.tabs.currentWidget() is self.tables["members"]:
             self.load_members()
-        self.sync_selection(self.selections)
+        self.sync_selection(self.selections, reveal=False)
 
     def activate_member(self, item):
         identity = self.tables["members"].item(item.row(), 0).data(IDENTITY_ROLE)
         if self.result is not None and identity:
             self.member_activated.emit(identity[1])
+
+    def set_analysis_state(self, state, detail=""):
+        self.analysis_state, self.state_detail = state, detail
+        if self.result is None:
+            self.snapshot.setText(state + (" | " + detail if detail else " | No result snapshot"))
+            self.snapshot.setToolTip(detail)
+            return
+        result = self.result
+        qualifier = "Analysis" if state == "Current" else "Showing previous analysis"
+        self.snapshot.setText(f"{state} | {qualifier} {result.snapshot_id} | {result.combination} | {self.project.units.summary}")
+        self.snapshot.setToolTip(f"{detail}\nAnalyzed (UTC): {result.analyzed_at}\nModel signature: {result.model_signature}".strip())
+
+    def update_equilibrium(self):
+        from .equilibrium import check_equilibrium, RELATIVE_TOLERANCE, FORCE_TOLERANCE, MOMENT_TOLERANCE
+        check = self.equilibrium = check_equilibrium(self.project, self.result)
+        units = self.project.units
+        origin = ", ".join(f"{units.to_display(value, 'length'):.6g}" for value in
+                           (check.origin if self.result.spatial else check.origin[:2]))
+        outcome = "Within numerical tolerance" if check.passed else "Outside numerical tolerance"
+        self.equilibrium_summary.setText(
+            f"{outcome} | Global components; moments about {check.origin_node} ({origin}) {units.length}.\n"
+            "Includes factored manual loads, self-weight and all support reactions. Balance alone does not verify structural design.")
+        self.equilibrium_summary.setToolTip(
+            f"Tolerance = absolute floor + {RELATIVE_TOLERANCE:g} × sum of absolute load/reaction contributions.\n"
+            f"Canonical absolute floors: {FORCE_TOLERANCE:g} kip; {MOMENT_TOLERANCE:g} kip-in.\n"
+            "Distributed loads are integrated over their actual loaded spans, including sign-changing distributions.")
+        rows = [[f"{row.component} ({getattr(units, row.quantity)})",
+                 *(units.to_display(value, row.quantity) for value in
+                   (row.applied, row.reaction, row.residual, row.tolerance)),
+                 "Within" if row.passed else "Outside"] for row in check.rows]
+        self.populate(self.equilibrium_table, ["Component", "Applied", "Reactions", "Residual", "Tolerance", "Check"], rows)
