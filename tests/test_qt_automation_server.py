@@ -135,7 +135,7 @@ class ServerWireTests(ServerWindowTests):
     def test_official_client_discovers_reads_model_units_and_snapshot_results(self):
         async def callback(client):
             listed = await client.list_tools()
-            self.assertEqual({tool.name for tool in listed.tools}, {"read_model","read_units","read_results"})
+            self.assertEqual({tool.name for tool in listed.tools}, {"read_model","read_schema","read_units","read_results"})
             response = await client.call_tool("read_model", {})
             self.assertFalse(response.is_error, response)
             model = response.structured_content["data"]
@@ -205,6 +205,27 @@ class ServerWireTests(ServerWindowTests):
             async with httpx2.AsyncClient(trust_env=False) as client:
                 return (await client.post(endpoint, headers={"Authorization":"Bearer "+token}, json={})).status_code
         self.assertEqual(self.run_async(old_token), 401)
+
+    def test_wire_schema_and_reference_resource_document_empty_models(self):
+        from pynitegui.qt.model import Project
+        self.window.load_project(Project())
+        async def callback(client):
+            model = (await client.call_tool("read_model", {})).structured_content["data"]
+            self.assertEqual(model["model"]["nodes"], {})
+            self.assertIn("support", model["schema"]["entities"]["nodes"]["properties"])
+            reference = (await client.call_tool("read_schema", {"session_id": model["session_id"]})).structured_content["data"]
+            self.assertEqual(reference["schema"]["dimension"], "2D")
+            self.assertEqual(reference["examples"]["create_cantilever"][0]["value"]["support"], "fixed")
+            resources = await client.list_resources()
+            self.assertIn("pynitegui://automation/reference", {str(resource.uri) for resource in resources.resources})
+            import json
+            resource = await client.read_resource("pynitegui://automation/reference")
+            docs = json.loads(resource.contents[0].text)
+            self.assertIn("restraint_z", docs["3D"]["entities"]["nodes"]["properties"])
+            self.server.permissions.set_tool("read_schema", False)
+            denied = await client.call_tool("read_schema", {"session_id": model["session_id"]})
+            self.assertTrue(denied.is_error)
+        self.with_client(callback)
 
     def test_wire_successful_analysis_and_paginated_snapshot_results(self):
         self.server.permissions.set_group("Analysis", True)

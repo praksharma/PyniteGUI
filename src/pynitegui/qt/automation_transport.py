@@ -10,6 +10,7 @@ from mcp.server.transport_security import TransportSecuritySettings
 from mcp_types import CallToolResult, TextContent, ToolAnnotations
 from pydantic import StrictInt
 from .automation_core import TOOLS
+from .automation_schema import model_reference
 
 
 def build_application(bridge, permissions, token, port, network_event):
@@ -37,6 +38,8 @@ def build_application(bridge, permissions, token, port, network_event):
     server = PermissionServer("PyniteGUI", version="0.1.0", log_level="CRITICAL",
         instructions="Controls the attached desktop project window. Read model first for session_id/revision. "
                      "Model input is canonical inch-kip; angles are degrees and load positions are fractions. "
+                     "Read read_model.schema or call read_schema before constructing edits; never guess fields. "
+                     "Supports are node fields: support=free/pin/roller/fixed/custom, and restraint_* flags for custom. "
                      "Edits require enabled desktop permissions and expected_revision. Files are opened/saved by the user.")
 
     async def call(name, arguments):
@@ -53,6 +56,15 @@ def build_application(bridge, permissions, token, port, network_event):
     async def read_model() -> dict[str, Any]:
         return await call("read_model", {})
 
+    @server.resource("pynitegui://automation/reference", mime_type="application/json",
+                     description="Exact 2D and 3D model fields, supports, units and batch operation reference.")
+    def automation_reference() -> str:
+        return json.dumps({dimension: model_reference(dimension) for dimension in ("2D", "3D")})
+
+    @server.tool(description=TOOLS["read_schema"][1], annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False))
+    async def read_schema(session_id: str) -> dict[str, Any]:
+        return await call("read_schema", {"session_id": session_id})
+
     @server.tool(description=TOOLS["read_units"][1], annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False))
     async def read_units(session_id: str) -> dict[str, Any]:
         return await call("read_units", {"session_id": session_id})
@@ -66,7 +78,13 @@ def build_application(bridge, permissions, token, port, network_event):
     @server.tool(description=TOOLS["apply_batch"][1] + " Canonical inch-kip inputs. Operations: "
                  "put/delete on nodes,members,loads,materials,sections,combinations; put/delete key on load_cases; "
                  "set value on settings. Each operation has op,collection,key,value. Entity put merges fields; "
-                 "deletion requires explicit dependent-reference updates in the same batch. All operations validate together.")
+                 "deletion requires explicit dependent-reference updates in the same batch. All operations validate together. "
+                 "REQUIRED WORKFLOW: read_model then inspect its schema or call read_schema; do not guess fields. "
+                 "Nodes: x,y (+z in 3D), support=free/pin/roller/fixed/custom; custom uses restraint_x/y/rz "
+                 "(+z/rx/ry in 3D) booleans. There is no supports object or fixX field. "
+                 "Members: start/end node IDs, material/section IDs, kind=frame/truss. "
+                 "Loads: target node/member ID, direction, magnitude, kind=point/distributed, case, position/end_position fractions. "
+                 "Distributed loads use magnitude and end_magnitude; equal for uniform. See read_schema for allowed directions and all fields.")
     async def apply_batch(session_id: str, expected_revision: StrictInt, operations: list[dict]) -> dict[str, Any]:
         return await call("apply_batch", dict(session_id=session_id, expected_revision=expected_revision, operations=operations))
 

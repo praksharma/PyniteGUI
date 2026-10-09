@@ -9,7 +9,8 @@ from .model import Load, Material, Member, Node, Project, Section
 
 
 TOOLS = {
-    "read_model": ("Model reads", "Read the current model and project/session revisions."),
+    "read_model": ("Model reads", "Read the current model, project/session revisions and exact entity schema, including empty collections. Read this before edits; do not guess node/support/load fields."),
+    "read_schema": ("Model reads", "Read the exact 2D/3D entity fields, types, defaults, support presets/custom restraints, units, validation rules and valid batch examples for the current project. Call before constructing edits, especially for an empty model."),
     "read_units": ("Model reads", "Read display units and canonical conversion factors."),
     "read_results": ("Result reads", "Read paginated snapshot-labelled node or member results."),
     "apply_batch": ("Model edits", "Apply a validated model batch as one undoable edit."),
@@ -130,8 +131,12 @@ class AutomationCommands:
     def execute(self, name, arguments, cancelled=lambda: False):
         window = self.window
         if name == "read_model":
-            return {**self.identity(), "model": window.project.to_dict(), "input_units": "Canonical inch-kip; positions are member fractions; angles are degrees."}
+            from .automation_schema import model_reference
+            return {**self.identity(), "model": window.project.to_dict(), "schema": model_reference(getattr(window.project, "dimension", "2D")), "input_units": "Canonical inch-kip; positions are member fractions; angles are degrees."}
         self.guard(arguments, revision=name in ("apply_batch", "run_analysis"))
+        if name == "read_schema":
+            from .automation_schema import model_reference, batch_examples
+            return {**self.identity(), "schema": model_reference(getattr(window.project, "dimension", "2D")), "examples": batch_examples(window.project)}
         if name == "read_units":
             return {**self.identity(), "units": asdict(window.project.units), "canonical": "in-kip"}
         if name == "apply_batch":

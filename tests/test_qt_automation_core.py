@@ -69,6 +69,26 @@ class AutomationCoreTests(unittest.TestCase):
         self.assertIsNone(self.window.result)
         self.assertEqual(self.window.results_panel.analysis_state, "Outdated")
 
+    def test_empty_model_reference_examples_validate_in_both_dimensions(self):
+        from dataclasses import fields
+        from pynitegui.qt.model import Project, Node
+        from pynitegui.qt.spatial_model import SpatialProject, SpatialNode
+        from pynitegui.qt.automation_core import batch_candidate
+        for project, node_type in ((Project(), Node), (SpatialProject(), SpatialNode)):
+            with self.subTest(dimension=getattr(project, "dimension", "2D")):
+                self.window.load_project(project)
+                docs = self.invoke("read_schema", session_id=self.window.project_session)
+                self.assertTrue(docs["ok"], docs)
+                schema = docs["data"]["schema"]
+                self.assertEqual(set(schema["entities"]["nodes"]["properties"]), {field.name for field in fields(node_type)})
+                example = batch_candidate(project, docs["data"]["examples"]["create_cantilever"])
+                self.assertTrue(all(example.nodes["ExampleA"].restraints))
+                self.assertEqual(example.members["ExampleBeam"].start, "ExampleA")
+                self.assertEqual(example.loads["ExampleForce"].target, "ExampleB")
+                self.assertFalse(self.window.project.nodes)
+                invalid = self.invoke("read_schema", session_id="old-project")
+                self.assertEqual(invalid["error"]["code"], "stale_session")
+
     def test_read_units_and_canonical_model_without_server_dependencies(self):
         response = self.invoke("read_model")
         self.assertTrue(response["ok"])

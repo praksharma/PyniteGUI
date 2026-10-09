@@ -80,7 +80,8 @@ mutation whose response was lost.
 
 | Tool | Behavior |
 | --- | --- |
-| `read_model` | Canonical project JSON, session ID, automation revision and engineering model revision. |
+| `read_model` | Canonical project JSON, session ID, revisions and exact entity schema, even for empty collections. |
+| `read_schema` | Current 2D/3D field types/defaults, support semantics, units, validation rules and valid batch examples. Requires the current session. |
 | `read_units` | Display unit definitions and conversion factors. Requires the current session. |
 | `apply_batch` | Validate the complete batch, update the GUI and create one undo step. Requires session and expected automation revision. |
 | `run_analysis` | Start the existing background solver and return its job ID. Requires session and expected revision. |
@@ -88,7 +89,13 @@ mutation whose response was lost.
 | `cancel_analysis` | Cancel the identified running job through the existing cancellation workflow. |
 | `read_results` | Read node/member report rows with snapshot ID, units and current/stale analysis state. Supports solved combination, offset and limit (1–1000). |
 
-Read the model first. Use its `session_id` for subsequent calls and its `revision`
+The MCP reference resource `pynitegui://automation/reference` also documents both
+dimensions. Tool descriptions name the exact support/member/load fields and direct
+clients to the schema before editing. Since clients may not pass resources into a
+model's context automatically, `read_model` includes the schema directly and
+`read_schema` exposes it as a normal model-callable tool.
+
+Read the model first, inspect its `schema`, and use `read_schema` for examples. Use its `session_id` for subsequent calls and its `revision`
 as `expected_revision` for edits/analysis. Opening another project changes the
 session; intervening GUI edits, undo/redo and display-unit changes invalidate the
 expected revision. Engineering edits clear the active result; display-unit changes
