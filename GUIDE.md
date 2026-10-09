@@ -2,6 +2,9 @@
 
 A Python desktop editor for 2D frames/trusses and linear 3D spatial frames with PyNite.
 
+For an audited comparison of PyNite engine capabilities with features actually
+exposed here, see [PyNite Capability Coverage](TODO.md#pynite-capability-coverage).
+
 ## Run
 
 Install uv, then run from the repository. uv installs and manages Python as well

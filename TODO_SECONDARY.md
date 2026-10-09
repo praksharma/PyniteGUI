@@ -13,8 +13,10 @@ inspection are not new tasks just because Stabileo also has them.
 ## Compatibility Gate
 
 Checked against the installed **PyniteFEA 3.0.0** source, not only the latest
-online documentation. Our application currently exposes linear static XY
-frames; solver capability does not mean a feature is already usable here.
+online documentation. Our application now exposes linear static 2D frames/trusses
+and 3D spatial frames; solver capability does not mean a feature is already usable
+here. See the primary [capability audit](TODO.md#pynite-capability-coverage) for
+current engine-feature coverage, partial support and future solver milestones.
 
 - **UI**: application-side editing or presentation of an existing PyNite model
   or result. No new structural solver is needed.
@@ -199,10 +201,10 @@ an audit of Stabileo's engineering calculations. PRO is labelled beta.
   consistent gravity conversion, mode filtering, a separate result type, and
   independent benchmarks. Static weight density must not be treated directly
   as mass density. Do not promise time-history or response-spectrum analysis.
-- [ ] **3D frame viewport (Deferred adapter).** PyNite accepts spatial nodes and
-  members, but our planar schema, restraints, loads, diagrams, and interaction
-  model all need redesign. Preserve planar mode as a first-class workflow.
-  Primary owner: separate 3D evaluation in TODO.md.
+- [x] **3D frame viewport (Adapter).** Implemented as a separate spatial project
+  with XYZ geometry, six DOFs, work-plane drawing, rolled local axes, spatial
+  member results, force/moment overlays and deformation. Planar mode remains
+  first-class. Remaining scope is owned by 3D Follow-Ups in TODO.md.
 
 ## Intentionally Not Tasks
 

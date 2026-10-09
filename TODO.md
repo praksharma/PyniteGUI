@@ -8,6 +8,53 @@ items are not promises of a particular release date.
 See [Secondary roadmap](TODO_SECONDARY.md) for Stabileo-inspired interface ideas
 and verified PyNite extensions. This file remains the primary implementation list.
 
+## PyNite Capability Coverage
+
+Audited 2026-10-09 against our application adapters, schemas and documented
+workflows, plus the locked **PyniteFEA 3.0.0** source. The
+[upstream capability list](https://github.com/JWock82/Pynite#current-capabilities)
+describes the engine, not features automatically available in this GUI.
+**Done** means usable in our current frame-focused scope; **Partial** identifies
+the exact missing part. Summary: **7 done, 2 partial, 9 pending**.
+
+| Engine capability | GUI status | Coverage or remaining task |
+| --- | --- | --- |
+| Elastic 3D statics | Done | Linear spatial-frame analysis, six DOFs, rolled members, materials/sections and validated results. |
+| Frame P-Delta | Pending | Add a separate analysis method, convergence feedback, method-labelled snapshots and second-order benchmarks. |
+| Frame modal analysis | Pending | Add an explicit mass source, gravity/unit conversion, frequencies, mode shapes and a separate modal result workflow. |
+| Steel-frame pushover | Pending | Add yield/plastic section data, push/control settings, load steps, convergence and capacity-curve results; benchmark supported steel assumptions. |
+| Member point/distributed and nodal loading | Done | Nodal/member forces and moments, uniform/linear-varying distributed forces and partial spans in 2D/3D. Distributed member moments are excluded. |
+| Cases and factored combinations | Done | Named cases, combination editing, selected-combination results and visible factored loads in 2D/3D. |
+| Member shear, moment and deflection output | Done | Member detail curves in 2D/3D; spatial biaxial shear/bending, torsion and deformation; whole-frame force/moment overlays. |
+| Physical-member internal joints | Partial | Explicit split/connect workflows exist in 2D. Automatic internal-node handling is not exposed; 3D requires shared endpoints and rejects interior-node connections. |
+| Unilateral member behaviour | Pending | Add tension-only/compression-only flags, iterative active-set analysis and activation/mechanism benchmarks; ordinary 2D trusses are not unilateral members. |
+| Node-to-node spring elements | Pending | Add separate spring entities, axial stiffness units and bilateral/tension-only/compression-only behaviour; support springs are not spring elements. |
+| Bilateral/unilateral support springs | Partial | Bilateral global DX/DY/RZ springs in 2D and all six DOFs in 3D are implemented. One-way support springs and iterative activation remain pending. |
+| DKMQ quadrilaterals | Pending | Add shell geometry/thickness/material input, surface loads, connectivity checks and plate-result visualization with independent benchmarks. |
+| Polynomial rectangles | Pending | Expose the separate rectangular plate formulation with geometry/orientation checks and formulation-specific tests. |
+| Shape/opening meshing | Pending | Add supported mesh generators, opening definitions, preview/regeneration and convergence checks; preserve references and loads explicitly. |
+| Support reactions | Done | Unit-aware reaction tables, CSV and printable output; all six components for spatial frames, including bilateral support springs. |
+| Geometry/load/deformation rendering | Done | Current 2D/3D frame geometry, supports, case-filtered loads, factored combinations and scaled deformed shapes; no plate/mesh renderer yet. |
+| Shear walls and mats | Pending | Add dedicated wall/foundation definitions, meshing, openings, soil/support input and specialized results; verify the locked engine before exposing workflows. |
+| Model/result PDF output | Done | Native printable model definitions and results with save-to-PDF; 2D diagrams/envelopes included. 3D numerical PDF output exists; 3D diagram PDF pages remain a separate follow-up. |
+
+### Implementation Gates
+
+- Keep the existing linear-static workflow intact. P-Delta, unilateral and
+  pushover results need their own analysis identity and per-combination solves;
+  do not use linear superposition for nonlinear results.
+- Modal mass must be defined explicitly, not inferred by treating weight density
+  as mass density. Do not imply dynamic time-history or response-spectrum support.
+- Physical-member handling must preserve user member IDs, load stations,
+  assignments and releases while exposing actual solver segmentation. A crossing
+  must not silently become a joint; coordinate with the split/connect tasks below.
+- Plates, meshes, shear walls and mats are separate validated milestones, not
+  extensions of the line-member renderer alone. Nonlinear steel modelling needs
+  verified material/section assumptions, not a generic plastic-design claim.
+
+This section owns engine-capability coverage. Existing 3D editing/report tasks
+below and the secondary interface wishlist retain their more specific scope.
+
 ## Modelling and Editing
 
 - [x] Add node dragging with snapping and undo/redo.
@@ -138,8 +185,8 @@ and verified PyNite extensions. This file remains the primary implementation lis
 - [ ] Spatial force-by-magnitude/azimuth/elevation entry and coordinate previews.
 - [ ] Dedicated 3D support/spring symbols with per-DOF hover inspection.
 - [ ] Large-model rendering benchmarks and cached analytical sampling.
-- [ ] Plate/shell modelling, mesh workflows, and nonlinear analysis as separate,
-  verified PyNite-supported milestones; no solids or design-code claims.
+- [ ] Implement the pending solver milestones in **PyNite Capability Coverage**
+  above; keep plates/meshes and nonlinear methods independently benchmarked.
 
 ## Completed Foundation
 
