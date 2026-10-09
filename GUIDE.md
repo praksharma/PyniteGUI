@@ -22,6 +22,38 @@ also use uv-managed Python instead of discovering a Conda or system interpreter.
 
 The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
 
+The compact toolbar groups **File**, **View**, **Edit**, **Loads**, **Analysis**
+and **Results**. Hover an icon for its command and shortcut. Select/Member/Pan
+show the active mode; the properties menu opens model tables, materials,
+sections, cases/combinations and self-weight. Diagrams and deformation stay
+disabled until a valid snapshot exists. The same commands remain accessible
+through the menus and existing keyboard shortcuts.
+
+### Optional Live Recalculation
+
+Manual **Analyze (F5)** is the default in every window. Enable **Live
+recalculation** in the Analysis toolbar or Edit menu to solve 750 ms after the
+last completed engineering edit, including undo/redo. Unapplied inspector/table
+drafts, selection and unit changes do not schedule new solves. Enabling it with
+an unsolved nonempty model schedules that model; a valid snapshot is not rerun.
+Live mode waits while a dialog, drawing mode, pointer gesture or modified numeric
+editor is active. A completed automatic snapshot also waits before refreshing
+the canvas; intervening engineering edits discard that deferred snapshot.
+
+Automatic solves use the same isolated worker and cloned model as manual
+analysis. An edit during an automatic solve cancels it and queues the latest
+revision after cleanup and debounce. A manual solve is allowed to finish, but
+its outdated reply is rejected before the queued solve starts. Pending, current,
+failed and cancelled states are shown in Results. Automatic failures populate
+Model Findings without opening a warning popup or retrying until another edit.
+
+The stop button cancels a pending or running solve and waits for a new edit or
+explicit Analyze. Switching live mode off cancels an automatic solve and clears
+its queue; it leaves a manual solve running. Closing clears pending work before
+the normal worker cleanup and unsaved-change prompt. Live mode is a per-window
+editing preference and is not stored in project files. For large models, leave
+it off and use Analyze when ready.
+
 ### Platform Checks
 
 - macOS: the user reported successful operation on 2026-10-09. This is a smoke
@@ -969,6 +1001,9 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/spatial_results.py`, `spatial_diagrams.py`: spatial sampling/exports/plots.
 - `src/pynitegui/qt/analysis_jobs.py`: isolated solver processes, phase messages,
   thread-safe cancellation, and cleanup before publishing results.
+- `src/pynitegui/qt/live_analysis.py`: optional debounce, cancellation and
+  latest-revision scheduling around the existing background analysis lifecycle.
+- `src/pynitegui/qt/toolbar_icons.py`: native vector tool icons following the theme.
 - `src/pynitegui/qt/results_panel.py`: native sortable result tabs, entity links,
   lazy member tables, equilibrium display and analysis/snapshot status.
 - `src/pynitegui/qt/equilibrium.py`: independent global load resultants and

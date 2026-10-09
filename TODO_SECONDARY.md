@@ -31,10 +31,10 @@ Observed in the live editor: grouped tools, a resizable contextual results panel
 diagram/colour-map modes, a comparison selector, and separate result-table tabs.
 These are the strongest ideas to adapt to a desktop engineering workflow.
 
-- [ ] **Grouped compact toolbar (UI).** Organize view, draw, properties, loads,
-  analysis, and results tools into clear groups. Use recognizable icons,
-  tooltips, visible active modes, and disabled result controls until solved.
-  Keep engineering controls usable at smaller window sizes.
+- [x] **Grouped compact toolbar (UI).** Promoted and completed in the primary
+  roadmap: file/view/edit/load/analysis/results groups, theme-aware native icons,
+  tooltips, checked modes, property menu and result controls enabled after solve.
+  Verified at the 820-pixel minimum window width in light and dark themes.
 - [ ] **In-canvas result workspace (UI).** Switch between model, deformation,
   axial, shear, and moment views without opening a window each time. Keep a
   resizable results dock with combination, scale, and inspection controls.
@@ -74,10 +74,11 @@ silently changing saved engineering definitions.
   dimensional sketch alongside A, Iy, Iz, and J. Feed validated properties to
   PyNite; do not imply a shape sketch provides stress recovery or code design.
   Primary owner: section library in TODO.md.
-- [ ] **Opt-in live linear recalculation (UI).** Debounce completed edits, solve
-  a cloned model in the background, and display pending/failed/current state.
-  Reject stale replies, avoid solving unfinished numeric input, and allow
-  manual mode for larger models. Retain explicit Analyze as the default.
+- [x] **Opt-in live linear recalculation (UI).** Promoted and completed in the
+  primary roadmap: debounce completed edits, solve a clone through the isolated
+  worker, show pending/failed/current state and reject stale replies. Draft input
+  does not edit the model or schedule a solve. Manual Analyze remains the default;
+  disable live mode or cancel a pending/running solve for larger models.
 - [ ] **Temporary what-if workspace (UI).** Explore load, E, and section-property
   multipliers against a baseline using cloned projects and PyNite solves.
   Provide reset and explicit apply-as-one-edit. Shared definitions must not

@@ -4,14 +4,14 @@ import sys
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import QPointF, QRect, QRectF, Qt, QThread, QTimer, QStandardPaths, QSettings
+from PySide6.QtCore import QPointF, QRect, QRectF, QSize, Qt, QThread, QTimer, QStandardPaths, QSettings
 from PySide6.QtGui import QAction, QActionGroup, QColor, QIcon, QPainter, QPainterPath, QPen, QUndoCommand, QUndoStack
 from PySide6.QtWidgets import (
     QApplication, QAbstractItemView, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDockWidget,
     QDoubleSpinBox, QFileDialog, QFormLayout, QGraphicsItem, QGraphicsScene, QGraphicsSimpleTextItem, QGraphicsView,
     QLabel, QMainWindow, QMessageBox, QProgressBar, QPushButton, QToolButton,
     QRubberBand, QScrollArea, QStyle, QTableWidget, QTableWidgetItem, QTreeWidget, QTreeWidgetItem,
-    QVBoxLayout, QWidget, QStackedWidget,
+    QVBoxLayout, QWidget, QStackedWidget, QMenu,
 )
 
 from .analysis_jobs import AnalysisWorker, CANCELLED
@@ -504,6 +504,9 @@ class MainWindow(QMainWindow):
         self.thread = None
         self.worker = None
         self.analysis_cancel_requested = False
+        self.analysis_automatic = False
+        from .live_analysis import LiveRecalculation
+        self.live_analysis = LiveRecalculation(self)
         self.close_after_analysis = False
         self.undo = QUndoStack(self)
         self.resize(1280, 820)
@@ -597,9 +600,15 @@ class MainWindow(QMainWindow):
         for key, action in self.theme_actions.items():
             action.setChecked(key == theme_name())
         for action in self.findChildren(QAction):
+            tool = action.property("tool_icon")
+            if tool:
+                from .toolbar_icons import tool_icon
+                action.setIcon(tool_icon(tool))
             standard = action.property("standard_pixmap")
             if standard is not None:
                 action.setIcon(self.standard_icon(QStyle.StandardPixmap(standard)))
+        from .toolbar_icons import tool_icon
+        self.properties_button.setIcon(tool_icon("properties"))
         self.view.setBackgroundBrush(QColor(colors()["canvas"]))
         self.view.redraw()
         self.view.viewport().update()
@@ -638,11 +647,11 @@ class MainWindow(QMainWindow):
         edit_menu.addActions([undo, redo])
         edit_menu.addAction(self.action("Delete Selection", self.delete_selected, "Delete", "edit-delete"))
         edit_menu.addAction(self.action("Select All", self.select_all, "Ctrl+A"))
-        edit_menu.addAction(self.action("Model Tables...", self.manage_model_tables))
-        edit_menu.addAction(self.action("Materials...", self.manage_materials))
-        edit_menu.addAction(self.action("Sections...", self.manage_sections))
-        edit_menu.addAction(self.action("Load Cases and Combinations...", self.manage_load_cases))
-        edit_menu.addAction(self.action("Self-Weight...", self.manage_self_weight))
+        self.property_actions = [self.action(text, callback) for text, callback in (
+            ("Model Tables...", self.manage_model_tables), ("Materials...", self.manage_materials),
+            ("Sections...", self.manage_sections), ("Load Cases and Combinations...", self.manage_load_cases),
+            ("Self-Weight...", self.manage_self_weight))]
+        edit_menu.addActions(self.property_actions)
         edit_menu.addAction(self.action("Grid...", self.settings))
         edit_menu.addAction(self.action("Units...", self.choose_units))
         edit_menu.addSeparator()
@@ -650,10 +659,24 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.action("Subdivide Selected Members...", self.subdivide_selected_members))
         edit_menu.addAction(self.action("Connect Intersections", self.connect_intersections))
         edit_menu.addAction(self.action("Check Model", self.check_model))
-        toolbar = self.addToolBar("Model")
-        toolbar.setMovable(False)
-        toolbar.addActions([self.new_action, self.open_action, self.save_action])
-        toolbar.addSeparator()
+        from .toolbar_icons import tool_icon
+        def icon_action(action, name, tooltip):
+            action.setProperty("tool_icon", name)
+            action.setIcon(tool_icon(name))
+            action.setToolTip(tooltip)
+            return action
+        def group(title):
+            toolbar = self.addToolBar(title)
+            toolbar.setObjectName(f"toolbar_{title.lower()}")
+            toolbar.setMovable(False)
+            toolbar.setIconSize(QSize(20, 20))
+            toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+            label = QLabel(title)
+            label.setMargin(2)
+            toolbar.addWidget(label)
+            return toolbar
+        group("File").addActions([self.new_action, self.open_action, self.save_action])
+        toolbar = group("View")
         self.mode_group = QActionGroup(self)
         self.mode_actions = {}
         for mode, text, shortcut in (("select", "Select", "V"), ("draw", "Member", "M"), ("pan", "Pan", "P")):
@@ -662,18 +685,39 @@ class MainWindow(QMainWindow):
             action.setChecked(mode == "select")
             self.mode_group.addAction(action)
             self.mode_actions[mode] = action
-            toolbar.addAction(action)
+            icon_action(action, {"select":"select", "draw":"member", "pan":"pan"}[mode], f"{text} ({shortcut})")
+            if mode != "draw":
+                toolbar.addAction(action)
         self.addAction(self.action("Cancel", lambda: self.set_mode("select"), "Escape"))
         toolbar.addAction(self.action("Fit", lambda: self.view.fit(), "F", "zoom-fit-best"))
-        toolbar.addSeparator()
-        toolbar.addAction(self.action("Load...", self.add_load, "L"))
-        toolbar.addAction(self.action("Support...", self.assign_support))
-        toolbar.addSeparator()
+        toolbar = group("Edit")
+        toolbar.addAction(self.mode_actions["draw"])
+        property_menu = QMenu(self)
+        property_menu.addActions(self.property_actions)
+        self.properties_button = QToolButton()
+        self.properties_button.setIcon(tool_icon("properties"))
+        self.properties_button.setToolTip("Properties: model tables, materials, sections, cases and self-weight")
+        self.properties_button.setAccessibleName("Model properties")
+        self.properties_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.properties_button.setMenu(property_menu)
+        toolbar.addWidget(self.properties_button)
+        toolbar = group("Loads")
+        toolbar.addAction(icon_action(self.action("Load...", self.add_load, "L"), "load", "Add load (L)"))
+        toolbar.addAction(icon_action(self.action("Support...", self.assign_support), "support", "Assign supports"))
+        toolbar = group("Analysis")
         self.analyze_action = self.action("Analyze", self.run_analysis, "F5", "media-playback-start")
         toolbar.addAction(self.analyze_action)
         self.cancel_analysis_action = self.action("Cancel Analysis", self.cancel_analysis, icon="media-playback-stop")
         self.cancel_analysis_action.setEnabled(False)
-        toolbar.addAction(self.action("Diagrams...", self.diagrams))
+        toolbar.addAction(self.cancel_analysis_action)
+        self.live_analysis_action = icon_action(self.action("Live recalculation", self.live_analysis.set_enabled), "live",
+            "Live recalculation: solve 750 ms after completed edits; off by default")
+        self.live_analysis_action.setCheckable(True)
+        toolbar.addAction(self.live_analysis_action)
+        edit_menu.addAction(self.live_analysis_action)
+        self.diagrams_action = icon_action(self.action("Diagrams...", self.diagrams), "diagram", "Open solved force diagrams and Member Detail")
+        self.diagrams_action.setEnabled(False)
+        group("Results").addAction(self.diagrams_action)
         self.addToolBarBreak()
         deformation_toolbar = self.addToolBar("Deformation")
         deformation_toolbar.setMovable(False)
@@ -840,9 +884,11 @@ class MainWindow(QMainWindow):
         self.results_panel.clear(self.project)
         self.results_dock.setWindowTitle("Results - Outdated")
         self.deformed_action.setEnabled(False)
+        self.diagrams_action.setEnabled(False)
         self.deformed_action.setChecked(False)
         self.refresh()
         self.statusBar().showMessage(f"Model updated | Results require analysis | {self.project.units.summary}")
+        self.live_analysis.schedule()
 
     def refresh(self):
         spatial = getattr(self.project, "dimension", "2D") == "3D"
@@ -1537,10 +1583,13 @@ class MainWindow(QMainWindow):
         self.update_title()
         self.statusBar().showMessage(f"Example: {EXAMPLES[key]} | {project.units.summary}")
 
-    def run_analysis(self):
+    def run_analysis(self, *, automatic=False):
         if self.thread is not None:
             return
-        self.view.cancel()
+        self.live_analysis.discard()
+        self.analysis_automatic = automatic
+        if not automatic:
+            self.view.cancel()
         self.analysis_revision = self.revision
         self.analysis_cancel_requested = False
         self.analyze_action.setEnabled(False)
@@ -1565,10 +1614,18 @@ class MainWindow(QMainWindow):
         if self.thread is not None and not self.analysis_cancel_requested:
             self.analysis_phase.setText(phase)
             self.analysis_phase.setToolTip(phase)
-            self.results_panel.set_analysis_state("Analyzing", phase)
+            if not self.live_analysis.pending:
+                self.results_panel.set_analysis_state("Analyzing", phase)
 
-    def cancel_analysis(self):
+    def cancel_analysis(self, *, user_requested=True):
+        pending = self.live_analysis.pending or self.live_analysis.deferred is not None
+        if user_requested:
+            self.live_analysis.discard()
         if self.thread is None or self.worker is None:
+            if user_requested and pending:
+                self.cancel_analysis_action.setEnabled(False)
+                self.results_panel.set_analysis_state("Cancelled", "Pending live recalculation cancelled; edit again or use Analyze.")
+                self.statusBar().showMessage("Pending live recalculation cancelled")
             return
         self.analysis_cancel_requested = True
         self.worker.cancel()
@@ -1582,27 +1639,39 @@ class MainWindow(QMainWindow):
         self.thread = None
         self.worker = None
         self.analyze_action.setEnabled(True)
-        self.cancel_analysis_action.setEnabled(False)
+        self.cancel_analysis_action.setEnabled(self.live_analysis.pending or self.live_analysis.deferred is not None)
         for widget in (self.analysis_phase, self.analysis_progress, self.analysis_cancel_button):
             widget.hide()
         if self.close_after_analysis:
             self.close_after_analysis = False
             QTimer.singleShot(0, self.close)
+        else:
+            self.live_analysis.try_start()
 
     def analysis_finished(self, result, error):
         if self.analysis_cancel_requested or error == CANCELLED:
+            if self.live_analysis.pending:
+                self.results_panel.set_analysis_state("Pending", "Waiting to analyze the latest model revision.")
+                return
             self.results_panel.set_analysis_state("Cancelled")
             self.statusBar().showMessage("Analysis cancelled | Previous results retained" if self.result is not None else "Analysis cancelled")
             return
         if self.analysis_revision != self.revision:
+            if self.live_analysis.pending:
+                self.results_panel.set_analysis_state("Pending", "Waiting to analyze the latest model revision.")
+                return
             self.results_panel.set_analysis_state("Outdated", "Model changed during analysis; run analysis again.")
             self.statusBar().showMessage("Model changed during analysis. Run analysis again.")
+            return
+        if self.analysis_automatic and self.live_analysis.is_editing():
+            self.live_analysis.defer(result, error)
             return
         if error:
             self.results_panel.set_analysis_state("Failed", error)
             self.show_model_findings(error.split("\n\n"), "Analysis failed")
             self.statusBar().showMessage("Analysis failed | Previous results retained" if self.result is not None else "Analysis failed")
-            QMessageBox.warning(self, "Analysis", error)
+            if not self.analysis_automatic:
+                QMessageBox.warning(self, "Analysis", error)
             return
         self.result = result
         self.model_findings.show_findings(self.project, [], "Analysis complete")
@@ -1617,6 +1686,7 @@ class MainWindow(QMainWindow):
         self.select_result_combination(result.combination)
         self.results_dock.show()
         self.deformed_action.setEnabled(True)
+        self.diagrams_action.setEnabled(True)
         from .diagrams import DiagramDialog
         for dialog in self.findChildren(DiagramDialog):
             dialog.update_snapshot_status()
@@ -1789,6 +1859,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Open Project", str(error))
 
     def closeEvent(self, event):
+        self.live_analysis.discard()
         if self.thread is not None:
             self.close_after_analysis = True
             self.cancel_analysis()
