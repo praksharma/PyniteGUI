@@ -676,6 +676,7 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.action("Connect Intersections", self.connect_intersections))
         edit_menu.addAction(self.action("Check Model", self.check_model))
         tools_menu = self.menuBar().addMenu("&Tools")
+        tools_menu.addAction(self.action("Rectangular Plate (Experimental)...", self.show_plate_workspace))
         tools_menu.addAction(self.action("Automation Server...", self.show_automation_server))
         from .toolbar_icons import tool_icon
         def icon_action(action, name, tooltip):
@@ -1632,6 +1633,10 @@ class MainWindow(QMainWindow):
         self.saved = Project().to_dict()
         self.update_title()
         self.statusBar().showMessage(f"Example: {EXAMPLES[key]} | {project.units.summary}")
+
+    def show_plate_workspace(self):
+        from .plate_workspace import PlateWorkspace
+        PlateWorkspace(self, self.project.unit_system).exec()
 
     def show_automation_server(self):
         from .automation_server import AutomationServer, AutomationPanel

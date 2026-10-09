@@ -35,6 +35,57 @@ sections, cases/combinations and self-weight. Diagrams and deformation stay
 disabled until a valid snapshot exists. The same commands remain accessible
 through the menus and existing keyboard shortcuts.
 
+### Experimental Rectangular Plates
+
+Post-1.0.0rc1 development adds **Tools > Rectangular Plate (Experimental)**.
+This is a separate, modal transverse-bending workspace, not a conversion of the
+open frame project. No additional dependencies are needed. The published rc1
+wheel does not include this pilot.
+
+Define width, height, thickness, material E/Poisson ratio and target mesh size.
+Choose XY, XZ or YZ and assign each boundary as Free, Simply supported or Clamped.
+**Apply / Preview Mesh** uses PyNite's RectangleMesh with DKMQ quads. Supported
+edges are green: dashed for simply supported, solid for clamped. Width follows
+global X in XY/XZ and Z in YZ; height follows Y in XY/YZ and Z in XZ.
+
+Pressure is force per geometry-length squared, with its positive global direction
+shown beside the controls (+Z in XY, -Y in XZ, -X in YZ). Negative pressure acts
+oppositely. A named load case and combination factor define the single solved
+combination. Pressure and edge assignments belong to the surface definition,
+not generated node IDs, and are reapplied when the mesh is refined.
+
+**Analyze** runs in a cancellable isolated process. Results include nodal normal
+displacement, normal-force reaction sum and unsmoothed element-centre Mx/My/Mxy
+and Qx/Qy contours. Moments are force-length per unit length (displayed as force);
+shears are force per unit length. Displacement colouring interpolates nodal values
+over display triangles; it is not a higher-order displacement recovery or a
+deformed 3D shell view. Export CSV contains local node coordinates, signed normal
+displacements/reactions and case/factor identity. The plot toolbar exports images.
+
+Save/Open uses separate `.pyniteplate` files with canonical inch-kip values and
+strict format/version validation. Undo/redo covers applied definitions, not
+individual keystrokes. Changing inputs clears results; Apply validates before
+changing the definition. Units affect inputs/plots/CSV, not physical geometry.
+This workspace has its own unsaved-change prompt, not frame autosave/recovery.
+
+Pilot limits: one axis-aligned rectangular surface at the global origin, up to
+1,024 elements, aspect ratios up to 20, linear small-displacement elastic bending,
+one uniform normal pressure case and one factor. In-plane translations and the
+drilling rotation are explicitly restrained everywhere; this is **not** general
+membrane/shell analysis. A simply supported edge restrains normal translation;
+a clamped edge additionally restrains both bending rotations. Rigid transverse
+mechanisms are rejected and normal-force equilibrium is checked. Large deflection
+relative to thickness is flagged but does not enable geometric nonlinearity.
+Openings, arbitrary outlines, curved surfaces, frame/surface coupling, nodal loads,
+surface self-weight, multi-case combinations, MCP, PDF and recovery integration
+remain separate milestones. Do not substitute this pilot for verified engineering
+design or assume the listed limits certify element quality.
+
+Regression coverage includes independent Navier square-plate deflection and mesh
+refinement, a zero-Poisson cantilever strip's closed-form deflection/moment,
+equilibrium/sign and plane invariance, clamped/cantilever support
+cases, mesh regeneration, persistence, units, undo, stale results and cancellation.
+
 ### Optional MCP Automation
 
 Install the optional extra and launch with it from the repository:

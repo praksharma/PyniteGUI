@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- Experimental separate rectangular DKMQ transverse-plate workspace under Tools:
+  PyNite mesh preview, geometry-owned pressure/edge supports, unit-aware input,
+  separate plate files, undo/redo and cancellable analysis. Includes displacement
+  and centre moment/shear contours, nodal CSV and Navier refinement regressions.
+  This is not general membrane/shell or mixed frame/surface modelling; see GUIDE.md.
+
 ## 1.0.0rc1 - Release Candidate
 
 First release candidate for the frame-focused desktop application. Not yet

@@ -3,7 +3,8 @@
 <img src="assets/PyniteGUI%20Structural%20Frame%20Logo.png" alt="PyniteGUI structural frame logo" width="480">
 
 A desktop editor for 2D/3D frames and axial-only trusses, powered by PyNite and Qt.
-**1.0.0rc1** is being prepared for a GitHub prerelease. See the [release checklist](RELEASE.md).
+**1.0.0rc1** is available as a [GitHub prerelease](https://github.com/praksharma/PyniteGUI/releases/tag/v1.0.0rc1).
+See the [release validation record](RELEASE.md).
 
 Draw and edit frames or trusses, assign custom or library materials and sections, and apply point,
 distributed, or automatic self-weight loads. Analyze combinations and inspect
@@ -31,7 +32,11 @@ Start a spatial model with **File > New 3D Frame**, use **Create 3D Copy** for a
 existing unreleased 2D model, or try the **3D** examples.
 If 3D graphics fail to start, launch with `uv run pynitegui --software-rendering`.
 
-For a release wheel, once published, install the downloaded file without cloning:
+Current development also includes **Tools > Rectangular Plate (Experimental)**:
+rectangular quad meshing and transverse plate analysis in a separate workspace.
+See [scope and limits](GUIDE.md#experimental-rectangular-plates); it is not in the rc1 wheel.
+
+For the release wheel, install the downloaded file without cloning:
 
 ```sh
 uv tool install --python 3.12 ./pynitegui-1.0.0rc1-py3-none-any.whl

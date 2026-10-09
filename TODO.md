@@ -15,7 +15,7 @@ workflows, plus the locked **PyniteFEA 3.0.0** source. The
 [upstream capability list](https://github.com/JWock82/Pynite#current-capabilities)
 describes the engine, not features automatically available in this GUI.
 **Done** means usable in our current frame-focused scope; **Partial** identifies
-the exact missing part. Summary: **7 done, 2 partial, 9 pending**.
+the exact missing part. Summary: **7 done, 4 partial, 7 pending**.
 
 | Engine capability | GUI status | Coverage or remaining task |
 | --- | --- | --- |
@@ -30,11 +30,11 @@ the exact missing part. Summary: **7 done, 2 partial, 9 pending**.
 | Unilateral member behaviour | Pending | Add tension-only/compression-only flags, iterative active-set analysis and activation/mechanism benchmarks; ordinary 2D/3D trusses are not unilateral members. |
 | Node-to-node spring elements | Pending | Add separate spring entities, axial stiffness units and bilateral/tension-only/compression-only behaviour; support springs are not spring elements. |
 | Bilateral/unilateral support springs | Partial | Bilateral global DX/DY/RZ springs in 2D and all six DOFs in 3D are implemented. One-way support springs and iterative activation remain pending. |
-| DKMQ quadrilaterals | Pending | Add shell geometry/thickness/material input, surface loads, connectivity checks and plate-result visualization with independent benchmarks. |
+| DKMQ quadrilaterals | Partial | Separate experimental rectangular transverse-plate workspace: thickness/E/nu, uniform pressure, edge supports, cancellable solve, nodal displacement/reaction CSV and centre moment/shear contours with Navier refinement benchmarks. General membrane/shell editing and frame coupling remain pending. |
 | Polynomial rectangles | Pending | Expose the separate rectangular plate formulation with geometry/orientation checks and formulation-specific tests. |
-| Shape/opening meshing | Pending | Add supported mesh generators, opening definitions, preview/regeneration and convergence checks; preserve references and loads explicitly. |
+| Shape/opening meshing | Partial | PyNite rectangular quad mesh preview/regeneration preserves surface-owned pressure and boundary supports in the separate pilot. Openings, control lines, curved generators, general geometry and shared connectivity remain pending. |
 | Support reactions | Done | Unit-aware reaction tables, CSV and printable output; all six components for spatial frames, including bilateral support springs. |
-| Geometry/load/deformation rendering | Done | Current 2D/3D frame geometry, supports, case-filtered loads, factored combinations and scaled deformed shapes; no plate/mesh renderer yet. |
+| Geometry/load/deformation rendering | Done | Current 2D/3D frame geometry, supports, case-filtered loads, factored combinations and scaled deformed shapes. Plate pilot adds planar mesh/contours; 3D surface/deformed-mesh rendering remains pending. |
 | Shear walls and mats | Pending | Add dedicated wall/foundation definitions, meshing, openings, soil/support input and specialized results; verify the locked engine before exposing workflows. |
 | Model/result PDF output | Done | Native printable model definitions/results with save-to-PDF; 2D diagrams and numerical envelopes; 3D six-component diagrams with selectable orthographic views and numerical envelopes. |
 
@@ -54,6 +54,23 @@ the exact missing part. Summary: **7 done, 2 partial, 9 pending**.
 
 This section owns engine-capability coverage. Existing 3D editing/report tasks
 below and the secondary interface wishlist retain their more specific scope.
+
+## Surface Geometry and Meshing
+
+- [x] Experimental separate rectangular DKMQ plate workspace with geometry-owned
+  pressure/boundary assignments, mesh preview/refinement, four unit presets,
+  persistence/undo, isolated cancellable solve, contours and nodal CSV; validate
+  against Navier deflection, equilibrium, support and plane/sign tests.
+- [ ] Integrate surfaces into versioned spatial projects and the Three.js editor,
+  explicitly handling mixed frame/surface connectivity, shared node ownership,
+  topology checks, editing/deletion, results, autosave and MCP contracts.
+- [ ] Add rectangular openings and control lines with boundary/pressure retention,
+  mesh quality previews and convergence/independent opening benchmarks.
+- [ ] Extend the plate pilot to general membrane behaviour, multiple surface load
+  cases/combinations, surface self-weight and detailed local result inspection;
+  independently benchmark moment/shear recovery before engineering claims.
+- [ ] Add curved/annular generators and richer 2D geometry only as independently
+  validated capabilities; do not imply arbitrary CAD or unstructured meshing.
 
 ## Modelling and Editing
 
