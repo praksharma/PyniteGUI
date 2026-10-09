@@ -86,7 +86,7 @@ const server = http.createServer((request,response)=>{
       assert(drawn,`${plane} work plane did not draw`);
       drawn.forEach((point,i)=>point.forEach((value,j)=>assert(Math.abs(value-points[i][j])<1e-6,`${plane} snap mismatch`)));
     }
-    const dark={...payload,colors:{...payload.colors,canvas:'#191c1f',grid:'#30373b',member:'#d1dbe0',label:'#c4cdd3',accent:'#4cc9c0',support:'#73d89c',load:'#ff7b8a'}};
+    const dark={...payload,colors:{...payload.colors,canvas:'#191c1f',grid:'#30373b',member:'#d1dbe0',label:'#c4cdd3',text:'#eef1f2',accent:'#4cc9c0',support:'#73d89c',load:'#ff7b8a',axial:'#79bdf1',shear:'#4cc9c0',moment:'#ff91ad'}};
     await page.evaluate(payload=>{window.pyniteViewer.update(payload);window.pyniteViewer.orient(0);},dark);
     await page.waitForTimeout(300);await page.screenshot({path:path.join(output,'desktop-dark.png')});
     for(const [type,index,direction] of [['posX',3,[1,0,0]],['posY',2,[0,1,0]],['posZ',1,[0,0,1]],['negX',6,[-1,0,0]],['negY',5,[0,-1,0]],['negZ',4,[0,0,-1]]]){
@@ -134,6 +134,7 @@ const server = http.createServer((request,response)=>{
     await page.evaluate(({payload,colors})=>{window.pyniteViewer.update({...payload,colors});window.pyniteViewer.orient(0);},
       {payload:payload.qaDiagrams.moment_z,colors:dark.colors});
     await page.waitForTimeout(150);
+    assert.equal(await page.locator('#result-legend').evaluate(element=>getComputedStyle(element).color),'rgb(238, 241, 242)','Dark legend text has insufficient contrast');
     await page.screenshot({path:path.join(output,'desktop-moment-z-dark.png')});
     await page.evaluate(payload=>window.pyniteViewer.update(payload),payload);
     assert(await page.locator('#result-legend').isHidden(),'Result legend was not cleared');
