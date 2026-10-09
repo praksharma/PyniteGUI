@@ -145,7 +145,11 @@ below and the secondary interface wishlist retain their more specific scope.
 - [x] Expand validation for malformed project files and supported format migrations,
   including safe rejection of future versions.
 - [x] Add benchmark tests for multi-storey frames and varied support/load setups.
-- [ ] Test installation and desktop rendering on Windows and macOS.
+- [x] Record a successful macOS user smoke test (2026-10-09); macOS version,
+  hardware, installation steps and individual workflows were not recorded.
+- [ ] Run and document a reproducible macOS installation/rendering/regression
+  check, including save/open, analysis, selection and exports.
+- [ ] Test installation and desktop rendering on Windows.
 - [ ] Package standalone desktop releases.
 - [x] Add a separate 3D spatial-frame project and offline Three.js viewport,
   keeping the established 2D editor and file format intact.

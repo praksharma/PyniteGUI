@@ -22,6 +22,15 @@ also use uv-managed Python instead of discovering a Conda or system interpreter.
 
 The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
 
+### Platform Checks
+
+- macOS: the user reported successful operation on 2026-10-09. This is a smoke
+  test, not an independently reproduced installation or full regression run;
+  OS version, hardware and tested workflows were not recorded.
+- Linux: native NVIDIA/Wayland rendering and desktop interactions have been
+  checked on the development host; backend-specific recovery is documented below.
+- Windows: installation and native rendering checks remain pending.
+
 ## Spatial Frames
 
 Use **File > New 3D Frame** for a new spatial project. **File > Examples** includes
