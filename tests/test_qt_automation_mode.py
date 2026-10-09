@@ -61,6 +61,19 @@ class AutomationModeTests(unittest.TestCase):
         self.window.automation_mode.set_enabled(True)
         self.assertFalse(self.window.mcp_mode)
 
+    def test_application_filter_is_active_only_during_mcp_mode(self):
+        with patch.object(self.app, "installEventFilter", wraps=self.app.installEventFilter) as install, \
+             patch.object(self.app, "removeEventFilter", wraps=self.app.removeEventFilter) as remove:
+            self.window.automation_mode.set_enabled(False)
+            install.assert_not_called()
+            self.enable()
+            install.assert_called_once_with(self.window.automation_mode)
+            self.window.automation_mode.set_enabled(True)
+            install.assert_called_once()
+            self.server.stop()
+            remove.assert_called_once_with(self.window.automation_mode)
+            self.assertFalse(self.window.mcp_mode)
+
     def test_lock_disables_manual_controls_but_both_release_buttons_work(self):
         self.window.analysis_cancel_button.setEnabled(False)
         self.enable()

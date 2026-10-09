@@ -23,7 +23,6 @@ class AutomationMode(QObject):
         self.action.setEnabled(False)
         self.action.setToolTip("Only while the automation server runs: lock manual controls. Entering cancels drawing and discards unapplied inspector inputs. Click again to unlock.")
         self.action.toggled.connect(self.set_enabled)
-        QApplication.instance().installEventFilter(self)
 
     def sync_server(self):
         server = self.window.automation_server
@@ -49,6 +48,7 @@ class AutomationMode(QObject):
             window.set_mode("select")
             window.refresh()  # Explicit handover discards unapplied inspector drafts.
             window.mcp_mode = True
+            QApplication.instance().installEventFilter(self)
             controls = [window.menuBar(), window.centralWidget(), window.unit_selector,
                         window.analysis_cancel_button, *window.findChildren(QToolBar),
                         *window.findChildren(QDockWidget), *window.findChildren(QDialog)]
@@ -60,6 +60,7 @@ class AutomationMode(QObject):
             window.statusBar().showMessage("MCP mode | Manual controls locked; automation server controls this project")
         else:
             window.mcp_mode = False
+            QApplication.instance().removeEventFilter(self)
             for control, previously_enabled in self.locked:
                 try:
                     control.setEnabled(previously_enabled)
