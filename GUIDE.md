@@ -1,5 +1,11 @@
 # PyniteGUI Guide
 
+Release candidate **1.0.0rc1**: [release notes](CHANGELOG.md) and
+[artifact validation/publication checklist](RELEASE.md). Installation from a
+wheel is tested separately from this repository's editable, locked environment.
+`pynitegui --version` reports installed metadata without initializing Qt; the
+desktop application and MCP server use the same version.
+
 A Python desktop editor for 2D/3D frames and axial-only trusses with PyNite.
 
 For an audited comparison of PyNite engine capabilities with features actually

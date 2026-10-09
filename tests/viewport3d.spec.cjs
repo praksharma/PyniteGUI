@@ -7,7 +7,7 @@ const {execFileSync} = require('node:child_process');
 const {chromium} = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
 
 const root = path.resolve(__dirname, '..');
-const assets = path.join(root, 'src/pynitegui/qt/viewport3d');
+const assets = path.resolve(process.env.VIEWPORT_ASSETS || path.join(root, 'src/pynitegui/qt/viewport3d'));
 const output = process.env.VIEWPORT_QA_OUTPUT || '/tmp/pynite-3d-qa';
 fs.mkdirSync(output, {recursive:true});
 const payload = JSON.parse(execFileSync(path.join(root,'.venv/bin/python'),['-B',path.join(__dirname,'viewport3d_payload.py')],{

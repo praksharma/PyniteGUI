@@ -1954,6 +1954,8 @@ def main():
     application = QApplication.instance() or QApplication(arguments)
     application.setProperty("pynitegui_graphics", mode)
     application.setApplicationName("PyniteGUI")
+    from pynitegui import __version__
+    application.setApplicationVersion(__version__)
     configure_theme(application)
     from .window_controls import install_window_controls
     install_window_controls(application)

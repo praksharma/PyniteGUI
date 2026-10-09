@@ -3,6 +3,7 @@
 <img src="assets/PyniteGUI%20Structural%20Frame%20Logo.png" alt="PyniteGUI structural frame logo" width="480">
 
 A desktop editor for 2D/3D frames and axial-only trusses, powered by PyNite and Qt.
+**1.0.0rc1** is being prepared for a GitHub prerelease. See the [release checklist](RELEASE.md).
 
 Draw and edit frames or trusses, assign custom or library materials and sections, and apply point,
 distributed, or automatic self-weight loads. Analyze combinations and inspect
@@ -30,6 +31,19 @@ Start a spatial model with **File > New 3D Frame**, use **Create 3D Copy** for a
 existing unreleased 2D model, or try the **3D** examples.
 If 3D graphics fail to start, launch with `uv run pynitegui --software-rendering`.
 
+For a release wheel, once published, install the downloaded file without cloning:
+
+```sh
+uv tool install --python 3.12 ./pynitegui-1.0.0rc1-py3-none-any.whl
+pynitegui
+```
+
+If the command is not on your PATH, run `uv tool update-shell` and reopen the terminal.
+
+Optional MCP: use `uv run --extra mcp pynitegui` from the repository, or install
+the wheel with `[mcp]` appended to its quoted path. Configure **Tools > Automation Server**.
+Requires Python 3.12+; the wheel is not a standalone desktop installer.
+
 ## Screenshots
 
 Frame editor with loads, deformed shape, and support reactions.
@@ -44,5 +58,6 @@ Whole-frame shear-force diagram.
 
 - [User and developer guide](GUIDE.md): workflows, units, engineering scope, tests and performance benchmarks.
 - [Roadmap](TODO.md): completed and planned features.
+- [Release notes](CHANGELOG.md) and [release validation](RELEASE.md).
 - [Secondary ideas](TODO_SECONDARY.md): interface inspiration and PyNite-compatible extensions.
 - [License](LICENSE): GNU AGPL v3.

@@ -11,6 +11,7 @@ from mcp_types import CallToolResult, TextContent, ToolAnnotations
 from pydantic import StrictInt, StrictBool, ValidationError
 from .automation_core import TOOLS
 from .automation_schema import model_reference
+from pynitegui import __version__
 
 
 def build_application(bridge, permissions, token, port, network_event, *, require_token=True):
@@ -45,7 +46,7 @@ def build_application(bridge, permissions, token, port, network_event, *, requir
             return CallToolResult(content=[TextContent(type="text", text=json.dumps(response))],
                                   structured_content=response, is_error=True)
 
-    server = PermissionServer("PyniteGUI", version="0.1.0", log_level="CRITICAL",
+    server = PermissionServer("PyniteGUI", version=__version__, log_level="CRITICAL",
         instructions="Controls one attached desktop project window. The GUI owns its session, not the client or chat. "
                      "Call read_model without session_id to discover it; reuse that ID. Opening a project changes it. "
                      "Unknown/old IDs return stale_session; read_model again rather than minting IDs. "

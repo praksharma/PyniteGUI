@@ -159,6 +159,11 @@ below and the secondary interface wishlist retain their more specific scope.
 
 ## Project Quality
 
+- [x] Prepare 1.0.0rc1 metadata, consistent desktop/MCP version reporting,
+  release notes/checklist, source/wheel audits and isolated installed-wheel smoke scripts.
+- [ ] Publish the approved GitHub 1.0.0rc1 prerelease after completing the
+  platform/manual validation gates in RELEASE.md; promote to 1.0.0 only after feedback.
+
 - [x] Use uv-managed Python and locked project dependencies without relying on
   Conda or a system interpreter; document setup and normal uv launches.
 - [x] Add a File > Examples catalog of editable, validated beam/frame models.

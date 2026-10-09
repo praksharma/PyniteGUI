@@ -1,8 +1,17 @@
 [project]
 name = "pynitegui"
-version = "0.1.0"
+version = "1.0.0rc1"
 description = "A Qt desktop editor for 2D and 3D frame analysis with PyNite."
 readme = "README.md"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE"]
+keywords = ["structural-analysis", "finite-element", "frames", "pynite", "desktop"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+]
 authors = [
     { name = "Prakhar" }
 ]
@@ -18,6 +27,12 @@ dependencies = [
 [project.scripts]
 pynitegui = "pynitegui:main"
 
+[project.urls]
+Repository = "https://github.com/praksharma/PyniteGUI"
+Documentation = "https://github.com/praksharma/PyniteGUI/blob/master/GUIDE.md"
+Issues = "https://github.com/praksharma/PyniteGUI/issues"
+Changelog = "https://github.com/praksharma/PyniteGUI/blob/master/CHANGELOG.md"
+
 [project.optional-dependencies]
 mcp = [
     "mcp>=2.3,<3",
@@ -28,5 +43,9 @@ mcp = [
 python-preference = "only-managed"
 
 [build-system]
-requires = ["uv_build>=0.12.10,<0.13.0"]
+requires = ["uv_build>=0.12.19,<0.13.0"]
 build-backend = "uv_build"
+
+[tool.uv.build-backend]
+source-include = ["GUIDE.md", "TODO.md", "TODO_SECONDARY.md", "RELEASE.md", "CHANGELOG.md",
+                  "uv.lock", "assets/**", "tests/**", "scripts/**"]
