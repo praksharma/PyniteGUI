@@ -9,6 +9,26 @@ from .spatial_model import DOFS, FORCES
 QUANTITIES = ("axial", "shear_y", "shear_z", "torque", "moment_y", "moment_z", "dy", "dz")
 LABELS = ("N", "Vy", "Vz", "T", "My", "Mz", "dy", "dz")
 UNITS = ("force", "force", "force", "moment", "moment", "moment", "length", "length")
+DIAGRAM_AXES = (1, 1, 2, 1, 2, 1)
+
+
+def diagram_metadata(project, result, kind, scale, samples):
+    """Scale one result component consistently across all members, in model units."""
+    if result is None or kind not in QUANTITIES[:6] or not samples:
+        return None
+    index = QUANTITIES.index(kind)
+    values = np.concatenate([sample[:, index] for sample in samples])
+    low, high = float(values.min()), float(values.max())
+    peak = max(abs(low), abs(high))
+    extent = max(max(n.coords[i] for n in project.nodes.values()) - min(n.coords[i] for n in project.nodes.values())
+                 for i in range(3))
+    quantity = UNITS[index]
+    return {"kind": kind, "label": LABELS[index], "axis": DIAGRAM_AXES[index],
+            "factor": .15 * max(extent, project.grid) * scale / peak if peak else 0.,
+            "unit": getattr(project.units, quantity), "displayFactor": project.units.to_display(1., quantity),
+            "minimum": project.units.to_display(low, quantity), "maximum": project.units.to_display(high, quantity),
+            "combination": result.combination,
+            "color": "axial" if index in (0, 3) else "shear" if index in (1, 2) else "moment"}
 
 
 def member_axes(project, name, result=None):

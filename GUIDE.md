@@ -73,9 +73,28 @@ does not reinterpret or convert existing geometry; open or create the intended m
   of subsequent model edits. CSV includes all six global node responses and member
   end values/extrema. Printable numerical reports split wide results into readable
   tables; 2D whole-structure diagrams/envelopes are not offered for 3D reports.
+- The viewport **Result** selector overlays N, Vy, Vz, T, My or Mz across the
+  entire undeformed frame for the currently selected result combination. **Scale**
+  multiplies automatic diagram height: 1x maps the largest absolute sampled value
+  to 15% of the largest model coordinate extent (at least one grid spacing).
+  This is a display scale, not a change to forces or stiffness. **Values** toggles
+  member endpoint and sampled-extrema labels; **Loads** independently hides or
+  shows load arrows. Fit includes diagram extents, and deformed shape can be
+  displayed alongside them. Changing geometry clears stale result overlays.
+- Diagram ordinates follow PyNite's local solver signs, with N positive in
+  compression. Positive values offset toward local y for N, Vy, T and Mz, or
+  local z for Vz and My, including member roll. The N/T offset direction is a
+  plotting convention, not their force/moment vector direction. Point-load
+  discontinuities retain both one-sided values. Legend ranges and value labels
+  are sampled, not exact optimized extrema; use the member detail/CSV for
+  solver-reported extrema. Units follow the current SI/imperial display choice.
+- The save icon on the viewport result toolbar exports the current camera view
+  as PNG, including visible geometry, diagram labels, signed-axis gizmo and the
+  combination/unit/sign legend. The native controls and editing sidebars are
+  excluded. Whole-structure 3D PDF diagram reports and envelopes remain pending.
 
 First-milestone scope is linear, unreleased 3D frame members. No spatial trusses,
-plates/shells, solids, nonlinear effects, member releases, force overlays/envelopes,
+plates/shells, solids, nonlinear effects, member releases, force envelopes,
 node dragging, automatic member splitting/intersection connection, or 2D conversion
 are implemented in this mode yet. Multi-selection supports deletion; use Model
 Tables for coordinated property editing. Geometry requires explicit shared endpoints;
@@ -752,7 +771,8 @@ available to Node (or set `PLAYWRIGHT_MODULE` to its installed package directory
 The script serves local assets temporarily and closes both browser/server after
 testing desktop canvas pixels, framing, six signed gizmo views, keyboard reset,
 zoom/selection preservation, orbit, node picking, all three work-plane drawing
-modes and dark appearance. Screenshots go to `/tmp/pynite-3d-qa`
+modes, six force/moment overlays with rolled members, PNG capture and dark
+appearance. Screenshots go to `/tmp/pynite-3d-qa`
 by default, configurable with `VIEWPORT_QA_OUTPUT`. It does not launch the user's GUI.
 Distributed-load checks cover analytical uniform/triangular beam responses,
 partial-span resultants, inclined global loading, orientation-independent

@@ -5,6 +5,7 @@
 <script type="importmap">{"imports":{"three":"./vendor/three.module.js"}}</script>
 <style>#orientation-gizmo{position:absolute;right:0;bottom:0;width:128px;height:128px;touch-action:none;cursor:pointer}#orientation-gizmo:focus-visible{outline:2px solid #3786bd;outline-offset:-2px}.gizmo-home{position:absolute;right:6px;top:2px;border:1px solid #7d8c95;background:#f4f8fa;color:#24333c;border-radius:3px;height:24px;padding:0 5px;font:11px sans-serif;cursor:pointer}.gizmo-home:hover{background:#d6edf0}#error{z-index:2}</style>
 </head><body><div id="error" role="alert"></div>
+<style>#result-legend{position:absolute;left:12px;top:12px;padding:8px 10px;font:12px/18px sans-serif;max-width:calc(100% - 44px);pointer-events:none;opacity:.95;overflow-wrap:anywhere}</style>
 <script>
 window.pyniteBridge=null;window.pyniteRendererReady=false;window.pyniteFailure=null;
 window.pyniteReportFailure=message=>{window.pyniteFailure=message;document.getElementById('error').textContent='3D renderer could not start: '+message;window.pyniteBridge?.failed(message);};

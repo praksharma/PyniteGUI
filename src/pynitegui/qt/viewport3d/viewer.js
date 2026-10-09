@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {OrbitControls} from './vendor/OrbitControls.js';
 import {OrientationGizmo} from './gizmo.js';
+import {diagramPoints, drawDiagram, legendLines} from './diagrams.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 100000);
@@ -23,12 +24,13 @@ scene.add(group);
 const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
 const vector = a => new THREE.Vector3(...a);
 const axisColors = [0xd65058,0x21955c,0x3786bd];
+const legend=document.createElement('div');legend.id='result-legend';document.body.appendChild(legend);
 function line(points, color, target=group) {
   const obj = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color}));
   target.add(obj); return obj;
 }
-function label(text, position, color, size=span*.035) {
-  if (!data.labels) return;
+function label(text, position, color, size=span*.035, force=false) {
+  if (!data.labels&&!force) return;
   const canvas=document.createElement('canvas'), context=canvas.getContext('2d');
   context.font='24px sans-serif'; const width=Math.ceil(context.measureText(text).width)+12;
   canvas.width=width; canvas.height=36; context.font='24px sans-serif';context.fillStyle=color;context.fillText(text,6,26);
@@ -77,6 +79,8 @@ function moment(position,axis,value,identity) {
 }
 function update(payload) {
   data=payload;const c=data.colors;scene.background=new THREE.Color(c.canvas);
+  legend.replaceChildren(...legendLines(data.diagram).map(text=>{const row=document.createElement('div');row.textContent=text;return row;}));
+  legend.hidden=!data.diagram;legend.style.color=c.text||c.label;legend.style.background=c.canvas;
   const positions=data.nodes.map(n=>vector(n.position)),box=new THREE.Box3().setFromPoints(positions);
   span=Math.max(box.isEmpty()?240:box.getSize(new THREE.Vector3()).length(),data.grid*8,1);
   const r=span*.004;raycaster.params.Line.threshold=span*.012;
@@ -87,6 +91,7 @@ function update(payload) {
     cylinder(a,b,r,selected('members',member.name)?c.accent:c.member,['members',member.name]);
     label(member.name,a.clone().lerp(b,.5).add(new THREE.Vector3(0,span*.023,0)),c.label);
     if(data.deformed&&member.points)line(member.points.map((p,i)=>vector(p).addScaledVector(vector(member.displacements[i]),data.factor)),c.load);
+    drawDiagram(member,data.diagram,group,line,label,c);
     if(data.localAxes&&selected('members',member.name))member.axes.forEach((axis,i)=>{const origin=a.clone().lerp(b,.5);group.add(new THREE.ArrowHelper(vector(axis),origin,span*.12,axisColors[i],span*.02,span*.01));label(['x','y','z'][i],origin.addScaledVector(vector(axis),span*.14),c.label);});
   }
   for(const node of data.nodes) {
@@ -116,6 +121,7 @@ function fit() {
   stopMotion();
   const points=data.nodes.map(n=>vector(n.position));
   if(data.deformed)for(const m of data.members)if(m.points)points.push(...m.points.map((p,i)=>vector(p).addScaledVector(vector(m.displacements[i]),data.factor)));
+  for(const member of data.members)points.push(...diagramPoints(member,data.diagram));
   const box=new THREE.Box3().setFromPoints(points),center=box.isEmpty()?new THREE.Vector3():box.getCenter(new THREE.Vector3());
   const radius=Math.max(box.isEmpty()?120:box.getSize(new THREE.Vector3()).length()*.65,data.grid*5,1);
   const distance=radius/Math.sin(THREE.MathUtils.degToRad(camera.fov/2))/Math.min(1,camera.aspect);
@@ -174,7 +180,25 @@ function placeLabels(){
   }
 }
 let lastTime=performance.now();
-function animate(){if(!rendering)return;requestAnimationFrame(animate);const now=performance.now(),delta=Math.min((now-lastTime)/1000,.1);lastTime=now;if(!gizmo.update(delta))controls.update();placeLabels();renderer.info.reset();renderer.clear();renderer.render(scene,camera);gizmo.render();}animate();
+function renderFrame(){placeLabels();renderer.info.reset();renderer.clear();renderer.render(scene,camera);gizmo.render();}
+function animate(){if(!rendering)return;requestAnimationFrame(animate);const now=performance.now(),delta=Math.min((now-lastTime)/1000,.1);lastTime=now;if(!gizmo.update(delta))controls.update();renderFrame();}animate();
+function exportImage(){
+  if(!rendering)return '';
+  renderFrame();
+  const source=renderer.domElement,canvas=document.createElement('canvas');canvas.width=source.width;canvas.height=source.height;
+  const context=canvas.getContext('2d');context.drawImage(source,0,0);
+  const rows=legendLines(data.diagram),ratio=renderer.getPixelRatio();
+  if(rows.length){
+    context.scale(ratio,ratio);context.font='12px sans-serif';
+    const width=Math.min(innerWidth-24,Math.max(...rows.map(text=>context.measureText(text).width))+20);
+    context.fillStyle=data.colors.canvas;context.fillRect(12,12,width,rows.length*18+16);
+    context.fillStyle=data.colors.text||data.colors.label;
+    rows.forEach((text,i)=>context.fillText(text,22,35+i*18,width-20));
+  }
+  return canvas.toDataURL('image/png');
+}
 window.pyniteViewer={update,fit,orient,cancel,state:()=>({objects:group.children.length,drawCalls:renderer.info.render.calls,camera:camera.position.toArray(),target:controls.target.toArray(),selection:data.selection}),project:position=>{const p=vector(position).project(camera);return[(p.x+1)*innerWidth/2,(1-p.y)*innerHeight/2];}};
+window.pyniteViewer.exportImage=exportImage;
+window.pyniteViewer.diagramPoints=()=>data.members.map(member=>({name:member.name,points:diagramPoints(member,data.diagram).map(point=>point.toArray())}));
 window.pyniteViewer.gizmoAxes=()=>gizmo.axes();
 window.pyniteRendererReady=true;window.pyniteBridge?.ready();

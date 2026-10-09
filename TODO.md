@@ -127,7 +127,9 @@ and verified PyNite extensions. This file remains the primary implementation lis
   decorations, retaining menu access and unsaved-work confirmation.
 - [ ] Display the actual viewport GPU/driver/backend in graphics diagnostics,
   distinguishing selected preferences from the renderer Qt actually uses.
-- [ ] Whole-structure 3D axial/shear/bending/torsion overlays and image reports.
+- [x] Whole-structure 3D axial/shear/bending/torsion overlays with shared scaling,
+  combination/unit-aware legends, sampled-value labels and PNG view export.
+- [ ] Whole-structure 3D diagram PDF reports and selectable report views.
 - [ ] Spatial combination envelopes and interactive one-sided station inspection.
 - [ ] 3D member end releases and axial-only trusses, with mechanism benchmarks.
 - [ ] 3D node dragging, box selection, and bulk inspector assignments.

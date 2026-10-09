@@ -29,6 +29,15 @@ const server = http.createServer((request,response)=>{
     page.on('pageerror',error=>errors.push(error.message));
     await page.goto(`http://127.0.0.1:${server.address().port}/`);
     await page.waitForFunction(()=>window.pyniteViewer);
+    const crossing=await page.evaluate(async()=>{
+      const {drawDiagram}=await import('./diagrams.js');
+      const objects=[];
+      drawDiagram({name:'Test',points:[[0,0,0],[10,0,0]],diagramValues:[2,-2],axes:[[1,0,0],[0,1,0],[0,0,1]]},
+        {axis:1,factor:1,color:'shear',values:false},{add:object=>objects.push(object)},()=>{},()=>{},{shear:'#168b8b'});
+      const result=Array.from(objects[0].geometry.attributes.position.array);
+      objects[0].geometry.dispose();objects[0].material.dispose();return result;
+    });
+    assert.deepEqual(crossing,[0,0,0,5,0,0,0,2,0,5,0,0,10,0,0,10,-2,0],'Opposite-sign ribbon did not split at zero');
     for(const [name,size] of [['desktop',{width:1280,height:720}]]){
       await page.setViewportSize(size);
       await page.evaluate(payload=>{window.pyniteViewer.update(payload);window.pyniteViewer.fit();},payload);
@@ -100,6 +109,34 @@ const server = http.createServer((request,response)=>{
     await page.waitForFunction(()=>window.viewEvent===0);
     await page.keyboard.press('Shift+X');
     await page.waitForFunction(()=>window.viewEvent===6);
+    for(const [kind,diagramPayload] of Object.entries(payload.qaDiagrams)){
+      await page.evaluate(payload=>{window.pyniteViewer.update(payload);window.pyniteViewer.orient(0);},diagramPayload);
+      await page.waitForTimeout(150);
+      assert((await page.locator('#result-legend').innerText()).includes(diagramPayload.diagram.combination),'Missing combination legend');
+      const paths=await page.evaluate(()=>window.pyniteViewer.diagramPoints());
+      for(const path of paths){
+        const member=diagramPayload.members.find(member=>member.name===path.name);
+        assert.equal(path.points.length,member.points.length);
+        path.points.forEach((point,i)=>point.forEach((value,j)=>{
+          const expected=member.points[i][j]+member.axes[diagramPayload.diagram.axis][j]*member.diagramValues[i]*diagramPayload.diagram.factor;
+          assert(Math.abs(value-expected)<1e-6,`${kind} diagram not in rolled local axes`);
+        }));
+      }
+      const projected=await page.evaluate(paths=>paths.flatMap(path=>path.points.map(point=>window.pyniteViewer.project(point))),paths);
+      projected.forEach(([x,y])=>assert(x>5&&x<1275&&y>5&&y<715,`${kind} diagram clipped after fit`));
+      if(kind==='moment_z')await page.screenshot({path:path.join(output,'desktop-moment-z.png')});
+    }
+    const png=await page.evaluate(()=>window.pyniteViewer.exportImage());
+    assert(png.startsWith('data:image/png;base64,'),'PNG export failed');
+    const pngBytes=Buffer.from(png.split(',')[1],'base64');
+    assert.equal(pngBytes.readUInt32BE(16),1280);assert.equal(pngBytes.readUInt32BE(20),720);
+    fs.writeFileSync(path.join(output,'export-moment-z.png'),pngBytes);
+    await page.evaluate(({payload,colors})=>{window.pyniteViewer.update({...payload,colors});window.pyniteViewer.orient(0);},
+      {payload:payload.qaDiagrams.moment_z,colors:dark.colors});
+    await page.waitForTimeout(150);
+    await page.screenshot({path:path.join(output,'desktop-moment-z-dark.png')});
+    await page.evaluate(payload=>window.pyniteViewer.update(payload),payload);
+    assert(await page.locator('#result-legend').isHidden(),'Result legend was not cleared');
     assert.deepEqual(errors,[]);
     await page.evaluate(()=>{
       window.bridgeFailures=[];
@@ -111,6 +148,6 @@ const server = http.createServer((request,response)=>{
     assert.match(failure.message,/graphics context was lost/i);
     assert.deepEqual(failure.bridge,[failure.message],'Context loss did not reach the native bridge');
     assert(failure.error.includes(failure.message),'Context loss did not show browser fallback text');
-    console.log('PASS: rendered geometry/deformation, desktop framing and gizmo, six signed views, keyboard reset, orbit, node picking, XY/XZ/YZ snapped drawing, dark theme, context-loss recovery.');
+    console.log('PASS: desktop geometry/deformation, gizmo, orbit/picking/drawing, six local-axis result overlays, fitted diagrams, PNG export, dark theme and context-loss recovery.');
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;}).finally(()=>server.close());

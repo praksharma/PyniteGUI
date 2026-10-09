@@ -1,5 +1,6 @@
 """Offline Three.js viewport and validated native editing bridge."""
 import json
+import base64
 import math
 import os
 import sys
@@ -7,10 +8,11 @@ from pathlib import Path
 
 import numpy as np
 from PySide6.QtCore import QObject, QUrl, Slot, Qt
-from PySide6.QtWidgets import QCheckBox, QComboBox, QHBoxLayout, QLabel, QPushButton, QStyle, QToolButton, QVBoxLayout, QWidget
+from PySide6.QtGui import QImage
+from PySide6.QtWidgets import QCheckBox, QComboBox, QFileDialog, QHBoxLayout, QLabel, QMessageBox, QPushButton, QStyle, QToolButton, QVBoxLayout, QWidget
 
 from .annotations import combination_loads
-from .spatial_results import member_axes, sampled_member
+from .spatial_results import LABELS, QUANTITIES, diagram_metadata, member_axes, sampled_member
 from .theme import colors
 
 
@@ -18,7 +20,8 @@ def viewport_payload(window):
     project, result = window.project, window.result
     nodes = [{"name": n.name, "position": list(n.coords), "restraints": list(n.restraints), "springs": list(n.springs)}
              for n in project.nodes.values()]
-    members, peak = [], 0.
+    members, peak, samples = [], 0., []
+    kind = window.view.diagram.currentData()
     axes = {}
     for member in project.members.values():
         axes[member.name] = member_axes(project, member.name, result)
@@ -29,6 +32,9 @@ def viewport_payload(window):
             points = a + positions[:, None] / math.dist(a, b) * (b - a)
             definition["points"] = points.tolist()
             definition["displacements"] = displacement.tolist()
+            if kind in QUANTITIES[:6]:
+                definition["diagramValues"] = values[:, QUANTITIES.index(kind)].tolist()
+                samples.append(values)
             peak = max(peak, float(np.linalg.norm(displacement, axis=1).max()))
         members.append(definition)
     extent = max((max(n.coords[i] for n in project.nodes.values()) - min(n.coords[i] for n in project.nodes.values())
@@ -56,7 +62,11 @@ def viewport_payload(window):
         loads.append({"name": load.name, "target": load.target, "kind": load.kind, "vector": vector.tolist(),
                       "moment": load.is_moment, "magnitude": load.magnitude, "endMagnitude": load.end_magnitude,
                       "position": load.position, "endPosition": load.end_position, "label": label})
-    return {"nodes": nodes, "members": members, "loads": loads, "grid": project.grid, "colors": colors(),
+    diagram = diagram_metadata(project, result, kind, window.view.diagram_scale.value(), samples)
+    if diagram:
+        diagram["values"] = window.view.diagram_values.isChecked()
+    return {"nodes": nodes, "members": members, "loads": loads if window.view.show_loads.isChecked() else [], "grid": project.grid, "colors": colors(),
+            "diagram": diagram,
             "selection": [list(s) for s in window.selections], "mode": window.mode,
             "deformed": visible, "factor": factor,
             "unit": project.units.length, "displayFactor": project.units.to_display(1, "length")}
@@ -176,6 +186,44 @@ class SpatialView(QWidget):
         add.clicked.connect(window.add_spatial_node)
         toolbar.addWidget(add)
         layout.addLayout(toolbar)
+        results = QHBoxLayout()
+        results.setContentsMargins(6, 4, 6, 4)
+        results.addWidget(QLabel("Result"))
+        self.diagram = QComboBox()
+        self.diagram.addItem("None", None)
+        for label, kind in zip(LABELS[:6], QUANTITIES[:6]):
+            self.diagram.addItem(label, kind)
+        self.diagram.setToolTip("Whole-frame member results in local solver axes")
+        results.addWidget(self.diagram)
+        from .app import number
+        self.diagram_scale = number(1., .05, 10., 2)
+        self.diagram_scale.setSingleStep(.1)
+        self.diagram_scale.setSuffix("x")
+        self.diagram_scale.setMaximumWidth(100)
+        self.diagram_scale.setToolTip("Diagram height relative to automatic scaling")
+        results.addWidget(QLabel("Scale"))
+        results.addWidget(self.diagram_scale)
+        self.diagram_values = QCheckBox("Values")
+        self.diagram_values.setChecked(True)
+        results.addWidget(self.diagram_values)
+        self.show_loads = QCheckBox("Loads")
+        self.show_loads.setChecked(True)
+        results.addWidget(self.show_loads)
+        results.addStretch()
+        self.export_button = QToolButton()
+        self.export_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton))
+        self.export_button.setToolTip("Export current 3D view as PNG")
+        self.export_button.clicked.connect(self.export_image)
+        results.addWidget(self.export_button)
+        layout.addLayout(results)
+        self.diagram.currentIndexChanged.connect(self.redraw)
+        self.diagram_scale.valueChanged.connect(self.redraw)
+        self.diagram_values.toggled.connect(self.redraw)
+        self.show_loads.toggled.connect(self.redraw)
+        self.diagram.setEnabled(False)
+        self.diagram_scale.setEnabled(False)
+        self.diagram_values.setEnabled(False)
+        self.export_button.setEnabled(False)
         self.web = None
         self.failure_panel = QWidget()
         self.failure_panel.setObjectName("spatial_render_failure")
@@ -219,6 +267,7 @@ class SpatialView(QWidget):
 
     def render_failure(self, message):
         self.ready = False
+        self.export_button.setEnabled(False)
         self.failure_message.setText("3D graphics could not start or were interrupted.\n\n" + str(message)[:600])
         self.failure_panel.show()
         if self.web:
@@ -233,6 +282,10 @@ class SpatialView(QWidget):
         if getattr(self.window.project, "dimension", "2D") != "3D":
             return
         payload = viewport_payload(self.window)
+        self.diagram.setEnabled(self.window.result is not None)
+        self.diagram_scale.setEnabled(payload["diagram"] is not None)
+        self.diagram_values.setEnabled(payload["diagram"] is not None)
+        self.export_button.setEnabled(self.ready and self.web is not None)
         from .app import unit_value
         units = self.window.project.units
         previous = self.offset.property("unit_system")
@@ -251,6 +304,26 @@ class SpatialView(QWidget):
         if self.pending_fit and self.ready:
             self.pending_fit = False
             self.call("fit")
+
+    def export_image(self):
+        if not self.ready or not self.web:
+            return
+        filename, _ = QFileDialog.getSaveFileName(self, "Export 3D View", "frame-3d.png", "PNG Image (*.png)")
+        if not filename:
+            return
+        if not filename.lower().endswith(".png"):
+            filename += ".png"
+        self.web.page().runJavaScript("window.pyniteViewer.exportImage();", lambda data: self.save_image(filename, data))
+
+    def save_image(self, filename, data):
+        try:
+            if not isinstance(data, str) or not data.startswith("data:image/png;base64,"):
+                raise ValueError("The 3D renderer did not return an image.")
+            image = QImage.fromData(base64.b64decode(data.split(",", 1)[1], validate=True), "PNG")
+            if image.isNull() or not image.save(filename, "PNG"):
+                raise ValueError("Could not save the PNG image to the selected location.")
+        except (ValueError, OSError) as error:
+            QMessageBox.warning(self, "Image Export", str(error))
 
     def fit(self):
         self.pending_fit = True

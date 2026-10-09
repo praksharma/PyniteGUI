@@ -1,5 +1,6 @@
 """Spatial persistence, analytical benchmarks, native editing and export contracts."""
 import contextlib
+import base64
 import io
 import json
 import os
@@ -12,6 +13,7 @@ from unittest.mock import patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 os.environ.setdefault("PYNITEGUI_NO_WEBENGINE", "1")
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QDoubleSpinBox, QMessageBox, QPushButton
 
 from pynitegui.qt.analysis import analyze, model_signature
@@ -21,7 +23,7 @@ from pynitegui.qt.model import Material, Project, Section
 from pynitegui.qt.model_tables import ModelTablesDialog
 from pynitegui.qt.reports import ReportOptions, ReportOptionsDialog, export_csv, report_html, result_table
 from pynitegui.qt.spatial_model import DOFS, SpatialLoad, SpatialProject
-from pynitegui.qt.spatial_results import member_axes, sampled_member
+from pynitegui.qt.spatial_results import QUANTITIES, DIAGRAM_AXES, member_axes, sampled_member
 from pynitegui.qt.spatial_view import Bridge, viewport_payload
 from pynitegui.qt.units import UNIT_SYSTEMS
 
@@ -374,6 +376,88 @@ class SpatialWidgetTests(unittest.TestCase):
         self.window.deformation_scale.setValue(25)
         self.assertEqual(viewport_payload(self.window)["factor"],25)
         self.assertTrue(self.window.deformation_scale.isEnabled())
+
+    def test_all_six_overlay_components_and_units(self):
+        for i, direction in enumerate(("FX", "FY", "FZ", "MX", "MY", "MZ")):
+            self.window.project.loads[f"L{i+1}"] = SpatialLoad(f"L{i+1}", "N2", direction, i+1)
+        self.window.project.members["M1"].roll = 37
+        self.result()
+        _, sampled, _ = sampled_member(self.window.project, self.window.result, "M1")
+        for i, kind in enumerate(QUANTITIES[:6]):
+            self.window.view.diagram.setCurrentIndex(self.window.view.diagram.findData(kind))
+            payload = viewport_payload(self.window)
+            self.assertEqual(payload["diagram"]["axis"], DIAGRAM_AXES[i])
+            self.assertEqual(payload["members"][0]["diagramValues"], sampled[:, i].tolist())
+            self.assertAlmostEqual(payload["diagram"]["minimum"], sampled[:, i].min())
+            self.assertAlmostEqual(payload["diagram"]["maximum"], sampled[:, i].max())
+            self.assertEqual(payload["diagram"]["unit"], "kip" if i<3 else "kip-in")
+            json.dumps(payload, allow_nan=False)
+
+    def test_diagram_combination_scale_and_units_preserve_physical_offsets(self):
+        self.window.project.loads["L1"] = SpatialLoad("L1", "N2", "FY", -2)
+        self.window.project.set_combination("Double", {"Case 1": 2})
+        self.result()
+        view = self.window.view
+        view.diagram.setCurrentIndex(view.diagram.findData("moment_z"))
+        original = viewport_payload(self.window)
+        self.assertAlmostEqual(abs(original["members"][0]["diagramValues"][0]), 2*120)
+        self.assertAlmostEqual(original["members"][0]["diagramValues"][-1], 0.)
+        view.diagram_scale.setValue(2)
+        doubled_scale = viewport_payload(self.window)
+        self.assertAlmostEqual(doubled_scale["diagram"]["factor"], original["diagram"]["factor"]*2)
+        self.window.select_result_combination("Double")
+        doubled_load = viewport_payload(self.window)
+        self.assertEqual(doubled_load["diagram"]["combination"], "Double")
+        self.assertAlmostEqual(doubled_load["diagram"]["factor"], original["diagram"]["factor"])
+        self.window.set_units("si")
+        metric = viewport_payload(self.window)
+        self.assertEqual(metric["diagram"]["unit"], "kN-m")
+        self.assertEqual(metric["diagram"]["factor"], doubled_load["diagram"]["factor"])
+        self.assertEqual(metric["members"][0]["diagramValues"], doubled_load["members"][0]["diagramValues"])
+
+    def test_diagram_jump_zero_and_stale_results(self):
+        self.window.project.loads["L1"] = SpatialLoad("L1", "M1", "FY", -10, .5)
+        self.result()
+        view = self.window.view
+        view.diagram.setCurrentIndex(view.diagram.findData("shear_y"))
+        member = viewport_payload(self.window)["members"][0]
+        indices = [i for i,p in enumerate(member["points"]) if p == [60.,0.,0.]]
+        self.assertEqual(len(indices), 2)
+        self.assertAlmostEqual(abs(member["diagramValues"][indices[1]]-member["diagramValues"][indices[0]]), 10)
+        view.diagram.setCurrentIndex(view.diagram.findData("axial"))
+        self.assertEqual(viewport_payload(self.window)["diagram"]["factor"], 0.)
+        self.window.edit("Move node", lambda p: setattr(p.nodes["N2"], "x", 144))
+        self.assertIsNone(viewport_payload(self.window)["diagram"])
+        self.assertFalse(view.diagram.isEnabled())
+        self.assertFalse(view.diagram_scale.isEnabled())
+
+    def test_diagram_controls_do_not_change_model_and_load_visibility(self):
+        self.window.project.loads["L1"] = SpatialLoad("L1", "N2", "FY", -1)
+        self.result()
+        before = self.window.project.to_dict()
+        view = self.window.view
+        view.diagram.setCurrentIndex(view.diagram.findData("moment_z"))
+        view.diagram_values.setChecked(False)
+        view.show_loads.setChecked(False)
+        payload = viewport_payload(self.window)
+        self.assertEqual(payload["loads"], [])
+        self.assertFalse(payload["diagram"]["values"])
+        self.assertEqual(self.window.project.to_dict(), before)
+
+    def test_spatial_png_save_and_failure(self):
+        with tempfile.TemporaryDirectory() as directory:
+            original = Path(directory)/"original.png"
+            image = QImage(32, 24, QImage.Format.Format_RGB32)
+            image.fill(Qt.GlobalColor.red)
+            self.assertTrue(image.save(str(original)))
+            data = "data:image/png;base64," + base64.b64encode(original.read_bytes()).decode()
+            output = Path(directory)/"export.png"
+            self.window.view.save_image(str(output), data)
+            exported = QImage(str(output))
+            self.assertEqual(exported.size(), image.size())
+            with patch.object(QMessageBox, "warning") as warning:
+                self.window.view.save_image(str(output), "bad")
+                warning.assert_called_once()
 
     def test_bridge_checks_selection_and_draw_arguments(self):
         bridge = Bridge(self.window.view)
