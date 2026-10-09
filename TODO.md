@@ -202,6 +202,8 @@ below and the secondary interface wishlist retain their more specific scope.
   shortcuts, permit MCP commands, and unlock on exit, server stop/failure or close.
 - [x] Add a remembered Require token checkbox for URL-only localhost connections,
   with authentication changes restricted to stopped listeners and both modes tested.
+- [x] Clarify polling/session contracts and result units; expose solved combination
+  names in status, optional schema omission and zero-based operation-local errors.
 - [ ] Optionally add viewport screenshot capture after the core workflow.
   No arbitrary Python/shell execution or file-management tools; the user opens
   and saves projects normally. A separate REST API is not part of the first scope.

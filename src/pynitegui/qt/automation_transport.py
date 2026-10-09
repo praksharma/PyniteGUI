@@ -3,12 +3,12 @@ import asyncio
 import hmac
 import ipaddress
 import json
-from typing import Any
+from typing import Any, Literal
 
 from mcp.server import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp_types import CallToolResult, TextContent, ToolAnnotations
-from pydantic import StrictInt
+from pydantic import StrictInt, StrictBool, ValidationError
 from .automation_core import TOOLS
 from .automation_schema import model_reference
 
@@ -20,6 +20,7 @@ def build_application(bridge, permissions, token, port, network_event, *, requir
 
         async def call_tool(self, name, arguments, context=None):
             code = ""
+            operation_index = None
             if not permissions.allows(name):
                 code = "permission_denied" if name in TOOLS else "unknown_tool"
             else:
@@ -28,16 +29,28 @@ def build_application(bridge, permissions, token, port, network_event, *, requir
                     if result.structured_content and result.structured_content.get("ok") is False:
                         result.is_error = True
                     return result
-                except Exception:
+                except Exception as error:
                     code = "invalid_arguments"
+                    cause = error.__cause__
+                    if name == "apply_batch" and isinstance(cause, ValidationError):
+                        for issue in cause.errors(include_input=False, include_url=False):
+                            location = issue["loc"]
+                            if len(location) > 1 and location[0] == "operations" and type(location[1]) is int:
+                                operation_index = location[1]
+                                break
             bridge.logged.emit(f"{name if name in TOOLS else 'unknown_tool'} | {code}")
             response = {"ok": False, "error": {"code": code, "message": "Tool disabled, unknown, or arguments rejected. See its schema and desktop permissions."}}
+            if operation_index is not None:
+                response["error"]["operation_index"] = operation_index
             return CallToolResult(content=[TextContent(type="text", text=json.dumps(response))],
                                   structured_content=response, is_error=True)
 
     server = PermissionServer("PyniteGUI", version="0.1.0", log_level="CRITICAL",
-        instructions="Controls the attached desktop project window. Read model first for session_id/revision. "
-                     "Model input is canonical inch-kip; angles are degrees and load positions are fractions. "
+        instructions="Controls one attached desktop project window. The GUI owns its session, not the client or chat. "
+                     "Call read_model without session_id to discover it; reuse that ID. Opening a project changes it. "
+                     "Unknown/old IDs return stale_session; read_model again rather than minting IDs. "
+                     "Inputs use canonical inch-kip; result outputs use the units named in their headers. "
+                     "Angles are degrees and load positions are member fractions. "
                      "Read read_model.schema or call read_schema before constructing edits; never guess fields. "
                      "Supports are node fields: support=free/pin/roller/fixed/custom, and restraint_* flags for custom. "
                      "Edits require enabled desktop permissions and expected_revision. Files are opened/saved by the user.")
@@ -53,8 +66,8 @@ def build_application(bridge, permissions, token, port, network_event, *, requir
             return {"ok": False, "error": {"code": "request_timeout", "message": "GUI command timed out; read state before retrying a mutation."}}
 
     @server.tool(description=TOOLS["read_model"][1], annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False))
-    async def read_model() -> dict[str, Any]:
-        return await call("read_model", {})
+    async def read_model(include_schema: StrictBool = True) -> dict[str, Any]:
+        return await call("read_model", {"include_schema": include_schema})
 
     @server.resource("pynitegui://automation/reference", mime_type="application/json",
                      description="Exact 2D and 3D model fields, supports, units and batch operation reference.")
@@ -70,7 +83,7 @@ def build_application(bridge, permissions, token, port, network_event, *, requir
         return await call("read_units", {"session_id": session_id})
 
     @server.tool(description=TOOLS["read_results"][1], annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False))
-    async def read_results(session_id: str, kind: str = "nodes", combination: str | None = None,
+    async def read_results(session_id: str, kind: Literal["nodes", "members"] = "nodes", combination: str | None = None,
                            snapshot_id: str | None = None, offset: StrictInt = 0, limit: StrictInt = 100) -> dict[str, Any]:
         return await call("read_results", dict(session_id=session_id, kind=kind, combination=combination,
                                                snapshot_id=snapshot_id, offset=offset, limit=limit))
@@ -84,7 +97,10 @@ def build_application(bridge, permissions, token, port, network_event, *, requir
                  "(+z/rx/ry in 3D) booleans. There is no supports object or fixX field. "
                  "Members: start/end node IDs, material/section IDs, kind=frame/truss. "
                  "Loads: target node/member ID, direction, magnitude, kind=point/distributed, case, position/end_position fractions. "
-                 "Distributed loads use magnitude and end_magnitude; equal for uniform. See read_schema for allowed directions and all fields.")
+                 "Distributed loads use magnitude and end_magnitude; equal for uniform. See read_schema for allowed directions and all fields. "
+                 "2D directions: FX,FY,MZ,Angle,Local x,Local y,Local angle. "
+                 "3D directions: FX,FY,FZ,MX,MY,MZ,Angle; members also accept Fx,Fy,Fz,Mx,My,Mz. "
+                 "Local operation errors include a zero-based error.operation_index. Whole-batch reference/constraint errors omit it; no changes apply.")
     async def apply_batch(session_id: str, expected_revision: StrictInt, operations: list[dict]) -> dict[str, Any]:
         return await call("apply_batch", dict(session_id=session_id, expected_revision=expected_revision, operations=operations))
 

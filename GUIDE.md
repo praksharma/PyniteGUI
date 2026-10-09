@@ -115,12 +115,12 @@ mutation whose response was lost.
 
 | Tool | Behavior |
 | --- | --- |
-| `read_model` | Canonical project JSON, session ID, revisions and exact entity schema, even for empty collections. |
+| `read_model` | Canonical project JSON, session ID and revisions. Exact schema included by default, even for empty collections; use `include_schema: false` to omit it after learning the fields. |
 | `read_schema` | Current 2D/3D field types/defaults, support semantics, units, validation rules and valid batch examples. Requires the current session. |
 | `read_units` | Display unit definitions and conversion factors. Requires the current session. |
 | `apply_batch` | Validate the complete batch, update the GUI and create one undo step. Requires session and expected automation revision. |
-| `run_analysis` | Start the existing background solver and return its job ID. Requires session and expected revision. |
-| `analysis_status` | Read running state, progress phase, failure, job identity and snapshot metadata. Optional job ID rejects replaced jobs. |
+| `run_analysis` | Start the existing background solver and immediately return its job ID. Poll `analysis_status` until `running: false`, then check state/error before reading results. Requires session and expected revision. |
+| `analysis_status` | Read running state, free-form progress phase, failure, job identity, snapshot metadata and `available_combinations` (names solved in the active snapshot; empty when none). Optional job ID rejects replaced jobs. |
 | `cancel_analysis` | Cancel the identified running job through the existing cancellation workflow. |
 | `read_results` | Read node/member report rows with snapshot ID, units and current/stale analysis state. Supports solved combination, offset and limit (1–1000). |
 
@@ -130,9 +130,14 @@ clients to the schema before editing. Since clients may not pass resources into 
 model's context automatically, `read_model` includes the schema directly and
 `read_schema` exposes it as a normal model-callable tool.
 
-Read the model first, inspect its `schema`, and use `read_schema` for examples. Use its `session_id` for subsequent calls and its `revision`
+The GUI owns one project session per open window; it is not a chat/client session.
+There are no create/list-session tools. Call `read_model` without a session ID,
+inspect its `schema`, and use `read_schema` for examples. Later model reads may use
+`include_schema: false` to reduce response size. Use the returned `session_id` for
+subsequent calls and its `revision`
 as `expected_revision` for edits/analysis. Opening another project changes the
-session; intervening GUI edits, undo/redo and display-unit changes invalidate the
+session; unknown or old IDs return `stale_session`. Discover the new ID with
+`read_model` instead of inventing one. Intervening GUI edits, undo/redo and display-unit changes invalidate the
 expected revision. Engineering edits clear the active result; display-unit changes
 preserve its snapshot identity and convert its report values. Failed or cancelled
 reruns can retain previous results, so inspect `analysis_state` before treating a
@@ -141,12 +146,27 @@ snapshot as current. Supply `snapshot_id` to reject a replaced snapshot. Respons
 MCP tool errors also set `isError`. Remote analysis failures populate Model Findings
 and job status without opening a warning popup.
 
+Analysis starts asynchronously. Retain the returned `job_id` and poll
+`analysis_status(session_id, job_id)` until `running` is false. Inspect `state` and
+`error`; read results after a successful Current state. `phase` is human-readable
+progress text, not a fixed enumeration. A replaced job returns `unknown_job`.
+Select a result combination from `available_combinations` in status; omit the
+combination to use the snapshot default. Model-defined combination names/factors
+are also available in `read_model.model.combinations`. Only one active result
+snapshot is retained; there is no historical snapshot store or enumeration.
+
 Batch inputs use canonical inch-kip units, degrees for angles and member fractions
 for load positions. Supports are fields on nodes. `put` merges existing entity
 fields or creates an entity using its normal defaults; `delete` requires explicit
 dependent-reference updates in the same batch. Numeric material/section edits clear
 preset/catalog provenance unless explicitly supplied. Project validation runs once
 after all operations, so a rejected batch creates no partial changes or undo step.
+Operation-local failures include `error.operation_index`, a zero-based position
+in the submitted operations list (including SDK argument validation when an item
+has the wrong type). Whole-batch size/reference/constraint failures omit the index
+because several cooperating operations may cause or resolve them. Every failure
+leaves the model and undo history unchanged; correct the batch and resubmit it.
+
 For example, after obtaining the current session and revision:
 
 ```json

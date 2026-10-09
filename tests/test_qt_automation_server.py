@@ -183,6 +183,31 @@ class ServerWireTests(ServerWindowTests):
         self.assertEqual(model["model"], self.window.project.to_dict())
         self.assertGreater(self.server.requests, 0)
 
+    def test_wire_compact_model_discovery_validation_indices_and_tool_contract(self):
+        self.server.permissions.set_group("Model edits", True)
+        self.server.permissions.set_group("Analysis", True)
+        before, count = self.window.project.to_dict(), self.window.undo.count()
+        async def callback(client):
+            tools = {tool.name:tool for tool in (await client.list_tools()).tools}
+            self.assertEqual(tools["read_results"].input_schema["properties"]["kind"]["enum"], ["nodes", "members"])
+            self.assertIn("Poll analysis_status", tools["run_analysis"].description)
+            compact = (await client.call_tool("read_model", {"include_schema":False})).structured_content["data"]
+            self.assertNotIn("schema", compact)
+            self.assertEqual(compact["model"], before)
+            invalid_bool = await client.call_tool("read_model", {"include_schema":"false"})
+            self.assertTrue(invalid_bool.is_error)
+            valid = {"op":"set", "collection":"settings", "value":{"grid":24}}
+            for bad in ({"op":"put", "collection":"nodes", "key":"N2", "value":{"fixX":True}}, 42):
+                response = await client.call_tool("apply_batch", {"session_id":compact["session_id"],
+                    "expected_revision":compact["revision"], "operations":[valid,bad]})
+                self.assertTrue(response.is_error)
+                self.assertEqual(response.structured_content["error"]["operation_index"], 1)
+            old = await client.call_tool("read_units", {"session_id":"client-invented-session"})
+            self.assertEqual(old.structured_content["error"]["code"], "stale_session")
+        self.with_client(callback)
+        self.assertEqual(self.window.project.to_dict(), before)
+        self.assertEqual(self.window.undo.count(), count)
+
     def test_cached_tool_calls_cannot_bypass_revocation_and_real_wire_edits_undo(self):
         self.server.permissions.set_group("Model edits", True)
         original = self.window.project.to_dict()
@@ -361,6 +386,7 @@ class ServerWireTests(ServerWindowTests):
                     break
                 await asyncio.sleep(.02)
             self.assertEqual(status["state"], "Current", status)
+            self.assertEqual(status["available_combinations"], list(model["model"]["combinations"]))
             result = await client.call_tool("read_results", {"session_id": model["session_id"],
                 "snapshot_id": status["snapshot"]["snapshot_id"], "limit": 1})
             self.assertFalse(result.is_error, result)

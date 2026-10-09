@@ -146,6 +146,50 @@ class AutomationCoreTests(unittest.TestCase):
             self.assertFalse(self.window.live_analysis.is_editing())
         other.deleteLater()
 
+    def test_model_schema_is_optional_and_boolean_and_status_has_solved_names(self):
+        full = self.invoke("read_model")["data"]
+        compact = self.invoke("read_model", include_schema=False)["data"]
+        self.assertIn("schema", full)
+        self.assertNotIn("schema", compact)
+        self.assertEqual({key:value for key,value in full.items() if key != "schema"}, compact)
+        invalid = self.invoke("read_model", include_schema="false")
+        self.assertEqual(invalid["error"]["code"], "invalid_arguments")
+        self.permissions.set_group("Analysis", True)
+        status = self.invoke("analysis_status", session_id=self.window.project_session)["data"]
+        self.assertEqual(status["available_combinations"], [])
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = analyze(self.window.project)
+        self.window.analysis_revision = self.window.revision
+        self.window.analysis_finished(result, "")
+        status = self.invoke("analysis_status", session_id=self.window.project_session)["data"]
+        self.assertEqual(status["available_combinations"], list(result.solver.load_combos))
+        self.assertEqual(status["snapshot"]["snapshot_id"], result.snapshot_id)
+        self.window.edit("Change geometry", lambda project: setattr(project.nodes["N2"], "x", 480))
+        status = self.invoke("analysis_status", session_id=self.window.project_session)["data"]
+        self.assertEqual(status["available_combinations"], [])
+        self.assertIsNone(status["snapshot"])
+
+    def test_batch_errors_identify_local_operation_without_guessing_global_cause(self):
+        before, count = self.window.project.to_dict(), self.window.undo.count()
+        valid = {"op":"put", "collection":"nodes", "key":"N2", "value":{"x":450}}
+        bad_operations = [
+            {"op":"put", "collection":"nodes", "key":"N2", "value":{"fixX":True}},
+            {"op":"put", "collection":"members", "key":"M2", "value":{}},
+            {"op":"put", "collection":"nodes", "key":"N2", "value":{"x":float("nan")}},
+            42,
+        ]
+        for operation in bad_operations:
+            with self.subTest(operation=operation):
+                response = self.edits([valid, operation])
+                self.assertEqual(response["error"]["operation_index"], 1)
+                self.assertEqual(self.window.project.to_dict(), before)
+                self.assertEqual(self.window.undo.count(), count)
+        global_error = self.edits([valid, {"op":"delete", "collection":"nodes", "key":"N1"}])
+        self.assertFalse(global_error["ok"])
+        self.assertNotIn("operation_index", global_error["error"])
+        self.assertEqual(self.window.project.to_dict(), before)
+        self.assertEqual(self.window.undo.count(), count)
+
     def test_read_units_and_canonical_model_without_server_dependencies(self):
         response = self.invoke("read_model")
         self.assertTrue(response["ok"])

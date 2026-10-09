@@ -9,20 +9,21 @@ from .model import Load, Material, Member, Node, Project, Section
 
 
 TOOLS = {
-    "read_model": ("Model reads", "Read the current model, project/session revisions and exact entity schema, including empty collections. Read this before edits; do not guess node/support/load fields."),
+    "read_model": ("Model reads", "Read the current model, project/session revisions and exact entity schema, including empty collections. include_schema defaults true; set false after learning the schema to reduce response size. No session_id is needed for this discovery call. Read this before edits; do not guess node/support/load fields."),
     "read_schema": ("Model reads", "Read the exact 2D/3D entity fields, types, defaults, support presets/custom restraints, units, validation rules and valid batch examples for the current project. Call before constructing edits, especially for an empty model."),
     "read_units": ("Model reads", "Read display units and canonical conversion factors."),
-    "read_results": ("Result reads", "Read paginated snapshot-labelled node or member results."),
+    "read_results": ("Result reads", "Read paginated snapshot-labelled results: kind=nodes|members. Output units follow the display units in headers. Use analysis_status.available_combinations for solved names; omit combination to use the snapshot default. Only the active snapshot is retained."),
     "apply_batch": ("Model edits", "Apply a validated model batch as one undoable edit."),
-    "run_analysis": ("Analysis", "Start the existing background analysis workflow."),
-    "analysis_status": ("Analysis", "Read analysis job progress, failures and snapshot identity."),
+    "run_analysis": ("Analysis", "Start background analysis and return a job_id immediately. Poll analysis_status with that job_id until running=false, then check state/error before read_results. phase is human-readable progress text, not a fixed enum."),
+    "analysis_status": ("Analysis", "Read job progress, failures, the active snapshot and available_combinations (solved names). Poll after run_analysis until running=false; check state/error. Only one active result snapshot is retained; job_id rejects replaced jobs."),
     "cancel_analysis": ("Analysis", "Cancel the identified running analysis job."),
 }
 
 
 class AutomationError(Exception):
-    def __init__(self, code, message):
+    def __init__(self, code, message, operation_index=None):
         self.code, self.message = code, message
+        self.operation_index = operation_index
         super().__init__(message)
 
 
@@ -53,6 +54,11 @@ def safe_json(value):
 def batch_candidate(project, operations):
     if not isinstance(operations, list) or not 1 <= len(operations) <= 500:
         raise AutomationError("invalid_batch", "Supply between 1 and 500 operations.")
+    for index, operation in enumerate(operations):
+        try:
+            json.dumps(operation, allow_nan=False)
+        except (ValueError, TypeError, OverflowError) as error:
+            raise AutomationError("invalid_batch", str(error), index) from error
     if len(json.dumps(operations, allow_nan=False).encode()) > 512*1024:
         raise AutomationError("invalid_batch", "Batch exceeds 512 KiB.")
     data = project.to_dict()
@@ -62,54 +68,64 @@ def batch_candidate(project, operations):
         constructors.update(nodes=SpatialNode, members=SpatialMember, loads=SpatialLoad)
     settings = {"unit_system", "grid", "default_material", "default_section", "default_load_case",
                 "self_weight_case", "self_weight_factor"}
-    for operation in operations:
-        if not isinstance(operation, dict) or set(operation)-{"op", "collection", "key", "value"}:
-            raise AutomationError("invalid_batch", "Each operation must contain only op, collection, key and value.")
-        action, collection, key, value = (operation.get(name) for name in ("op", "collection", "key", "value"))
-        if collection == "settings" and action == "set":
-            if not isinstance(value, dict) or not value or set(value)-settings or key is not None:
-                raise AutomationError("invalid_batch", "Unsupported settings field.")
-            data.update(value)
-            continue
-        if not isinstance(key, str) or not key.strip() or key != key.strip():
-            raise AutomationError("invalid_batch", "Entity keys must be nonempty identifiers.")
-        if collection in constructors:
-            entities = data[collection]
-            if action == "put":
-                allowed = {field.name for field in fields(constructors[collection])}
-                if not isinstance(value, dict) or set(value)-allowed or value.get("name", key) != key:
-                    raise AutomationError("invalid_batch", "Unsupported entity field or inconsistent name.")
-                values = {**entities.get(key, {}), **value, "name": key}
-                if collection == "materials" and "preset" not in value and any(
-                        field in value and value[field] != entities.get(key, {}).get(field) for field in ("E", "nu", "rho")):
-                    values["preset"] = None
-                if collection == "sections" and "catalog" not in value and any(
-                        field in value and value[field] != entities.get(key, {}).get(field) for field in ("A", "Iy", "Iz", "J")):
-                    values.update(catalog=None, designation=None, weak_axis=False)
-                entities[key] = asdict(constructors[collection](**values))
-            elif action == "delete" and value is None:
-                if key not in entities:
-                    raise AutomationError("invalid_batch", "Cannot delete an unknown entity.")
-                del entities[key]
+    for index, operation in enumerate(operations):
+        try:
+            if not isinstance(operation, dict) or set(operation)-{"op", "collection", "key", "value"}:
+                raise AutomationError("invalid_batch", "Each operation must contain only op, collection, key and value.")
+            action, collection, key, value = (operation.get(name) for name in ("op", "collection", "key", "value"))
+            if collection == "settings" and action == "set":
+                if not isinstance(value, dict) or not value or set(value)-settings or key is not None:
+                    raise AutomationError("invalid_batch", "Unsupported settings field.")
+                data.update(value)
+                continue
+            if not isinstance(key, str) or not key.strip() or key != key.strip():
+                raise AutomationError("invalid_batch", "Entity keys must be nonempty identifiers.")
+            if collection in constructors:
+                entities = data[collection]
+                if action == "put":
+                    allowed = {field.name for field in fields(constructors[collection])}
+                    if not isinstance(value, dict) or set(value)-allowed or value.get("name", key) != key:
+                        raise AutomationError("invalid_batch", "Unsupported entity field or inconsistent name.")
+                    values = {**entities.get(key, {}), **value, "name": key}
+                    if collection == "materials" and "preset" not in value and any(
+                            field in value and value[field] != entities.get(key, {}).get(field) for field in ("E", "nu", "rho")):
+                        values["preset"] = None
+                    if collection == "sections" and "catalog" not in value and any(
+                            field in value and value[field] != entities.get(key, {}).get(field) for field in ("A", "Iy", "Iz", "J")):
+                        values.update(catalog=None, designation=None, weak_axis=False)
+                    entities[key] = asdict(constructors[collection](**values))
+                elif action == "delete" and value is None:
+                    if key not in entities:
+                        raise AutomationError("invalid_batch", "Cannot delete an unknown entity.")
+                    del entities[key]
+                else:
+                    raise AutomationError("invalid_batch", "Use put or delete for entity collections.")
+            elif collection == "combinations":
+                if action == "put" and isinstance(value, dict):
+                    data[collection][key] = value
+                elif action == "delete" and value is None and key in data[collection]:
+                    del data[collection][key]
+                else:
+                    raise AutomationError("invalid_batch", "Invalid combination operation.")
+            elif collection == "load_cases":
+                if action == "put" and value is None and key not in data[collection]:
+                    data[collection].append(key)
+                elif action == "delete" and value is None and key in data[collection]:
+                    data[collection].remove(key)
+                else:
+                    raise AutomationError("invalid_batch", "Invalid load-case operation.")
             else:
-                raise AutomationError("invalid_batch", "Use put or delete for entity collections.")
-        elif collection == "combinations":
-            if action == "put" and isinstance(value, dict):
-                data[collection][key] = value
-            elif action == "delete" and value is None and key in data[collection]:
-                del data[collection][key]
-            else:
-                raise AutomationError("invalid_batch", "Invalid combination operation.")
-        elif collection == "load_cases":
-            if action == "put" and value is None and key not in data[collection]:
-                data[collection].append(key)
-            elif action == "delete" and value is None and key in data[collection]:
-                data[collection].remove(key)
-            else:
-                raise AutomationError("invalid_batch", "Invalid load-case operation.")
-        else:
-            raise AutomationError("invalid_batch", "Unsupported collection.")
-    return Project.from_dict(data)
+                raise AutomationError("invalid_batch", "Unsupported collection.")
+        except AutomationError as error:
+            raise AutomationError(error.code, error.message, index) from error
+        except (ValueError, TypeError, KeyError, OverflowError) as error:
+            raise AutomationError("invalid_batch", str(error), index) from error
+    try:
+        return Project.from_dict(data)
+    except (ValueError, TypeError, KeyError, OverflowError) as error:
+        # Cross-entity constraints apply to the completed batch; do not blame an
+        # operation when several cooperating changes can cause or fix the issue.
+        raise AutomationError("invalid_batch", str(error)) from error
 
 
 class AutomationCommands:
@@ -132,7 +148,14 @@ class AutomationCommands:
         window = self.window
         if name == "read_model":
             from .automation_schema import model_reference
-            return {**self.identity(), "model": window.project.to_dict(), "schema": model_reference(getattr(window.project, "dimension", "2D")), "input_units": "Canonical inch-kip; positions are member fractions; angles are degrees."}
+            include_schema = arguments.get("include_schema", True)
+            if type(include_schema) is not bool:
+                raise AutomationError("invalid_arguments", "include_schema must be a boolean.")
+            response = {**self.identity(), "model": window.project.to_dict(),
+                        "input_units": "Canonical inch-kip; positions are member fractions; angles are degrees."}
+            if include_schema:
+                response["schema"] = model_reference(getattr(window.project, "dimension", "2D"))
+            return response
         self.guard(arguments, revision=name in ("apply_batch", "run_analysis"))
         if name == "read_schema":
             from .automation_schema import model_reference, batch_examples
@@ -209,7 +232,8 @@ class AutomationCommands:
                 "job_session_id": window.analysis_job_session, "job_model_revision": getattr(window, "analysis_revision", None),
                 "phase": window.analysis_phase.text() if window.thread is not None else "",
                 "state": window.results_panel.analysis_state, "error": window.analysis_error,
-                "snapshot": self.snapshot()}
+                "snapshot": self.snapshot(),
+                "available_combinations": list(window.result.solver.load_combos) if window.result is not None else []}
 
 
 @dataclass
@@ -265,7 +289,10 @@ class QtCommandBridge(QObject):
             data = safe_json(self.commands.execute(request.name, request.arguments, request.future.cancelled))
             response, status = {"ok": True, "data": data}, "ok"
         except AutomationError as error:
-            response, status = {"ok": False, "error": {"code": error.code, "message": error.message}}, error.code
+            error_data = {"code": error.code, "message": error.message}
+            if error.operation_index is not None:
+                error_data["operation_index"] = error.operation_index
+            response, status = {"ok": False, "error": error_data}, error.code
         except (ValueError, TypeError, KeyError, OverflowError) as error:
             response, status = {"ok": False, "error": {"code": "invalid_arguments", "message": str(error)}}, "invalid_arguments"
         except Exception:
