@@ -44,13 +44,31 @@ class LiveRecalculation(QObject):
         self.deferred = None
         self.pending = self.ready = False
 
-    def is_editing(self):
+    def editing_blocker(self):
         window = self.window
+        modal = QApplication.activeModalWidget()
+        if modal is not None and (modal is window or window.isAncestorOf(modal)):
+            return "Close or finish this project's open editing dialog before automation edits/analysis."
+        if window.planar_view.drag_node or window.planar_view.box_origin is not None:
+            return "Finish the node drag or box selection, or press Escape to cancel it."
+        if window.mode == "draw":
+            return "Member drawing mode is active. Switch to Select mode to finish/cancel drawing before automation edits/analysis."
         focus = QApplication.focusWidget()
-        editor = focus.findChild(QLineEdit) if isinstance(focus, QAbstractSpinBox) else focus
-        return bool(QApplication.activeModalWidget() or QApplication.mouseButtons() != Qt.MouseButton.NoButton
-                    or window.mode == "draw" or window.planar_view.drag_node or window.planar_view.box_origin is not None
-                    or isinstance(editor, QLineEdit) and editor.isModified())
+        if focus is not None and (focus is window or window.isAncestorOf(focus)):
+            current = focus
+            while current is not None and current is not window:
+                if current.property("pynitegui_non_model_controls"):
+                    return ""
+                current = current.parentWidget()
+            if QApplication.mouseButtons() != Qt.MouseButton.NoButton:
+                return "Release the mouse button to finish the current editor gesture."
+            editor = focus.findChild(QLineEdit) if isinstance(focus, QAbstractSpinBox) else focus
+            if isinstance(editor, QLineEdit) and not editor.isReadOnly() and editor.isModified():
+                return "An editable model input has an unfinished change. Apply or discard it before automation edits/analysis."
+        return ""
+
+    def is_editing(self):
+        return bool(self.editing_blocker())
 
     def defer(self, result, error):
         self.deferred = (result, error, self.window.analysis_revision)

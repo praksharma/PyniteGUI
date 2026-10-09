@@ -195,7 +195,8 @@ class AutomationCommands:
 
     def require_idle_editor(self):
         if self.window.live_analysis.is_editing():
-            raise AutomationError("editor_busy", "Finish the current input, gesture or dialog before automation edits/analysis.")
+            raise AutomationError("editor_busy", self.window.live_analysis.editing_blocker() or
+                                  "Finish the current input, gesture or dialog before automation edits/analysis.")
 
     def snapshot(self):
         result = self.window.result

@@ -196,6 +196,8 @@ below and the secondary interface wishlist retain their more specific scope.
   snapshot-labelled results. Return structured errors instead of modal dialogs.
 - [x] Expose exact entity/support schemas and examples in model reads and a
   read-schema tool, plus an MCP reference resource, so empty models need no guesses.
+- [x] Explain specific editor-busy blockers and exclude automation controls,
+  read-only inputs and unrelated windows from the unfinished-input guard.
 - [ ] Optionally add viewport screenshot capture after the core workflow.
   No arbitrary Python/shell execution or file-management tools; the user opens
   and saves projects normally. A separate REST API is not part of the first scope.

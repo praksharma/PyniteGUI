@@ -89,6 +89,63 @@ class AutomationCoreTests(unittest.TestCase):
                 invalid = self.invoke("read_schema", session_id="old-project")
                 self.assertEqual(invalid["error"]["code"], "stale_session")
 
+    def test_editor_busy_names_drawing_mode_and_preserves_batch(self):
+        before = self.window.project.to_dict()
+        self.window.set_mode("draw")
+        response = self.edits([{"op":"put", "collection":"nodes", "key":"N3", "value":{"x": 200, "y": 100}}])
+        self.assertEqual(response["error"]["code"], "editor_busy")
+        self.assertIn("Select mode", response["error"]["message"])
+        self.assertEqual(self.window.project.to_dict(), before)
+        self.window.set_mode("select")
+        response = self.edits([{"op":"put", "collection":"nodes", "key":"N3", "value":{"x": 200, "y": 100}}])
+        self.assertTrue(response["ok"], response)
+
+    def test_automation_controls_and_readonly_focus_do_not_block_edits(self):
+        from PySide6.QtWidgets import QLineEdit
+        self.window.show_automation_server()
+        panel = self.window.automation_panel
+        panel.port.findChild(QLineEdit).setModified(True)
+        with patch.object(QApplication, "focusWidget", return_value=panel.port):
+            self.assertFalse(self.window.live_analysis.is_editing())
+            response = self.edits([{"op":"set", "collection":"settings", "value":{"grid":24}}])
+            self.assertTrue(response["ok"], response)
+        readonly = QLineEdit(self.window)
+        readonly.setReadOnly(True)
+        readonly.setModified(True)
+        with patch.object(QApplication, "focusWidget", return_value=readonly):
+            self.assertFalse(self.window.live_analysis.is_editing())
+        readonly.deleteLater()
+
+    def test_own_modal_dialog_and_gesture_block_even_when_panel_has_focus(self):
+        from PySide6.QtWidgets import QDialog
+        own, other = QDialog(self.window), QDialog()
+        with patch.object(QApplication, "activeModalWidget", return_value=own):
+            self.assertIn("editing dialog", self.window.live_analysis.editing_blocker())
+        with patch.object(QApplication, "activeModalWidget", return_value=other), patch.object(QApplication, "focusWidget", return_value=None):
+            self.assertFalse(self.window.live_analysis.is_editing())
+        self.window.show_automation_server()
+        self.window.planar_view.drag_node = "N2"
+        with patch.object(QApplication, "focusWidget", return_value=self.window.automation_panel.port):
+            self.assertIn("node drag", self.window.live_analysis.editing_blocker())
+        self.window.planar_view.drag_node = None
+        own.deleteLater()
+        other.deleteLater()
+
+    def test_modified_model_input_blocks_but_other_window_does_not(self):
+        from PySide6.QtWidgets import QDoubleSpinBox, QLineEdit
+        self.window.select(("nodes", "N2"))
+        field = self.window.inspector.findChild(QDoubleSpinBox)
+        field.findChild(QLineEdit).setModified(True)
+        with patch.object(QApplication, "focusWidget", return_value=field):
+            response = self.edits([{"op":"set", "collection":"settings", "value":{"grid":24}}])
+            self.assertEqual(response["error"]["code"], "editor_busy")
+            self.assertIn("Apply or discard", response["error"]["message"])
+        other = QLineEdit()
+        other.setModified(True)
+        with patch.object(QApplication, "focusWidget", return_value=other):
+            self.assertFalse(self.window.live_analysis.is_editing())
+        other.deleteLater()
+
     def test_read_units_and_canonical_model_without_server_dependencies(self):
         response = self.invoke("read_model")
         self.assertTrue(response["ok"])

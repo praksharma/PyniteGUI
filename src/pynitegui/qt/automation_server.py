@@ -135,6 +135,7 @@ class AutomationPanel(QDialog):
     def __init__(self, window, server):
         super().__init__(window)
         self.server = server
+        self.setProperty("pynitegui_non_model_controls", True)
         self.setWindowTitle("Automation Server")
         self.resize(620, 690)
         layout = QVBoxLayout(self)

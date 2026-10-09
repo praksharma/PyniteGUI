@@ -131,7 +131,10 @@ Entity collections are `nodes`, `members`, `loads`, `materials`, `sections` and
 and a value containing only `unit_system`, `grid`, `default_material`,
 `default_section`, `default_load_case`, `self_weight_case` or `self_weight_factor`.
 Model reads expose the entity fields for each project's 2D/3D dimension. Active
-input drafts, gestures and editing dialogs block remote edits/analysis. Accepted
+input drafts, gestures and editing dialogs block remote edits/analysis. Drawing
+mode also blocks them: switch to Select mode first. `editor_busy` identifies the
+blocker and how to finish/cancel it. The automation panel, read-only fields and
+inputs in another project window do not count as unfinished model input. Accepted
 edits follow the existing live-recalculation preference, including automatic solves
 when live mode is enabled. Analysis progress/cancellation uses the existing isolated
 worker and preserves previous results on failure/cancellation.
