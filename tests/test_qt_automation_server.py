@@ -195,7 +195,11 @@ class ServerWireTests(ServerWindowTests):
         second = AutomationServer(self.window)
         self.assertFalse(second.start(port))
         self.assertIn("bind localhost port", second.detail)
+        self.window.automation_mode.set_enabled(True)
+        self.assertTrue(self.window.mcp_mode)
         self.server.stop()
+        self.assertFalse(self.window.mcp_mode)
+        self.assertTrue(self.window.centralWidget().isEnabled())
         self.wait_until(lambda: self.server.thread is None)
         self.assertTrue(self.server.start(port), self.server.detail)
         self.wait_until(lambda: self.server.state == "Running")
@@ -228,6 +232,9 @@ class ServerWireTests(ServerWindowTests):
         self.with_client(callback)
 
     def test_wire_successful_analysis_and_paginated_snapshot_results(self):
+        self.window.automation_mode.set_enabled(True)
+        self.assertTrue(self.window.mcp_mode)
+        self.assertFalse(self.window.centralWidget().isEnabled())
         self.server.permissions.set_group("Analysis", True)
         async def callback(client):
             model = (await client.call_tool("read_model", {})).structured_content["data"]
@@ -251,6 +258,15 @@ class ServerWireTests(ServerWindowTests):
             self.assertTrue(stale.is_error)
             self.assertEqual(stale.structured_content["error"]["code"], "stale_revision")
         self.with_client(callback)
+
+    def test_listener_exit_automatically_releases_mcp_mode(self):
+        self.window.automation_mode.set_enabled(True)
+        self.assertTrue(self.window.mcp_mode)
+        self.server.server.should_exit = True  # Listener exits without the user clicking Stop.
+        self.wait_until(lambda: self.server.thread is None)
+        self.assertFalse(self.window.mcp_mode)
+        self.assertTrue(self.window.centralWidget().isEnabled())
+        self.assertFalse(self.window.mcp_mode_button.isEnabled())
 
     def test_wire_analysis_progress_cancellation_and_no_modal_errors(self):
         self.server.permissions.set_group("Analysis", True)

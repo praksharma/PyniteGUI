@@ -24,6 +24,7 @@ class AutomationServer(QObject):
 
     def __init__(self, window):
         super().__init__(window)
+        self.changed.connect(window.automation_mode.sync_server)
         self.permissions = Permissions()
         self.bridge = QtCommandBridge(window, self.permissions)
         self.bridge.logged.connect(self.logged)
@@ -156,6 +157,15 @@ class AutomationPanel(QDialog):
         self.token.setEchoMode(QLineEdit.EchoMode.Password)
         form.addRow("Bearer token", self.token)
         layout.addLayout(form)
+        self.mode_button = QPushButton("MCP mode")
+        self.mode_button.setCheckable(True)
+        self.mode_button.setToolTip(window.automation_mode.action.toolTip())
+        self.mode_button.clicked.connect(window.automation_mode.set_enabled)
+        window.automation_mode.changed.connect(self.update_status)
+        layout.addWidget(self.mode_button)
+        mode_note = QLabel("MCP mode locks manual controls. Entering cancels drawing and discards unapplied inspector inputs. Leave MCP mode or Stop to unlock; permissions still apply.")
+        mode_note.setWordWrap(True)
+        layout.addWidget(mode_note)
         row = QHBoxLayout()
         self.start_button = QPushButton("Start")
         self.start_button.clicked.connect(lambda: server.start(self.port.value()))
@@ -218,6 +228,9 @@ class AutomationPanel(QDialog):
     def update_status(self):
         server = self.server
         connection = f"Last authenticated request {server.last_request} | {server.requests} requests" if server.last_request else "Waiting for a client"
+        self.mode_button.setEnabled(server.state == "Running" and server.bridge.active)
+        self.mode_button.setChecked(self.parentWidget().mcp_mode)
+        self.mode_button.setText("Leave MCP mode" if self.parentWidget().mcp_mode else "MCP mode")
         self.status.setText(f"{server.state} | {connection}" + (f"\n{server.detail}" if server.detail else ""))
         self.endpoint.setText(server.endpoint)
         self.token.setText(server.token)

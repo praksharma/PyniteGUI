@@ -502,6 +502,7 @@ class MainWindow(QMainWindow):
         self.mode = "select"
         self.result = None
         self.revision = 0
+        self.mcp_mode = False
         self.project_session = uuid.uuid4().hex
         self.automation_revision = 0
         self.automation_server = self.automation_panel = None
@@ -546,6 +547,12 @@ class MainWindow(QMainWindow):
         self.statusBar().addPermanentWidget(self.unit_selector)
         self.statusBar().showMessage(f"Ready | 2D frame | {self.project.units.summary}")
         self.undo.indexChanged.connect(self.update_title)
+        from .automation_mode import AutomationMode
+        self.automation_mode = AutomationMode(self)
+        self.mcp_mode_button = QToolButton()
+        self.mcp_mode_button.setProperty("pynitegui_non_model_controls", True)
+        self.mcp_mode_button.setDefaultAction(self.automation_mode.action)
+        self.statusBar().addPermanentWidget(self.mcp_mode_button)
         self.refresh()
         self.view.fit()
         self.autosave_timer = QTimer(self)
@@ -852,6 +859,8 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f"{mode.capitalize()} | {getattr(self.project, 'dimension', '2D')} frame | {self.project.units.summary}")
 
     def edit(self, title, mutate):
+        if self.mcp_mode:
+            return
         before = self.project.clone()
         after = self.project.clone()
         try:
@@ -1727,7 +1736,7 @@ class MainWindow(QMainWindow):
             self.results_panel.set_analysis_state("Failed", error)
             self.show_model_findings(error.split("\n\n"), "Analysis failed")
             self.statusBar().showMessage("Analysis failed | Previous results retained" if self.result is not None else "Analysis failed")
-            if not self.analysis_automatic and not self.analysis_remote:
+            if not self.analysis_automatic and not self.analysis_remote and not self.mcp_mode:
                 QMessageBox.warning(self, "Analysis", error)
             return
         self.result = result
@@ -1916,6 +1925,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "Open Project", str(error))
 
     def closeEvent(self, event):
+        self.automation_mode.set_enabled(False)
         self.live_analysis.discard()
         if self.thread is not None:
             self.close_after_analysis = True

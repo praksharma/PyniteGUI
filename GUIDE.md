@@ -69,6 +69,25 @@ Closing the panel leaves the server running; **Stop** or closing the project
 window stops access. Stop invalidates queued commands immediately. A solve already
 started continues under the normal GUI controls; cancel it separately.
 
+**MCP mode** gives the server exclusive control of this project while it runs.
+Use the button in the status bar or Automation Server panel; it stays disabled
+until the server is running. Entering switches to Select, cancels drawing and
+discards unapplied inspector inputs without changing committed model data.
+Finish any open modal editing dialog before entering. Menus, toolbars, canvas,
+model/results panels and manual shortcuts are locked, while model updates and
+solver progress still appear. MCP commands can edit/analyze without the normal
+editor-busy check in this mode; tool permissions and session/revision guards still
+apply. `read_model` reports `mcp_mode` so clients can see who controls the editor.
+
+Click **Leave MCP mode** in the status bar or panel to return to manual control.
+The Automation Server panel remains available for permissions, cancellation via
+the client, and Stop. Stopping the server or losing its listener automatically
+unlocks the editor. Closing the panel leaves MCP mode active, with the status-bar
+release button available. Closing the project window releases the lock before
+the normal cancellation and unsaved-change prompt. This mode is per-window,
+starts off and is not saved in project files. Ordinary manual controls return
+with their current result/analysis availability intact.
+
 Both a permission group and its individual tool switch must be enabled. Model
 and result reads start enabled; edits and analysis start disabled. Switches take
 effect during discovery, on every call and again before GUI-thread dispatch.

@@ -198,6 +198,8 @@ below and the secondary interface wishlist retain their more specific scope.
   read-schema tool, plus an MCP reference resource, so empty models need no guesses.
 - [x] Explain specific editor-busy blockers and exclude automation controls,
   read-only inputs and unrelated windows from the unfinished-input guard.
+- [x] Add explicit MCP mode while the server runs: lock manual controls and
+  shortcuts, permit MCP commands, and unlock on exit, server stop/failure or close.
 - [ ] Optionally add viewport screenshot capture after the core workflow.
   No arbitrary Python/shell execution or file-management tools; the user opens
   and saves projects normally. A separate REST API is not part of the first scope.

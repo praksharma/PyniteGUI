@@ -46,6 +46,8 @@ class LiveRecalculation(QObject):
 
     def editing_blocker(self):
         window = self.window
+        if window.mcp_mode:
+            return ""
         def belongs_to_project(widget):
             # Qt isAncestorOf stops at top-level dialog boundaries. Follow ownership.
             while widget is not None:

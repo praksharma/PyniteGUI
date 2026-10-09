@@ -119,7 +119,7 @@ class AutomationCommands:
     def identity(self):
         window = self.window
         return {"session_id": window.project_session, "revision": window.automation_revision,
-                "model_revision": window.revision}
+                "model_revision": window.revision, "mcp_mode": window.mcp_mode}
 
     def guard(self, arguments, revision=False):
         if arguments.get("session_id") != self.window.project_session:
