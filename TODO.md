@@ -159,6 +159,11 @@ below and the secondary interface wishlist retain their more specific scope.
 
 ## Project Quality
 
+- [ ] Low priority: build a searchable documentation website on GitHub Pages,
+  splitting and polishing GUIDE.md into repository-maintained pages rather than
+  maintaining duplicate content. Cover installation/examples, modeling, analysis
+  and limitations, 3D graphics troubleshooting, MCP and reference/release notes;
+  include screenshots, light/dark themes and automatic documentation deployment.
 - [x] Prepare 1.0.0rc1 metadata, consistent desktop/MCP version reporting,
   release notes/checklist, source/wheel audits and isolated installed-wheel smoke scripts.
 - [ ] Publish the approved GitHub 1.0.0rc1 prerelease after completing the
