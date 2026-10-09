@@ -156,6 +156,29 @@ below and the secondary interface wishlist retain their more specific scope.
 - [x] Add a separate 3D spatial-frame project and offline Three.js viewport,
   keeping the established 2D editor and file format intact.
 
+## Optional MCP Automation
+
+- [ ] Add an optional `pynitegui[mcp]` extra (`uv sync --extra mcp` in this repo)
+  without adding server dependencies to normal desktop installations.
+- [ ] Add **Tools > Automation Server** with localhost port/endpoint, explicit
+  Start/Stop, connection status, token/configuration copying, permission groups
+  and individual tool switches, and a secret-free request/error log. Start off;
+  explain missing optional dependencies without installing packages automatically.
+- [ ] Use the official MCP SDK with Streamable HTTP and a queued Qt command
+  bridge to the open model. Require localhost binding, authentication and
+  Host/Origin validation. Validate permissions on every call, not only tool listing.
+- [ ] Expose model/units/results reads and validated, undoable batch edits of
+  nodes, members, supports, materials, sections, loads, cases and combinations.
+  Changes appear immediately in the open GUI. Identify project sessions and
+  check expected revisions so requests cannot overwrite intervening user edits.
+- [ ] Expose the existing Run analysis workflow, job progress/cancellation and
+  snapshot-labelled results. Return structured errors instead of modal dialogs.
+- [ ] Optionally add viewport screenshot capture after the core workflow.
+  No arbitrary Python/shell execution or file-management tools; the user opens
+  and saves projects normally. A separate REST API is not part of the first scope.
+- [ ] Test missing-extra startup, lifecycle/port conflicts, permissions/auth,
+  Qt-thread dispatch, atomic undo, stale revisions and analysis cancellation.
+
 ## 3D Follow-Ups
 
 - [x] XYZ geometry, work-plane drawing/snapping, coordinate-based node insertion,
