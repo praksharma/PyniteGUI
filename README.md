@@ -10,7 +10,7 @@ reactions, deformed shapes, force diagrams, and envelopes across combinations. S
 SI/Imperial units, light/dark themes, undo/redo, and autosave recovery.
 Model elastic support springs and 2D member-end axial, shear, or moment releases.
 Analysis shows progress phases and can be cancelled without losing valid results.
-Print selected model definitions, result tables, envelopes, and force diagrams as a report.
+Print selected definitions, results, envelopes, and 2D/3D force diagrams as a report.
 3D mode adds an offline orbitable viewport, XYZ work planes, six-direction supports
 and loads, member roll, biaxial bending/torsion results, and spatial deformation.
 

@@ -11,7 +11,7 @@ import tempfile
 from PySide6.QtCore import QMarginsF, QUrl, Qt
 from PySide6.QtGui import QFont, QImage, QPageLayout, QPageSize, QTextDocument
 from PySide6.QtPrintSupport import QPrinter, QPrintPreviewDialog
-from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFileDialog, QFormLayout, QListWidget, QListWidgetItem, QMenu, QMessageBox
+from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFileDialog, QFormLayout, QListWidget, QListWidgetItem, QMenu, QMessageBox, QScrollArea, QVBoxLayout, QWidget
 
 from .analysis import model_signature
 from .diagrams import draw_structure, member_result_rows
@@ -30,14 +30,18 @@ class ReportOptions:
     envelope_combinations: tuple[str, ...] = ()
     supports: bool = True
     loads: bool = True
+    views: tuple[str, ...] = ("isometric",)
 
     def validate(self):
         if any(type(value) is not bool for value in (self.model, self.nodes, self.members, self.supports, self.loads)):
             raise ValueError("Report section choices must be boolean values.")
-        if not isinstance(self.diagrams, tuple) or any(key not in ("axial", "shear", "moment") for key in self.diagrams):
+        if not isinstance(self.diagrams, tuple) or any(key not in ("axial", "shear", "moment", "shear_y", "shear_z", "torque", "moment_y", "moment_z") for key in self.diagrams):
             raise ValueError("Unknown report diagram selection.")
         if len(set(self.diagrams)) != len(self.diagrams):
             raise ValueError("Duplicate report diagrams.")
+        if (not isinstance(self.views, tuple) or any(key not in ("isometric", "front", "top", "right") for key in self.views)
+                or len(set(self.views)) != len(self.views) or (self.diagrams and not self.views)):
+            raise ValueError("Select distinct supported report views; diagrams need at least one view.")
         if (not isinstance(self.envelope_combinations, tuple) or
                 any(not isinstance(name, str) or not name for name in self.envelope_combinations) or
                 len(set(self.envelope_combinations)) != len(self.envelope_combinations)):
@@ -54,14 +58,22 @@ class ReportOptionsDialog(QDialog):
     def __init__(self, parent):
         super().__init__(parent)
         self.setWindowTitle("Analysis Report")
-        self.resize(460, 360)
+        self.resize(490, 600)
         self.definition = None
         envelope_view = getattr(parent, "envelopes", None)
         envelope_only = hasattr(parent, "selected_combinations")
         if envelope_only:
             envelope_view = parent
         result = getattr(parent, "result", None)
-        form = QFormLayout(self)
+        self.spatial = getattr(getattr(parent, "project", None), "dimension", "2D") == "3D"
+        layout = QVBoxLayout(self)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        content = QWidget()
+        form = QFormLayout(content)
+        scroll.setWidget(content)
+        layout.addWidget(scroll)
         self.sections = {}
         for key, label in (("model", "Model definitions"), ("nodes", "Node results"), ("members", "Member results")):
             widget = QCheckBox(label)
@@ -70,11 +82,26 @@ class ReportOptionsDialog(QDialog):
             form.addRow(widget)
         self.diagrams = {}
         selected = parent.quantity.currentData() if hasattr(parent, "quantity") else "moment"
-        for key, label in (("axial", "Axial-force diagram"), ("shear", "Shear-force diagram"), ("moment", "Bending-moment diagram")):
+        if self.spatial:
+            from .spatial_reports import TITLES, VIEWS
+            selected = parent.view.diagram.currentData() if hasattr(getattr(parent, "view", None), "diagram") else None
+            choices = tuple(TITLES.items())
+        else:
+            choices = (("axial", "Axial-force diagram"), ("shear", "Shear-force diagram"), ("moment", "Bending-moment diagram"))
+        for key, label in choices:
             widget = QCheckBox(label)
             widget.setChecked(key == selected and not envelope_only)
             self.diagrams[key] = widget
             form.addRow(widget)
+        self.views = QListWidget()
+        self.views.setMaximumHeight(90)
+        if self.spatial:
+            for key, label in VIEWS.items():
+                item = QListWidgetItem(label, self.views)
+                item.setData(Qt.ItemDataRole.UserRole, key)
+                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+                item.setCheckState(Qt.CheckState.Checked if key == "isometric" else Qt.CheckState.Unchecked)
+            form.addRow("Diagram views", self.views)
         self.include_envelopes = QCheckBox("Combination envelopes")
         self.include_envelopes.setChecked(envelope_only or
                                          (envelope_view is not None and parent.tabs.currentWidget() is envelope_view))
@@ -115,14 +142,7 @@ class ReportOptionsDialog(QDialog):
         buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Preview")
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        form.addRow(buttons)
-        if getattr(getattr(parent, "project", None), "dimension", "2D") == "3D":
-            for widget in self.diagrams.values():
-                widget.setChecked(False)
-                widget.setEnabled(False)
-                form.setRowVisible(widget, False)
-            for widget in (self.side, self.sign, self.amplitude, self.supports, self.loads):
-                form.setRowVisible(widget, False)
+        layout.addWidget(buttons)
 
     def accept(self):
         combinations = tuple(self.envelope_combinations.item(index).text() for index in range(self.envelope_combinations.count())
@@ -135,6 +155,8 @@ class ReportOptionsDialog(QDialog):
                                 side=self.side.currentData(), sign=-1 if self.sign.isChecked() else 1,
                                 amplitude=self.amplitude.value(),
                                 supports=self.supports.isChecked(), loads=self.loads.isChecked(),
+                                views=tuple(self.views.item(index).data(Qt.ItemDataRole.UserRole) for index in range(self.views.count())
+                                            if self.views.item(index).checkState() == Qt.CheckState.Checked) if self.spatial else ("isometric",),
                                 envelope_combinations=combinations if self.include_envelopes.isChecked() else ())
         try:
             options.validate()
@@ -196,9 +218,27 @@ def model_definition_tables(project):
             ("Load Combinations", *combos)]
 
 
+def diagram_pages(project, options):
+    options.validate()
+    if getattr(project, "dimension", "2D") == "3D":
+        from .spatial_reports import TITLES, VIEWS
+        if any(key not in TITLES for key in options.diagrams):
+            raise ValueError("Choose explicit 3D diagram components (Vy/Vz, My/Mz, N or T).")
+        return [(f"{kind}:{view}", TITLES[kind] + " | " + VIEWS[view]) for kind in options.diagrams for view in options.views]
+    if any(key not in ("axial", "shear", "moment") for key in options.diagrams):
+        raise ValueError("Spatial report diagrams require a 3D project.")
+    titles = {"axial": "Axial-Force Diagram", "shear": "Shear-Force Diagram", "moment": "Bending-Moment Diagram"}
+    return [(key, titles[key]) for key in options.diagrams]
+
+
 def report_images(project, result, options):
-    if getattr(project, "dimension", "2D") == "3D" and options.diagrams:
-        raise ValueError("Whole-structure 3D diagram reports are not yet supported. Use spatial member diagrams or numerical reports.")
+    diagram_pages(project, options)
+    result_table(project, result, "nodes")
+    if not options.diagrams:
+        return {}
+    if getattr(project, "dimension", "2D") == "3D":
+        from .spatial_reports import report_images as spatial_images
+        return spatial_images(project, result, options)
     from matplotlib.backends.backend_agg import FigureCanvasAgg
     from matplotlib.figure import Figure
     images = {}
@@ -271,8 +311,7 @@ def report_html(project, result, source="Untitled", options=None, *, image_urls=
     options = options or ReportOptions()
     options.validate()
     spatial = getattr(project, "dimension", "2D") == "3D"
-    if spatial and options.diagrams:
-        raise ValueError("Whole-structure 3D diagram report pages are not yet supported.")
+    pages = diagram_pages(project, options)
     # Check identity even when no numerical result tables are selected.
     result_table(project, result, "nodes")
     def table(kind):
@@ -330,17 +369,26 @@ def report_html(project, result, source="Untitled", options=None, *, image_urls=
     if image_urls is None:
         image_urls = {key: "data:image/png;base64," + base64.b64encode(data).decode("ascii")
                       for key, data in report_images(project, result, options).items()}
-    titles = {"axial": "Axial-Force Diagram", "shear": "Shear-Force Diagram", "moment": "Bending-Moment Diagram"}
-    for quantity in options.diagrams:
+    if spatial and pages:
+        sections.append('<h2>Spatial Diagram Conventions</h2><p>'
+                        'Orthographic spatial projections; result offsets follow rolled member axes. '
+                        'N is positive in compression. Triangle: rigid restraint; square: bilateral spring; '
+                        'labels name global support DOFs. Moments use axis double arrows; '
+                        'normal-to-view loads use circle (toward viewer) or cross (away). '
+                        'Sampled extrema labels are not exact solver extrema; projected geometry can overlap. '
+                        'Crowded labels may be omitted; use numerical tables for exact values. '
+                        'Member tables and CSV keep the local solver signs.</p>')
+    for quantity, title in pages:
         side = "default" if options.side == 1 else "opposite"
         sign = "standard" if options.sign == 1 else "reversed"
-        sections.append(f'<h2 style="page-break-before: always">{titles[quantity]}</h2>'
+        width, height = (640, 341) if spatial else (800, 427)
+        sections.append(f'<h2 style="page-break-before: always">{title}</h2>'
                         f'<p>Analysis {escape(result.snapshot_id)} | {escape(result.combination)} | {escape(project.units.label)}<br>'
                         f'Placement: {side} side | Diagram display signs: {sign} | Amplitude: {options.amplitude:g}%<br>'
                         f'Supports/springs: {"shown" if options.supports else "hidden"} | '
                         f'Factored combination loads: {"shown" if options.loads else "hidden"}<br>'
                         'Member tables and CSV keep the local solver signs.</p>'
-                        f'<img src="{escape(image_urls[quantity], quote=True)}" width="800" height="427">')
+                        f'<img src="{escape(image_urls[quantity], quote=True)}" width="{width}" height="{height}">')
     return f'''<html><head><style>
         body {{ font-family: sans-serif; color: #24343b; }}
         h1 {{ font-size: 20pt; }} h2 {{ font-size: 12pt; }} h3 {{ font-size: 10pt; }}

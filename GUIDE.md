@@ -202,7 +202,8 @@ again. Closing the source window does not close the copy.
   wins ties. These are independent bounds, not one simultaneous load state.
   Export envelope summaries as CSV or select them in **Print Results**; both
   retain snapshot identity, selected combination factors and project units.
-  Spatial whole-structure diagram PDF pages remain unavailable.
+  Whole-structure report diagrams are single-combination views; the envelope
+  sections remain numerical summaries, not ribbons depicting one governing state.
 - The viewport **Result** selector overlays N, Vy, Vz, T, My or Mz across the
   entire undeformed frame for the currently selected result combination. **Scale**
   multiplies automatic diagram height: 1x maps the largest absolute sampled value
@@ -221,12 +222,27 @@ again. Closing the source window does not close the copy.
 - The save icon on the viewport result toolbar exports the current camera view
   as PNG, including visible geometry, diagram labels, signed-axis gizmo and the
   combination/unit/sign legend. The native controls and editing sidebars are
-  excluded. Whole-structure 3D PDF diagram reports remain pending; numerical
-  envelopes are available in the retained diagram window.
+  excluded. For printable diagrams use **File > Export Results > Print Results**
+  or the retained diagram window's export menu. Select N, Vy, Vz, T, My and/or Mz
+  and check **Isometric**, **Front XY**, **Top XZ** and/or **Right YZ** views.
+  Each component/view pair gets a page with snapshot ID, combination and units.
+  Preview offers native printing/save-to-PDF. These are deterministic orthographic
+  diagrams from the analyzed snapshot, not captures of the live orbit camera;
+  they work without WebGL and always use a light, print-friendly palette.
+  Diagram amplitude maps the largest absolute sampled ordinate across the whole
+  model to the chosen percent of model extent (at least one grid spacing).
+  Side/sign controls change only printed geometry and display labels, not solver
+  tables, CSV or envelope bounds. Supports/springs and factored combination loads
+  have separate visibility controls. Triangles identify rigid supports, squares
+  bilateral springs, and labels identify global DOFs. Moment double arrows follow
+  their global/rolled axes; normal-to-view forces/moments use a circle toward the
+  viewer or cross away. Projected members and offsets can overlap or be edge-on;
+  choose additional views. Dense labels are omitted instead of overlapped; use
+  numerical model/results tables for exact definitions and solver extrema.
 
 Current spatial scope is linear, unreleased frame members and bilateral axial-only
 trusses. No plates/shells, solids, nonlinear effects, manual frame member releases,
-node dragging, implicit physical-member segmentation, or 2D conversion
+node dragging, or implicit physical-member segmentation
 are implemented in this mode yet. Multi-selection supports bulk assignments and
 deletion; use Model Tables for coordinated geometry editing. Geometry requires explicit shared endpoints;
 overlaps, interior nodes, crossings without a shared joint and disconnected groups
@@ -890,6 +906,8 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/model_tables.py`: atomic numerical geometry/load editing.
 - `src/pynitegui/qt/spatial_conversion.py`: explicit, independently validated
   2D-to-3D definitions and support/force convention mapping.
+- `src/pynitegui/qt/spatial_reports.py`: snapshot-based, WebGL-independent spatial
+  diagram projections, rolled-axis ribbons and print-friendly report images.
 - `src/pynitegui/qt/bulk_edit.py`: explicit multi-entity property assignments.
 - `tests/`: project, solver, diagram, and Qt interaction regression tests.
 

@@ -36,7 +36,7 @@ the exact missing part. Summary: **7 done, 2 partial, 9 pending**.
 | Support reactions | Done | Unit-aware reaction tables, CSV and printable output; all six components for spatial frames, including bilateral support springs. |
 | Geometry/load/deformation rendering | Done | Current 2D/3D frame geometry, supports, case-filtered loads, factored combinations and scaled deformed shapes; no plate/mesh renderer yet. |
 | Shear walls and mats | Pending | Add dedicated wall/foundation definitions, meshing, openings, soil/support input and specialized results; verify the locked engine before exposing workflows. |
-| Model/result PDF output | Done | Native printable model definitions and results with save-to-PDF; 2D diagrams/envelopes included. 3D numerical PDF output exists; 3D diagram PDF pages remain a separate follow-up. |
+| Model/result PDF output | Done | Native printable model definitions/results with save-to-PDF; 2D diagrams and numerical envelopes; 3D six-component diagrams with selectable orthographic views and numerical envelopes. |
 
 ### Implementation Gates
 
@@ -206,7 +206,11 @@ below and the secondary interface wishlist retain their more specific scope.
   requested backend overrides; retain unavailable/masked/failure states.
 - [x] Whole-structure 3D axial/shear/bending/torsion overlays with shared scaling,
   combination/unit-aware legends, sampled-value labels and PNG view export.
-- [ ] Whole-structure 3D diagram PDF reports and selectable report views.
+- [x] Whole-structure 3D diagram PDF reports: six local force/moment components,
+  selectable isometric/front/top/right projections, shared ordinate scaling,
+  rolled axes and one-sided jumps, side/sign and support/load visibility,
+  snapshot/unit/combination identity, independent print-friendly rendering,
+  native preview/PDF and pagination/image/analytical regressions.
 - [x] Spatial combination envelopes and interactive one-sided station inspection:
   all six global node motions/reactions, eight local member components, exact
   solver extrema, governing combinations, sampled curves, snapshot-aware CSV
