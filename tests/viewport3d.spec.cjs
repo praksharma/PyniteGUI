@@ -276,6 +276,21 @@ const server = http.createServer((request,response)=>{
     await page.evaluate(({payload,colors})=>window.pyniteViewer.update({...payload,colors}),{payload:truss,colors:dark.colors});
     await page.waitForTimeout(100);
     await page.screenshot({path:path.join(output,'desktop-truss-tripod-dark.png')});
+    const converted=payload.qaConversion;
+    assert(converted.nodes.every(node=>node.position[2]===24),'Converted geometry lost its Z offset');
+    const angled=converted.loads.find(load=>load.name==='L2');
+    assert(Math.abs(angled.vector[0]-.5)<1e-9 && Math.abs(angled.vector[1]+Math.sqrt(3)/2)<1e-9 && Math.abs(angled.vector[2])<1e-9,
+      'Converted force arrow no longer lies in its original XY direction');
+    for(const [name,colors] of [['light',converted.colors],['dark',dark.colors]]){
+      await page.evaluate(({payload,colors})=>{window.pyniteViewer.update({...payload,colors});window.pyniteViewer.orient(0);}, {payload:converted,colors});
+      await page.waitForTimeout(200);
+      assert((await page.evaluate(()=>window.pyniteViewer.state())).drawCalls>10,'Converted model viewport is empty');
+      for(const node of converted.nodes){
+        const [x,y]=await page.evaluate(position=>window.pyniteViewer.project(position),node.position);
+        assert(x>15&&x<1265&&y>15&&y<705,'Converted geometry clipped');
+      }
+      await page.screenshot({path:path.join(output,`desktop-converted-cantilever-${name}.png`)});
+    }
     assert.deepEqual(errors,[]);
     await page.evaluate(()=>{
       window.bridgeFailures=[];

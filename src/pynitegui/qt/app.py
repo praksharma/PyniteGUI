@@ -612,6 +612,8 @@ class MainWindow(QMainWindow):
         for action in (self.new_action, self.open_action, self.save_action):
             file_menu.addAction(action)
         file_menu.addAction(self.action("New 3D Frame", self.new_spatial_project))
+        self.convert_spatial_action = self.action("Create 3D Copy...", self.convert_spatial_project)
+        file_menu.addAction(self.convert_spatial_action)
         file_menu.addAction(self.action("Save As...", lambda: self.save_project(True), "Ctrl+Shift+S"))
         from .reports import ResultExportMenu
         self.export_menu = ResultExportMenu(self, lambda: (self.project, self.result, str(self.path or "Untitled")))
@@ -838,6 +840,7 @@ class MainWindow(QMainWindow):
 
     def refresh(self):
         spatial = getattr(self.project, "dimension", "2D") == "3D"
+        self.convert_spatial_action.setEnabled(not spatial and bool(self.project.members))
         if spatial and self.spatial_view is None:
             from .spatial_view import SpatialView
             self.spatial_view = SpatialView(self)
@@ -1420,6 +1423,36 @@ class MainWindow(QMainWindow):
         if self.confirm_discard():
             from .spatial_model import SpatialProject
             self.load_project(SpatialProject(unit_system=self.project.unit_system))
+
+    def convert_spatial_project(self):
+        if getattr(self.project, "dimension", "2D") != "2D" or not self.project.members:
+            return
+        from .spatial_conversion import conversion_dialog, to_spatial
+        dialog = conversion_dialog(self, self.project)
+        if not dialog.exec():
+            return
+        try:
+            converted = to_spatial(self.project, dialog.mode.currentData(),
+                                   unit_value(dialog.offset, self.project.units))
+        except ValueError as error:
+            QMessageBox.warning(self, "Create 3D Copy", str(error))
+            return
+        directory = self.recovery.directory if self.recovery is not None else None
+        window = MainWindow(directory, self.settings_store)
+        window.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose)
+        # Independent top-level windows must survive the source window closing.
+        application = QApplication.instance()
+        if not hasattr(application, "project_windows"):
+            application.project_windows = set()
+        application.project_windows.add(window)
+        window.destroyed.connect(lambda: application.project_windows.discard(window))
+        window.load_project(converted)
+        window.saved = type(converted)(unit_system=converted.unit_system).to_dict()
+        window.update_title()
+        window.statusBar().showMessage(f"3D copy of {self.path.name if self.path else 'Untitled'} | "
+                                      f"{dialog.mode.currentText()} | {converted.units.summary}")
+        window.show()
+        return window
 
     def add_spatial_node(self):
         dialog = QDialog(self)

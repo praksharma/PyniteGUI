@@ -8,7 +8,7 @@ Draw and edit frames or trusses, assign custom or library materials and sections
 distributed, or automatic self-weight loads. Analyze combinations and inspect
 reactions, deformed shapes, force diagrams, and envelopes across combinations. Supports
 SI/Imperial units, light/dark themes, undo/redo, and autosave recovery.
-Model elastic support springs and member-end axial, shear, or moment releases.
+Model elastic support springs and 2D member-end axial, shear, or moment releases.
 Analysis shows progress phases and can be cancelled without losing valid results.
 Print selected model definitions, result tables, envelopes, and force diagrams as a report.
 3D mode adds an offline orbitable viewport, XYZ work planes, six-direction supports
@@ -25,7 +25,8 @@ uv run pynitegui
 ```
 
 Try **File > Examples** to open a ready-to-analyze beam or frame.
-Start a spatial model with **File > New 3D Frame**, or try either **3D** example.
+Start a spatial model with **File > New 3D Frame**, use **Create 3D Copy** for an
+existing unreleased 2D model, or try the **3D** examples.
 If 3D graphics fail to start, launch with `uv run pynitegui --software-rendering`.
 
 ## Screenshots

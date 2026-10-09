@@ -222,7 +222,12 @@ below and the secondary interface wishlist retain their more specific scope.
 - [x] Spatial member splitting and explicit XYZ crossing/T-junction/interior-node
   connections, preserving roll/assignments and point/distributed loads, with
   overlap rejection, atomic validation and one-step undo.
-- [ ] Explicit 2D-to-3D conversion with preserved loads/support conventions.
+- [x] Explicit 2D-to-3D conversion for unreleased frames and axial-only trusses:
+  independent unsaved window, optional Z offset, explicit planar/spatial support
+  modes, preserved force components/cases/assignments, save/recovery isolation
+  and in-plane response benchmarks. Released frames are rejected, never stripped.
+- [ ] Extend 2D-to-3D conversion to released frames after general spatial frame
+  releases and released-end recovery are independently benchmarked.
 - [x] Spatial point/distributed forces by magnitude, global azimuth/elevation,
   XYZ component previews, angled arrows, editable tables and versioned persistence.
 - [x] Dedicated global 3D rigid/spring symbols for all six DOFs, unit-aware

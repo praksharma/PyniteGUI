@@ -40,8 +40,33 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
 Use **File > New 3D Frame** for a new spatial project. **File > Examples** includes
 **3D Cantilever - Biaxial Bending and Torsion** and **3D Space Frame - Gravity and Wind**.
 **3D Truss Tripod - Joint Load** provides a pin-jointed spatial benchmark.
-The existing New command still creates a 2D project. Changing project dimensions
-does not reinterpret or convert existing geometry; open or create the intended mode.
+The existing New command still creates a 2D project. Dimensions never change
+implicitly. Use **File > Create 3D Copy** to convert an existing 2D definition into
+an independent, unsaved 3D window; the original geometry, undo history, file and
+result snapshot remain untouched. Save the copy to its own file and analyze it
+again. Closing the source window does not close the copy.
+
+- Conversion places the original XY geometry at the entered global Z offset.
+  **Preserve planar constraints** (default) explicitly fixes DZ/RX/RY at every
+  node and preserves the original global DX/DY/RZ restraints and springs. These
+  are real, editable custom supports, not hidden solver stabilization, and retain
+  the original in-plane linear response.
+- **Use spatial supports** removes the planar adapter constraints: free nodes
+  have six free directions, pins restrain XYZ translations, fixed supports
+  restrain all six directions, rollers remain global Y-only, and custom supports
+  keep only their explicitly defined in-plane restraints/springs. Review supports
+  before analysis; a planar truss or Y-only-supported frame may be unstable out
+  of plane. No missing stiffness is silently restrained.
+- IDs, assignments, material/section provenance, units, grid, cases/combinations,
+  load fractions/intensities and self-weight settings are copied. Angled and
+  member-local planar forces become global spatial azimuth/elevation forces with
+  the same actual XY components, including on reversed/vertical members. Generated
+  self-weight is regenerated, not duplicated; member roll starts at zero.
+- Unreleased frames and axial-only trusses can be converted. Frame members with
+  any DX/DY/RZ end release are rejected by name until general spatial end releases
+  are supported; conversion never drops their releases. Redundant planar truss
+  moment flags become the spatial axial-only type. Conversion copies definitions,
+  not analytical results, and does not infer new joints at crossings.
 
 - The central viewport uses bundled Three.js and Qt WebEngine, offline. Drag to
   orbit in Select mode, use Pan for translation, and wheel to zoom. Fit and the
@@ -863,6 +888,8 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/theme.py`: shared light/dark widget, canvas, and plot styling.
 - `src/pynitegui/qt/self_weight.py`: opt-in case/factor editor and weight preview.
 - `src/pynitegui/qt/model_tables.py`: atomic numerical geometry/load editing.
+- `src/pynitegui/qt/spatial_conversion.py`: explicit, independently validated
+  2D-to-3D definitions and support/force convention mapping.
 - `src/pynitegui/qt/bulk_edit.py`: explicit multi-entity property assignments.
 - `tests/`: project, solver, diagram, and Qt interaction regression tests.
 

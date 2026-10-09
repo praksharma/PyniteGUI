@@ -11,6 +11,7 @@ from pynitegui.qt.analysis import analyze
 from pynitegui.qt.examples import example_project
 from pynitegui.qt.spatial_view import viewport_payload
 from pynitegui.qt.spatial_model import SpatialLoad, SPRING_FIELDS
+from pynitegui.qt.spatial_conversion import to_spatial
 
 
 if __name__ == "__main__":
@@ -66,6 +67,13 @@ if __name__ == "__main__":
     window.view.diagram.setCurrentIndex(window.view.diagram.findData("axial"))
     payload["qaTruss"] = viewport_payload(window)
     payload["qaTruss"].update(plane="XZ", offset=0, labels=True)
+    window.load_project(to_spatial(example_project("cantilever"), offset=24))
+    with contextlib.redirect_stdout(io.StringIO()):
+        window.result = analyze(window.project)
+    window.deformed_action.setChecked(True)
+    window.view.diagram.setCurrentIndex(window.view.diagram.findData("moment_z"))
+    payload["qaConversion"] = viewport_payload(window)
+    payload["qaConversion"].update(plane="XY", offset=24, labels=True)
     print(json.dumps(payload, allow_nan=False))
     window.saved = window.project.to_dict()
     window.close()
