@@ -114,13 +114,17 @@ and verified PyNite extensions. This file remains the primary implementation lis
 - [x] All six nodal displacements/reactions, biaxial bending, shear and torsion
   member diagrams, true/auto/custom spatial deformation, CSV and numerical reports.
 - [x] Editable 3D cantilever and space-frame examples; analytical benchmarks,
-  native light/dark rendering, and desktop/mobile browser interaction checks.
+  native light/dark rendering, and desktop browser interaction checks.
 - [x] Add startup software rendering, a persisted renderer preference and an
   actionable native recovery panel for failed WebGL/graphics contexts.
 - [x] Verify and document NVIDIA hardware rendering on Wayland with matched
   EGL/Vulkan drivers, visible geometry, and GPU compositing enabled.
 - [x] Apply the verified NVIDIA profile automatically for one NVIDIA display-driving
   GPU on Wayland, preserving software mode, hybrid setups, and explicit overrides.
+- [x] Add a clickable signed-axis orientation gizmo, isometric reset, animated
+  view changes, keyboard access, and synchronized native orientation selection.
+- [x] Restore window controls for GNOME Wayland Vulkan windows without Qt
+  decorations, retaining menu access and unsaved-work confirmation.
 - [ ] Display the actual viewport GPU/driver/backend in graphics diagnostics,
   distinguishing selected preferences from the renderer Qt actually uses.
 - [ ] Whole-structure 3D axial/shear/bending/torsion overlays and image reports.

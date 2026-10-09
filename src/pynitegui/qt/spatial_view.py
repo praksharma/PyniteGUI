@@ -79,6 +79,14 @@ class Bridge(QObject):
     def failed(self, message):
         self.view.render_failure(message)
 
+    @Slot(int)
+    def orientation(self, index):
+        if 0 <= index <= 7:
+            control = self.view.orientation
+            previous = control.blockSignals(True)
+            control.setCurrentIndex(index)
+            control.blockSignals(previous)
+
     @Slot(str, str, bool)
     def select(self, kind, name, extend):
         window = self.view.window
@@ -147,7 +155,8 @@ class SpatialView(QWidget):
         self.offset.setToolTip("Work plane offset along its perpendicular global axis")
         self.offset.setMaximumWidth(125)
         self.orientation = QComboBox()
-        self.orientation.addItems(["Isometric", "Front XY", "Top XZ", "Side YZ"])
+        self.orientation.addItems(["Isometric", "Front XY", "Top XZ", "Right YZ", "Back XY", "Bottom XZ", "Left YZ", "Orbit"])
+        self.orientation.model().item(7).setEnabled(False)
         self.orientation.setToolTip("Camera orientation")
         self.labels = QCheckBox("Labels")
         self.labels.setChecked(True)

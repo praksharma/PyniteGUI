@@ -28,7 +28,13 @@ does not reinterpret or convert existing geometry; open or create the intended m
 
 - The central viewport uses bundled Three.js and Qt WebEngine, offline. Drag to
   orbit in Select mode, use Pan for translation, and wheel to zoom. Fit and the
-  isometric/front/top/side camera presets reframe the model.
+  isometric/front/top/right/back/bottom/left camera presets reframe the model.
+- The lower-right orientation gizmo rotates with the camera. Click a signed axis
+  to animate to that view while preserving the current zoom and orbit center;
+  **ISO** restores the isometric fitted view. The native view selector follows
+  gizmo choices and shows **Orbit** during free navigation. With the gizmo focused,
+  X/Y/Z select positive axes, Shift+X/Y/Z select negative axes, and Home restores
+  isometric. This uses the bundled Three.js r180 `ViewHelper`, under its MIT license.
 - In Member mode choose an XY, XZ or YZ work plane and its perpendicular offset.
   Two clicks draw a snapped member. Existing picked nodes take priority over the
   work plane, allowing connections between different planes. Escape cancels a
@@ -164,6 +170,13 @@ to the command. Successful hardware rendering should report the Quadro as the
 `QSG RHI Device`, NVIDIA in `GL Renderer`, and `GPU Compositing: Enabled`; viewing
 the model must also succeed. A working context alone does not prove Qt can display it.
 Use software rendering if this configuration does not work on another machine.
+
+On GNOME Wayland, Qt currently omits its own client-side decorations for Vulkan
+windows. PyniteGUI supplies a compact title bar for affected main windows and
+its own box/form-layout dialogs, with close, minimize/maximize where applicable,
+title dragging and double-click maximize. Closing still uses the existing
+unsaved-work confirmation. Other platforms/backends retain their native controls.
+See [Qt's Vulkan decoration limitation](https://codebrowser.dev/qt6/qtbase/src/plugins/platforms/wayland/qwaylandwindow.cpp.html).
 
 References: [Qt NVIDIA graphics integration](https://doc.qt.io/qt-6.10/qtwebengine-features.html#nvidia-on-linux),
 [NVIDIA EGL vendor selection](https://github.com/NVIDIA/libglvnd/blob/master/src/EGL/icd_enumeration.md),
@@ -737,8 +750,9 @@ For real viewport checks, install Playwright in a separate developer environment
 with its Chromium browser, then run `node tests/viewport3d.spec.cjs` with Playwright
 available to Node (or set `PLAYWRIGHT_MODULE` to its installed package directory).
 The script serves local assets temporarily and closes both browser/server after
-testing desktop/mobile canvas pixels, framing, orbit, node picking, all three
-work-plane drawing modes and dark appearance. Screenshots go to `/tmp/pynite-3d-qa`
+testing desktop canvas pixels, framing, six signed gizmo views, keyboard reset,
+zoom/selection preservation, orbit, node picking, all three work-plane drawing
+modes and dark appearance. Screenshots go to `/tmp/pynite-3d-qa`
 by default, configurable with `VIEWPORT_QA_OUTPUT`. It does not launch the user's GUI.
 Distributed-load checks cover analytical uniform/triangular beam responses,
 partial-span resultants, inclined global loading, orientation-independent

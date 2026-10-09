@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {OrbitControls} from './vendor/OrbitControls.js';
+import {OrientationGizmo} from './gizmo.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 100000);
@@ -7,6 +8,11 @@ const renderer = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 document.body.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
+renderer.autoClear = false;
+renderer.info.autoReset = false;
+function notifyOrientation(index){window.pyniteBridge?.orientation(index);window.dispatchEvent(new CustomEvent('viewOriented',{detail:index}));}
+const gizmo = new OrientationGizmo(camera,controls,renderer,orient,notifyOrientation,stopMotion);
+controls.addEventListener('start',()=>notifyOrientation(7));
 controls.enableDamping = true;
 controls.screenSpacePanning = true;
 scene.add(new THREE.HemisphereLight(0xffffff, 0x708080, 2));
@@ -117,9 +123,12 @@ function fit() {
   controls.target.copy(center);camera.position.copy(center).addScaledVector(direction,distance);camera.near=Math.max(distance/10000,.001);camera.far=distance*100;camera.updateProjectionMatrix();controls.update();
 }
 function orient(index) {
+  if(index<0||index>6)return;
+  gizmo.cancel();
   stopMotion();
-  const direction=[new THREE.Vector3(1,.7,1),new THREE.Vector3(0,0,1),new THREE.Vector3(0,1,.0001),new THREE.Vector3(1,0,0)][index];
-  camera.up.set(0,1,0);camera.position.copy(controls.target).add(direction);fit();
+  const direction=[new THREE.Vector3(1,.7,1),new THREE.Vector3(0,0,1),new THREE.Vector3(0,1,0),new THREE.Vector3(1,0,0),new THREE.Vector3(0,0,-1),new THREE.Vector3(0,-1,0),new THREE.Vector3(-1,0,0)][index];
+  camera.up.set(0,index===2||index===5?0:1,index===2?-1:index===5?1:0);
+  camera.position.copy(controls.target).add(direction);fit();notifyOrientation(index);
 }
 function stopMotion(){const damping=controls.enableDamping;controls.enableDamping=false;controls.update();controls.enableDamping=damping;}
 function ray(event) {
@@ -164,6 +173,8 @@ function placeLabels(){
     if(sprite.visible)occupied.push(rect);
   }
 }
-function animate(){if(!rendering)return;requestAnimationFrame(animate);controls.update();placeLabels();renderer.render(scene,camera);}animate();
+let lastTime=performance.now();
+function animate(){if(!rendering)return;requestAnimationFrame(animate);const now=performance.now(),delta=Math.min((now-lastTime)/1000,.1);lastTime=now;if(!gizmo.update(delta))controls.update();placeLabels();renderer.info.reset();renderer.clear();renderer.render(scene,camera);gizmo.render();}animate();
 window.pyniteViewer={update,fit,orient,cancel,state:()=>({objects:group.children.length,drawCalls:renderer.info.render.calls,camera:camera.position.toArray(),target:controls.target.toArray(),selection:data.selection}),project:position=>{const p=vector(position).project(camera);return[(p.x+1)*innerWidth/2,(1-p.y)*innerHeight/2];}};
+window.pyniteViewer.gizmoAxes=()=>gizmo.axes();
 window.pyniteRendererReady=true;window.pyniteBridge?.ready();

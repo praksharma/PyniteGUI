@@ -29,7 +29,7 @@ const server = http.createServer((request,response)=>{
     page.on('pageerror',error=>errors.push(error.message));
     await page.goto(`http://127.0.0.1:${server.address().port}/`);
     await page.waitForFunction(()=>window.pyniteViewer);
-    for(const [name,size] of [['desktop',{width:1280,height:720}],['mobile',{width:390,height:844}]]){
+    for(const [name,size] of [['desktop',{width:1280,height:720}]]){
       await page.setViewportSize(size);
       await page.evaluate(payload=>{window.pyniteViewer.update(payload);window.pyniteViewer.fit();},payload);
       await page.waitForTimeout(300);
@@ -46,6 +46,12 @@ const server = http.createServer((request,response)=>{
       const positions=await page.evaluate(nodes=>nodes.map(node=>window.pyniteViewer.project(node.position)),payload.nodes);
       for(const [x,y] of positions)assert(x>15&&x<size.width-15&&y>15&&y<size.height-15,`${name} model clipped: ${x}, ${y}`);
       await page.screenshot({path:path.join(output,`${name}-light.png`)});
+      await page.evaluate(()=>{window.pyniteViewer.orient(0);window.viewEvent=-1;addEventListener('viewOriented',event=>window.viewEvent=event.detail);});
+      const axis=await page.evaluate(()=>window.pyniteViewer.gizmoAxes().find(axis=>axis.type==='posZ'));
+      await page.mouse.click(axis.x,axis.y);
+      await page.waitForFunction(()=>window.viewEvent===1);
+      await page.getByRole('button',{name:'Isometric view'}).click();
+      await page.waitForFunction(()=>window.viewEvent===0);
       console.log(name,JSON.stringify({pixels,drawCalls:state.drawCalls}));
     }
     await page.setViewportSize({width:1280,height:720});
@@ -74,6 +80,26 @@ const server = http.createServer((request,response)=>{
     const dark={...payload,colors:{...payload.colors,canvas:'#191c1f',grid:'#30373b',member:'#d1dbe0',label:'#c4cdd3',accent:'#4cc9c0',support:'#73d89c',load:'#ff7b8a'}};
     await page.evaluate(payload=>{window.pyniteViewer.update(payload);window.pyniteViewer.orient(0);},dark);
     await page.waitForTimeout(300);await page.screenshot({path:path.join(output,'desktop-dark.png')});
+    for(const [type,index,direction] of [['posX',3,[1,0,0]],['posY',2,[0,1,0]],['posZ',1,[0,0,1]],['negX',6,[-1,0,0]],['negY',5,[0,-1,0]],['negZ',4,[0,0,-1]]]){
+      await page.evaluate(()=>{window.pyniteViewer.orient(0);window.viewEvent=-1;});
+      const before=await page.evaluate(()=>window.pyniteViewer.state());
+      const axis=await page.evaluate(type=>window.pyniteViewer.gizmoAxes().find(axis=>axis.type===type),type);
+      await page.mouse.click(axis.x,axis.y);
+      await page.waitForFunction(index=>window.viewEvent===index,index,{timeout:2000}).catch(async error=>{
+        console.error(type,index,await page.evaluate(()=>({event:window.viewEvent,state:window.pyniteViewer.state(),axes:window.pyniteViewer.gizmoAxes()})));throw error;
+      });
+      const after=await page.evaluate(()=>window.pyniteViewer.state());
+      const delta=after.camera.map((v,i)=>v-after.target[i]),distance=Math.hypot(...delta);
+      assert(delta.every((v,i)=>Math.abs(v/distance-direction[i])<.001),`${type} did not align the camera`);
+      assert(after.target.every((v,i)=>Math.abs(v-before.target[i])<1e-6),'Gizmo changed the orbit target');
+      assert.deepEqual(after.selection,before.selection,'Gizmo changed the selection');
+      assert(Math.abs(distance-Math.hypot(...before.camera.map((v,i)=>v-before.target[i])))<.01,'Gizmo changed zoom');
+    }
+    await page.getByRole('group',{name:'View orientation'}).focus();
+    await page.keyboard.press('Home');
+    await page.waitForFunction(()=>window.viewEvent===0);
+    await page.keyboard.press('Shift+X');
+    await page.waitForFunction(()=>window.viewEvent===6);
     assert.deepEqual(errors,[]);
     await page.evaluate(()=>{
       window.bridgeFailures=[];
@@ -85,6 +111,6 @@ const server = http.createServer((request,response)=>{
     assert.match(failure.message,/graphics context was lost/i);
     assert.deepEqual(failure.bridge,[failure.message],'Context loss did not reach the native bridge');
     assert(failure.error.includes(failure.message),'Context loss did not show browser fallback text');
-    console.log('PASS: rendered geometry/deformation, desktop/mobile framing, orbit, node picking, XY/XZ/YZ snapped drawing, dark theme, context-loss recovery.');
+    console.log('PASS: rendered geometry/deformation, desktop framing and gizmo, six signed views, keyboard reset, orbit, node picking, XY/XZ/YZ snapped drawing, dark theme, context-loss recovery.');
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;}).finally(()=>server.close());

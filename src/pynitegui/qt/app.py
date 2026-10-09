@@ -1737,6 +1737,8 @@ def main():
     application.setProperty("pynitegui_graphics", mode)
     application.setApplicationName("PyniteGUI")
     configure_theme(application)
+    from .window_controls import install_window_controls
+    install_window_controls(application)
     recovery_directory = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppDataLocation)) / "recovery"
     window = MainWindow(recovery_directory, settings)
     window.show()
