@@ -117,6 +117,10 @@ again. Closing the source window does not close the copy.
   undo in one step and invalidate results; repeat analysis after editing.
   Drawing or analysis never silently connects a crossing, and solver-only
   physical-member segmentation remains outside this workflow.
+- **Edit > Subdivide Selected Members** divides each selected frame into 2–100
+  equal segments. It uses the same load/roll-preserving split rules, retains
+  coincident nodes and applies the entire selection as one undoable edit.
+  Axial-only trusses are rejected because subdivision introduces unbraced joints.
 - In Select mode, enable **Box select** or hold Shift while dragging a rectangle.
   Left-to-right selects enclosed nodes and complete members; right-to-left also
   selects members crossing the box. Ctrl/Command adds to the current selection;
@@ -451,7 +455,20 @@ This panel does not query the compositor's physical GPU or a driver package vers
   explicit segments sharing one node. Existing interior nodes are also connected.
   Splitting and connecting are each a single undoable edit.
 - Edit > Check Model reports overlapping members, interior-node connections that
-  need splitting, and disconnected groups. Analysis also runs these checks.
+  need splitting, and disconnected groups in the **Model Findings** dock.
+  Select a finding and press **Select affected geometry**, or double-click it,
+  to highlight its referenced entities in the canvas and tree. Analysis failures
+  also populate this dock, including recognized node/DOF instability references.
+  General failures without a specific reference remain readable with selection
+  disabled. Navigation does not edit the model. Engineering edits clear findings;
+  unit changes preserve them. Analysis also runs the model checks.
+- **Edit > Subdivide Selected Members** divides selected frame members into
+  2–100 equal segments in one undoable edit. The first segment retains the member
+  ID; outer-end releases, assignments, load locations/cases and distributed
+  intensity profiles are preserved. Existing coincident nodes retain their
+  engineering properties. New internal frame connections are rigid. Axial-only
+  trusses are rejected because subdivision creates unbraced intermediate joints;
+  use explicit split/connect operations with appropriate bracing instead.
 - Select a member and check Released for its Start or End moment RZ in
   the inspector, then press Apply. Hollow circles mark released member ends.
   These releases disconnect in-plane moment transfer at the member connection;
@@ -956,6 +973,8 @@ and concentrated moments include both sides of each discontinuity.
   lazy member tables, equilibrium display and analysis/snapshot status.
 - `src/pynitegui/qt/equilibrium.py`: independent global load resultants and
   reaction balance with explicit force/moment tolerances.
+- `src/pynitegui/qt/model_findings.py`: model/analysis finding review and
+  conservative navigation for recognized geometry references.
 - `src/pynitegui/qt/app.py`: Qt graphics editor, inspector, undo commands,
   background analysis, and a consistent light application theme.
 - `src/pynitegui/qt/diagrams.py`: whole-frame axial/SFD/BMD views, member detail plots,

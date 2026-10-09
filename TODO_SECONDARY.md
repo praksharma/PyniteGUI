@@ -126,8 +126,10 @@ an audit of Stabileo's engineering calculations. PRO is labelled beta.
   geometry as a reusable local template. Truss generators wait for the explicit
   truss workflow; no automatic sizing or structural design is implied.
 - [ ] **Reviewable topology cleanup and construction aids (UI).** Turn existing
-  validation findings into select/zoom actions and previewed fixes. Add equal
-  subdivision, perpendicular connections, and midpoint-to-midpoint members.
+  validation findings into select/zoom actions and previewed fixes. Finding
+  selection and equal frame subdivision are completed in the primary roadmap;
+  finding-focused zoom, previewed fixes, perpendicular connections and
+  midpoint-to-midpoint members remain pending.
   Offer controlled node merging, orientation reversal, and renumbering; rewrite
   every reference and preserve loads, releases, and group membership. Merge
   collinear members only when the intermediate node has no engineering role
@@ -146,8 +148,9 @@ an audit of Stabileo's engineering calculations. PRO is labelled beta.
   the primary roadmap: planar/spatial global totals, residuals, tolerances and
   units, including combination factors, manual/self-weight loads and distributed
   resultants. Analysis lifecycle states identify retained snapshots explicitly.
-  Balance is not design approval. Navigation from failure diagnostics to affected
-  geometry remains a separate primary TODO; extend the free-body inspector below.
+  Balance is not design approval. Navigation from recognized failure diagnostics
+  to affected geometry is also completed in the primary roadmap; extend the
+  free-body inspector below.
 - [ ] **Plain storey displacement/drift table (UI).** For explicitly paired
   nodes at successive levels, calculate horizontal displacement difference and
   drift ratio from PyNite nodal results. Report pairs, height, combination, and

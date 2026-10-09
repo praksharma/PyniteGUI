@@ -653,6 +653,32 @@ class Project:
             raise ValueError("Split fraction must be strictly between 0 and 1.")
         return self._split_member(name, [fraction])
 
+    def subdivide_members(self, names, count):
+        """Atomically split selected members into equal physical segments."""
+        if isinstance(count, bool) or not isinstance(count, int) or not 2 <= count <= 100:
+            raise ValueError("Choose between 2 and 100 equal segments per member.")
+        names = list(dict.fromkeys(names))
+        if not names or any(name not in self.members for name in names):
+            raise ValueError("Select existing members to subdivide.")
+        candidate = self.clone()
+        candidate.validate()
+        segments = {}
+        for name in names:
+            member = candidate.members[name]
+            if member.kind == "truss":
+                raise ValueError(f"Member {name}: equal subdivision of axial-only trusses introduces unbraced joints. Use explicit split/connect operations with appropriate bracing instead.")
+            a, b = candidate.nodes[member.start], candidate.nodes[member.end]
+            spatial = getattr(candidate, "dimension", "2D") == "3D"
+            length = math.dist(a.coords, b.coords) if spatial else math.hypot(b.x - a.x, b.y - a.y)
+            if length / count <= 1e-8:
+                raise ValueError(f"Member {name}: subdivisions are too close to the geometry tolerance.")
+            segments[name] = candidate._split_member(name, [index / count for index in range(1, count)])
+            if len(segments[name]) != count:
+                raise ValueError(f"Member {name}: could not create all equal segments.")
+        candidate.validate()
+        self.nodes, self.members, self.loads = candidate.nodes, candidate.members, candidate.loads
+        return segments
+
     def _split_member(self, name, fractions):
         from dataclasses import replace
         original = self.members[name]

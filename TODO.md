@@ -63,6 +63,9 @@ below and the secondary interface wishlist retain their more specific scope.
 - [x] Add editable node/member/load tables with unit-aware numerical entry,
   row addition/removal, atomic validation, and one-step undo/redo.
 - [x] Add member splitting and an explicit connect-at-intersection operation.
+- [x] Add atomic equal subdivision of selected 2D/3D frame members with
+  assignment/release/load preservation, existing-node reuse and one-step undo.
+  Reject axial-only trusses rather than introduce unbraced intermediate joints.
 - [x] Detect overlapping members, disconnected components, and unintended
   intermediate-node connections before analysis.
 - [x] Add in-plane member end moment releases for hinges and pin-jointed frames.
@@ -138,7 +141,8 @@ below and the secondary interface wishlist retain their more specific scope.
 - [x] Show global equilibrium totals, residuals and tolerances for planar/spatial
   combinations, including manual and generated self-weight loads; label analysis
   lifecycle states and retained snapshots explicitly in the results dock.
-- [ ] Link analysis failure diagnostics to affected geometry where identifiable.
+- [x] Link recognized analysis failure and model-check diagnostics to affected
+  geometry via a reviewable findings dock; clear findings after engineering edits.
 - [x] Export reactions, forces, and displacements as CSV and a printable report.
 - [x] Extend printable reports with model definitions and selected diagrams.
   Select definitions/result tables/axial/SFD/BMD diagrams; retain snapshot identity,

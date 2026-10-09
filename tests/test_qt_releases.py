@@ -256,4 +256,8 @@ class ReleaseEditorTests(unittest.TestCase):
         self.window.load_project(project)
         with patch.object(QMessageBox, "warning") as warning:
             self.window.check_model()
-        self.assertIn("all connected member ends are hinged", warning.call_args.args[2])
+        warning.assert_not_called()
+        findings = self.window.model_findings
+        self.assertIn("all connected member ends are hinged", findings.list.item(0).text())
+        findings.activate()
+        self.assertEqual(self.window.selected, ("nodes", "N1"))

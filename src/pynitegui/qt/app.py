@@ -647,6 +647,7 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.action("Units...", self.choose_units))
         edit_menu.addSeparator()
         edit_menu.addAction(self.action("Split Selected Member...", self.split_selected_member))
+        edit_menu.addAction(self.action("Subdivide Selected Members...", self.subdivide_selected_members))
         edit_menu.addAction(self.action("Connect Intersections", self.connect_intersections))
         edit_menu.addAction(self.action("Check Model", self.check_model))
         toolbar = self.addToolBar("Model")
@@ -777,6 +778,11 @@ class MainWindow(QMainWindow):
         results_layout.addWidget(self.results_panel)
         self.results_dock = self.dock("Results", results_panel, Qt.DockWidgetArea.BottomDockWidgetArea)
         self.results_dock.hide()
+        from .model_findings import ModelFindings
+        self.model_findings = ModelFindings(self)
+        self.model_findings.entities_requested.connect(self.select_finding_entities)
+        self.findings_dock = self.dock("Model Findings", self.model_findings, Qt.DockWidgetArea.BottomDockWidgetArea)
+        self.findings_dock.hide()
 
     def update_title(self):
         dirty = self.project.to_dict() != self.saved
@@ -826,6 +832,7 @@ class MainWindow(QMainWindow):
                 self.statusBar().showMessage(f"Units updated | {self.project.units.summary}")
             return
         self.revision += 1
+        self.model_findings.clear()
         self.result = None
         self.export_menu.setEnabled(False)
         self.result_combination.setEnabled(False)
@@ -1199,6 +1206,35 @@ class MainWindow(QMainWindow):
         if added:
             self.statusBar().showMessage(f"Connected intersections | {added} additional member segments | Results require analysis")
 
+    def subdivide_selected_members(self):
+        names = [name for kind, name in self.selections if kind == "members"]
+        if not names:
+            QMessageBox.information(self, "Subdivide Members", "Select one or more members first.")
+            return
+        from PySide6.QtWidgets import QInputDialog
+        count, accepted = QInputDialog.getInt(self, "Subdivide Members",
+            f"Equal segments per member ({len(names)} selected)", 2, 2, 100)
+        if not accepted:
+            return
+        segments = {}
+        revision = self.revision
+        self.edit("Subdivide members", lambda project: segments.update(project.subdivide_members(names, count)))
+        if self.revision != revision:
+            self.select_many([("members", name) for values in segments.values() for name in values])
+            self.statusBar().showMessage(f"Subdivided {len(names)} members into {len(self.selections)} segments | Results require analysis")
+
+    def select_finding_entities(self, entities):
+        if any(kind == "loads" for kind, name in entities):
+            self.load_filter.setCurrentText("All load cases")
+        self.set_mode("select")
+        self.select_many(entities)
+        self.statusBar().showMessage(f"Selected {len(self.selections)} entities from Model Findings")
+
+    def show_model_findings(self, messages, title):
+        self.model_findings.show_findings(self.project, messages, title)
+        self.findings_dock.show()
+        self.findings_dock.raise_()
+
     def check_model(self):
         try:
             self.project.validate()
@@ -1206,8 +1242,9 @@ class MainWindow(QMainWindow):
         except ValueError as error:
             issues = [str(error)]
         if issues:
-            QMessageBox.warning(self, "Model Check", "\n\n".join(issues))
+            self.show_model_findings(issues, "Model Check")
         else:
+            self.model_findings.show_findings(self.project, [], "Model Check: no issues found")
             QMessageBox.information(self, "Model Check", "No geometry, connectivity, or release/load issues found.")
 
     def delete_selected(self):
@@ -1563,10 +1600,12 @@ class MainWindow(QMainWindow):
             return
         if error:
             self.results_panel.set_analysis_state("Failed", error)
+            self.show_model_findings(error.split("\n\n"), "Analysis failed")
             self.statusBar().showMessage("Analysis failed | Previous results retained" if self.result is not None else "Analysis failed")
             QMessageBox.warning(self, "Analysis", error)
             return
         self.result = result
+        self.model_findings.show_findings(self.project, [], "Analysis complete")
         self.results_panel.set_analysis_state("Current")
         self.export_menu.setEnabled(True)
         self.result_combination.blockSignals(True)
