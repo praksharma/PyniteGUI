@@ -33,6 +33,31 @@ const server = http.createServer((request,response)=>{
     assert(driver.renderer&&driver.vendor&&driver.version.includes('WebGL'),'Missing observed WebGL driver information');
     assert.equal(driver.lost,false);
     assert(['Unmasked WebGL driver','Masked WebGL information'].includes(driver.source));
+    const batches=await page.evaluate(async()=>{
+      const THREE=await import('three'),{drawFrame,hitIdentity}=await import('./frame_meshes.js');
+      const group=new THREE.Group(),picks=[];
+      const data={nodes:[{name:'A',position:[0,0,0]},{name:'B',position:[10,0,0]},
+        {name:'C',position:[20,0,0]},{name:'D',position:[20,10,0]}],
+        members:[{name:'X',start:'A',end:'B',kind:'frame'},{name:'Y',start:'C',end:'D',kind:'truss'}],
+        selection:[['nodes','A'],['members','Y']],colors:{accent:'#ff0000',member:'#444444',axial:'#00ff00'}};
+      drawFrame(data,.2,group,picks);group.updateMatrixWorld(true);
+      const cast=position=>hitIdentity(new THREE.Raycaster(new THREE.Vector3(...position),new THREE.Vector3(0,0,-1)).intersectObjects(picks)[0]);
+      const matrix=new THREE.Matrix4(),member=picks[0],node=picks[1],color=new THREE.Color();
+      const ends=[];
+      for(let i=0;i<2;i++){
+        member.getMatrixAt(i,matrix);ends.push([new THREE.Vector3(0,-.5,0).applyMatrix4(matrix).toArray(),
+          new THREE.Vector3(0,.5,0).applyMatrix4(matrix).toArray()]);
+      }
+      member.getColorAt(1,color);const memberColor=color.getHexString();node.getColorAt(0,color);
+      const value={counts:picks.map(mesh=>mesh.count),ends,hits:[[5,0,10],[20,5,10],[20,10,10]].map(cast),
+        colors:[memberColor,color.getHexString()]};
+      for(const mesh of picks){mesh.dispose();mesh.geometry.dispose();mesh.material.dispose();}return value;
+    });
+    assert.deepEqual(batches.counts,[2,4]);
+    assert.deepEqual(batches.hits,[['members','X'],['members','Y'],['nodes','D']],'Instanced picking lost identities');
+    assert.deepEqual(batches.colors,['ff0000','ff0000'],'Instance selection colours were lost');
+    const expectedEnds=[[[0,0,0],[10,0,0]],[[20,0,0],[20,10,0]]];
+    batches.ends.forEach((ends,i)=>ends.forEach((point,j)=>point.forEach((value,k)=>assert(Math.abs(value-expectedEnds[i][j][k])<1e-6,'Instance transform moved a member endpoint'))));
     for(const load of payload.loads.filter(load=>load.label.includes('| Angle'))){
       assert(Math.abs(Math.hypot(...load.vector)-1)<1e-9,'Angular load arrow is not a unit global vector');
       assert(load.label.includes('az ')&&load.label.includes('el '),'Angular arrow label lacks angle context');
@@ -51,7 +76,7 @@ const server = http.createServer((request,response)=>{
       await page.evaluate(payload=>{window.pyniteViewer.update(payload);window.pyniteViewer.fit();},payload);
       await page.waitForTimeout(300);
       const state=await page.evaluate(()=>window.pyniteViewer.state());
-      assert(state.objects>50 && state.drawCalls>10,`Empty ${name} scene`);
+      assert(state.objects>10 && state.drawCalls>10 && state.nodes.length===payload.nodes.length,`Empty ${name} scene`);
       const pixels=await page.evaluate(()=>{
         const canvas=document.querySelector('canvas'),gl=canvas.getContext('webgl2'),rgba=new Uint8Array(canvas.width*canvas.height*4);
         gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,rgba);

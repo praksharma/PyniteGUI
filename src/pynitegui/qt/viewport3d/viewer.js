@@ -5,6 +5,7 @@ import {diagramPoints, drawDiagram, legendLines} from './diagrams.js';
 import {attachBoxSelection} from './selection.js';
 import {drawSupports, SupportTooltip} from './supports.js';
 import {attachNodeDrag,planeAxis} from './node_drag.js';
+import {drawFrame,hitIdentity} from './frame_meshes.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 100000);
@@ -31,8 +32,8 @@ const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
 const vector = a => new THREE.Vector3(...a);
 const axisColors = [0xd65058,0x21955c,0x3786bd];
 const nodeDrag=attachNodeDrag(renderer.domElement,camera,controls,()=>data,event=>{
-  ray(event);const hit=raycaster.intersectObjects(picks).find(hit=>hit.object.userData.dragNode);
-  return hit?data.nodes.find(node=>node.name===hit.object.userData.dragNode):null;
+  ray(event);const hit=raycaster.intersectObjects(picks).find(hit=>hit.object.userData.nodeInstances);
+  return hit?data.nodes.find(node=>node.name===hitIdentity(hit)[1]):null;
 },event=>{ray(event);return raycaster.ray;},()=>{supportTooltip.hide();gizmo.cancel();stopMotion();},
   (name,position,snapshot)=>{
     update({...snapshot,nodes:snapshot.nodes.map(node=>node.name===name?{...node,position}:node),
@@ -60,13 +61,16 @@ function label(text, position, color, size=span*.035, force=false) {
   sprite.position.copy(position); sprite.scale.set(size*width/36,size,1);
   sprite.userData.labelRatio=width/36;group.add(sprite);
 }
-function cylinder(a,b,r,color,identity) {
-  const delta=b.clone().sub(a), mesh=new THREE.Mesh(new THREE.CylinderGeometry(r,r,delta.length(),10),new THREE.MeshStandardMaterial({color}));
-  mesh.position.copy(a).add(b).multiplyScalar(.5);mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),delta.normalize());
-  if(identity){mesh.userData.identity=identity;picks.push(mesh);}group.add(mesh);return mesh;
-}
 function dispose() {
-  group.traverse(obj=>{obj.geometry?.dispose();if(obj.material){obj.material.map?.dispose();obj.material.dispose();}});
+  const geometries=new Set(),materials=new Set(),textures=new Set();
+  group.traverse(obj=>{
+    if(obj.isInstancedMesh)obj.dispose();
+    if(obj.geometry)geometries.add(obj.geometry);
+    for(const material of (Array.isArray(obj.material)?obj.material:obj.material?[obj.material]:[])){
+      materials.add(material);if(material.map)textures.add(material.map);
+    }
+  });
+  textures.forEach(texture=>texture.dispose());materials.forEach(material=>material.dispose());geometries.forEach(geometry=>geometry.dispose());
   scene.remove(group); group=new THREE.Group();scene.add(group);picks=[];preview=null;
 }
 function grid() {
@@ -75,10 +79,10 @@ function grid() {
   const point=(u,v)=>plane==='XY'?new THREE.Vector3(u,v,offset):plane==='XZ'?new THREE.Vector3(u,offset,v):new THREE.Vector3(offset,u,v);
   const u=plane==='YZ'?center.y:center.x, v=plane==='XY'?center.y:center.z;
   const cu=Math.round(u/step)*step, cv=Math.round(v/step)*step;
-  for(let value=-extent;value<=extent+.1;value+=step) {
-    line([point(cu+value,cv-extent),point(cu+value,cv+extent)],data.colors.grid);
-    line([point(cu-extent,cv+value),point(cu+extent,cv+value)],data.colors.grid);
-  }
+  const points=[];
+  for(let value=-extent;value<=extent+.1;value+=step)points.push(point(cu+value,cv-extent),point(cu+value,cv+extent),
+    point(cu-extent,cv+value),point(cu+extent,cv+value));
+  group.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color:data.colors.grid})));
   const origin=new THREE.Vector3(0,0,0);
   ['X','Y','Z'].forEach((text,i)=>{const dir=new THREE.Vector3().setComponent(i,1);group.add(new THREE.ArrowHelper(dir,origin,span*.16,axisColors[i],span*.025,span*.012));label(text,dir.multiplyScalar(span*.18),`#${axisColors[i].toString(16)}`);});
 }
@@ -110,17 +114,16 @@ function update(payload,dragPreview=false) {
   const r=span*.004;raycaster.params.Line.threshold=span*.012;
   dispose();grid();
   const nodes=new Map(data.nodes.map(n=>[n.name,n])), selected=(kind,name)=>data.selection.some(s=>s[0]===kind&&s[1]===name);
+  drawFrame(data,r,group,picks);
   for(const member of data.members) {
     const a=vector(nodes.get(member.start).position),b=vector(nodes.get(member.end).position);
-    cylinder(a,b,member.kind==='truss'?r*.7:r,selected('members',member.name)?c.accent:member.kind==='truss'?c.axial:c.member,['members',member.name]);
     label(member.name+(member.kind==='truss'?' [truss]':''),a.clone().lerp(b,.5).add(new THREE.Vector3(0,span*.023,0)),c.label);
     if(data.deformed&&member.points)line(member.points.map((p,i)=>vector(p).addScaledVector(vector(member.displacements[i]),data.factor)),c.load);
     drawDiagram(member,data.diagram,group,line,label,c);
     if(data.localAxes&&selected('members',member.name))member.axes.forEach((axis,i)=>{const origin=a.clone().lerp(b,.5);group.add(new THREE.ArrowHelper(vector(axis),origin,span*.12,axisColors[i],span*.02,span*.01));label(['x','y','z'][i],origin.addScaledVector(vector(axis),span*.14),c.label);});
   }
   for(const node of data.nodes) {
-    const p=vector(node.position),mesh=new THREE.Mesh(new THREE.SphereGeometry(r*1.8,12,8),new THREE.MeshStandardMaterial({color:selected('nodes',node.name)?c.accent:c.member}));
-    mesh.position.copy(p);mesh.userData.identity=['nodes',node.name];mesh.userData.dragNode=node.name;picks.push(mesh);group.add(mesh);label(node.name,p.clone().add(new THREE.Vector3(span*.02,span*.025,0)),c.label);
+    const p=vector(node.position);label(node.name,p.clone().add(new THREE.Vector3(span*.02,span*.025,0)),c.label);
     if(data.supports!==false)supports.push(...drawSupports(node,span,c,group,picks));
   }
   for(const load of data.loads) {
@@ -168,8 +171,8 @@ function ray(event) {
 }
 function workPoint(event) {
   ray(event);
-  const hits=raycaster.intersectObjects(picks).filter(h=>h.object.userData.identity?.[0]==='nodes');
-  if(hits.length)return data.nodes.find(n=>n.name===hits[0].object.userData.identity[1]).position;
+  const hits=raycaster.intersectObjects(picks).filter(h=>hitIdentity(h)?.[0]==='nodes');
+  if(hits.length)return data.nodes.find(n=>n.name===hitIdentity(hits[0])[1]).position;
   const axis=(data.plane||'XY')==='XY'?2:data.plane==='XZ'?1:0;
   const normal=new THREE.Vector3().setComponent(axis,1),p=new THREE.Vector3();
   if(!raycaster.ray.intersectPlane(new THREE.Plane(normal,-(data.offset||0)),p))return null;
@@ -177,7 +180,7 @@ function workPoint(event) {
 }
 let down=null;
 function selectAt(event){
-  ray(event);const hit=raycaster.intersectObjects(picks)[0],identity=hit?.object.userData.identity||['',''];
+  ray(event);const hit=raycaster.intersectObjects(picks)[0],identity=hitIdentity(hit)||['',''];
   window.pyniteBridge?.select(...identity,event.ctrlKey||event.metaKey||event.shiftKey);window.dispatchEvent(new CustomEvent('modelSelected',{detail:identity}));
 }
 renderer.domElement.addEventListener('nodeDragClicked',event=>{
@@ -199,7 +202,7 @@ renderer.domElement.addEventListener('pointermove',event=>{
   supportTooltip.hide();
   ray(event);
   if(!event.buttons&&data.mode!=='draw'){
-    const hit=raycaster.intersectObjects(picks)[0],identity=hit?.object.userData.identity;
+    const hit=raycaster.intersectObjects(picks)[0],identity=hitIdentity(hit);
     if(identity?.[0]==='nodes'){
       const node=data.nodes.find(node=>node.name===identity[1]);
       if(node)supportTooltip.show(node,hit.object.userData.supportDof,event,data.colors);

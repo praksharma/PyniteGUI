@@ -996,10 +996,22 @@ replacement, and records scene rebuild and frame timings. Screenshots and
 benchmarks rendering only, not structural analysis. The harness uses Chromium's
 SwiftShader software renderer; record the reported driver when comparing runs.
 Timings are observations, not hardware-independent pass/fail thresholds.
-The first recorded run rebuilt the 1,580-member geometry in about 152 ms,
-or 520 ms with labels enabled, with roughly 2,600 draw calls. This identifies
-scene/label rebuilding and draw-call batching as follow-up work; the analytical
-cache does not cache Three.js geometry or avoid JSON/payload construction.
+The pre-batching baseline rebuilt the 1,580-member geometry in about 152 ms,
+or 520 ms with labels enabled, with roughly 2,600 draw calls. Base frame rendering
+now uses two instanced meshes (one unit cylinder shape for members and one unit
+sphere shape for nodes) with per-instance transforms/colours/IDs, and the grid
+uses one line-segment batch. Picking, node-dragging and drawing snaps resolve
+instance IDs back to model IDs. Disposal releases instance buffers and deduplicates
+geometry/material/texture disposal. Supports, labels, loads and analytical
+overlays remain independent objects; their rebuilding and JSON/payload costs
+are not removed by geometry batching or the analytical cache. The benchmark
+enforces fewer than 30 unlabelled draw calls and 20 geometries for the lattices,
+in addition to visible model pixels and resource-replacement checks.
+The post-batching run recorded 18 unlabelled draw calls and seven geometries at
+all three sizes. The 1,580-member unlabelled rebuild took about 14 ms (12 ms on
+replacement), while labels still brought rebuilds into the hundreds of
+milliseconds. SwiftShader frame timings remained variable; these measurements
+demonstrate lower allocation/submission costs, not a guaranteed frame-rate gain.
 
 ### Additional Regression Coverage
 

@@ -245,9 +245,14 @@ below and the secondary interface wishlist retain their more specific scope.
   LRU eviction and serialization reset; native redraw/isolation regressions;
   repeatable cold/warm analytical timings and 144/616/1,580-member desktop
   label/geometry, pixel, orbit and graphics-resource checks.
-- [ ] Reduce large-scene redraw/draw-call costs (geometry/material reuse or
-  batching), using the recorded desktop benchmarks; retain picking, selection,
-  supports, labels, overlays and reliable resource disposal.
+- [x] Batch base frame geometry: two instanced node/member meshes with shared
+  shapes/materials and per-instance colours/IDs, plus one grid line batch.
+  Retain picking, drawing snaps, dragging, selection, supports, overlays and
+  explicit instance-buffer disposal; enforce allocation/draw-call budgets in
+  the recorded desktop benchmarks.
+- [ ] Reduce remaining large-scene label, support and result-overlay rebuild
+  costs; consider bounded texture reuse and incremental display-only updates,
+  preserving independent visibility/picking and reliable resource disposal.
 - [ ] Implement the pending solver milestones in **PyNite Capability Coverage**
   above; keep plates/meshes and nonlinear methods independently benchmarked.
 

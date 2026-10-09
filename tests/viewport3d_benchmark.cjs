@@ -49,7 +49,11 @@ module.exports=async function benchmark(page,base,output){
       },data);
       const first=await measure();
       assert(first.pixels>.0005,'Blank large-model canvas');
-      assert(first.drawCalls>model.members.length,'Large-model geometry not rendered');
+      assert(first.drawCalls>0&&first.nodes.length===model.nodes.length,'Large-model geometry not rendered');
+      if(!labels){
+        assert(first.drawCalls<30,'Frame/grid geometry was not batched');
+        assert(first.resources.geometries<20,'Per-member/node geometry allocations returned');
+      }
       for(const node of [model.nodes[0],model.nodes.at(-1)]){
         const [x,y]=await page.evaluate(position=>window.pyniteViewer.project(position),node.position);
         assert(x>10&&x<1270&&y>10&&y<710,'Large model clipped');

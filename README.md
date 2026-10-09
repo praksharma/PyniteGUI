@@ -13,7 +13,7 @@ Analysis shows progress phases and can be cancelled without losing valid results
 Print selected definitions, results, envelopes, and 2D/3D force diagrams as a report.
 3D mode adds an offline orbitable viewport, XYZ work planes, six-direction supports
 and loads, constrained node dragging, member roll, biaxial bending/torsion results,
-and spatial deformation.
+and spatial deformation, with batched node/member rendering for larger models.
 
 ## Quick Start
 
