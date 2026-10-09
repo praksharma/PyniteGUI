@@ -131,6 +131,9 @@ below and the secondary interface wishlist retain their more specific scope.
   Result/report visibility controls never change analytical results. Envelopes
   retain combination provenance instead of depicting one misleading load state.
 - [x] Add result tables for member end forces and extrema.
+- [x] Add sortable linked node/displacement/reaction/member-force tables to the
+  results dock: two-way geometry/tree selection, lazy member extrema, unit and
+  combination refresh, multi-selection and Member Detail activation in 2D/3D.
 - [x] Add explicit result snapshot identification in open diagram windows.
 - [x] Export reactions, forces, and displacements as CSV and a printable report.
 - [x] Extend printable reports with model definitions and selected diagrams.

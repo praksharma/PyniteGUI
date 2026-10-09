@@ -761,9 +761,11 @@ class MainWindow(QMainWindow):
         self.inspector_scroll.setMinimumWidth(260)
         self.inspector_scroll.setWidget(self.inspector)
         self.dock("Properties", self.inspector_scroll, Qt.DockWidgetArea.RightDockWidgetArea)
-        self.results_table = QTableWidget(0, 7)
-        self.results_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.results_table.setMinimumHeight(120)
+        from .results_panel import ResultsPanel
+        self.results_panel = ResultsPanel(self)
+        self.results_table = self.results_panel.tables["nodes"]
+        self.results_panel.entities_selected.connect(self.select_many)
+        self.results_panel.member_activated.connect(self.open_result_member)
         results_panel = QWidget()
         results_layout = QVBoxLayout(results_panel)
         results_layout.setContentsMargins(0, 0, 0, 0)
@@ -772,7 +774,7 @@ class MainWindow(QMainWindow):
         self.result_combination.setEnabled(False)
         self.result_combination.currentTextChanged.connect(self.select_result_combination)
         results_layout.addWidget(self.result_combination)
-        results_layout.addWidget(self.results_table)
+        results_layout.addWidget(self.results_panel)
         self.results_dock = self.dock("Results", results_panel, Qt.DockWidgetArea.BottomDockWidgetArea)
         self.results_dock.hide()
 
@@ -828,7 +830,7 @@ class MainWindow(QMainWindow):
         self.export_menu.setEnabled(False)
         self.result_combination.setEnabled(False)
         self.result_combination.clear()
-        self.results_table.setRowCount(0)
+        self.results_panel.clear(self.project)
         self.results_dock.setWindowTitle("Results - Outdated")
         self.deformed_action.setEnabled(False)
         self.deformed_action.setChecked(False)
@@ -863,15 +865,7 @@ class MainWindow(QMainWindow):
         self.unit_selector.blockSignals(True)
         self.unit_selector.setCurrentIndex(self.unit_selector.findData(self.project.unit_system))
         self.unit_selector.blockSignals(False)
-        if spatial:
-            from .spatial_model import DOFS, FORCES
-            headers = ["Node", *(f"{dof} ({units.length if i < 3 else 'rad'})" for i, dof in enumerate(DOFS)),
-                       *(f"{force} ({units.force if i < 3 else units.moment})" for i, force in enumerate(FORCES))]
-        else:
-            headers = ["Node", f"DX ({units.length})", f"DY ({units.length})", "RZ (rad)",
-                       f"FX ({units.force})", f"FY ({units.force})", f"MZ ({units.moment})"]
-        self.results_table.setColumnCount(len(headers))
-        self.results_table.setHorizontalHeaderLabels(headers)
+        self.results_panel.set_headers(self.project)
         self.coordinates.setText("   ".join(f"{axis} 0 {units.length}" for axis in ("XYZ" if spatial else "XY")))
         from .diagrams import DiagramDialog
         for dialog in self.findChildren(DiagramDialog):
@@ -932,6 +926,7 @@ class MainWindow(QMainWindow):
                 item.setToolTip(1, f"{load.name}: generated from material weight density and section area; configure via Edit > Self-Weight.")
             parent.setExpanded(True)
         self.tree.blockSignals(False)
+        self.results_panel.sync_selection(self.selections)
         self.update_inspector()
         self.view.redraw()
         self.update_title()
@@ -980,6 +975,7 @@ class MainWindow(QMainWindow):
                     if identity and tuple(identity) in selected:
                         item.setSelected(True)
             self.tree.blockSignals(False)
+        self.results_panel.sync_selection(self.selections)
         self.update_inspector()
         self.view.redraw()
 
@@ -1587,21 +1583,19 @@ class MainWindow(QMainWindow):
             return
         self.result = self.result.for_combination(name)
         result = self.result
-        self.results_table.setRowCount(len(result.displacements))
-        for row, (name, displacement) in enumerate(result.displacements.items()):
-            for col, value in enumerate((name, *displacement, *result.reactions[name])):
-                if col and value is not None:
-                    quantities = (("length",) * 3 + ("rotation",) * 3 + ("force",) * 3 + ("moment",) * 3
-                                  if result.spatial else ("length", "length", "rotation", "force", "force", "moment"))
-                    value = self.project.units.to_display(value, quantities[col - 1])
-                item = QTableWidgetItem("n/a" if value is None else value if isinstance(value, str) else f"{value:.6g}")
-                if value is None:
-                    item.setToolTip("Released member ends rotate independently; no shared nodal rotation is defined.")
-                self.results_table.setItem(row, col, item)
-        self.results_table.resizeColumnsToContents()
+        self.results_panel.update_results(self.project, result)
         self.results_dock.setWindowTitle(f"Results - {result.combination}")
         self.view.redraw()
         self.statusBar().showMessage(f"Analysis complete | {result.combination} | {self.project.units.summary}")
+
+    def open_result_member(self, name):
+        self.select(("members", name))
+        dialog = self.diagrams()
+        if dialog is not None:
+            for index in range(dialog.tabs.count()):
+                if dialog.tabs.tabText(index) == "Member Detail":
+                    dialog.tabs.setCurrentIndex(index)
+                    break
 
     def diagrams(self):
         if self.result is None:
@@ -1610,12 +1604,14 @@ class MainWindow(QMainWindow):
         if getattr(self.project, "dimension", "2D") == "3D":
             from .spatial_diagrams import SpatialDiagramDialog
             selected = self.selected[1] if self.selected and self.selected[0] == "members" else None
-            SpatialDiagramDialog(self, self.project, self.result, selected).show()
-            return
+            dialog = SpatialDiagramDialog(self, self.project, self.result, selected)
+            dialog.show()
+            return dialog
         from .diagrams import DiagramDialog
         selected = self.selected[1] if self.selected and self.selected[0] == "members" else None
         dialog = DiagramDialog(self, self.project, self.result, selected)
         dialog.show()
+        return dialog
 
     def clear_autosave(self):
         self.last_autosave = None

@@ -46,10 +46,11 @@ These are the strongest ideas to adapt to a desktop engineering workflow.
   offset diagrams, using PyNite span samples. Include a numerical legend,
   zero/sign distinction, explicit units, and a shared scale for comparisons.
   Colour alone must not communicate the sign.
-- [ ] **Linked result tables (UI).** Select a row to highlight its node/member;
-  select geometry to reveal its result row. Separate displacements, reactions,
-  and member forces, with sortable values and correct units. Build on the
-  existing result tables and coordinate with the editable-table task in TODO.md.
+- [x] **Linked result tables (UI).** Promoted to TODO.md and implemented in the
+  native results dock: combined node overview plus separate displacement,
+  reaction and member-force tabs; numeric sorting, two-way geometry/tree links,
+  multi-selection, correct units and snapshot-preserving combination changes.
+  Member rows load on demand and double-click opens that member's detail.
 - [ ] **Diagram readability controls (UI).** Toggle IDs, loads, supports, values,
   and extrema independently. Avoid label collisions and make local-axis/sign
   conventions inspectable. Primary owner: dense labels, sign preferences, and

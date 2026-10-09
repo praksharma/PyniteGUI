@@ -657,6 +657,24 @@ This panel does not query the compositor's physical GPU or a driver package vers
   midspan load. Each support should react with 5 kip. In SI the same physical
   example displays a 10.668 m span, 44.4822 kN load, and 22.2411 kN reactions.
 
+## Linked Results
+
+The native Results dock contains **Nodes**, **Displacements**, **Reactions** and
+**Member forces** tabs. Nodes retains the combined overview. Header clicks sort
+numbers by their full values; six-significant-digit display does not determine
+the order. Undefined released-joint rotations remain `n/a`.
+Selecting rows highlights the corresponding geometry and structure-tree items;
+Ctrl/Command/Shift selection supports multiple entities. Selecting geometry
+reveals and scrolls to its result rows, switching between node and member tabs
+when needed. These selection changes do not edit the model or invalidate results.
+
+The member tab loads end values and independent minimum/maximum values on demand.
+The extrema in a row can occur at different stations; they are not one combined
+force state. Double-click a member row to open **Member Detail** for that member
+and snapshot. Unit and combination changes refresh the tables while preserving
+entity selection. Engineering edits clear all active result tables until another
+analysis; retained diagram windows continue to identify their own snapshots.
+
 ## Units
 
 Use **Edit > Units** to choose length (mm, cm, m, in, ft) and force
@@ -919,6 +937,8 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/spatial_results.py`, `spatial_diagrams.py`: spatial sampling/exports/plots.
 - `src/pynitegui/qt/analysis_jobs.py`: isolated solver processes, phase messages,
   thread-safe cancellation, and cleanup before publishing results.
+- `src/pynitegui/qt/results_panel.py`: native sortable result tabs, entity links,
+  lazy member tables and snapshot identity.
 - `src/pynitegui/qt/app.py`: Qt graphics editor, inspector, undo commands,
   background analysis, and a consistent light application theme.
 - `src/pynitegui/qt/diagrams.py`: whole-frame axial/SFD/BMD views, member detail plots,
