@@ -127,9 +127,10 @@ def definition_tables(project):
             rows.append([load.name, load.target, load.case, load.kind, load.direction, units.to_display(load.magnitude, quantity),
                          getattr(units, quantity), load.position if load.target in project.members else "",
                          units.to_display(load.end_magnitude, "intensity") if load.kind == "distributed" else "",
-                         load.end_position if load.kind == "distributed" else ""])
+                         load.end_position if load.kind == "distributed" else "",
+                         load.angle if load.direction == "Angle" else "", load.elevation if load.direction == "Angle" else ""])
         return rows
-    headers = ["Load", "Target", "Case", "Type", "Direction", "Magnitude / start", "Units", "Start fraction", f"End ({units.intensity})", "End fraction"]
+    headers = ["Load", "Target", "Case", "Type", "Direction", "Magnitude / start", "Units", "Start fraction", f"End ({units.intensity})", "End fraction", "Azimuth (deg)", "Elevation (deg)"]
     return [("Nodes and Supports (3D)", *nodes), ("Members and Assignments (3D)", *members), *shared[2:4],
             ("Manual Loads (Unfactored)", headers, loads(project.loads.values())),
             ("Generated Self-Weight (Unfactored)", headers, loads(project.self_weight_loads())), shared[-1]]

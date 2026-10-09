@@ -57,16 +57,18 @@ def analyze_spatial(project, progress=None):
     for member in project.members.values():
         model.add_member(member.name, member.start, member.end, member.material, member.section, rotation=member.roll)
     for load in (*project.loads.values(), *project.self_weight_loads()):
-        if load.target in project.nodes:
-            model.add_node_load(load.target, load.direction, load.magnitude, case=load.case)
-        else:
-            member = project.members[load.target]
-            length = math.dist(project.nodes[member.start].coords, project.nodes[member.end].coords)
-            if load.kind == "distributed":
-                model.add_member_dist_load(load.target, load.direction, load.magnitude, load.end_magnitude,
-                                           length * load.position, length * load.end_position, case=load.case)
+        ends = dict(load.components(project, load.end_magnitude))
+        for direction, magnitude in load.components(project):
+            if load.target in project.nodes:
+                model.add_node_load(load.target, direction, magnitude, case=load.case)
             else:
-                model.add_member_pt_load(load.target, load.direction, load.magnitude, length * load.position, case=load.case)
+                member = project.members[load.target]
+                length = math.dist(project.nodes[member.start].coords, project.nodes[member.end].coords)
+                if load.kind == "distributed":
+                    model.add_member_dist_load(load.target, direction, magnitude, ends[direction],
+                                               length * load.position, length * load.end_position, case=load.case)
+                else:
+                    model.add_member_pt_load(load.target, direction, magnitude, length * load.position, case=load.case)
     for name, factors in project.combinations.items():
         model.add_load_combo(name, dict(factors))
     phase(f"Solving {len(project.combinations)} spatial combination(s)")

@@ -35,9 +35,9 @@ class ModelTablesDialog(QDialog):
             from .spatial_model import SpatialNode, SpatialMember, SpatialLoad, RESTRAINT_FIELDS, SPRING_FIELDS
             self.fields = {"nodes": ("name", "x", "y", "z", "support", *RESTRAINT_FIELDS, *SPRING_FIELDS),
                            "members": ("name", "start", "end", "material", "section", "roll"),
-                           "loads": tuple(key for key in FIELDS["loads"] if key != "angle")}
+                           "loads": (*FIELDS["loads"][:-1], "elevation", "units")}
             self.boolean_fields = set(RESTRAINT_FIELDS)
-            self.numeric_fields = NUMERIC_FIELDS | {"z", "roll", *SPRING_FIELDS}
+            self.numeric_fields = NUMERIC_FIELDS | {"z", "roll", "elevation", *SPRING_FIELDS}
             self.constructors = {"nodes": SpatialNode, "members": SpatialMember, "loads": SpatialLoad}
         self.original = project.clone()
         self.definition = None
@@ -63,7 +63,7 @@ class ModelTablesDialog(QDialog):
                                 *("Restrain " + dof for dof in DOFS),
                                 *(f"Spring {dof} ({project.units.stiffness if index < 3 else project.units.rotational_stiffness})" for index, dof in enumerate(DOFS))]
             headers["members"] = ["ID", "Start", "End", "Material", "Section", "Roll (deg)"]
-            headers["loads"] = [header for header in headers["loads"] if header != "Angle (deg)"]
+            headers["loads"] = [*headers["loads"][:-2], "Azimuth (deg)", "Elevation (deg)", "Magnitude units"]
         for kind, fields in self.fields.items():
             panel = QWidget()
             panel_layout = QVBoxLayout(panel)
@@ -104,7 +104,7 @@ class ModelTablesDialog(QDialog):
     def choices(self, kind, key):
         if self.spatial and key == "direction":
             from .spatial_model import MEMBER_DIRECTIONS
-            return list(MEMBER_DIRECTIONS)
+            return [*MEMBER_DIRECTIONS, "Angle"]
         if kind == "members" and key == "kind":
             return ["frame", "truss"]
         if key in ("start", "end"):
@@ -153,7 +153,7 @@ class ModelTablesDialog(QDialog):
                 if kind == "loads" and key in ("kind", "direction"):
                     widget.setToolTip("Changing type or direction reinterprets the entered magnitude in the row's displayed units.")
                 if self.spatial and key == "direction":
-                    widget.setToolTip(widget.toolTip() + "\nUppercase FX/FY/FZ/MX/MY/MZ: global XYZ. Mixed-case Fx/Fy/Fz/Mx/My/Mz: rolled member xyz. Nodes accept global only.")
+                    widget.setToolTip(widget.toolTip() + "\nUppercase: global XYZ. Mixed case: rolled member xyz. Angle: global azimuth +X toward +Z, elevation toward +Y. Nodes accept global only.")
                 table.setCellWidget(row, column, widget)
             else:
                 quantity = self.quantity(kind, key, getattr(entity, "direction", "FY"), getattr(entity, "kind", "point"))

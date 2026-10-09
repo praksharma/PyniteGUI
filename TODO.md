@@ -172,8 +172,9 @@ below and the secondary interface wishlist retain their more specific scope.
   view changes, keyboard access, and synchronized native orientation selection.
 - [x] Restore window controls for GNOME Wayland Vulkan windows without Qt
   decorations, retaining menu access and unsaved-work confirmation.
-- [ ] Display the actual viewport GPU/driver/backend in graphics diagnostics,
-  distinguishing selected preferences from the renderer Qt actually uses.
+- [x] Add graphics diagnostics with the observed WebGL renderer/vendor/version
+  and Qt window surface, separately labelled startup/saved preferences and
+  requested backend overrides; retain unavailable/masked/failure states.
 - [x] Whole-structure 3D axial/shear/bending/torsion overlays with shared scaling,
   combination/unit-aware legends, sampled-value labels and PNG view export.
 - [ ] Whole-structure 3D diagram PDF reports and selectable report views.
@@ -182,7 +183,8 @@ below and the secondary interface wishlist retain their more specific scope.
 - [ ] 3D node dragging, box selection, and bulk inspector assignments.
 - [ ] Spatial member splitting and explicit intersection connection workflows.
 - [ ] Explicit 2D-to-3D conversion with preserved loads/support conventions.
-- [ ] Spatial force-by-magnitude/azimuth/elevation entry and coordinate previews.
+- [x] Spatial point/distributed forces by magnitude, global azimuth/elevation,
+  XYZ component previews, angled arrows, editable tables and versioned persistence.
 - [ ] Dedicated 3D support/spring symbols with per-DOF hover inspection.
 - [ ] Large-model rendering benchmarks and cached analytical sampling.
 - [ ] Implement the pending solver milestones in **PyNite Capability Coverage**

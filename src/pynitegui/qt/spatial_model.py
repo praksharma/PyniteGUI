@@ -47,12 +47,20 @@ class SpatialMember(Member):
 
 @dataclass
 class SpatialLoad(Load):
+    elevation: float = 0.0
+
     @property
     def is_moment(self):
         return self.direction.upper().startswith("M")
 
     def components(self, project=None, magnitude=None):
-        return [(self.direction, self.magnitude if magnitude is None else magnitude)]
+        magnitude = self.magnitude if magnitude is None else magnitude
+        if self.direction != "Angle":
+            return [(self.direction, magnitude)]
+        azimuth, elevation = math.radians(self.angle), math.radians(self.elevation)
+        factors = (math.cos(elevation)*math.cos(azimuth), math.sin(elevation), math.cos(elevation)*math.sin(azimuth))
+        return [(direction, magnitude*(0. if abs(factor)<1e-14 else factor))
+                for direction, factor in zip(FORCES[:3], factors)]
 
 
 @dataclass
@@ -60,11 +68,11 @@ class SpatialProject(Project):
     dimension: str = "3D"
 
     def to_dict(self):
-        return {"version": 16, "units": "in-kip", **asdict(self)}
+        return {"version": 17, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] != 16 or data.get("dimension") != "3D" or data.get("units") != "in-kip":
+        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
             raise ValueError("Unsupported spatial project version, dimension, or units.")
         unknown = data.keys() - {f.name for f in fields(cls)} - {"version", "units"}
         if unknown:
@@ -81,6 +89,8 @@ class SpatialProject(Project):
             for name, value in data[key].items():
                 if not identifier(name) or not isinstance(value, dict):
                     raise ValueError(f"Invalid spatial {key} entry: {name!r}.")
+                if key == "loads" and data["version"] == 16 and ("elevation" in value or value.get("direction") == "Angle"):
+                    raise ValueError("Spatial angle forces require project version 17.")
                 try:
                     entities[name] = constructor(**value)
                 except TypeError as error:
@@ -140,12 +150,14 @@ class SpatialProject(Project):
             if not isinstance(load, SpatialLoad) or name != load.name or not identifier(name) or not identifier(load.target) or load.target not in {*self.nodes, *self.members}:
                 raise ValueError("Invalid spatial load identifier or target.")
             directions = MEMBER_DIRECTIONS if load.target in self.members else FORCES
-            if load.direction not in directions:
+            if load.direction not in (*directions, "Angle"):
                 raise ValueError(f"Load {name}: unsupported direction for this target.")
             if load.case not in self.load_cases or load.kind not in ("point", "distributed"):
                 raise ValueError(f"Load {name}: invalid case or load type.")
-            if not all(finite_number(value) for value in (load.magnitude, load.end_magnitude, load.position, load.end_position, load.angle)):
+            if not all(finite_number(value) for value in (load.magnitude, load.end_magnitude, load.position, load.end_position, load.angle, load.elevation)):
                 raise ValueError(f"Load {name}: magnitudes and positions must be finite numbers.")
+            if not -360 <= load.angle <= 360 or not -90 <= load.elevation <= 90:
+                raise ValueError(f"Load {name}: azimuth must be between -360 and 360 and elevation between -90 and 90 degrees.")
             if not 0 <= load.position <= 1:
                 raise ValueError(f"Load {name}: position must be between zero and one.")
             if load.kind == "distributed" and (load.target not in self.members or load.is_moment or not 0 <= load.position < load.end_position <= 1):

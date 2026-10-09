@@ -52,13 +52,18 @@ def viewport_payload(window):
     for load in definitions:
         if not window.load_visible(load):
             continue
-        axis = "XYZ".index(load.direction[-1].upper())
-        vector = np.eye(3)[axis] if load.direction.isupper() else axes[load.target][axis]
+        if load.direction == "Angle":
+            vector = np.array([value for _, value in load.components(project, 1.)])
+        else:
+            axis = "XYZ".index(load.direction[-1].upper())
+            vector = np.eye(3)[axis] if load.direction.isupper() else axes[load.target][axis]
         quantity = "intensity" if load.kind == "distributed" else "moment" if load.is_moment else "force"
         label = f"{load.name}: {project.units.to_display(load.magnitude, quantity):.4g}"
         if load.kind == "distributed":
             label += f" to {project.units.to_display(load.end_magnitude, quantity):.4g}"
         label += f" {getattr(project.units, quantity)} | {load.direction}"
+        if load.direction == "Angle":
+            label += f" (az {load.angle:.4g}, el {load.elevation:.4g} deg)"
         loads.append({"name": load.name, "target": load.target, "kind": load.kind, "vector": vector.tolist(),
                       "moment": load.is_moment, "magnitude": load.magnitude, "endMagnitude": load.end_magnitude,
                       "position": load.position, "endPosition": load.end_position, "label": label})

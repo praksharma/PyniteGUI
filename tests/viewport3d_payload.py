@@ -10,6 +10,7 @@ from pynitegui.qt.app import MainWindow
 from pynitegui.qt.analysis import analyze
 from pynitegui.qt.examples import example_project
 from pynitegui.qt.spatial_view import viewport_payload
+from pynitegui.qt.spatial_model import SpatialLoad
 
 
 if __name__ == "__main__":
@@ -17,6 +18,8 @@ if __name__ == "__main__":
     window = MainWindow()
     window.load_project(example_project("3d_space_frame"))
     window.project.members["M1"].roll = 27
+    window.project.loads["L7"] = SpatialLoad("L7","N4","Angle",2,case="Wind",angle=40,elevation=30)
+    window.project.loads["L8"] = SpatialLoad("L8","M1","Angle",-.003,.2,"distributed",.006,.8,"Wind",angle=25,elevation=-20)
     with contextlib.redirect_stdout(io.StringIO()):
         window.result = analyze(window.project).for_combination("Combined")
     window.deformed_action.setChecked(True)

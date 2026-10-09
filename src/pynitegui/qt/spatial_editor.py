@@ -2,6 +2,7 @@
 import math
 from dataclasses import replace
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QLabel, QPushButton
 
 from .spatial_model import DOFS, FORCES, MEMBER_DIRECTIONS, RESTRAINT_FIELDS, SPRING_FIELDS, SpatialLoad
@@ -29,13 +30,51 @@ def load_fields(form, project, load):
     fields["position"] = number(load.position, 0, 1, 8)
     fields["end_magnitude"] = unit_number(load.end_magnitude, project.units, "intensity")
     fields["end_position"] = number(load.end_position, 0, 1, 8)
+    azimuth, elevation = load.angle, load.elevation
+    if load.direction != "Angle" and not load.is_moment:
+        import numpy as np
+        vector = np.eye(3)["XYZ".index(load.direction[-1].upper())]
+        if not load.direction.isupper():
+            from .spatial_results import member_axes
+            vector = member_axes(project, load.target)["XYZ".index(load.direction[-1].upper())]
+        azimuth = math.degrees(math.atan2(vector[2], vector[0]))
+        elevation = math.degrees(math.asin(max(-1., min(1., vector[1]))))
+    fields["angle"] = number(azimuth, -360, 360, 6)
+    fields["elevation"] = number(elevation, -90, 90, 6)
+    fields["angle"].setObjectName("spatial_load_azimuth")
+    fields["elevation"].setObjectName("spatial_load_elevation")
+    fields["angle"].setToolTip("Global XZ-plane angle: 0 = +X, 90 = +Z")
+    fields["elevation"].setToolTip("Angle above the XZ plane: 90 = +Y, -90 = -Y")
     for key, label in (("target", "Target"), ("case", "Case"), ("direction", "Direction"), ("magnitude", getattr(project.units, quantity)),
                        ("position", "Start fraction"), ("end_magnitude", f"End ({project.units.intensity})"), ("end_position", "End fraction")):
         form.addRow(label, fields[key])
+    form.addRow("Azimuth (deg)", fields["angle"])
+    form.addRow("Elevation (deg)", fields["elevation"])
+    preview = QLabel()
+    preview.setObjectName("spatial_load_components")
+    preview.setWordWrap(True)
+    preview.setMinimumWidth(130)
+    preview.setTextFormat(Qt.TextFormat.PlainText)
+    form.addRow("Components", preview)
+    def update_preview():
+        angular = fields["direction"].currentData() == "Angle"
+        for key in ("angle", "elevation"):
+            form.setRowVisible(fields[key], angular)
+        form.setRowVisible(preview, angular)
+        if not angular:
+            return
+        draft = SpatialLoad("preview", fields["target"].currentText(), "Angle", fields["magnitude"].value(),
+                            kind=load.kind, end_magnitude=fields["end_magnitude"].value(),
+                            angle=fields["angle"].value(), elevation=fields["elevation"].value())
+        start, end = dict(draft.components()), dict(draft.components(magnitude=draft.end_magnitude))
+        unit = project.units.intensity if load.kind == "distributed" else project.units.force
+        preview.setText("\n".join(f"{direction} {value:.5g}" + (f" to {end[direction]:.5g}" if load.kind == "distributed" else "") + f" {unit}"
+                                  for direction, value in start.items()))
     def update_direction():
         quantity = "intensity" if load.kind == "distributed" else "moment" if fields["direction"].currentData().upper().startswith("M") else "force"
         form.labelForField(fields["magnitude"]).setText(getattr(project.units, quantity))
         form.setRowVisible(fields["position"], fields["target"].currentText() in project.members)
+        update_preview()
     def update_target():
         selected = fields["direction"].currentData() or load.direction
         directions = MEMBER_DIRECTIONS if fields["target"].currentText() in project.members else FORCES
@@ -45,11 +84,14 @@ def load_fields(form, project, load):
         fields["direction"].clear()
         for direction in directions:
             fields["direction"].addItem(("Global " if direction.isupper() else "Local ") + direction, direction)
+        fields["direction"].addItem("Global angle", "Angle")
         fields["direction"].setCurrentIndex(max(0, fields["direction"].findData(selected)))
         fields["direction"].blockSignals(False)
         update_direction()
     fields["target"].currentTextChanged.connect(update_target)
     fields["direction"].currentIndexChanged.connect(update_direction)
+    for key in ("magnitude", "end_magnitude", "angle", "elevation"):
+        fields[key].valueChanged.connect(update_preview)
     for key in ("end_magnitude", "end_position"):
         form.setRowVisible(fields[key], load.kind == "distributed")
     update_target()
@@ -58,7 +100,9 @@ def load_fields(form, project, load):
         quantity = "intensity" if load.kind == "distributed" else "moment" if direction.upper().startswith("M") else "force"
         return {"target": fields["target"].currentText(), "case": fields["case"].currentText(), "direction": direction,
                 "magnitude": unit_value(fields["magnitude"], project.units, quantity), "position": fields["position"].value(),
-                "end_magnitude": unit_value(fields["end_magnitude"], project.units), "end_position": fields["end_position"].value()}
+                "end_magnitude": unit_value(fields["end_magnitude"], project.units), "end_position": fields["end_position"].value(),
+                "angle": load.angle if direction != "Angle" or (load.direction == "Angle" and fields["angle"].value() == round(azimuth, 6)) else fields["angle"].value(),
+                "elevation": load.elevation if direction != "Angle" or (load.direction == "Angle" and fields["elevation"].value() == round(elevation, 6)) else fields["elevation"].value()}
     return fields, values
 
 

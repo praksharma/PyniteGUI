@@ -3,6 +3,7 @@ import contextlib
 import base64
 import io
 import json
+import math
 import os
 import pickle
 import tempfile
@@ -14,7 +15,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 os.environ.setdefault("PYNITEGUI_NO_WEBENGINE", "1")
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QImage
-from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QDoubleSpinBox, QMessageBox, QPushButton
+from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QDoubleSpinBox, QLabel, QMessageBox, QPushButton
 
 from pynitegui.qt.analysis import analyze, model_signature
 from pynitegui.qt.app import MainWindow
@@ -44,6 +45,47 @@ def solve(project):
 
 
 class SpatialModelTests(unittest.TestCase):
+    def test_spatial_angle_components_follow_y_up_convention(self):
+        for azimuth, elevation, expected in ((0,0,(10,0,0)),(90,0,(0,0,10)),(0,90,(0,10,0)),
+                                             (45,0,(math.sqrt(50),0,math.sqrt(50))),(0,-90,(0,-10,0))):
+            values = dict(SpatialLoad("L1","N2","Angle",10,angle=azimuth,elevation=elevation).components())
+            for value, target in zip(values.values(), expected):
+                self.assertAlmostEqual(value, target)
+            self.assertAlmostEqual(math.sqrt(sum(value*value for value in values.values())),10)
+
+    def test_legacy_spatial_migration_and_angle_validation(self):
+        project = beam()
+        project.loads["L1"] = SpatialLoad("L1","N2","FY",-2)
+        old = project.to_dict()
+        old["version"] = 16
+        old["loads"]["L1"].pop("elevation")
+        self.assertEqual(Project.from_dict(old).to_dict(), project.to_dict())
+        old["loads"]["L1"]["direction"] = "Angle"
+        with self.assertRaises(ValueError):
+            Project.from_dict(old)
+        for key, value in (("angle",361),("elevation",91),("elevation",float("nan")),("elevation",True)):
+            project.loads["L1"] = SpatialLoad("L1","N2","Angle",10,angle=33.123456789,elevation=17.987654321)
+            self.assertEqual(Project.from_dict(project.to_dict()).to_dict(),project.to_dict())
+            setattr(project.loads["L1"],key,value)
+            with self.assertRaises(ValueError):
+                project.validate()
+
+    def test_angle_load_analysis_matches_explicit_components(self):
+        for target, kind in (("N2","point"),("M1","point"),("M1","distributed")):
+            project = beam()
+            project.loads["L1"] = SpatialLoad("L1",target,"Angle",-2,.2,kind,3,.8,angle=33,elevation=-17)
+            project.set_combination("Scaled",{"Case 1":1.7})
+            expected = project.clone()
+            expected.loads.clear()
+            load = project.loads["L1"]
+            ends = dict(load.components(magnitude=load.end_magnitude))
+            for i,(direction,value) in enumerate(load.components()):
+                expected.loads[f"L{i+1}"] = SpatialLoad(f"L{i+1}",target,direction,value,.2,kind,ends[direction],.8)
+            actual, reference = solve(project).for_combination("Scaled"), solve(expected).for_combination("Scaled")
+            for node in project.nodes:
+                for values in ((actual.displacements[node],reference.displacements[node]),(actual.reactions[node],reference.reactions[node])):
+                    for value, target_value in zip(*values):
+                        self.assertAlmostEqual(value,target_value)
     def test_schema_dispatch_roundtrip_and_legacy_unchanged(self):
         project = beam()
         project.nodes["N2"].z = 45
@@ -54,7 +96,7 @@ class SpatialModelTests(unittest.TestCase):
         self.assertEqual(Project().to_dict()["version"], 15)
 
     def test_schema_rejects_future_missing_and_unknown_fields(self):
-        for key, value in (("version", 17), ("version", True), ("dimension", "4D"), ("units", "m-kN"), ("extra", 1)):
+        for key, value in (("version", 18), ("version", True), ("dimension", "4D"), ("units", "m-kN"), ("extra", 1)):
             data = beam().to_dict()
             data[key] = value
             with self.subTest(key=key, value=value), self.assertRaises(ValueError):
@@ -80,7 +122,7 @@ class SpatialModelTests(unittest.TestCase):
 
     def test_load_validation_local_nodal_and_distributed_moments(self):
         for target, direction, kind in (("N2", "Fy", "point"), ("N2", "FY", "distributed"),
-                                        ("M1", "MY", "distributed"), ("M1", "Angle", "point")):
+                                        ("M1", "MY", "distributed"), ("M1", "Local angle", "point")):
             project = beam()
             project.loads["L1"] = SpatialLoad("L1", target, direction, -1, 0, kind)
             with self.subTest(target=target, direction=direction), self.assertRaises(ValueError):
@@ -280,6 +322,62 @@ class SpatialWidgetTests(unittest.TestCase):
         self.window.load_project(example_project("simple_beam"))
         self.assertIs(self.window.view, planar)
         self.assertEqual(self.window.results_table.columnCount(), 7)
+
+    def test_angle_inspector_preview_undo_payload_and_report(self):
+        project = self.window.project
+        project.loads["L1"] = SpatialLoad("L1","N2","FY",10)
+        self.window.select(("loads","L1"))
+        inspector = self.window.inspector
+        direction = inspector.findChild(QComboBox,"spatial_load_direction")
+        direction.setCurrentIndex(direction.findData("Angle"))
+        # An unchanged +FY converts to the shown +90 elevation, not an old default angle.
+        inspector.findChild(QPushButton,"spatial_apply").click()
+        self.assertEqual(self.window.project.loads["L1"].elevation,90)
+        self.window.select(("loads","L1"))
+        inspector.findChild(QDoubleSpinBox,"spatial_load_azimuth").setValue(30)
+        inspector.findChild(QDoubleSpinBox,"spatial_load_elevation").setValue(20)
+        self.assertIn("FZ",inspector.findChild(QLabel,"spatial_load_components").text())
+        inspector.findChild(QPushButton,"spatial_apply").click()
+        load = self.window.project.loads["L1"]
+        self.assertEqual((load.angle,load.elevation),(30,20))
+        payload = viewport_payload(self.window)
+        for value, expected in zip(payload["loads"][0]["vector"],dict(load.components(magnitude=1)).values()):
+            self.assertAlmostEqual(value,expected)
+        self.assertIn("az 30",payload["loads"][0]["label"])
+        from pynitegui.qt.spatial_results import definition_tables
+        table = next(table for table in definition_tables(self.window.project) if table[0].startswith("Manual Loads"))
+        self.assertEqual(table[2][0][-2:],[30,20])
+        self.window.undo.undo()
+        self.assertEqual(self.window.project.loads["L1"].elevation,90)
+
+    def test_angle_tables_preserve_precision_and_units(self):
+        self.window.project.loads["L1"] = SpatialLoad("L1","M1","Angle",-.02,0,"distributed",-.04,1,angle=33.123456789,elevation=17.987654321)
+        self.window.set_units("si")
+        dialog = ModelTablesDialog(self.window,self.window.project)
+        self.assertEqual(dialog.preview().to_dict(),self.window.project.to_dict())
+        table = dialog.tables["loads"]
+        table.item(0,dialog.fields["loads"].index("elevation")).setText("-20")
+        self.assertEqual(dialog.preview().loads["L1"].elevation,-20)
+        self.assertEqual(dialog.preview().loads["L1"].magnitude,-.02)
+        dialog.deleteLater()
+
+    def test_graphics_diagnostics_distinguish_observed_and_requested(self):
+        from pynitegui.qt.graphics_diagnostics import GraphicsDiagnostics
+        dialog = GraphicsDiagnostics(self.window)
+        self.assertEqual(dialog.values["renderer"].text(),"Unavailable")
+        self.assertEqual(dialog.values["status"].text(),"Not ready")
+        dialog.received(json.dumps({"renderer":"ANGLE (NVIDIA)","vendor":"NVIDIA","version":"WebGL 2.0","shader":"GLSL ES","source":"Unmasked WebGL driver","lost":False}),dialog.serial)
+        self.assertEqual(dialog.values["renderer"].text(),"ANGLE (NVIDIA)")
+        self.assertEqual(dialog.values["status"].text(),"Ready")
+        self.assertEqual(dialog.values["mode"].text(),"auto")
+        dialog.received(json.dumps({"renderer":"stale"}),dialog.serial-1)
+        self.assertEqual(dialog.values["renderer"].text(),"ANGLE (NVIDIA)")
+        dialog.received("invalid JSON",dialog.serial)
+        self.assertEqual(dialog.values["status"].text(),"Renderer information unavailable")
+        self.window.load_project(example_project("simple_beam"))
+        dialog.refresh()
+        self.assertEqual(dialog.values["status"].text(),"No active 3D viewport")
+        dialog.deleteLater()
 
     def test_new_3d_project_respects_discard_and_units(self):
         self.window.project.unit_system = "si"

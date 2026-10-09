@@ -60,6 +60,15 @@ does not reinterpret or convert existing geometry; open or create the intended m
   global and mixed case means local. Nodal loads use global directions only.
   Uniform/varying distributed forces support partial spans; magnitudes are force
   per full member length, not projected length. Distributed moments are excluded.
+- **Global angle** enters nodal/member point forces or distributed member forces
+  by signed magnitude, azimuth and elevation. Azimuth is measured in global XZ
+  from +X toward +Z (0 = +X, 90 = +Z); elevation tilts toward global +Y
+  (+90 = upward, -90 = downward). The preview lists global FX/FY/FZ, including
+  both end intensities for varying distributions. Negative magnitudes reverse
+  the chosen direction. One saved load retains its angles; resolution into
+  solver components is automatic. Angles are also editable in Model Tables
+  and included in model-definition reports. Angular moments and local-axis
+  azimuth/elevation input are not offered.
 - Background analysis solves all six DOFs without planar stabilizing restraints.
   Insufficient restraints report affected global directions. Named cases,
   combination factors, progress/cancellation and stale-result rejection are shared
@@ -204,6 +213,16 @@ References: [Qt NVIDIA graphics integration](https://doc.qt.io/qt-6.10/qtwebengi
 [NVIDIA EGL vendor selection](https://github.com/NVIDIA/libglvnd/blob/master/src/EGL/icd_enumeration.md),
 and [Vulkan driver selection](https://github.com/KhronosGroup/Vulkan-Loader/blob/main/docs/LoaderDriverInterface.md).
 See also [Vulkan layer filtering](https://github.com/KhronosGroup/Vulkan-Loader/blob/main/docs/LoaderLayerInterface.md).
+
+**View > 3D Rendering > Diagnostics** shows the observed WebGL renderer,
+vendor, WebGL/shader versions and information source. Driver details may be
+masked by the platform; unavailable values stay explicit. Startup preference,
+next-launch preference and requested environment overrides are listed separately
+from the observed Qt window surface and WebGL driver. Selecting Automatic is
+not proof of hardware rendering, and Software describes requested compositing,
+not a guarantee about the platform's chosen WebGL driver. Refresh rechecks the
+active 3D viewport; a missing/failed viewport does not invent GPU details.
+This panel does not query the compositor's physical GPU or a driver package version.
 
 ## Workflow
 
@@ -684,7 +703,10 @@ incorrect collection/entity shapes, unknown entity fields, invalid references,
 boolean/string/nonfinite numerical values, and duplicate JSON keys produce
 readable errors. JSON syntax errors include their line and column. Supported
 planar versions 1 through 15 are migrated without modifying the input; spatial
-version 16 requires an explicit `dimension: "3D"` marker and is validated separately.
+versions 16/17 require an explicit `dimension: "3D"` marker and are validated separately.
+Spatial version 17 adds global angular forces with azimuth (`angle`) and
+`elevation`; version 16 axis-based loads migrate without changing their physics.
+Unsupported future versions and angular fields in version 16 are rejected.
 Spatial files retain XYZ, all six restraints/springs, and roll. Unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be
 distinct so load targets are unambiguous.

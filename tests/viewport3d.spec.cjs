@@ -29,6 +29,14 @@ const server = http.createServer((request,response)=>{
     page.on('pageerror',error=>errors.push(error.message));
     await page.goto(`http://127.0.0.1:${server.address().port}/`);
     await page.waitForFunction(()=>window.pyniteViewer);
+    const driver=await page.evaluate(()=>window.pyniteViewer.diagnostics());
+    assert(driver.renderer&&driver.vendor&&driver.version.includes('WebGL'),'Missing observed WebGL driver information');
+    assert.equal(driver.lost,false);
+    assert(['Unmasked WebGL driver','Masked WebGL information'].includes(driver.source));
+    for(const load of payload.loads.filter(load=>load.label.includes('| Angle'))){
+      assert(Math.abs(Math.hypot(...load.vector)-1)<1e-9,'Angular load arrow is not a unit global vector');
+      assert(load.label.includes('az ')&&load.label.includes('el '),'Angular arrow label lacks angle context');
+    }
     const crossing=await page.evaluate(async()=>{
       const {drawDiagram}=await import('./diagrams.js');
       const objects=[];

@@ -730,6 +730,9 @@ class MainWindow(QMainWindow):
             self.graphics_group.addAction(action)
             self.graphics_actions[key] = action
             rendering.addAction(action)
+        rendering.addSeparator()
+        from .graphics_diagnostics import show_graphics_diagnostics
+        rendering.addAction(self.action("Diagnostics...", lambda: show_graphics_diagnostics(self)))
         self.menuBar_view.addSeparator()
         self.tree = QTreeWidget()
         self.tree.setHeaderLabels(["Model", "Properties"])
@@ -905,7 +908,7 @@ class MainWindow(QMainWindow):
                         detail += f" to {units.to_display(entity.end_magnitude, quantity):g}"
                     detail += f" {getattr(units, quantity)}"
                     if entity.direction in ("Angle", "Local angle"):
-                        detail += f" @ {entity.angle:g} deg"
+                        detail += f" | az {entity.angle:g}, el {entity.elevation:g} deg" if spatial else f" @ {entity.angle:g} deg"
                 if kind == "members" and entity.kind == "frame":
                     for end, label in zip(("start", "end"), entity.release_labels):
                         if label != "None":

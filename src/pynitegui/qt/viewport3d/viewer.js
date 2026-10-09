@@ -199,6 +199,12 @@ function exportImage(){
 }
 window.pyniteViewer={update,fit,orient,cancel,state:()=>({objects:group.children.length,drawCalls:renderer.info.render.calls,camera:camera.position.toArray(),target:controls.target.toArray(),selection:data.selection}),project:position=>{const p=vector(position).project(camera);return[(p.x+1)*innerWidth/2,(1-p.y)*innerHeight/2];}};
 window.pyniteViewer.exportImage=exportImage;
+window.pyniteViewer.diagnostics=()=>{
+  const gl=renderer.getContext(),debug=gl.getExtension('WEBGL_debug_renderer_info');
+  return {lost:gl.isContextLost(),renderer:gl.getParameter(debug?debug.UNMASKED_RENDERER_WEBGL:gl.RENDERER),
+    vendor:gl.getParameter(debug?debug.UNMASKED_VENDOR_WEBGL:gl.VENDOR),version:gl.getParameter(gl.VERSION),
+    shader:gl.getParameter(gl.SHADING_LANGUAGE_VERSION),source:debug?'Unmasked WebGL driver':'Masked WebGL information'};
+};
 window.pyniteViewer.diagramPoints=()=>data.members.map(member=>({name:member.name,points:diagramPoints(member,data.diagram).map(point=>point.toArray())}));
 window.pyniteViewer.gizmoAxes=()=>gizmo.axes();
 window.pyniteRendererReady=true;window.pyniteBridge?.ready();
