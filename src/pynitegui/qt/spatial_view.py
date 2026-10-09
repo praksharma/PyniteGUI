@@ -116,6 +116,21 @@ class Bridge(QObject):
         else:
             window.select(selection)
 
+    @Slot(str, bool)
+    def select_many(self, data, extend):
+        window = self.view.window
+        if window.view is not self.view or window.mode != "select" or getattr(window.project, "dimension", "2D") != "3D":
+            return
+        try:
+            selections = json.loads(data)
+            if not isinstance(selections, list) or any(not isinstance(item, list) or len(item) != 2
+                    or item[0] not in ("nodes", "members") or not isinstance(item[1], str)
+                    or item[1] not in getattr(window.project, item[0]) for item in selections):
+                return
+        except (ValueError, TypeError):
+            return
+        window.select_many([*window.selections, *selections] if extend else selections)
+
     @Slot(str)
     def draw(self, data):
         window = self.view.window
@@ -214,6 +229,10 @@ class SpatialView(QWidget):
         self.show_loads = QCheckBox("Loads")
         self.show_loads.setChecked(True)
         results.addWidget(self.show_loads)
+        self.box_select = QCheckBox("Box select")
+        self.box_select.setToolTip("Drag in Select mode. Left-to-right: enclosed; right-to-left: crossing. Ctrl adds. Shift-drag also starts a box.")
+        self.box_select.toggled.connect(self.redraw)
+        results.addWidget(self.box_select)
         results.addStretch()
         self.export_button = QToolButton()
         self.export_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton))
@@ -291,6 +310,7 @@ class SpatialView(QWidget):
         self.diagram_scale.setEnabled(payload["diagram"] is not None)
         self.diagram_values.setEnabled(payload["diagram"] is not None)
         self.export_button.setEnabled(self.ready and self.web is not None)
+        self.box_select.setEnabled(self.window.mode == "select")
         from .app import unit_value
         units = self.window.project.units
         previous = self.offset.property("unit_system")
@@ -304,7 +324,7 @@ class SpatialView(QWidget):
             self.offset.blockSignals(False)
         self.offset.setProperty("unit_system", units.key)
         self.offset_label.setText(units.length)
-        payload.update(plane=self.plane.currentText(), offset=unit_value(self.offset, units), labels=self.labels.isChecked(), localAxes=self.axes.isChecked())
+        payload.update(plane=self.plane.currentText(), offset=unit_value(self.offset, units), labels=self.labels.isChecked(), localAxes=self.axes.isChecked(), boxSelect=self.box_select.isChecked())
         self.call("update", payload)
         if self.pending_fit and self.ready:
             self.pending_fit = False

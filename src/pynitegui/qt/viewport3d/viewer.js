@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {OrbitControls} from './vendor/OrbitControls.js';
 import {OrientationGizmo} from './gizmo.js';
 import {diagramPoints, drawDiagram, legendLines} from './diagrams.js';
+import {attachBoxSelection} from './selection.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 100000);
@@ -24,6 +25,8 @@ scene.add(group);
 const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
 const vector = a => new THREE.Vector3(...a);
 const axisColors = [0xd65058,0x21955c,0x3786bd];
+const boxSelection=attachBoxSelection(renderer.domElement,camera,controls,()=>data,()=>{gizmo.cancel();stopMotion();},
+  (selections,extend)=>{window.pyniteBridge?.select_many(JSON.stringify(selections),extend);window.dispatchEvent(new CustomEvent('modelBoxSelected',{detail:{selections,extend}}));},selectAt);
 const legend=document.createElement('div');legend.id='result-legend';document.body.appendChild(legend);
 function line(points, color, target=group) {
   const obj = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color}));
@@ -78,6 +81,7 @@ function moment(position,axis,value,identity) {
   group.add(new THREE.ArrowHelper(tangent,points.at(-1),span*.014,data.colors.load,span*.014,span*.008));
 }
 function update(payload) {
+  boxSelection.cancel();
   data=payload;const c=data.colors;scene.background=new THREE.Color(c.canvas);
   legend.replaceChildren(...legendLines(data.diagram).map(text=>{const row=document.createElement('div');row.textContent=text;return row;}));
   legend.hidden=!data.diagram;legend.style.color=c.text||c.label;legend.style.background=c.canvas;
@@ -113,7 +117,7 @@ function update(payload) {
     label(load.label,a.clone().lerp(b,load.position).addScaledVector(dir,-Math.sign(load.magnitude||load.endMagnitude)*span*.12),c.load,span*.028);
   }
   controls.mouseButtons.LEFT=data.mode==='pan'?THREE.MOUSE.PAN:THREE.MOUSE.ROTATE;
-  controls.enableRotate=data.mode!=='draw';renderer.domElement.style.cursor=data.mode==='draw'?'crosshair':'default';
+  controls.enableRotate=data.mode!=='draw';renderer.domElement.style.cursor=data.mode==='draw'||(data.mode==='select'&&data.boxSelect)?'crosshair':'default';
   if(start)preview=line([vector(start),vector(start)],c.accent);
 }
 function fit() {
@@ -150,6 +154,10 @@ function workPoint(event) {
   [0,1,2].filter(i=>i!==axis).forEach(i=>p.setComponent(i,Math.round(p.getComponent(i)/data.grid)*data.grid));return p.toArray();
 }
 let down=null;
+function selectAt(event){
+  ray(event);const hit=raycaster.intersectObjects(picks)[0],identity=hit?.object.userData.identity||['',''];
+  window.pyniteBridge?.select(...identity,event.ctrlKey||event.metaKey||event.shiftKey);window.dispatchEvent(new CustomEvent('modelSelected',{detail:identity}));
+}
 renderer.domElement.addEventListener('pointerdown',event=>{if(event.button===0)down=[event.clientX,event.clientY];});
 renderer.domElement.addEventListener('pointerup',event=>{
   if(event.button!==0||!down||Math.hypot(event.clientX-down[0],event.clientY-down[1])>5)return;down=null;
@@ -158,13 +166,12 @@ renderer.domElement.addEventListener('pointerup',event=>{
     if(start){if(vector(start).distanceTo(vector(point))<1e-8)return;window.pyniteBridge?.draw(JSON.stringify([start,point]));window.dispatchEvent(new CustomEvent('memberDrawn',{detail:[start,point]}));cancel();}
     else{start=point;preview=line([vector(point),vector(point)],data.colors.accent);}
   }else if(data.mode==='select'){
-    ray(event);const hit=raycaster.intersectObjects(picks)[0],identity=hit?.object.userData.identity||['',''];
-    window.pyniteBridge?.select(...identity,event.ctrlKey||event.metaKey);window.dispatchEvent(new CustomEvent('modelSelected',{detail:identity}));
+    selectAt(event);
   }
 });
 renderer.domElement.addEventListener('pointermove',event=>{const point=workPoint(event);if(!point)return;window.pyniteBridge?.coordinates(...point);if(preview&&start){preview.geometry.dispose();preview.geometry=new THREE.BufferGeometry().setFromPoints([vector(start),vector(point)]);}});
 renderer.domElement.addEventListener('webglcontextlost',()=>{rendering=false;window.pyniteReportFailure('The graphics context was lost. Restart with software rendering if this persists.');});
-function cancel(){start=null;if(preview){group.remove(preview);preview.geometry.dispose();preview.material.dispose();preview=null;}}
+function cancel(){boxSelection.cancel();start=null;if(preview){group.remove(preview);preview.geometry.dispose();preview.material.dispose();preview=null;}}
 addEventListener('keydown',event=>{if(event.key==='Escape')cancel();});
 function resize(){camera.aspect=innerWidth/Math.max(innerHeight,1);camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);}
 addEventListener('resize',resize);resize();camera.position.set(500,350,500);controls.update();

@@ -379,6 +379,70 @@ class SpatialWidgetTests(unittest.TestCase):
         self.assertEqual(dialog.values["status"].text(),"No active 3D viewport")
         dialog.deleteLater()
 
+    def test_spatial_bulk_assignments_are_one_undo_and_keep_unselected_values(self):
+        self.window.project.add_member((120,0,0),(240,0,0))
+        self.window.project.set_material(Material("Other",E=10000,nu=.25,rho=0))
+        before = self.window.project.to_dict()
+        self.window.select_many([("members","M1"),("members","M2")])
+        inspector = self.window.inspector
+        material = inspector.findChild(QComboBox,"bulk_material")
+        material.setCurrentIndex(material.findData("Other"))
+        inspector.findChild(QCheckBox,"bulk_change_roll").setChecked(True)
+        inspector.findChild(QDoubleSpinBox,"bulk_roll").setValue(37)
+        count = self.window.undo.count()
+        inspector.findChild(QPushButton,"bulk_apply").click()
+        self.assertEqual(self.window.undo.count(),count+1)
+        for member in self.window.project.members.values():
+            self.assertEqual((member.material,member.roll),("Other",37))
+            self.assertEqual(member.section,before["members"][member.name]["section"])
+        self.window.undo.undo()
+        self.assertEqual(self.window.project.to_dict(),before)
+
+    def test_spatial_bulk_custom_supports_and_atomic_failure(self):
+        self.window.select_many([("nodes","N1"),("nodes","N2")])
+        inspector = self.window.inspector
+        support = inspector.findChild(QComboBox,"bulk_support")
+        support.setCurrentIndex(support.findData("custom"))
+        inspector.findChild(QCheckBox,"bulk_restraint_z").setChecked(True)
+        inspector.findChild(QPushButton,"bulk_apply").click()
+        self.assertEqual(self.window.project.nodes["N1"].restraints,(True,)*6)
+        self.assertEqual(self.window.project.nodes["N2"].restraints,(False,False,True,False,False,False))
+        before = self.window.project.to_dict()
+        inspector.findChild(QCheckBox,"bulk_change_spring_z").setChecked(True)
+        inspector.findChild(QDoubleSpinBox,"bulk_spring_z").setValue(1)
+        with patch.object(QMessageBox,"warning") as warning:
+            inspector.findChild(QPushButton,"bulk_apply").click()
+            warning.assert_called_once()
+        self.assertEqual(self.window.project.to_dict(),before)
+
+    def test_spatial_bulk_load_scaling_preserves_angles_and_scopes(self):
+        self.window.project.loads["L1"] = SpatialLoad("L1","M1","Angle",-.1,0,"distributed",-.2,1,angle=30,elevation=20)
+        self.window.project.loads["L2"] = SpatialLoad("L2","N2","MX",10)
+        before = self.window.project.to_dict()
+        self.window.select_many([("loads","L1"),("loads","L2"),("members","M1")])
+        inspector = self.window.inspector
+        inspector.findChild(QCheckBox,"bulk_scale").setChecked(True)
+        inspector.findChild(QDoubleSpinBox,"bulk_factor").setValue(-2)
+        inspector.findChild(QPushButton,"bulk_apply").click()
+        one,two = self.window.project.loads.values()
+        self.assertEqual((one.magnitude,one.end_magnitude,one.angle,one.elevation),(.2,.4,30,20))
+        self.assertEqual(two.magnitude,-20)
+        self.assertEqual(self.window.project.to_dict()["members"],before["members"])
+        self.window.undo.undo()
+        self.assertEqual(self.window.project.to_dict(),before)
+
+    def test_spatial_box_bridge_validates_whole_message_and_adds_selection(self):
+        bridge = Bridge(self.window.view)
+        bridge.select_many('[["nodes","N2"],["members","M1"]]',False)
+        self.assertEqual(self.window.selections,[("nodes","N2"),("members","M1")])
+        for invalid in ('bad','null','[["members","M1"],["nodes","missing"]]','[["__dict__","name"]]','[["nodes",[]]]'):
+            bridge.select_many(invalid,False)
+            self.assertEqual(self.window.selections,[("nodes","N2"),("members","M1")])
+        bridge.select_many('[["nodes","N1"]]',True)
+        self.assertIn(("nodes","N1"),self.window.selections)
+        bridge.select_many('[]',False)
+        self.assertEqual(self.window.selections,[])
+
     def test_new_3d_project_respects_discard_and_units(self):
         self.window.project.unit_system = "si"
         before = self.window.project.to_dict()

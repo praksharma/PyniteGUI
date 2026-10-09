@@ -110,12 +110,10 @@ def populate_inspector(window):
     from .app import number, unit_number, unit_value
     project, form = window.project, window.form
     if len(window.selections) > 1:
-        form.addRow("Selection", QLabel(f"{len(window.selections)} items"))
+        from .bulk_edit import populate_bulk_inspector
+        populate_bulk_inspector(window)
         button = QPushButton("Model Tables...")
         button.clicked.connect(window.manage_model_tables)
-        form.addRow(button)
-        button = QPushButton("Delete Selection")
-        button.clicked.connect(window.delete_selected)
         form.addRow(button)
         return
     if not window.selected:

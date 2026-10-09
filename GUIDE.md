@@ -43,6 +43,23 @@ does not reinterpret or convert existing geometry; open or create the intended m
   work plane, allowing connections between different planes. Escape cancels a
   pending member. Add Node opens exact XYZ entry; Model Tables can define complete
   node/member connectivity numerically. All engineering edits support undo/redo.
+- In Select mode, enable **Box select** or hold Shift while dragging a rectangle.
+  Left-to-right selects enclosed nodes and complete members; right-to-left also
+  selects members crossing the box. Ctrl/Command adds to the current selection;
+  an empty replacement box clears it. Escape cancels without changing selection.
+  Selection uses projected undeformed nodes and straight member centerlines,
+  including geometry behind other members, not visible diagram/deformation curves
+  or load arrows. Geometry behind the camera/near-far clip is excluded. Ordinary
+  clicks still pick individual entities; orbit resumes when box mode is off.
+- With multiple entities selected, the inspector offers explicit **Keep existing**
+  choices. Assign member materials/sections and optional roll, node support presets
+  or custom global restraints, all six support-spring stiffnesses, and load cases
+  or a signed magnitude multiplier. A custom support starts from each node's
+  current effective restraints; untouched checkboxes retain those values. Scaling
+  changes both intensities of varying loads and preserves their angles/stations.
+  All chosen changes are validated together and applied as one undoable edit.
+  Invalid combinations, such as a spring on a rigidly restrained DOF, reject the
+  entire batch. Geometry and unselected properties remain unchanged.
 - XYZ coordinates, grid and plane offset use the selected project length units.
   SI/imperial selection preserves the physical model and valid results. Y is
   vertical; automatic self-weight acts in global -Y using full 3D member length.
@@ -108,8 +125,8 @@ does not reinterpret or convert existing geometry; open or create the intended m
 First-milestone scope is linear, unreleased 3D frame members. No spatial trusses,
 plates/shells, solids, nonlinear effects, member releases, force envelopes,
 node dragging, automatic member splitting/intersection connection, or 2D conversion
-are implemented in this mode yet. Multi-selection supports deletion; use Model
-Tables for coordinated property editing. Geometry requires explicit shared endpoints;
+are implemented in this mode yet. Multi-selection supports bulk assignments and
+deletion; use Model Tables for coordinated geometry editing. Geometry requires explicit shared endpoints;
 overlaps, interior nodes, crossings without a shared joint and disconnected groups
 are rejected before analysis. Skew lines are not mistaken for intersecting members.
 Support markers show global translation restraints as stops and rotational restraints

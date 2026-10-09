@@ -85,6 +85,36 @@ const server = http.createServer((request,response)=>{
     await page.mouse.click(...point);
     const selection=await page.evaluate(()=>window.selectedEvent);
     assert.deepEqual(selection,['nodes','N2'],'Node picking failed');
+    await page.evaluate(payload=>{window.pyniteViewer.update({...payload,boxSelect:true,deformed:false});window.pyniteViewer.orient(0);window.boxEvent=null;addEventListener('modelBoxSelected',event=>window.boxEvent=event.detail);},payload);
+    const boxCamera=await page.evaluate(()=>window.pyniteViewer.state().camera);
+    await page.mouse.move(5,5);await page.mouse.down();await page.mouse.move(1275,715,{steps:6});await page.mouse.up();
+    const allBox=await page.evaluate(()=>window.boxEvent);
+    assert.equal(allBox.selections.length,payload.nodes.length+payload.members.length,'Whole-view box missed geometry');
+    assert.equal(allBox.extend,false);
+    const fixedCamera=await page.evaluate(()=>window.pyniteViewer.state().camera);
+    assert(fixedCamera.every((value,i)=>Math.abs(value-boxCamera[i])<1e-6),'Box drag moved the camera');
+    const column=payload.members.find(member=>member.name==='M1');
+    const midpoint=payload.nodes.find(node=>node.name===column.start).position.map((value,i)=>(value+payload.nodes.find(node=>node.name===column.end).position[i])/2);
+    const center=await page.evaluate(point=>window.pyniteViewer.project(point),midpoint);
+    await page.mouse.move(center[0]-4,center[1]-4);await page.mouse.down();await page.mouse.move(center[0]+4,center[1]+4);await page.mouse.up();
+    assert(!(await page.evaluate(()=>window.boxEvent)).selections.some(([kind,name])=>kind==='members'&&name==='M1'),'Contained selection picked a crossing member');
+    await page.keyboard.down('Control');
+    await page.mouse.move(center[0]+4,center[1]-4);await page.mouse.down();await page.mouse.move(center[0]-4,center[1]+4);await page.mouse.up();
+    await page.keyboard.up('Control');
+    const crossingBox=await page.evaluate(()=>window.boxEvent);
+    assert(crossingBox.selections.some(([kind,name])=>kind==='members'&&name==='M1'),'Crossing box missed member');
+    assert(crossingBox.extend,'Ctrl did not request additive selection');
+    await page.evaluate(()=>window.boxEvent=null);
+    await page.mouse.move(5,5);await page.mouse.down();await page.mouse.move(400,300);
+    await page.screenshot({path:path.join(output,'desktop-box-selection.png')});
+    await page.keyboard.press('Escape');await page.mouse.up();
+    assert.equal(await page.evaluate(()=>window.boxEvent),null,'Cancelled box changed selection');
+    assert(await page.locator('#selection-box').isHidden(),'Selection rectangle remained after cancellation');
+    await page.evaluate(payload=>window.pyniteViewer.update(payload),payload);
+    await page.keyboard.down('Shift');
+    await page.mouse.move(5,5);await page.mouse.down();await page.mouse.move(1275,715);await page.mouse.up();
+    await page.keyboard.up('Shift');
+    assert.equal((await page.evaluate(()=>window.boxEvent)).selections.length,payload.nodes.length+payload.members.length,'Shift-drag did not select a box with box mode off');
     for(const [plane,orientation,points] of [['XY',1,[[72,60,0],[168,96,0]]],['XZ',2,[[72,0,60],[168,0,96]]],['YZ',3,[[0,60,60],[0,96,96]]]]){
       await page.evaluate(({payload,plane,orientation})=>{window.pyniteViewer.update({...payload,mode:'draw',plane,labels:false});window.pyniteViewer.orient(orientation);window.drawEvent=null;}, {payload,plane,orientation});
       await page.evaluate(()=>{window.addEventListener('memberDrawn',event=>window.drawEvent=event.detail,{once:true});});
@@ -157,6 +187,6 @@ const server = http.createServer((request,response)=>{
     assert.match(failure.message,/graphics context was lost/i);
     assert.deepEqual(failure.bridge,[failure.message],'Context loss did not reach the native bridge');
     assert(failure.error.includes(failure.message),'Context loss did not show browser fallback text');
-    console.log('PASS: desktop geometry/deformation, gizmo, orbit/picking/drawing, six local-axis result overlays, fitted diagrams, PNG export, dark theme and context-loss recovery.');
+    console.log('PASS: desktop geometry, gizmo, orbit/picking, contained/crossing/additive/cancelled box selection, drawing, result overlays, PNG, diagnostics and dark/context-loss states.');
   }finally{await browser.close();}
 })().catch(error=>{console.error(error);process.exitCode=1;}).finally(()=>server.close());

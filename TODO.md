@@ -57,7 +57,7 @@ below and the secondary interface wishlist retain their more specific scope.
 
 ## Modelling and Editing
 
-- [x] Add node dragging with snapping and undo/redo.
+- [x] Add 2D node dragging with snapping and undo/redo.
 - [x] Add tree/canvas multiple selection, geometry box selection, and atomic
   bulk support/member/load-property editing with one-step undo/redo.
 - [x] Add editable node/member/load tables with unit-aware numerical entry,
@@ -180,7 +180,9 @@ below and the secondary interface wishlist retain their more specific scope.
 - [ ] Whole-structure 3D diagram PDF reports and selectable report views.
 - [ ] Spatial combination envelopes and interactive one-sided station inspection.
 - [ ] 3D member end releases and axial-only trusses, with mechanism benchmarks.
-- [ ] 3D node dragging, box selection, and bulk inspector assignments.
+- [x] 3D contained/crossing box selection, additive selection and cancellation;
+  atomic bulk material/section/roll, six-DOF restraint/spring and load assignments.
+- [ ] 3D node dragging with explicit work-plane constraints, snapping and undo.
 - [ ] Spatial member splitting and explicit intersection connection workflows.
 - [ ] Explicit 2D-to-3D conversion with preserved loads/support conventions.
 - [x] Spatial point/distributed forces by magnitude, global azimuth/elevation,
