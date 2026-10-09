@@ -93,6 +93,37 @@ window.close()
         group.child(0).setCheckState(0, Qt.CheckState.Unchecked)
         self.assertFalse(self.server.permissions.allows("apply_batch"))
 
+    def test_auth_checkbox_defaults_on_and_omits_token_free_config_headers(self):
+        self.assertTrue(self.server.require_token)
+        self.assertTrue(self.panel.require_token.isChecked())
+        self.panel.require_token.setChecked(False)
+        self.assertFalse(self.server.require_token)
+        self.assertFalse(self.panel.token.isEnabled())
+        self.assertFalse(self.panel.copy_token.isEnabled())
+        self.assertNotIn("headers", self.server.configuration()["mcpServers"]["PyniteGUI"])
+        self.panel.require_token.setChecked(True)
+        self.assertTrue(self.server.require_token)
+
+    def test_auth_preference_is_remembered_without_persisting_tokens(self):
+        import tempfile
+        from PySide6.QtCore import QSettings
+        with tempfile.TemporaryDirectory() as directory:
+            settings = QSettings(directory+"/preferences.ini", QSettings.Format.IniFormat)
+            first = MainWindow(settings=settings)
+            first.show_automation_server()
+            first.automation_panel.require_token.setChecked(False)
+            settings.sync()
+            first.close()
+            first.deleteLater()
+            restored = MainWindow(settings=QSettings(directory+"/preferences.ini", QSettings.Format.IniFormat))
+            restored.show_automation_server()
+            self.assertFalse(restored.automation_server.require_token)
+            self.assertFalse(restored.automation_panel.require_token.isChecked())
+            self.assertEqual(settings.allKeys(), ["automation_require_token"])
+            restored.close()
+            restored.deleteLater()
+            self.app.processEvents()
+
 
 @unittest.skipUnless(dependencies_available(), "Install the optional mcp extra for wire tests")
 class ServerWireTests(ServerWindowTests):
@@ -100,6 +131,8 @@ class ServerWireTests(ServerWindowTests):
     test_missing_extra_is_explained_without_installing = None
     test_desktop_import_and_panel_work_when_all_optional_packages_are_blocked = None
     test_group_and_tool_switches_default_to_read_access = None
+    test_auth_checkbox_defaults_on_and_omits_token_free_config_headers = None
+    test_auth_preference_is_remembered_without_persisting_tokens = None
 
     def setUp(self):
         super().setUp()
@@ -125,7 +158,8 @@ class ServerWireTests(ServerWindowTests):
             import httpx2
             from mcp import ClientSession
             from mcp.client.streamable_http import streamable_http_client
-            async with httpx2.AsyncClient(headers={"Authorization":"Bearer "+self.server.token}, trust_env=False) as http:
+            headers = {"Authorization":"Bearer "+self.server.token} if self.server.require_token else {}
+            async with httpx2.AsyncClient(headers=headers, trust_env=False) as http:
                 async with streamable_http_client(self.server.endpoint, http_client=http) as (read, write):
                     async with ClientSession(read, write, read_timeout_seconds=5) as client:
                         await client.initialize()
@@ -168,6 +202,86 @@ class ServerWireTests(ServerWindowTests):
         self.assertEqual(self.window.project.nodes["N2"].x, 480)
         self.window.undo.undo()
         self.assertEqual(self.window.project.to_dict(), original)
+
+    def test_token_free_client_reads_edits_and_restarts_without_config_changes(self):
+        port = int(self.server.endpoint.split(":")[2].split("/")[0])
+        self.server.stop()
+        self.wait_until(lambda: self.server.thread is None)
+        self.panel.require_token.setChecked(False)
+        self.assertTrue(self.server.start(port))
+        self.wait_until(lambda: self.server.state == "Running")
+        self.assertFalse(self.panel.require_token.isEnabled())
+        self.assertFalse(self.server.set_require_token(True))
+        self.assertFalse(self.server.require_token)
+        self.assertEqual(self.server.token, "")
+        self.assertFalse(self.panel.copy_token.isEnabled())
+        config = self.server.configuration()
+        self.assertEqual(config["mcpServers"]["PyniteGUI"], {"url": self.server.endpoint})
+        self.window.automation_mode.set_enabled(True)
+        self.assertTrue(self.window.mcp_mode)
+        async def callback(client):
+            model = (await client.call_tool("read_model", {})).structured_content["data"]
+            self.assertTrue(model["mcp_mode"])
+            args = {"session_id":model["session_id"], "expected_revision":model["revision"],
+                    "operations":[{"op":"put", "collection":"nodes", "key":"N2", "value":{"x":480}}]}
+            denied = await client.call_tool("apply_batch", args)
+            self.assertTrue(denied.is_error)
+            self.server.permissions.set_group("Model edits", True)
+            changed = await client.call_tool("apply_batch", args)
+            self.assertFalse(changed.is_error, changed)
+        self.with_client(callback)
+        self.assertEqual(self.window.project.nodes["N2"].x, 480)
+        self.assertGreater(self.server.requests, 0)
+        self.assertIn("Last accepted request", self.panel.status.text())
+        self.server.stop()
+        self.wait_until(lambda: self.server.thread is None)
+        self.assertTrue(self.server.start(port))
+        self.wait_until(lambda: self.server.state == "Running")
+        self.assertEqual(self.server.configuration(), config)
+        async def read_again(client):
+            response = await client.call_tool("read_model", {})
+            self.assertFalse(response.is_error)
+        self.with_client(read_again)
+
+    def test_token_free_mode_still_rejects_invalid_host_origin_and_can_restore_auth(self):
+        self.server.stop()
+        self.wait_until(lambda: self.server.thread is None)
+        self.server.set_require_token(False)
+        self.assertTrue(self.server.start(0))
+        self.wait_until(lambda: self.server.state == "Running")
+        async def requests():
+            import httpx2
+            from pynitegui.qt.automation_transport import build_application
+            application = build_application(self.server.bridge, self.server.permissions, "",
+                int(self.server.endpoint.split(":")[2].split("/")[0]), self.server.network_event, require_token=False)
+            sent = []
+            async def send(message):
+                sent.append(message)
+            async def receive():
+                return {"type":"http.request", "body":b"{}", "more_body":False}
+            await application({"type":"http", "client":("203.0.113.1", 1234),
+                "headers":[(b"host", self.server.endpoint.split("//")[1].split("/")[0].encode())]}, receive, send)
+            self.assertEqual(sent[0]["status"], 403)
+            self.assertIn(b"invalid_host", sent[1]["body"])
+            async with httpx2.AsyncClient(trust_env=False) as client:
+                for headers in ({"Host":"evil.example"}, {"Origin":"http://evil.example"}, {"Origin":"null"}):
+                    response = await client.post(self.server.endpoint, headers=headers, json={})
+                    self.assertEqual(response.status_code, 403)
+                # A leftover client token is irrelevant when token authentication is disabled.
+                response = await client.post(self.server.endpoint, headers={"Authorization":"Bearer obsolete"}, json={})
+                self.assertNotEqual(response.status_code, 401)
+        self.run_async(requests)
+        self.server.stop()
+        self.wait_until(lambda: self.server.thread is None)
+        self.server.set_require_token(True)
+        self.assertTrue(self.server.start(0))
+        self.wait_until(lambda: self.server.state == "Running")
+        self.assertTrue(self.server.token)
+        async def unauthorized():
+            import httpx2
+            async with httpx2.AsyncClient(trust_env=False) as client:
+                return (await client.post(self.server.endpoint, json={})).status_code
+        self.assertEqual(self.run_async(unauthorized), 401)
 
     def test_auth_host_origin_duplicate_headers_and_secret_free_logs(self):
         token = self.server.token

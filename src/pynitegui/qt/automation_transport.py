@@ -13,7 +13,7 @@ from .automation_core import TOOLS
 from .automation_schema import model_reference
 
 
-def build_application(bridge, permissions, token, port, network_event):
+def build_application(bridge, permissions, token, port, network_event, *, require_token=True):
     class PermissionServer(MCPServer):
         async def list_tools(self):
             return [tool for tool in await super().list_tools() if permissions.allows(tool.name)]
@@ -123,8 +123,8 @@ def build_application(bridge, permissions, token, port, network_event):
                 status, reason = 403, "invalid_host"
             elif b"origin" in headers and headers[b"origin"] not in ([origin.encode()] for origin in origins):
                 status, reason = 403, "invalid_origin"
-            elif len(headers.get(b"authorization", [])) != 1 or not hmac.compare_digest(
-                    headers[b"authorization"][0], b"Bearer "+token.encode()):
+            elif require_token and (len(headers.get(b"authorization", [])) != 1 or not hmac.compare_digest(
+                    headers[b"authorization"][0], b"Bearer "+token.encode())):
                 status, reason = 401, "unauthorized"
             if status:
                 network_event.emit(f"HTTP | {reason}")
@@ -135,7 +135,7 @@ def build_application(bridge, permissions, token, port, network_event):
                 await send({"type": "http.response.start", "status": status, "headers": response_headers})
                 await send({"type": "http.response.body", "body": body})
                 return
-            network_event.emit("HTTP | authenticated")
+            network_event.emit("HTTP | authenticated" if require_token else "HTTP | accepted")
             await app(scope, receive, send)
 
     return LocalAuthentication()

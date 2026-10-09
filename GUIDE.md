@@ -46,9 +46,10 @@ Missing dependencies and occupied ports appear in the panel without installing
 anything automatically. Use a separate port for each project window.
 
 Use **Copy configuration** for clients accepting the common `mcpServers` format,
-or copy the endpoint and token into a client's Streamable HTTP settings. Clients
-must support an `Authorization: Bearer <token>` header. For example (replace the
-placeholder with the copied token; use the actual port):
+or copy the endpoint into a client's Streamable HTTP settings. **Require token**
+starts checked. With it checked, clients need an `Authorization: Bearer <token>`
+header; copy the token after Start. For example (replace the placeholder with the
+copied token; use the actual port):
 
 ```json
 {
@@ -61,9 +62,22 @@ placeholder with the copied token; use the actual port):
 }
 ```
 
-Every start generates a new token. Nothing saves it to disk automatically. The
-panel masks the token and logs only fixed request names/status codes, omitting
-arguments, model values, paths and credentials. Status shows the last authenticated
+For a connection that needs no token updates, stop the server, uncheck **Require
+token**, then Start again. This preference is remembered in the app settings across
+GUI restarts. The checkbox can only change while the listener is stopped. In this
+mode no token is generated, Copy token is disabled and Copy configuration includes
+only the URL. An LM Studio entry can then remain:
+
+```json
+"pynite": {
+  "url": "http://127.0.0.1:8765/mcp"
+}
+```
+
+Recheck **Require token** while stopped to restore authentication. When required,
+every start generates a new token; tokens are never persisted. The panel masks the
+token and logs only fixed request names/status codes, omitting arguments, model
+values, paths and credentials. Status shows the last accepted
 request and its count, rather than claiming a persistent client connection.
 Closing the panel leaves the server running; **Stop** or closing the project
 window stops access. Stop invalidates queued commands immediately. A solve already
@@ -91,8 +105,10 @@ with their current result/analysis availability intact.
 Both a permission group and its individual tool switch must be enabled. Model
 and result reads start enabled; edits and analysis start disabled. Switches take
 effect during discovery, on every call and again before GUI-thread dispatch.
-The server rejects non-loopback peers, invalid Host/Origin headers and missing,
-incorrect or duplicate authorization headers. Requests are limited to 1 MiB,
+The server always rejects non-loopback peers and invalid Host/Origin headers.
+When Require token is checked, it also rejects missing, incorrect or duplicate
+authorization headers. Token-free mode retains tool permissions, MCP mode and
+revision/session checks. Requests are limited to 1 MiB,
 batches to 512 KiB/500 operations, and the GUI queue to 64 commands. Queued
 commands time out after 30 seconds; read the current model before retrying a
 mutation whose response was lost.

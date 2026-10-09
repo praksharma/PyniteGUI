@@ -186,7 +186,7 @@ below and the secondary interface wishlist retain their more specific scope.
   and individual tool switches, and a secret-free request/error log. Start off;
   explain missing optional dependencies without installing packages automatically.
 - [x] Use the official MCP SDK with Streamable HTTP and a queued Qt command
-  bridge to the open model. Require localhost binding, authentication and
+  bridge to the open model. Require localhost binding, optional token authentication and
   Host/Origin validation. Validate permissions on every call, not only tool listing.
 - [x] Expose model/units/results reads and validated, undoable batch edits of
   nodes, members, supports, materials, sections, loads, cases and combinations.
@@ -200,6 +200,8 @@ below and the secondary interface wishlist retain their more specific scope.
   read-only inputs and unrelated windows from the unfinished-input guard.
 - [x] Add explicit MCP mode while the server runs: lock manual controls and
   shortcuts, permit MCP commands, and unlock on exit, server stop/failure or close.
+- [x] Add a remembered Require token checkbox for URL-only localhost connections,
+  with authentication changes restricted to stopped listeners and both modes tested.
 - [ ] Optionally add viewport screenshot capture after the core workflow.
   No arbitrary Python/shell execution or file-management tools; the user opens
   and saves projects normally. A separate REST API is not part of the first scope.

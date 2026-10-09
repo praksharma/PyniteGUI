@@ -9,7 +9,7 @@ from threading import Thread
 
 from PySide6.QtCore import QObject, Signal, QTimer, Qt
 from PySide6.QtWidgets import (QApplication, QDialog, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
-                             QPushButton, QSpinBox, QTreeWidget, QTreeWidgetItem, QPlainTextEdit, QVBoxLayout)
+                             QPushButton, QSpinBox, QCheckBox, QTreeWidget, QTreeWidgetItem, QPlainTextEdit, QVBoxLayout)
 from .automation_core import Permissions, QtCommandBridge, TOOLS
 
 
@@ -33,6 +33,8 @@ class AutomationServer(QObject):
         self.detail = ""
         self.endpoint = ""
         self.token = ""
+        self.require_token = (window.settings_store.value("automation_require_token", True, type=bool)
+                              if window.settings_store is not None else True)
         self.requests = 0
         self.last_request = ""
         self.server = self.thread = self.listener = None
@@ -42,12 +44,23 @@ class AutomationServer(QObject):
         self.timer.timeout.connect(self.poll)
 
     def network_log(self, message):
-        if message == "HTTP | authenticated":
+        if message in ("HTTP | authenticated", "HTTP | accepted"):
             self.requests += 1
             self.last_request = datetime.now().strftime("%H:%M:%S")
             self.changed.emit()
         else:
             self.logged.emit(message)
+
+    def set_require_token(self, enabled):
+        if self.thread is not None:
+            return False
+        self.require_token = bool(enabled)
+        settings = self.parent().settings_store
+        if settings is not None:
+            settings.setValue("automation_require_token", self.require_token)
+        self.logged.emit("Authentication | " + ("token required" if self.require_token else "token not required"))
+        self.changed.emit()
+        return True
 
     def start(self, port=8765):
         if self.thread is not None:
@@ -68,8 +81,9 @@ class AutomationServer(QObject):
             port = listener.getsockname()[1]
             from .automation_transport import build_application
             import uvicorn
-            token = secrets.token_urlsafe(32)
-            app = build_application(self.bridge, self.permissions, token, port, self.network_event)
+            token = secrets.token_urlsafe(32) if self.require_token else ""
+            app = build_application(self.bridge, self.permissions, token, port, self.network_event,
+                                    require_token=self.require_token)
             self.server = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, proxy_headers=False,
                 access_log=False, log_config=None, log_level="critical", timeout_graceful_shutdown=2))
         except OSError:
@@ -129,7 +143,10 @@ class AutomationServer(QObject):
             self.changed.emit()
 
     def configuration(self):
-        return {"mcpServers": {"PyniteGUI": {"url": self.endpoint, "headers": {"Authorization": f"Bearer {self.token}"}}}}
+        entry = {"url": self.endpoint}
+        if self.require_token:
+            entry["headers"] = {"Authorization": f"Bearer {self.token}"}
+        return {"mcpServers": {"PyniteGUI": entry}}
 
 
 class AutomationPanel(QDialog):
@@ -149,6 +166,11 @@ class AutomationPanel(QDialog):
         self.port.setRange(1024, 65535)
         self.port.setValue(8765)
         form.addRow("Localhost port", self.port)
+        self.require_token = QCheckBox("Require token")
+        self.require_token.setChecked(server.require_token)
+        self.require_token.setToolTip("When off, local clients connect using only the endpoint URL. Remembered across app restarts. Stop the server before changing this setting.")
+        self.require_token.toggled.connect(server.set_require_token)
+        form.addRow("Authentication", self.require_token)
         self.endpoint = QLineEdit()
         self.endpoint.setReadOnly(True)
         form.addRow("Endpoint", self.endpoint)
@@ -205,7 +227,7 @@ class AutomationPanel(QDialog):
         self.log.setPlaceholderText("Request names/status codes appear here. Tokens, arguments, model values and paths are omitted.")
         layout.addWidget(self.log)
         note = QLabel("This server controls this project window. Starts off; binds only 127.0.0.1. "
-                      "Tokens change on every start. Closing this panel leaves the server running; Stop or close the project window to stop it. "
+                      "When required, tokens change on every start. Closing this panel leaves the server running; Stop or close the project window to stop it. "
                       "No file access or arbitrary code tools are exposed.")
         note.setWordWrap(True)
         layout.addWidget(note)
@@ -227,15 +249,21 @@ class AutomationPanel(QDialog):
 
     def update_status(self):
         server = self.server
-        connection = f"Last authenticated request {server.last_request} | {server.requests} requests" if server.last_request else "Waiting for a client"
+        connection = f"Last accepted request {server.last_request} | {server.requests} requests" if server.last_request else "Waiting for a client"
         self.mode_button.setEnabled(server.state == "Running" and server.bridge.active)
         self.mode_button.setChecked(self.parentWidget().mcp_mode)
         self.mode_button.setText("Leave MCP mode" if self.parentWidget().mcp_mode else "MCP mode")
         self.status.setText(f"{server.state} | {connection}" + (f"\n{server.detail}" if server.detail else ""))
         self.endpoint.setText(server.endpoint)
         self.token.setText(server.token)
+        self.token.setEnabled(server.require_token)
+        self.token.setPlaceholderText("" if server.require_token else "Not required")
+        self.require_token.blockSignals(True)
+        self.require_token.setChecked(server.require_token)
+        self.require_token.blockSignals(False)
+        self.require_token.setEnabled(server.thread is None)
         self.port.setEnabled(server.thread is None)
         self.start_button.setEnabled(server.thread is None)
         self.stop_button.setEnabled(server.state in ("Starting", "Running"))
-        self.copy_token.setEnabled(server.state == "Running")
+        self.copy_token.setEnabled(server.state == "Running" and server.require_token and bool(server.token))
         self.copy_config.setEnabled(server.state == "Running")
