@@ -26,7 +26,7 @@ the exact missing part. Summary: **7 done, 2 partial, 9 pending**.
 | Member point/distributed and nodal loading | Done | Nodal/member forces and moments, uniform/linear-varying distributed forces and partial spans in 2D/3D. Distributed member moments are excluded. |
 | Cases and factored combinations | Done | Named cases, combination editing, selected-combination results and visible factored loads in 2D/3D. |
 | Member shear, moment and deflection output | Done | Member detail curves in 2D/3D; spatial biaxial shear/bending, torsion and deformation; whole-frame force/moment overlays. |
-| Physical-member internal joints | Partial | Explicit split/connect workflows exist in 2D. Automatic internal-node handling is not exposed; 3D requires shared endpoints and rejects interior-node connections. |
+| Physical-member internal joints | Partial | Explicit load-preserving split/connect workflows exist in 2D/3D. Automatic solver-only internal-node handling is not exposed; connections require explicit segments and shared endpoints. |
 | Unilateral member behaviour | Pending | Add tension-only/compression-only flags, iterative active-set analysis and activation/mechanism benchmarks; ordinary 2D trusses are not unilateral members. |
 | Node-to-node spring elements | Pending | Add separate spring entities, axial stiffness units and bilateral/tension-only/compression-only behaviour; support springs are not spring elements. |
 | Bilateral/unilateral support springs | Partial | Bilateral global DX/DY/RZ springs in 2D and all six DOFs in 3D are implemented. One-way support springs and iterative activation remain pending. |
@@ -215,7 +215,9 @@ below and the secondary interface wishlist retain their more specific scope.
 - [x] 3D contained/crossing box selection, additive selection and cancellation;
   atomic bulk material/section/roll, six-DOF restraint/spring and load assignments.
 - [ ] 3D node dragging with explicit work-plane constraints, snapping and undo.
-- [ ] Spatial member splitting and explicit intersection connection workflows.
+- [x] Spatial member splitting and explicit XYZ crossing/T-junction/interior-node
+  connections, preserving roll/assignments and point/distributed loads, with
+  overlap rejection, atomic validation and one-step undo.
 - [ ] Explicit 2D-to-3D conversion with preserved loads/support conventions.
 - [x] Spatial point/distributed forces by magnitude, global azimuth/elevation,
   XYZ component previews, angled arrows, editable tables and versioned persistence.

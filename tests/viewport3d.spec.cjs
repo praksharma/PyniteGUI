@@ -242,6 +242,22 @@ const server = http.createServer((request,response)=>{
     await page.screenshot({path:path.join(output,'desktop-moment-z-dark.png')});
     await page.evaluate(payload=>window.pyniteViewer.update(payload),payload);
     assert(await page.locator('#result-legend').isHidden(),'Result legend was not cleared');
+    const split=payload.qaSplit;
+    assert.equal(split.nodes.length,3);assert.equal(split.members.length,2);
+    assert.equal(split.members[0].end,split.members[1].start,'Split viewport segments do not share a joint');
+    assert.equal(split.loads.find(load=>load.name==='L5').position,1,'Split point force lost its member-end station');
+    await page.evaluate(payload=>{window.pyniteViewer.update(payload);window.pyniteViewer.orient(0);},split);
+    await page.waitForTimeout(200);
+    for(const node of split.nodes){
+      const [x,y]=await page.evaluate(position=>window.pyniteViewer.project(position),node.position);
+      assert(x>15&&x<1265&&y>15&&y<705,'Split XYZ geometry clipped');
+    }
+    await page.screenshot({path:path.join(output,'desktop-spatial-split.png')});
+    await page.evaluate(payload=>window.pyniteViewer.update({...payload,loads:[]}),split);
+    const joint=split.nodes.find(node=>node.name===split.members[0].end);
+    const jointPoint=await page.evaluate(position=>window.pyniteViewer.project(position),joint.position);
+    await page.mouse.click(...jointPoint);
+    assert.deepEqual(await page.evaluate(()=>window.selectedEvent),['nodes',joint.name],'New split joint could not be picked');
     assert.deepEqual(errors,[]);
     await page.evaluate(()=>{
       window.bridgeFailures=[];

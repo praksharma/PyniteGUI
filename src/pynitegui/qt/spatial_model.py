@@ -203,8 +203,14 @@ class SpatialProject(Project):
         a, b = np.array(self.nodes[member.start].coords), np.array(self.nodes[member.end].coords)
         vector, point = b - a, np.array([x, y, z]) - a
         length = np.linalg.norm(vector)
+        if length <= 1e-8:
+            raise ValueError(f"Member {name} is too short.")
         fraction = float(np.dot(point, vector) / length**2)
         if np.linalg.norm(point - fraction * vector) <= 1e-8 and -1e-8 / length <= fraction <= 1 + 1e-8 / length:
+            if fraction * length <= 1e-8:
+                return 0.0
+            if (1 - fraction) * length <= 1e-8:
+                return 1.0
             return max(0.0, min(1.0, fraction))
         return None
 
@@ -213,6 +219,8 @@ class SpatialProject(Project):
         a, b, c, d = (np.array(self.nodes[name].coords) for name in (one.start, one.end, two.start, two.end))
         r, s, q = b - a, d - c, c - a
         lr, ls = np.linalg.norm(r), np.linalg.norm(s)
+        if min(lr, ls) <= 1e-8:
+            raise ValueError("Spatial members must be longer than the geometry tolerance.")
         if np.linalg.norm(np.cross(r, s)) <= 1e-12 * lr * ls:
             if np.linalg.norm(np.cross(q, r)) / lr > 1e-8:
                 return None
@@ -221,28 +229,45 @@ class SpatialProject(Project):
                 raise ValueError(f"Members {first} and {second} overlap.")
             return None
         t, u = np.linalg.lstsq(np.column_stack((r, -s)), q, rcond=None)[0]
-        if np.linalg.norm(a + t * r - c - u * s) <= 1e-8 and 0 < t < 1 and 0 < u < 1:
-            return float(t), float(u)
+        if (np.linalg.norm(a + t * r - c - u * s) <= 1e-8
+                and -1e-8 / lr <= t <= 1 + 1e-8 / lr and -1e-8 / ls <= u <= 1 + 1e-8 / ls):
+            t = 0.0 if t * lr <= 1e-8 else 1.0 if (1 - t) * lr <= 1e-8 else t
+            u = 0.0 if u * ls <= 1e-8 else 1.0 if (1 - u) * ls <= 1e-8 else u
+            return float(max(0, min(1, t))), float(max(0, min(1, u)))
         return None
 
     def split_member(self, name, fraction):
-        raise ValueError("3D member splitting is planned; edit explicit XYZ segments in Model Tables for now.")
+        if not finite_number(fraction) or not 0 < fraction < 1:
+            raise ValueError("Split fraction must be strictly between 0 and 1.")
+        candidate = self.clone()
+        candidate.validate()
+        if name not in candidate.members:
+            raise ValueError("Unknown spatial member.")
+        segments = candidate._split_member(name, [fraction])
+        candidate.validate()
+        self.nodes, self.members, self.loads = candidate.nodes, candidate.members, candidate.loads
+        return segments
 
     def connect_intersections(self):
-        raise ValueError("Automatic 3D connection is planned. Add explicit joints and segments in Model Tables.")
+        candidate = self.clone()
+        candidate.validate()
+        Project.connect_intersections(candidate)
+        candidate.validate()
+        self.nodes, self.members, self.loads = candidate.nodes, candidate.members, candidate.loads
 
     def analysis_topology_issues(self):
         issues = []
         for name, member in self.members.items():
             for node in self.nodes.values():
                 if node.name not in (member.start, member.end) and self.member_position(name, *node.coords) is not None:
-                    issues.append(f"{node.name} lies inside {name}. Define separate members meeting at this joint in Model Tables.")
+                    issues.append(f"{node.name} lies inside {name}. Use Edit > Connect Intersections or define explicit segments in Model Tables.")
         names = list(self.members)
         for index, first in enumerate(names):
             for second in names[index + 1:]:
                 try:
-                    if self.member_intersection(first, second):
-                        issues.append(f"Members {first} and {second} cross without an explicit shared joint.")
+                    intersection = self.member_intersection(first, second)
+                    if intersection and any(0 < fraction < 1 for fraction in intersection):
+                        issues.append(f"Members {first} and {second} cross or meet without an explicit shared joint. Use Edit > Connect Intersections.")
                 except ValueError as error:
                     issues.append(str(error))
         adjacency = {name: set() for name in self.nodes}

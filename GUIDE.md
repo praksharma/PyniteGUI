@@ -56,6 +56,23 @@ does not reinterpret or convert existing geometry; open or create the intended m
   work plane, allowing connections between different planes. Escape cancels a
   pending member. Add Node opens exact XYZ entry; Model Tables can define complete
   node/member connectivity numerically. All engineering edits support undo/redo.
+- Select a member and choose **Split...** in its inspector or **Edit > Split
+  Selected Member**. Enter a fraction measured from its start. The first segment
+  retains the original member ID; new segments preserve material, section and roll.
+  Existing coincident joints retain their supports, springs and nodal loads.
+  Point loads keep their physical XYZ stations and reference directions; a 3D
+  point force/moment at a cut remains a member-end load on the preceding segment,
+  preserving its ID and rolled local axes instead of resolving it into nodal loads.
+  Partial uniform/varying distributed loads are clipped and interpolated onto
+  the segments; new pieces get new load IDs and retain cases/angles. Self-weight
+  is regenerated from segment lengths without double counting.
+- **Edit > Connect Intersections** explicitly connects actual XYZ crossings,
+  T-junctions and existing interior nodes by creating shared endpoints and segments.
+  Skew lines and crossings seen only in projection do not connect. Collinear
+  overlaps are rejected before any changes. Both topology commands are atomic,
+  undo in one step and invalidate results; repeat analysis after editing.
+  Drawing or analysis never silently connects a crossing, and solver-only
+  physical-member segmentation remains outside this workflow.
 - In Select mode, enable **Box select** or hold Shift while dragging a rectangle.
   Left-to-right selects enclosed nodes and complete members; right-to-left also
   selects members crossing the box. Ctrl/Command adds to the current selection;
@@ -161,17 +178,18 @@ does not reinterpret or convert existing geometry; open or create the intended m
 - The save icon on the viewport result toolbar exports the current camera view
   as PNG, including visible geometry, diagram labels, signed-axis gizmo and the
   combination/unit/sign legend. The native controls and editing sidebars are
-  excluded. Whole-structure 3D PDF diagram reports and envelopes remain pending.
+  excluded. Whole-structure 3D PDF diagram reports remain pending; numerical
+  envelopes are available in the retained diagram window.
 
 First-milestone scope is linear, unreleased 3D frame members. No spatial trusses,
-plates/shells, solids, nonlinear effects, member releases, force envelopes,
-node dragging, automatic member splitting/intersection connection, or 2D conversion
+plates/shells, solids, nonlinear effects, member releases,
+node dragging, implicit physical-member segmentation, or 2D conversion
 are implemented in this mode yet. Multi-selection supports bulk assignments and
 deletion; use Model Tables for coordinated geometry editing. Geometry requires explicit shared endpoints;
 overlaps, interior nodes, crossings without a shared joint and disconnected groups
 are rejected before analysis. Skew lines are not mistaken for intersecting members.
-Support markers show global translation restraints as stops and rotational restraints
-as rings; spring markers are blue. Exact DOFs/stiffnesses are in the inspector/table.
+Dedicated support/spring symbols and hover details show global DOFs and selected-unit
+stiffnesses; the inspector and model tables provide exact editing controls.
 
 Qt WebEngine is included with the full PySide6 dependency. Three.js 0.180.0 and
 OrbitControls are bundled unmodified under their MIT license in

@@ -197,6 +197,11 @@ def populate_inspector(window):
     button = QPushButton("Delete")
     button.clicked.connect(window.delete_selected)
     form.addRow(button)
+    if kind == "members":
+        button = QPushButton("Split...")
+        button.setObjectName("spatial_split")
+        button.clicked.connect(window.split_selected_member)
+        form.addRow(button)
 
 
 def add_load(window):

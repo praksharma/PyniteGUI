@@ -49,6 +49,16 @@ if __name__ == "__main__":
     window.project.unit_system = "si"
     payload["qaSupportsSI"] = viewport_payload(window)
     payload["qaSupportsSI"].update(plane="XY", offset=0, labels=True)
+    window.load_project(example_project("3d_cantilever"))
+    window.project.nodes["N2"].y, window.project.nodes["N2"].z = 60, -30
+    window.project.members["M1"].roll = 27
+    window.project.loads["L5"] = SpatialLoad("L5", "M1", "Angle", -.5, .37, angle=23, elevation=-17)
+    window.project.split_member("M1", .37)
+    with contextlib.redirect_stdout(io.StringIO()):
+        window.result = analyze(window.project)
+    window.view.diagram.setCurrentIndex(window.view.diagram.findData("moment_z"))
+    payload["qaSplit"] = viewport_payload(window)
+    payload["qaSplit"].update(plane="XY", offset=0, labels=True)
     print(json.dumps(payload, allow_nan=False))
     window.saved = window.project.to_dict()
     window.close()

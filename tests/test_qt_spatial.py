@@ -159,10 +159,14 @@ class SpatialModelTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Disconnected"):
             solve(project)
 
-    def test_no_silent_planar_split(self):
-        for callback in (lambda p: p.split_member("M1", .5), lambda p: p.connect_intersections()):
-            with self.assertRaisesRegex(ValueError, "planned"):
-                callback(beam())
+    def test_split_uses_xyz_without_planar_projection(self):
+        project = beam()
+        project.nodes["N2"].z = 90
+        project.split_member("M1", .5)
+        self.assertEqual(project.nodes["N3"].coords, (60, 0, 45))
+        before = project.to_dict()
+        project.connect_intersections()
+        self.assertEqual(project.to_dict(), before)
 
     def test_json_save_open_preserves_dimension(self):
         with tempfile.TemporaryDirectory() as directory:

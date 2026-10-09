@@ -657,7 +657,9 @@ class Project:
         from dataclasses import replace
         original = self.members[name]
         a, b = self.nodes[original.start], self.nodes[original.end]
-        length = math.hypot(b.x - a.x, b.y - a.y)
+        spatial = getattr(self, "dimension", "2D") == "3D"
+        start_point, end_point = (a.coords, b.coords) if spatial else ((a.x, a.y), (b.x, b.y))
+        length = math.dist(start_point, end_point)
         cuts = [0.0]
         for fraction in sorted(fractions):
             if (fraction - cuts[-1]) * length > 1e-8 and (1 - fraction) * length > 1e-8:
@@ -666,7 +668,8 @@ class Project:
             raise ValueError("Split point is too close to a member endpoint.")
         cuts.append(1.0)
         nodes = [original.start]
-        nodes.extend(self.node_at(a.x + t * (b.x - a.x), a.y + t * (b.y - a.y)) for t in cuts[1:-1])
+        nodes.extend(self.node_at(*(start + t * (end - start) for start, end in zip(start_point, end_point)))
+                     for t in cuts[1:-1])
         nodes.append(original.end)
         segments = []
         for index, (start, end) in enumerate(zip(nodes, nodes[1:])):
@@ -699,6 +702,16 @@ class Project:
                     pieces.append(piece)
                 continue
             position = load.position
+            if spatial:
+                # Keep rolled local forces/moments on a segment endpoint at cuts.
+                for cut in cuts[1:-1]:
+                    if abs(position - cut) * length <= 1e-8:
+                        position = cut
+                        break
+                index = next(i for i, right in enumerate(cuts[1:]) if position <= right)
+                load.target = segments[index]
+                load.position = (position - cuts[index]) / (cuts[index + 1] - cuts[index])
+                continue
             for index, cut in enumerate(cuts[1:-1], 1):
                 if abs(position - cut) * length <= 1e-8:
                     if load.direction.startswith("Local"):
@@ -727,7 +740,8 @@ class Project:
             member = self.members[name]
             for node in self.nodes.values():
                 if node.name not in (member.start, member.end):
-                    fraction = self.member_position(name, node.x, node.y)
+                    point = node.coords if getattr(self, "dimension", "2D") == "3D" else (node.x, node.y)
+                    fraction = self.member_position(name, *point)
                     if fraction is not None and 0 < fraction < 1:
                         cuts[name].append(fraction)
         for name, fractions in cuts.items():
