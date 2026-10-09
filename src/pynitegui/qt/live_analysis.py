@@ -46,15 +46,23 @@ class LiveRecalculation(QObject):
 
     def editing_blocker(self):
         window = self.window
+        def belongs_to_project(widget):
+            # Qt isAncestorOf stops at top-level dialog boundaries. Follow ownership.
+            while widget is not None:
+                if widget is window:
+                    return True
+                widget = widget.parentWidget()
+            return False
+
         modal = QApplication.activeModalWidget()
-        if modal is not None and (modal is window or window.isAncestorOf(modal)):
+        if belongs_to_project(modal):
             return "Close or finish this project's open editing dialog before automation edits/analysis."
         if window.planar_view.drag_node or window.planar_view.box_origin is not None:
             return "Finish the node drag or box selection, or press Escape to cancel it."
         if window.mode == "draw":
             return "Member drawing mode is active. Switch to Select mode to finish/cancel drawing before automation edits/analysis."
         focus = QApplication.focusWidget()
-        if focus is not None and (focus is window or window.isAncestorOf(focus)):
+        if belongs_to_project(focus):
             current = focus
             while current is not None and current is not window:
                 if current.property("pynitegui_non_model_controls"):
