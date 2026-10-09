@@ -805,13 +805,10 @@ class MainWindow(QMainWindow):
             self.edit("Change units", lambda p: setattr(p, "unit_system", key))
 
     def choose_units(self):
-        from PySide6.QtWidgets import QInputDialog
-        keys = list(UNIT_SYSTEMS)
-        labels = [UNIT_SYSTEMS[key].label for key in keys]
-        selected, accepted = QInputDialog.getItem(self, "Units", "Unit system", labels,
-                                                 keys.index(self.project.unit_system), False)
-        if accepted:
-            self.set_units(keys[labels.index(selected)])
+        from .units import units_dialog, unit_key
+        dialog = units_dialog(self, self.project.units)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.set_units(unit_key(dialog.length.currentText(), dialog.force.currentText()))
 
     def replace_project(self, project):
         before, after = self.project.to_dict(), project.to_dict()

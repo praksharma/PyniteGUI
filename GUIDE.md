@@ -659,6 +659,22 @@ This panel does not query the compositor's physical GPU or a driver package vers
 
 ## Units
 
+Use **Edit > Units** to choose length (mm, cm, m, in, ft) and force
+(N, kN, lbf, kip) independently. All 20 combinations also appear in the
+bottom-right selector; the four original preset names remain unchanged.
+The dialog previews derived units before applying a change. Apply is undoable;
+Cancel leaves the project unchanged. These choices persist in 2D/3D projects,
+recovery snapshots and 3D copies without changing canonical engineering values
+or invalidating valid results.
+
+For custom choices with mm/cm/m geometry, material stress uses MPa and section
+properties use mm2/mm4. With in/ft geometry, sections use in2/in4; stress uses
+kip/in2 for kip forces and psi for other force choices. Moments, distributed
+loads, weight density and support stiffness use the chosen length/force units.
+The dialog shows these conventions even for mixed metric/Imperial choices.
+Files retain their current schema versions and store a deterministic unit key;
+older application builds that lack the custom choices reject those unit keys.
+
 | Quantity | Imperial (in, kip) | SI (m, kN) | SI (mm, N) | Imperial (ft, kip) |
 | --- | --- | --- | --- | --- |
 | Coordinates, lengths, grid, displacements | in | m | mm | ft |

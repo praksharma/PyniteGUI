@@ -103,7 +103,8 @@ below and the secondary interface wishlist retain their more specific scope.
 - [x] Add SI/imperial presets with validated dimensional input/output conversion,
   persistent selection, and physical-model preservation for existing projects.
 - [x] Add mm/N and ft/kip unit presets alongside the original in/kip and m/kN.
-- [ ] Add custom length/force unit choices.
+- [x] Add independent mm/cm/m/in/ft and N/kN/lbf/kip choices, derived-unit
+  previews, persistent 2D/3D unit keys, undo/redo and result preservation.
 - [x] Improve instability messages with affected nodes and degrees of freedom.
 - [x] Add scalable sparse mechanism checks/localization beyond 600 free planar
   degrees of freedom: scaled near-zero modes, direct zero-stiffness checks,
