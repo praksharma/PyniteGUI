@@ -25,8 +25,12 @@ The application uses PySide6 / Qt Widgets and PyNite for structural analysis.
 ### Platform Checks
 
 - macOS: the user reported successful operation on 2026-10-09. This is a smoke
-  test, not an independently reproduced installation or full regression run;
-  OS version, hardware and tested workflows were not recorded.
+  test, not an independently reproduced installation or full regression run.
+  The supplied diagnostics show Qt 6.11.2 / Cocoa, a MetalSurface, and a ready
+  WebGL 2.0 viewport using ANGLE's Apple M4 Max Metal renderer. Startup and
+  next-launch preferences are auto, with platform defaults and no requested
+  backend overrides. This records a working hardware-rendering path on that Mac;
+  the macOS version, installation steps and individual workflows remain unrecorded.
 - Linux: native NVIDIA/Wayland rendering and desktop interactions have been
   checked on the development host; backend-specific recovery is documented below.
 - Windows: installation and native rendering checks remain pending.

@@ -145,8 +145,10 @@ below and the secondary interface wishlist retain their more specific scope.
 - [x] Expand validation for malformed project files and supported format migrations,
   including safe rejection of future versions.
 - [x] Add benchmark tests for multi-storey frames and varied support/load setups.
-- [x] Record a successful macOS user smoke test (2026-10-09); macOS version,
-  hardware, installation steps and individual workflows were not recorded.
+- [x] Record a successful macOS user smoke test (2026-10-09), with supplied
+  diagnostics showing Qt 6.11.2 / Cocoa and a ready WebGL 2.0 viewport using
+  ANGLE Metal on Apple M4 Max with platform defaults. macOS version,
+  installation steps and individual workflows remain unrecorded.
 - [ ] Run and document a reproducible macOS installation/rendering/regression
   check, including save/open, analysis, selection and exports.
 - [ ] Test installation and desktop rendering on Windows.
