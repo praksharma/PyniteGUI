@@ -11,6 +11,8 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import numpy as np
+
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 os.environ.setdefault("PYNITEGUI_NO_WEBENGINE", "1")
 from PySide6.QtCore import Qt
@@ -326,6 +328,27 @@ class SpatialWidgetTests(unittest.TestCase):
         self.window.load_project(example_project("simple_beam"))
         self.assertIs(self.window.view, planar)
         self.assertEqual(self.window.results_table.columnCount(), 7)
+
+    def test_viewport_changes_reuse_samples_and_new_analysis_resamples(self):
+        from pynitegui.qt import spatial_results
+        self.window.project.loads["L1"] = SpatialLoad("L1", "N2", "FY", -1)
+        self.window.result = solve(self.window.project)
+        with patch.object(spatial_results, "_sample_member", wraps=spatial_results._sample_member) as sample:
+            original = viewport_payload(self.window)
+            self.window.select(("members", "M1"))
+            self.window.view.diagram.setCurrentIndex(self.window.view.diagram.findData("moment_z"))
+            self.window.project.unit_system = "si"
+            self.window.view.show_loads.setChecked(False)
+            changed = viewport_payload(self.window)
+            self.assertEqual(sample.call_count, 1)
+            self.assertEqual(original["members"][0]["displacements"], changed["members"][0]["displacements"])
+            self.assertEqual(changed["diagram"]["unit"], self.window.project.units.moment)
+            self.window.project.loads["L1"].magnitude = -2
+            self.window.result = solve(self.window.project)
+            new = viewport_payload(self.window)
+            self.assertEqual(sample.call_count, 2)
+            np.testing.assert_allclose(new["members"][0]["displacements"],
+                                       2 * np.array(original["members"][0]["displacements"]))
 
     def test_angle_inspector_preview_undo_payload_and_report(self):
         project = self.window.project

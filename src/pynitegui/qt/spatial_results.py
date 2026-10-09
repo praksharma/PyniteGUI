@@ -1,5 +1,6 @@
 """Unit-aware spatial result sampling shared by viewport, detail, and exports."""
 import math
+from collections import OrderedDict
 import numpy as np
 from Pynite import FEModel3D
 
@@ -108,8 +109,58 @@ def member_extrema(result, name, prefix):
             *(getattr(member, prefix + "_deflection")(axis, combo) for axis in ("dy", "dz")))
 
 
+class SampleCache:
+    """Bounded, solver-owned canonical samples; never persisted with solver jobs."""
+    def __init__(self, limit=32 * 1024 * 1024):
+        self.limit = limit
+        self.bytes = 0
+        self.entries = OrderedDict()
+
+    def get(self, key):
+        value = self.entries.get(key)
+        if value is not None:
+            self.entries.move_to_end(key)
+        return value
+
+    def put(self, key, value):
+        for array in value:
+            array.setflags(write=False)
+        size = sum(array.nbytes for array in value)
+        old = self.entries.pop(key, None)
+        if old is not None:
+            self.bytes -= sum(array.nbytes for array in old)
+        if size > self.limit:
+            return
+        while self.entries and self.bytes + size > self.limit:
+            _, old = self.entries.popitem(last=False)
+            self.bytes -= sum(array.nbytes for array in old)
+        self.entries[key] = value
+        self.bytes += size
+
+    def __getstate__(self):
+        return {"limit": self.limit}
+
+    def __setstate__(self, state):
+        self.__init__(state["limit"])
+
+
 def sampled_member(project, result, name):
+    """Reuse immutable samples across viewport/detail/report and combo views."""
     length, boundaries = member_breaks(project, name)
+    member = project.members[name]
+    cache = getattr(result.solver, "_pynitegui_samples", None)
+    if cache is None:
+        cache = result.solver._pynitegui_samples = SampleCache()
+    key = (result.snapshot_id, result.model_signature, result.combination, name, member.kind, member.roll,
+           project.nodes[member.start].coords, project.nodes[member.end].coords, tuple(boundaries))
+    value = cache.get(key)
+    if value is None:
+        value = _sample_member(project, result, name, length, boundaries)
+        cache.put(key, value)
+    return value
+
+
+def _sample_member(project, result, name, length, boundaries):
     points, queries = [], []
     for left, right in zip(boundaries, boundaries[1:]):
         xs = np.linspace(left, right, max(3, math.ceil(60 * (right - left) / length) + 1))

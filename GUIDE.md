@@ -958,6 +958,51 @@ zoom/selection preservation, orbit, node picking, all three work-plane drawing
 modes, six force/moment overlays with rolled members, PNG capture and dark
 appearance. Screenshots go to `/tmp/pynite-3d-qa`
 by default, configurable with `VIEWPORT_QA_OUTPUT`. It does not launch the user's GUI.
+
+### Spatial Performance Checks
+
+Spatial member sampling is cached in canonical model units, shared by the
+viewport, Member Detail, envelopes and report diagrams. Each solver snapshot
+owns a least-recently-used cache with a 32 MiB sample-array budget. Keys separate
+snapshots, combinations, members, geometry/roll/type and load-boundary stations;
+unit, selection and display-only changes reuse read-only arrays. Fresh analyses
+use fresh caches, and solver serialization drops cached arrays. There is no
+change to numerical sampling density, one-sided load jumps or solver signs.
+
+Run the optional analytical benchmark from the repository root:
+
+```sh
+uv run --locked python -B tests/benchmark_spatial.py
+```
+
+It solves 10-, 50- and 100-segment spatial cantilevers and emits JSON with solve,
+cold sampling, five warm reads, station counts and cache bytes. On this Linux
+Python 3.12.15 run (2026-10-09), the 100-member cold read took 0.85 seconds and
+warm reads took 0.15-0.21 milliseconds, retaining 585,600 sample-array bytes.
+These are sampling-only measurements, not complete UI redraw or solver speedups.
+
+For optional large-model desktop rendering checks, use the same separate
+Playwright installation as above:
+
+```sh
+VIEWPORT_BENCHMARK=1 node tests/viewport3d.spec.cjs
+```
+
+The ordinary interaction suite still runs. The benchmark additionally draws
+144-, 616- and 1,580-member lattices at 1280x720 with labels on/off, checks canvas
+pixels, framing, orbit interaction and graphics-resource counts after model
+replacement, and records scene rebuild and frame timings. Screenshots and
+`desktop-benchmark.json` use the same output directory. Synthetic lattice data
+benchmarks rendering only, not structural analysis. The harness uses Chromium's
+SwiftShader software renderer; record the reported driver when comparing runs.
+Timings are observations, not hardware-independent pass/fail thresholds.
+The first recorded run rebuilt the 1,580-member geometry in about 152 ms,
+or 520 ms with labels enabled, with roughly 2,600 draw calls. This identifies
+scene/label rebuilding and draw-call batching as follow-up work; the analytical
+cache does not cache Three.js geometry or avoid JSON/payload construction.
+
+### Additional Regression Coverage
+
 Distributed-load checks cover analytical uniform/triangular beam responses,
 partial-span resultants, inclined global loading, orientation-independent
 diagrams, interpolated split loads, persistence, and editor creation/undo.

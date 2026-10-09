@@ -245,7 +245,7 @@ function exportImage(){
   }
   return canvas.toDataURL('image/png');
 }
-window.pyniteViewer={update,fit,orient,cancel,state:()=>({objects:group.children.length,drawCalls:renderer.info.render.calls,camera:camera.position.toArray(),target:controls.target.toArray(),selection:data.selection,dragging:nodeDrag.active(),nodes:data.nodes.map(node=>({name:node.name,position:node.position}))}),project:position=>{const p=vector(position).project(camera);return[(p.x+1)*innerWidth/2,(1-p.y)*innerHeight/2];}};
+window.pyniteViewer={update,fit,orient,cancel,state:()=>({objects:group.children.length,drawCalls:renderer.info.render.calls,resources:{...renderer.info.memory},camera:camera.position.toArray(),target:controls.target.toArray(),selection:data.selection,dragging:nodeDrag.active(),nodes:data.nodes.map(node=>({name:node.name,position:node.position}))}),project:position=>{const p=vector(position).project(camera);return[(p.x+1)*innerWidth/2,(1-p.y)*innerHeight/2];}};
 window.pyniteViewer.exportImage=exportImage;
 window.pyniteViewer.diagnostics=()=>{
   const gl=renderer.getContext(),debug=gl.getExtension('WEBGL_debug_renderer_info');

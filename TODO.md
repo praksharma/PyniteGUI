@@ -240,7 +240,14 @@ below and the secondary interface wishlist retain their more specific scope.
   XYZ component previews, angled arrows, editable tables and versioned persistence.
 - [x] Dedicated global 3D rigid/spring symbols for all six DOFs, unit-aware
   per-DOF hover inspection, node-linked picking and non-analytical visibility.
-- [ ] Large-model rendering benchmarks and cached analytical sampling.
+- [x] Large-model rendering benchmarks and cached analytical sampling: shared
+  snapshot/combination-specific read-only samples with a 32 MiB array budget,
+  LRU eviction and serialization reset; native redraw/isolation regressions;
+  repeatable cold/warm analytical timings and 144/616/1,580-member desktop
+  label/geometry, pixel, orbit and graphics-resource checks.
+- [ ] Reduce large-scene redraw/draw-call costs (geometry/material reuse or
+  batching), using the recorded desktop benchmarks; retain picking, selection,
+  supports, labels, overlays and reliable resource disposal.
 - [ ] Implement the pending solver milestones in **PyNite Capability Coverage**
   above; keep plates/meshes and nonlinear methods independently benchmarked.
 
