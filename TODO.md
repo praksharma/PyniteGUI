@@ -184,7 +184,10 @@ below and the secondary interface wishlist retain their more specific scope.
 - [x] Whole-structure 3D axial/shear/bending/torsion overlays with shared scaling,
   combination/unit-aware legends, sampled-value labels and PNG view export.
 - [ ] Whole-structure 3D diagram PDF reports and selectable report views.
-- [ ] Spatial combination envelopes and interactive one-sided station inspection.
+- [x] Spatial combination envelopes and interactive one-sided station inspection:
+  all six global node motions/reactions, eight local member components, exact
+  solver extrema, governing combinations, sampled curves, snapshot-aware CSV
+  and printable numerical envelope summaries.
 - [ ] 3D member end releases and axial-only trusses, with mechanism benchmarks.
 - [x] 3D contained/crossing box selection, additive selection and cancellation;
   atomic bulk material/section/roll, six-DOF restraint/spring and load assignments.

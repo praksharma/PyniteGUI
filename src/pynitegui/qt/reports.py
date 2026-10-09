@@ -117,11 +117,11 @@ class ReportOptionsDialog(QDialog):
         buttons.rejected.connect(self.reject)
         form.addRow(buttons)
         if getattr(getattr(parent, "project", None), "dimension", "2D") == "3D":
-            for widget in (*self.diagrams.values(), self.include_envelopes):
+            for widget in self.diagrams.values():
                 widget.setChecked(False)
                 widget.setEnabled(False)
                 form.setRowVisible(widget, False)
-            for widget in (self.envelope_combinations, self.side, self.sign, self.amplitude, self.supports, self.loads):
+            for widget in (self.side, self.sign, self.amplitude, self.supports, self.loads):
                 form.setRowVisible(widget, False)
 
     def accept(self):
@@ -271,8 +271,8 @@ def report_html(project, result, source="Untitled", options=None, *, image_urls=
     options = options or ReportOptions()
     options.validate()
     spatial = getattr(project, "dimension", "2D") == "3D"
-    if spatial and (options.diagrams or options.envelope_combinations):
-        raise ValueError("3D reports currently support model definitions and numerical node/member results only.")
+    if spatial and options.diagrams:
+        raise ValueError("Whole-structure 3D diagram report pages are not yet supported.")
     # Check identity even when no numerical result tables are selected.
     result_table(project, result, "nodes")
     def table(kind):

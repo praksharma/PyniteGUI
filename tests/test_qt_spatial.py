@@ -685,10 +685,10 @@ class SpatialExportTests(unittest.TestCase):
         for text in ("3D spatial frame","DZ (in)","RX (rad)","MY (kip-in)","T (kip-in)","Roll (deg)","&lt;untrusted&gt;"):
             self.assertIn(text,html)
         self.assertNotIn("RZ is n/a",html)
-        with self.assertRaisesRegex(ValueError,"3D reports"):
+        with self.assertRaisesRegex(ValueError,"3D diagram"):
             report_html(project,result,options=ReportOptions(diagrams=("moment",)))
-        with self.assertRaisesRegex(ValueError,"3D reports"):
-            report_html(project,result,options=ReportOptions(envelope_combinations=("Service",)))
+        self.assertIn("Selected-Combination Envelopes", report_html(project,result,
+                      options=ReportOptions(envelope_combinations=("Service",))))
 
     def test_csv_includes_xyz_and_torsion(self):
         project = beam()

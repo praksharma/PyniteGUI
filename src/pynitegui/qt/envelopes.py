@@ -42,6 +42,22 @@ def envelope_rows(project, result, combinations):
     from .diagrams import member_result_rows
     results = selected_results(project, result, combinations)
     rows = []
+    if getattr(project, "dimension", "2D") == "3D":
+        from .spatial_model import DOFS, FORCES
+        from .spatial_results import LABELS, UNITS, member_extrema
+        for name in project.nodes:
+            for index, (label, quantity) in enumerate(zip((*DOFS, *FORCES),
+                    ("length",) * 3 + ("rotation",) * 3 + ("force",) * 3 + ("moment",) * 3)):
+                values = [((r.displacements if index < 6 else r.reactions)[name][index % 6], r.combination) for r in results]
+                rows.append(("Node", name, label, quantity, *bounds(values)))
+        for name in project.members:
+            lows = [member_extrema(r, name, "min") for r in results]
+            highs = [member_extrema(r, name, "max") for r in results]
+            for index, (label, quantity) in enumerate(zip(LABELS, UNITS)):
+                low = bounds([(values[index], r.combination) for values, r in zip(lows, results)])[:2]
+                high = bounds([(values[index], r.combination) for values, r in zip(highs, results)])[2:]
+                rows.append(("Member", name, label, quantity, *low, *high))
+        return rows
     for name in project.nodes:
         for index, (label, quantity) in enumerate((("DX", "length"), ("DY", "length"), ("RZ", "rotation"),
                                                   ("FX", "force"), ("FY", "force"), ("MZ", "moment"))):
@@ -59,10 +75,18 @@ def envelope_rows(project, result, combinations):
 
 def member_envelope(project, result, combinations, member, quantity):
     from .diagrams import sample_member
-    if member not in project.members or quantity not in ("axial", "shear", "moment", "deflection"):
+    spatial = getattr(project, "dimension", "2D") == "3D"
+    from .spatial_results import QUANTITIES, sampled_member
+    quantities = QUANTITIES if spatial else ("axial", "shear", "moment", "deflection")
+    if member not in project.members or quantity not in quantities:
         raise ValueError("Unknown envelope member or quantity.")
     results = selected_results(project, result, combinations)
-    samples = [sample_member(project, r, member) for r in results]
+    if spatial:
+        index = QUANTITIES.index(quantity)
+        samples = [{"x": sample[0], quantity: sample[1][:, index]}
+                   for sample in (sampled_member(project, r, member) for r in results)]
+    else:
+        samples = [sample_member(project, r, member) for r in results]
     values = np.stack([sample[quantity] for sample in samples])
     names = np.array([r.combination for r in results], dtype=object)
     return {"x": samples[0]["x"], "minimum": values.min(axis=0), "maximum": values.max(axis=0),
@@ -110,6 +134,7 @@ class EnvelopeWidget(QWidget):
     def __init__(self, parent, project, result, source, selected=None):
         super().__init__(parent)
         self.project, self.result, self.source = project, result, source
+        self.spatial = getattr(project, "dimension", "2D") == "3D"
         layout = QVBoxLayout(self)
         controls = QHBoxLayout()
         controls.addWidget(QLabel("Combinations"))
@@ -149,7 +174,12 @@ class EnvelopeWidget(QWidget):
         if selected in project.members:
             self.member.setCurrentText(selected)
         self.quantity = QComboBox()
-        for label, key in (("Axial N", "axial"), ("Shear Fy", "shear"), ("Moment Mz", "moment"), ("Deflection dy", "deflection")):
+        if self.spatial:
+            from .spatial_results import LABELS, QUANTITIES
+            choices = zip(LABELS, QUANTITIES)
+        else:
+            choices = (("Axial N", "axial"), ("Shear Fy", "shear"), ("Moment Mz", "moment"), ("Deflection dy", "deflection"))
+        for label, key in choices:
             self.quantity.addItem(label, key)
         plot_controls.addWidget(self.member)
         plot_controls.addWidget(self.quantity)
@@ -206,6 +236,8 @@ class EnvelopeWidget(QWidget):
 
     def update_plot(self):
         from .diagrams import member_breaks, member_values
+        if self.spatial:
+            from .spatial_results import member_breaks, inspect_member as member_values, QUANTITIES, UNITS
         self.figure.clear()
         ax = self.figure.add_subplot()
         names, member, quantity = self.selected_combinations(), self.member.currentText(), self.quantity.currentData()
@@ -222,7 +254,10 @@ class EnvelopeWidget(QWidget):
         self.inspection.clearContents()
         if names and member:
             data = member_envelope(self.project, self.result, names, member, quantity)
-            value_quantity = "length" if quantity == "deflection" else "moment" if quantity == "moment" else "force"
+            if self.spatial:
+                value_quantity = UNITS[QUANTITIES.index(quantity)]
+            else:
+                value_quantity = "length" if quantity == "deflection" else "moment" if quantity == "moment" else "force"
             value_unit = getattr(units, value_quantity)
             self.inspection.setHorizontalHeaderLabels((f"Minimum ({value_unit})", "Minimum combination",
                                                        f"Maximum ({value_unit})", "Maximum combination"))
@@ -237,7 +272,7 @@ class EnvelopeWidget(QWidget):
             for text in legend.get_texts():
                 text.set_color(palette["text"])
             ax.set_title(f"{member} | {len(names)} combination(s) | Local axes" + (" | + compression" if quantity == "axial" else ""))
-            index = ("axial", "shear", "moment", "deflection").index(quantity)
+            index = (QUANTITIES if self.spatial else ("axial", "shear", "moment", "deflection")).index(quantity)
             values = bounds([(member_values(self.project, self.result.for_combination(name), member, self.inspection_x,
                                             self.side.currentData())[index], name) for name in names])
             for col, value in enumerate(values):
@@ -254,6 +289,8 @@ class EnvelopeWidget(QWidget):
 
     def inspect_distance(self):
         from .diagrams import member_breaks
+        if self.spatial:
+            from .spatial_results import member_breaks
         length = member_breaks(self.project, self.member.currentText())[0]
         self.inspection_x = min(length, max(0, self.project.units.from_display(self.distance.value(), "length")))
         self.update_plot()

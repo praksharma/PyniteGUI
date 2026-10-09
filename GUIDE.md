@@ -112,9 +112,23 @@ does not reinterpret or convert existing geometry; open or create the intended m
 - Diagrams opens a retained member snapshot with N, Vy, Vz, T, My, Mz, dy and dz.
   Curves use local solver signs, with N positive in compression, and sample both
   sides of point-load boundaries. Combination and member selectors are independent
-  of subsequent model edits. CSV includes all six global node responses and member
-  end values/extrema. Printable numerical reports split wide results into readable
-  tables; 2D whole-structure diagrams/envelopes are not offered for 3D reports.
+  of subsequent model edits. Enter **Distance** or click a member plot to inspect
+  all eight values at that station. **Left side / Right side** queries the solver
+  immediately before/after interior load boundaries, rather than interpolating
+  screen curves. End stations query the member endpoint. Units change without
+  changing the physical station; changing members resets the station to zero.
+  CSV includes all six global node responses and member end values/extrema.
+  Printable numerical reports split wide results into readable tables.
+- The retained diagram window's **Combination Envelopes** tab compares checked
+  analyzed combinations independently of the single-combination selector. Node
+  bounds cover all six global motions and reactions; member summaries use exact
+  solver extrema of N, Vy, Vz, T, My, Mz, dy and dz over each entire member.
+  **Member Curves** shows sampled lower/upper bounds and solver-based one-sided
+  station values with their governing combinations. First checked combination
+  wins ties. These are independent bounds, not one simultaneous load state.
+  Export envelope summaries as CSV or select them in **Print Results**; both
+  retain snapshot identity, selected combination factors and project units.
+  Spatial whole-structure diagram PDF pages remain unavailable.
 - The viewport **Result** selector overlays N, Vy, Vz, T, My or Mz across the
   entire undeformed frame for the currently selected result combination. **Scale**
   multiplies automatic diagram height: 1x maps the largest absolute sampled value

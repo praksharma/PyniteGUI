@@ -52,7 +52,7 @@ def member_values(result, name, distance):
             member.deflection("dy", distance, combo), member.deflection("dz", distance, combo))
 
 
-def sampled_member(project, result, name):
+def member_breaks(project, name):
     definition = project.members[name]
     length = math.dist(project.nodes[definition.start].coords, project.nodes[definition.end].coords)
     breaks = {0., length}
@@ -61,7 +61,40 @@ def sampled_member(project, result, name):
             breaks.add(load.position * length)
             if load.kind == "distributed":
                 breaks.add(load.end_position * length)
-    boundaries = sorted(breaks)
+    return length, sorted(breaks)
+
+
+def inspect_member(project, result, name, distance, side="right"):
+    """Query the solver on the requested side of an interior load boundary."""
+    from .analysis import model_signature
+    if result.model_signature != model_signature(project):
+        raise ValueError("The model does not match this analyzed snapshot.")
+    length, boundaries = member_breaks(project, name)
+    if isinstance(distance, bool) or not math.isfinite(distance) or not 0 <= distance <= length:
+        raise ValueError("Inspection distance must be within the member.")
+    if side not in ("left", "right"):
+        raise ValueError("Unknown inspection side.")
+    query = distance
+    for index, boundary in enumerate(boundaries[1:-1], 1):
+        if abs(distance - boundary) <= max(length * 1e-10, 1e-10):
+            gap = min(boundary - boundaries[index - 1], boundaries[index + 1] - boundary)
+            epsilon = min(gap * 1e-5, max(length * 1e-8, 1e-8))
+            query = boundary + (epsilon if side == "right" else -epsilon)
+            break
+    return member_values(result, name, query)
+
+
+def member_extrema(result, name, prefix):
+    member, combo = result.solver.members[name], result.combination
+    return (getattr(member, prefix + "_axial")(combo),
+            *(getattr(member, prefix + "_shear")(axis, combo) for axis in ("Fy", "Fz")),
+            getattr(member, prefix + "_torque")(combo),
+            *(getattr(member, prefix + "_moment")(axis, combo) for axis in ("My", "Mz")),
+            *(getattr(member, prefix + "_deflection")(axis, combo) for axis in ("dy", "dz")))
+
+
+def sampled_member(project, result, name):
+    length, boundaries = member_breaks(project, name)
     points, queries = [], []
     for left, right in zip(boundaries, boundaries[1:]):
         xs = np.linspace(left, right, max(3, math.ceil(60 * (right - left) / length) + 1))
@@ -96,11 +129,7 @@ def result_table(project, result, kind):
             rows.append([name, label, units.to_display(x, "length"), *(units.to_display(value, quantity)
                          for value, quantity in zip(member_values(result, name, x), UNITS))])
         for label, prefix in (("Minimum", "min"), ("Maximum", "max")):
-            values = (getattr(member, prefix + "_axial")(result.combination),
-                      *(getattr(member, prefix + "_shear")(axis, result.combination) for axis in ("Fy", "Fz")),
-                      getattr(member, prefix + "_torque")(result.combination),
-                      *(getattr(member, prefix + "_moment")(axis, result.combination) for axis in ("My", "Mz")),
-                      *(getattr(member, prefix + "_deflection")(axis, result.combination) for axis in ("dy", "dz")))
+            values = member_extrema(result, name, prefix)
             rows.append([name, label, "", *(units.to_display(value, quantity) for value, quantity in zip(values, UNITS))])
     return headers, rows
 
