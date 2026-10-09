@@ -974,6 +974,8 @@ zoom/selection preservation, orbit, node picking, all three work-plane drawing
 modes, six force/moment overlays with rolled members, PNG capture and dark
 appearance. Screenshots go to `/tmp/pynite-3d-qa`
 by default, configurable with `VIEWPORT_QA_OUTPUT`. It does not launch the user's GUI.
+`PLAYWRIGHT_EXECUTABLE_PATH` optionally selects an installed Chromium-compatible
+test browser; otherwise Playwright uses its downloaded Chromium.
 
 ### Spatial Performance Checks
 
@@ -1028,6 +1030,43 @@ all three sizes. The 1,580-member unlabelled rebuild took about 14 ms (12 ms on
 replacement), while labels still brought rebuilds into the hundreds of
 milliseconds. SwiftShader frame timings remained variable; these measurements
 demonstrate lower allocation/submission costs, not a guaranteed frame-rate gain.
+
+Selection and tool-mode changes now recolour the two base instance buffers and
+update interaction settings without rebuilding supports, loads, deformation or
+force overlays. The complete remaining payload is compared, so geometry,
+work-plane, units, theme, visibility and result changes still rebuild. When local
+axes are shown, selection also rebuilds because it changes the displayed axes.
+JSON serialization and native payload construction still scale with model size.
+
+Label textures are shared by exact text/colour through a least-recently-used
+cache capped at 512 entries and an 8 MiB estimated RGBA texture budget (including
+a mipmap allowance). Active sprites pin their entries. Labels beyond the budget
+use transient textures that are disposed with their sprites. Hiding ordinary
+labels clears unused entries; required diagram values remain independent.
+Context loss and page teardown clear retained entries and dispose scene objects;
+browser history suspension retains its scene for restoration. The cache bounds
+retained resources, not the memory required by all live labels in a large scene.
+
+The interaction harness includes real-canvas cache lifetime/eviction checks,
+selection colours, all six force-overlay refreshes, support-anchor preservation,
+geometry/theme/visibility/local-axis rebuilds, and context-loss cleanup.
+Large-model benchmarks also record selection/tool refresh times and enforce no
+scene rebuilds, additional graphics resources or cache-budget overruns for those
+display-only updates.
+
+A hardware comparison on 2026-10-09 used the Codex in-app Chromium browser,
+WebGL 2 / ANGLE Metal on Apple M4 Max, a 552x853 viewport, the same 144/616/1,580
+member lattices and five selection/tool updates per case. Median labelled
+selection refreshes changed from 5.8/22.3/76.9 ms to 0.6/0.9/1.3 ms; tool changes
+changed from 5.7/24.6/71.7 ms to 0.5/0.8/1.0 ms. Unlabelled refresh times stayed
+around 0.4-1.5 ms. Resource counts stayed constant across the new refreshes;
+the largest scenes retained 512 label entries with an estimated 6,856,128 bytes.
+These are payload-to-scene update observations, not complete native GUI latency,
+solver timings, full-rebuild speedups or guaranteed frame rates. The targeted
+browser contracts and context-loss check passed on this hardware. The standalone
+Playwright interaction suite could not launch here because the macOS sandbox
+denied Chromium's Mach bootstrap registration; the recorded hardware comparison
+does not substitute for that suite's gesture coverage.
 
 ### Additional Regression Coverage
 

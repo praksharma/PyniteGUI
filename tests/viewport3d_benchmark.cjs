@@ -67,9 +67,24 @@ module.exports=async function benchmark(page,base,output){
       await page.evaluate(base=>window.pyniteViewer.update({...base,labels:false}),base);
       const repeated=await measure();
       assert.deepEqual(repeated.resources,first.resources,'Resources accumulated after model replacement');
+      const refresh=await page.evaluate(data=>{
+        const viewer=window.pyniteViewer,before=viewer.state();
+        let start=performance.now();viewer.update({...data,selection:[['nodes',data.nodes[0].name]]});
+        const selectionMilliseconds=performance.now()-start;
+        start=performance.now();viewer.update({...data,mode:'pan'});
+        const modeMilliseconds=performance.now()-start,after=viewer.state();
+        return {selectionMilliseconds,modeMilliseconds,rebuilds:after.rebuilds-before.rebuilds,
+          incrementalUpdates:after.incrementalUpdates-before.incrementalUpdates,resources:after.resources,
+          labelCache:after.labelCache};
+      },data);
+      assert.equal(refresh.rebuilds,0,'Selection/tool refresh rebuilt large-scene overlays');
+      assert.equal(refresh.incrementalUpdates,2);
+      assert.deepEqual(refresh.resources,repeated.resources,'Display refresh allocated graphics resources');
+      assert(refresh.labelCache.entries<=refresh.labelCache.maxEntries&&refresh.labelCache.bytes<=refresh.labelCache.maxBytes,
+        'Large-scene label cache exceeded its budgets');
       models.push({members:model.members.length,nodes:model.nodes.length,labels,
         updateMilliseconds:first.updateMilliseconds,rebuildMilliseconds:repeated.updateMilliseconds,
-        frameMilliseconds:repeated.frameMilliseconds,drawCalls:repeated.drawCalls,resources:repeated.resources,pixels:repeated.pixels});
+        frameMilliseconds:repeated.frameMilliseconds,drawCalls:repeated.drawCalls,resources:repeated.resources,pixels:repeated.pixels,refresh});
     }
   }
   const report={viewport:{width:1280,height:720},chromium:page.context().browser().version(),

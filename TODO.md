@@ -251,9 +251,11 @@ below and the secondary interface wishlist retain their more specific scope.
   Retain picking, drawing snaps, dragging, selection, supports, overlays and
   explicit instance-buffer disposal; enforce allocation/draw-call budgets in
   the recorded desktop benchmarks.
-- [ ] Reduce remaining large-scene label, support and result-overlay rebuild
-  costs; consider bounded texture reuse and incremental display-only updates,
-  preserving independent visibility/picking and reliable resource disposal.
+- [x] Reduce large-scene label, support and result-overlay rebuild costs with
+  bounded text/colour texture reuse and incremental selection/tool updates;
+  preserve visibility/picking, local-axis rebuilds and context-loss disposal.
+  Hardware refresh comparisons and cache/overlay/budget regressions are recorded
+  in GUIDE.md; payload construction and full scene rebuilds remain separate costs.
 - [ ] Implement the pending solver milestones in **PyNite Capability Coverage**
   above; keep plates/meshes and nonlinear methods independently benchmarked.
 

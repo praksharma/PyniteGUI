@@ -4,6 +4,20 @@ export function hitIdentity(hit){
   return hit?.object.userData.identities?.[hit.instanceId] || hit?.object.userData.identity;
 }
 
+export function recolorFrame(data,group){
+  const selected=new Set(data.selection.map(([kind,name])=>`${kind}:${name}`));
+  const members=new Map(data.members.map(member=>[member.name,member]));
+  group.traverse(mesh=>{
+    if(!mesh.isInstancedMesh||!mesh.userData.identities)return;
+    mesh.userData.identities.forEach(([kind,name],index)=>{
+      const color=selected.has(`${kind}:${name}`)?data.colors.accent:
+        kind==='members'&&members.get(name).kind==='truss'?data.colors.axial:data.colors.member;
+      mesh.setColorAt(index,new THREE.Color(color));
+    });
+    mesh.instanceColor.needsUpdate=true;
+  });
+}
+
 export function drawFrame(data,radius,group,picks){
   const nodes=new Map(data.nodes.map(node=>[node.name,new THREE.Vector3(...node.position)]));
   const selected=new Set(data.selection.map(([kind,name])=>`${kind}:${name}`));

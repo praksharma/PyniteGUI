@@ -5,7 +5,8 @@ import {diagramPoints, drawDiagram, legendLines} from './diagrams.js';
 import {attachBoxSelection} from './selection.js';
 import {drawSupports, SupportTooltip} from './supports.js';
 import {attachNodeDrag,planeAxis} from './node_drag.js';
-import {drawFrame,hitIdentity} from './frame_meshes.js';
+import {drawFrame,hitIdentity,recolorFrame} from './frame_meshes.js';
+import {LabelTextures} from './label_textures.js';
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(38, 1, 0.01, 100000);
@@ -28,6 +29,8 @@ const supportTooltip=new SupportTooltip();
 controls.addEventListener('start',()=>supportTooltip.hide());
 controls.addEventListener('change',()=>supportTooltip.hide());
 scene.add(group);
+const labelTextures=new LabelTextures();
+let sceneSignature=null,rebuilds=0,incrementalUpdates=0;
 const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
 const vector = a => new THREE.Vector3(...a);
 const axisColors = [0xd65058,0x21955c,0x3786bd];
@@ -53,21 +56,20 @@ function line(points, color, target=group) {
 }
 function label(text, position, color, size=span*.035, force=false) {
   if (!data.labels&&!force) return;
-  const canvas=document.createElement('canvas'), context=canvas.getContext('2d');
-  context.font='24px sans-serif'; const width=Math.ceil(context.measureText(text).width)+12;
-  canvas.width=width; canvas.height=36; context.font='24px sans-serif';context.fillStyle=color;context.fillText(text,6,26);
-  const texture=new THREE.CanvasTexture(canvas);
-  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:texture,depthTest:false}));
-  sprite.position.copy(position); sprite.scale.set(size*width/36,size,1);
-  sprite.userData.labelRatio=width/36;group.add(sprite);
+  const entry=labelTextures.acquire(text,color);
+  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:entry.texture,depthTest:false}));
+  sprite.position.copy(position); sprite.scale.set(size*entry.width/36,size,1);
+  sprite.userData.labelTexture=entry;
+  sprite.userData.labelRatio=entry.width/36;group.add(sprite);
 }
 function dispose() {
   const geometries=new Set(),materials=new Set(),textures=new Set();
   group.traverse(obj=>{
+    if(obj.userData.labelTexture)labelTextures.release(obj.userData.labelTexture);
     if(obj.isInstancedMesh)obj.dispose();
     if(obj.geometry)geometries.add(obj.geometry);
     for(const material of (Array.isArray(obj.material)?obj.material:obj.material?[obj.material]:[])){
-      materials.add(material);if(material.map)textures.add(material.map);
+      materials.add(material);if(material.map&&!obj.userData.labelTexture)textures.add(material.map);
     }
   });
   textures.forEach(texture=>texture.dispose());materials.forEach(material=>material.dispose());geometries.forEach(geometry=>geometry.dispose());
@@ -105,14 +107,24 @@ function moment(position,axis,value,identity) {
 function update(payload,dragPreview=false) {
   if(!dragPreview)nodeDrag.cancel(false);
   boxSelection.cancel();
-  supportTooltip.hide();supports=[];
+  supportTooltip.hide();
+  // Selection and interaction tools do not alter support/load/result geometry.
+  // Compare the complete remaining payload so model, units, theme, work-plane,
+  // visibility and analysis changes always rebuild the affected scene.
+  const {selection,mode,boxSelect,moveNodes,...appearance}=payload;
+  const signature=JSON.stringify(appearance);
+  const incremental=!dragPreview&&!start&&!data.localAxes&&!payload.localAxes&&signature===sceneSignature;
+  if(incremental){
+    data=payload;recolorFrame(data,group);interaction();incrementalUpdates++;return;
+  }
+  supports=[];sceneSignature=signature;rebuilds++;
   data=payload;const c=data.colors;scene.background=new THREE.Color(c.canvas);
   legend.replaceChildren(...legendLines(data.diagram).map(text=>{const row=document.createElement('div');row.textContent=text;return row;}));
   legend.hidden=!data.diagram;legend.style.color=c.text||c.label;legend.style.background=c.canvas;
   const positions=data.nodes.map(n=>vector(n.position)),box=new THREE.Box3().setFromPoints(positions);
   span=Math.max(box.isEmpty()?240:box.getSize(new THREE.Vector3()).length(),data.grid*8,1);
   const r=span*.004;raycaster.params.Line.threshold=span*.012;
-  dispose();grid();
+  dispose();if(!data.labels)labelTextures.clearUnused();grid();
   const nodes=new Map(data.nodes.map(n=>[n.name,n])), selected=(kind,name)=>data.selection.some(s=>s[0]===kind&&s[1]===name);
   drawFrame(data,r,group,picks);
   for(const member of data.members) {
@@ -137,9 +149,12 @@ function update(payload,dragPreview=false) {
     else loadArrow(a.clone().lerp(b,load.position),dir,load.magnitude,span*.085,identity);
     label(load.label,a.clone().lerp(b,load.position).addScaledVector(dir,-Math.sign(load.magnitude||load.endMagnitude)*span*.12),c.load,span*.028);
   }
+  interaction();
+  if(start)preview=line([vector(start),vector(start)],c.accent);
+}
+function interaction(){
   controls.mouseButtons.LEFT=data.mode==='pan'?THREE.MOUSE.PAN:THREE.MOUSE.ROTATE;
   controls.enableRotate=data.mode!=='draw';renderer.domElement.style.cursor=data.mode==='draw'||(data.mode==='select'&&data.boxSelect)?'crosshair':data.mode==='select'&&data.moveNodes?'move':'default';
-  if(start)preview=line([vector(start),vector(start)],c.accent);
 }
 function fit() {
   nodeDrag.cancel();
@@ -214,7 +229,8 @@ renderer.domElement.addEventListener('pointermove',event=>{
 });
 renderer.domElement.addEventListener('pointerleave',()=>supportTooltip.hide());
 renderer.domElement.addEventListener('pointerdown',()=>supportTooltip.hide(),true);
-renderer.domElement.addEventListener('webglcontextlost',()=>{nodeDrag.cancel(false);supportTooltip.hide();rendering=false;window.pyniteReportFailure('The graphics context was lost. Restart with software rendering if this persists.');});
+renderer.domElement.addEventListener('webglcontextlost',()=>{nodeDrag.cancel(false);supportTooltip.hide();rendering=false;dispose();labelTextures.clearUnused();sceneSignature=null;window.pyniteReportFailure('The graphics context was lost. Restart with software rendering if this persists.');});
+window.addEventListener('pagehide',event=>{if(!event.persisted){rendering=false;dispose();labelTextures.clearUnused();}});
 function cancel(){nodeDrag.cancel();supportTooltip.hide();boxSelection.cancel();down=null;start=null;if(preview){group.remove(preview);preview.geometry.dispose();preview.material.dispose();preview=null;}}
 addEventListener('keydown',event=>{if(event.key==='Escape')cancel();});
 function resize(){supportTooltip.hide();camera.aspect=innerWidth/Math.max(innerHeight,1);camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);}
@@ -248,7 +264,7 @@ function exportImage(){
   }
   return canvas.toDataURL('image/png');
 }
-window.pyniteViewer={update,fit,orient,cancel,state:()=>({objects:group.children.length,drawCalls:renderer.info.render.calls,resources:{...renderer.info.memory},camera:camera.position.toArray(),target:controls.target.toArray(),selection:data.selection,dragging:nodeDrag.active(),nodes:data.nodes.map(node=>({name:node.name,position:node.position}))}),project:position=>{const p=vector(position).project(camera);return[(p.x+1)*innerWidth/2,(1-p.y)*innerHeight/2];}};
+window.pyniteViewer={update,fit,orient,cancel,state:()=>({objects:group.children.length,drawCalls:renderer.info.render.calls,resources:{...renderer.info.memory},labelCache:labelTextures.state(),rebuilds,incrementalUpdates,camera:camera.position.toArray(),target:controls.target.toArray(),selection:data.selection,dragging:nodeDrag.active(),nodes:data.nodes.map(node=>({name:node.name,position:node.position}))}),project:position=>{const p=vector(position).project(camera);return[(p.x+1)*innerWidth/2,(1-p.y)*innerHeight/2];}};
 window.pyniteViewer.exportImage=exportImage;
 window.pyniteViewer.diagnostics=()=>{
   const gl=renderer.getContext(),debug=gl.getExtension('WEBGL_debug_renderer_info');

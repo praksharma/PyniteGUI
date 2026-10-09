@@ -22,7 +22,8 @@ const server = http.createServer((request,response)=>{
 
 (async()=>{
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
-  const browser = await chromium.launch({headless:true,args:['--use-gl=angle','--use-angle=swiftshader']});
+  const browser = await chromium.launch({headless:true,executablePath:process.env.PLAYWRIGHT_EXECUTABLE_PATH,
+    args:['--use-gl=angle','--use-angle=swiftshader']});
   try{
     const page = await browser.newPage();
     const errors=[];
@@ -33,6 +34,7 @@ const server = http.createServer((request,response)=>{
     assert(driver.renderer&&driver.vendor&&driver.version.includes('WebGL'),'Missing observed WebGL driver information');
     assert.equal(driver.lost,false);
     assert(['Unmasked WebGL driver','Masked WebGL information'].includes(driver.source));
+    await require('./viewport3d_cache.cjs')(page,payload);
     const batches=await page.evaluate(async()=>{
       const THREE=await import('three'),{drawFrame,hitIdentity}=await import('./frame_meshes.js');
       const group=new THREE.Group(),picks=[];
@@ -383,6 +385,7 @@ const server = http.createServer((request,response)=>{
     assert(failure.error.includes(failure.message),'Context loss did not show browser fallback text');
     await page.mouse.up();
     assert(!(await page.evaluate(()=>window.pyniteViewer.state())).dragging,'Graphics loss left an active node drag');
+    assert.equal(await page.evaluate(()=>window.pyniteViewer.state().labelCache.entries),0,'Graphics loss retained label textures');
     assert.equal(await page.evaluate(()=>window.moveEvent),null,'Graphics loss committed a node move');
     console.log('PASS: desktop geometry, six-DOF supports/springs/hover/visibility, gizmo, orbit/picking, contained/crossing/additive/cancelled box selection, drawing, constrained node dragging/cancellation/stale updates, result overlays, PNG, diagnostics and dark/context-loss states.');
   }finally{await browser.close();}
