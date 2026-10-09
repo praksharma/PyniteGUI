@@ -128,9 +128,9 @@ an audit of Stabileo's engineering calculations. PRO is labelled beta.
   truss workflow; no automatic sizing or structural design is implied.
 - [ ] **Reviewable topology cleanup and construction aids (UI).** Turn existing
   validation findings into select/zoom actions and previewed fixes. Finding
-  selection and equal frame subdivision are completed in the primary roadmap;
-  finding-focused zoom, previewed fixes, perpendicular connections and
-  midpoint-to-midpoint members remain pending.
+  selection, equal frame subdivision, previewed perpendicular connections and
+  midpoint-to-midpoint members are completed in the primary roadmap;
+  finding-focused zoom and previewed topology fixes remain pending.
   Offer controlled node merging, orientation reversal, and renumbering; rewrite
   every reference and preserve loads, releases, and group membership. Merge
   collinear members only when the intermediate node has no engineering role

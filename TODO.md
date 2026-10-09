@@ -66,6 +66,9 @@ below and the secondary interface wishlist retain their more specific scope.
 - [x] Add atomic equal subdivision of selected 2D/3D frame members with
   assignment/release/load preservation, existing-node reuse and one-step undo.
   Reject axial-only trusses rather than introduce unbraced intermediate joints.
+- [x] Add previewed perpendicular node-to-member and member-midpoint connections
+  in 2D/3D: explicit shared joints, load-preserving splits, default frame
+  properties, existing-node reuse, overlap/crossing checks and one-step undo.
 - [x] Detect overlapping members, disconnected components, and unintended
   intermediate-node connections before analysis.
 - [x] Add in-plane member end moment releases for hinges and pin-jointed frames.

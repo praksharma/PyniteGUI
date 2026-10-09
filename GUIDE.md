@@ -706,6 +706,35 @@ This panel does not query the compositor's physical GPU or a driver package vers
   midspan load. Each support should react with 5 kip. In SI the same physical
   example displays a 10.668 m span, 44.4822 kN load, and 22.2411 kN reactions.
 
+## Construction Connections
+
+**Edit > Perpendicular Connection** requires exactly one selected node and one
+member. It projects the node onto the member's actual XY or XYZ line and adds a
+frame to that foot. The foot must lie within the member span; an endpoint foot
+reuses that endpoint, while an interior foot splits the target into explicit
+segments. This uses full spatial geometry rather than the current 3D work plane.
+
+**Edit > Connect Member Midpoints** requires exactly two selected members.
+It splits both at their midpoints and adds a frame between the shared joints.
+Coincident endpoints, duplicate or overlapping connectors, and additional
+crossings/interior nodes requiring other shared joints are rejected. These
+helpers only split the selected members; unrelated geometry needs explicit
+split/connect operations.
+
+Both commands open a native preview with solid existing geometry, a dashed
+connector, endpoint IDs/coordinates in project units, length, node/split counts
+and the new member's material/section. Spatial previews offer isometric, XY,
+XZ and YZ projections. **Apply** makes one undoable engineering edit; **Cancel**
+keeps the model and results. A changed model invalidates an open preview.
+
+Original segments retain assignments, rolled axes and outer-end releases.
+Existing coincident joints keep their supports, springs and nodal loads.
+Manual load cases, physical stations and partial distributed intensity profiles
+follow the existing split rules, including rolled local spatial loads at cuts.
+The new connector is a frame using project defaults, without releases or manual
+loads and with zero spatial roll. Enabled self-weight includes its added length.
+Adding the connection changes stiffness and invalidates results; analyze again.
+
 ## Linked Results
 
 The native Results dock contains **Nodes**, **Displacements**, **Reactions** and
@@ -1010,6 +1039,8 @@ and concentrated moments include both sides of each discontinuity.
   reaction balance with explicit force/moment tolerances.
 - `src/pynitegui/qt/model_findings.py`: model/analysis finding review and
   conservative navigation for recognized geometry references.
+- `src/pynitegui/qt/construction.py`: validated connection candidates and native
+  perpendicular/midpoint previews with explicit load-preserving member splits.
 - `src/pynitegui/qt/app.py`: Qt graphics editor, inspector, undo commands,
   background analysis, and a consistent light application theme.
 - `src/pynitegui/qt/diagrams.py`: whole-frame axial/SFD/BMD views, member detail plots,

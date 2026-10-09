@@ -657,6 +657,8 @@ class MainWindow(QMainWindow):
         edit_menu.addSeparator()
         edit_menu.addAction(self.action("Split Selected Member...", self.split_selected_member))
         edit_menu.addAction(self.action("Subdivide Selected Members...", self.subdivide_selected_members))
+        edit_menu.addAction(self.action("Perpendicular Connection...", lambda: self.construct_connection("perpendicular")))
+        edit_menu.addAction(self.action("Connect Member Midpoints...", lambda: self.construct_connection("midpoints")))
         edit_menu.addAction(self.action("Connect Intersections", self.connect_intersections))
         edit_menu.addAction(self.action("Check Model", self.check_model))
         from .toolbar_icons import tool_icon
@@ -1275,6 +1277,32 @@ class MainWindow(QMainWindow):
         self.set_mode("select")
         self.select_many(entities)
         self.statusBar().showMessage(f"Selected {len(self.selections)} entities from Model Findings")
+
+    def construct_connection(self, operation):
+        from .construction import ConnectionPreview, plan_connection
+        title = "Perpendicular Connection" if operation == "perpendicular" else "Connect Member Midpoints"
+        original = self.project.to_dict()
+        try:
+            plan = plan_connection(self.project, operation, self.selections)
+        except ValueError as error:
+            QMessageBox.warning(self, title, str(error))
+            return
+        dialog = ConnectionPreview(self, self.project, plan, title)
+        accepted = dialog.exec() == QDialog.DialogCode.Accepted
+        dialog.deleteLater()
+        if not accepted:
+            return
+        if self.project.to_dict() != original:
+            QMessageBox.warning(self, title, "The model changed while the preview was open. Open a new preview before applying.")
+            return
+        revision = self.revision
+        def mutate(project):
+            candidate = plan.definition.clone()
+            project.nodes, project.members, project.loads = candidate.nodes, candidate.members, candidate.loads
+        self.edit(title, mutate)
+        if self.revision != revision:
+            self.select(("members", plan.connector))
+            self.statusBar().showMessage(f"Created {plan.connector} | Results require analysis")
 
     def show_model_findings(self, messages, title):
         self.model_findings.show_findings(self.project, messages, title)
