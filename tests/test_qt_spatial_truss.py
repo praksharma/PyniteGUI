@@ -133,8 +133,9 @@ class SpatialTrussTests(unittest.TestCase):
     def test_version_migration_and_result_exports(self):
         project = bar()
         data = project.to_dict()
-        self.assertEqual(data["version"], 18)
+        self.assertEqual(data["version"], 19)
         self.assertEqual(Project.from_dict(data).to_dict(), data)
+        data.pop("surfaces")
         for version in (16, 17):
             data["version"] = version
             with self.assertRaisesRegex(ValueError, "version 18"):

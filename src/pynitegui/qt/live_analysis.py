@@ -101,7 +101,7 @@ class LiveRecalculation(QObject):
         if not self.enabled:
             return
         self.discard()
-        if not self.window.project.members:
+        if not self.window.project.members or getattr(self.window.project, "surfaces", {}):
             return
         self.pending = True
         self.timer.start()

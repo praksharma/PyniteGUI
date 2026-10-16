@@ -10,7 +10,7 @@ and verified PyNite extensions. This file remains the primary implementation lis
 
 ## PyNite Capability Coverage
 
-Audited 2026-10-09 against our application adapters, schemas and documented
+Audited 2026-10-16 against our application adapters, schemas and documented
 workflows, plus the locked **PyniteFEA 3.0.0** source. The
 [upstream capability list](https://github.com/JWock82/Pynite#current-capabilities)
 describes the engine, not features automatically available in this GUI.
@@ -64,6 +64,19 @@ below and the secondary interface wishlist retain their more specific scope.
 - [ ] Integrate surfaces into versioned spatial projects and the Three.js editor,
   explicitly handling mixed frame/surface connectivity, shared node ownership,
   topology checks, editing/deletion, results, autosave and MCP contracts.
+- [x] First integration stage: version 19 spatial projects own uncoupled surface
+  recipes; all generators render beside frames with face picking, tree/inspector
+  edit/delete, visibility, fitting, undo/redo and save/autosave/recovery. Preserve
+  recipes through frame-table/MCP edits; expose read-only MCP discovery and block
+  manual/live/MCP/direct analysis rather than silently ignoring surfaces.
+- [ ] Define explicit shared frame/surface node ownership, merging tolerance,
+  compatible member segmentation, adjacent-mesh conformity and remesh/delete
+  behaviour; reject incompatible/overlapping interfaces rather than silently join.
+- [ ] Add geometry-owned surface pressure/support cases, drilling-rotation and
+  membrane treatment, coupled slab/frame solver assembly, benchmarks, results
+  and deformed-mesh rendering. Only then enable mixed-project analysis.
+- [ ] Add surface-aware MCP edit schemas and atomic topology/assignment validation;
+  add surface box selection after the geometry ownership rules are established.
 - [x] Add rectangular openings/control lines with geometry-owned assignments,
   Quad/Rect analysis, origin/options transfer, version 1 plate-file migration,
   basic mesh-quality checks and net-area pressure/reaction regressions.

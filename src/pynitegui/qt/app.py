@@ -676,7 +676,7 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.action("Connect Intersections", self.connect_intersections))
         edit_menu.addAction(self.action("Check Model", self.check_model))
         tools_menu = self.menuBar().addMenu("&Tools")
-        tools_menu.addAction(self.action("Surface Meshing (Experimental)...", self.show_mesh_workspace))
+        tools_menu.addAction(self.action("Surface Meshing (Experimental)...", lambda: self.show_mesh_workspace()))
         tools_menu.addAction(self.action("Rectangular Plate (Experimental)...", self.show_plate_workspace))
         tools_menu.addAction(self.action("Automation Server...", self.show_automation_server))
         from .toolbar_icons import tool_icon
@@ -799,6 +799,11 @@ class MainWindow(QMainWindow):
         rendering.addSeparator()
         from .graphics_diagnostics import show_graphics_diagnostics
         rendering.addAction(self.action("Diagnostics...", lambda: show_graphics_diagnostics(self)))
+        self.surface_visibility_action = self.action("Surface Geometry", lambda: self.view.redraw())
+        self.surface_visibility_action.setCheckable(True)
+        self.surface_visibility_action.setChecked(True)
+        self.surface_visibility_action.setToolTip("Show uncoupled surface geometry; hiding it does not enable analysis")
+        self.menuBar_view.addAction(self.surface_visibility_action)
         self.menuBar_view.addSeparator()
         self.tree = QTreeWidget()
         self.tree.setHeaderLabels(["Model", "Properties"])
@@ -857,7 +862,8 @@ class MainWindow(QMainWindow):
         self.mode_actions[mode].setChecked(True)
         self.view.setDragMode(QGraphicsView.DragMode.ScrollHandDrag if mode == "pan" else QGraphicsView.DragMode.NoDrag)
         self.view.setCursor(Qt.CursorShape.CrossCursor if mode == "draw" else Qt.CursorShape.ArrowCursor)
-        self.statusBar().showMessage(f"{mode.capitalize()} | {getattr(self.project, 'dimension', '2D')} frame | {self.project.units.summary}")
+        surface_state = " | Uncoupled surfaces: geometry only" if getattr(self.project, "surfaces", {}) else ""
+        self.statusBar().showMessage(f"{mode.capitalize()} | {getattr(self.project, 'dimension', '2D')} frame | {self.project.units.summary}{surface_state}")
 
     def edit(self, title, mutate):
         if self.mcp_mode:
@@ -910,11 +916,13 @@ class MainWindow(QMainWindow):
         self.diagrams_action.setEnabled(False)
         self.deformed_action.setChecked(False)
         self.refresh()
-        self.statusBar().showMessage(f"Model updated | Results require analysis | {self.project.units.summary}")
+        state = "Uncoupled surfaces: analysis unavailable" if getattr(self.project, "surfaces", {}) else "Results require analysis"
+        self.statusBar().showMessage(f"Model updated | {state} | {self.project.units.summary}")
         self.live_analysis.schedule()
 
     def refresh(self):
         spatial = getattr(self.project, "dimension", "2D") == "3D"
+        self.surface_visibility_action.setEnabled(spatial)
         self.convert_spatial_action.setEnabled(not spatial and bool(self.project.members))
         if spatial and self.spatial_view is None:
             from .spatial_view import SpatialView
@@ -953,8 +961,14 @@ class MainWindow(QMainWindow):
             dialog.update_snapshot_status()
         self.tree.blockSignals(True)
         self.tree.clear()
-        for kind, title in (("nodes", "Nodes"), ("members", "Members"), ("loads", "Loads")):
+        collections = [("nodes", "Nodes"), ("members", "Members"), ("loads", "Loads")]
+        if spatial:
+            collections.append(("surfaces", "Surfaces"))
+        for kind, title in collections:
             parent = QTreeWidgetItem(self.tree, [f"{title} ({len(getattr(self.project, kind))})"])
+            if kind == "surfaces":
+                parent.setText(1, "Uncoupled geometry")
+                parent.setToolTip(1, "Surface nodes are independent from frame joints; mixed analysis is not enabled.")
             parent.setFlags(parent.flags() & ~Qt.ItemFlag.ItemIsSelectable)
             for name, entity in getattr(self.project, kind).items():
                 if kind == "loads" and not self.load_visible(entity):
@@ -971,6 +985,11 @@ class MainWindow(QMainWindow):
                     detail = f"{entity.start} - {entity.end}"
                     if entity.kind == "truss":
                         detail += " | truss (axial only)"
+                elif kind == "surfaces":
+                    from .mesh_model import GENERATORS
+                    from .spatial_surfaces import surface_geometry
+                    node_names, elements, _, _ = surface_geometry(entity)
+                    detail = f"{GENERATORS[entity.generator][0]} | {len(node_names)} nodes | {len(elements)} {entity.element_type} | geometry only"
                 else:
                     quantity = "intensity" if entity.kind == "distributed" else "moment" if entity.direction.upper().startswith("M") else "force"
                     detail = f"{entity.target} | {entity.direction} {units.to_display(entity.magnitude, quantity):g}"
@@ -1032,7 +1051,8 @@ class MainWindow(QMainWindow):
         self.select_many([selection] if selection else [])
 
     def select_all(self):
-        self.select_many([(kind, name) for kind in ("nodes", "members", "loads")
+        kinds = ("nodes", "members", "loads", "surfaces") if getattr(self.project, "dimension", "2D") == "3D" else ("nodes", "members", "loads")
+        self.select_many([(kind, name) for kind in kinds
                           for name in getattr(self.project, kind)])
 
     def select_many(self, selections, sync_tree=True):
@@ -1634,9 +1654,31 @@ class MainWindow(QMainWindow):
         self.update_title()
         self.statusBar().showMessage(f"Example: {EXAMPLES[key]} | {project.units.summary}")
 
-    def show_mesh_workspace(self):
+    def show_mesh_workspace(self, previous=None):
         from .mesh_workspace import MeshWorkspace
-        MeshWorkspace(self, self.project.unit_system).exec()
+        from .mesh_model import MeshDefinition
+        if self.mcp_mode:
+            return
+        spatial = getattr(self.project, "dimension", "2D") == "3D"
+        definition = None
+        validator = None
+        if spatial:
+            from .spatial_surfaces import put_surface
+            definition = self.project.surfaces[previous] if previous is not None else MeshDefinition(
+                name=self.project.next_name("S", {*self.project.surfaces, *self.project.nodes, *self.project.members, *self.project.loads}), unit_system=self.project.unit_system)
+            definition = MeshDefinition.from_dict(definition.to_dict())
+            definition.unit_system = self.project.unit_system
+            def validator(mesh):
+                candidate = self.project.clone()
+                put_surface(candidate, mesh, previous)
+                candidate.validate()
+        dialog = MeshWorkspace(self, self.project.unit_system, definition=definition, model_mode=spatial, model_validator=validator)
+        if dialog.exec() == QDialog.DialogCode.Accepted and spatial:
+            from .spatial_surfaces import put_surface
+            self.edit("Edit surface" if previous else "Add surface", lambda p: put_surface(p, dialog.definition, previous))
+            if dialog.definition.name in self.project.surfaces:
+                self.select(("surfaces", dialog.definition.name))
+                self.view.fit()
 
     def show_plate_workspace(self):
         from .plate_workspace import PlateWorkspace
@@ -1653,6 +1695,13 @@ class MainWindow(QMainWindow):
 
     def run_analysis(self, *, automatic=False, automation=False):
         if self.thread is not None:
+            return
+        if getattr(self.project, "surfaces", {}):
+            from .spatial_surfaces import SURFACE_ANALYSIS_LIMIT
+            self.live_analysis.discard()
+            self.statusBar().showMessage("Analysis unavailable: uncoupled surface geometry")
+            if not automatic:
+                QMessageBox.information(self, "Surface Geometry", SURFACE_ANALYSIS_LIMIT)
             return
         self.live_analysis.discard()
         self.analysis_automatic = automatic

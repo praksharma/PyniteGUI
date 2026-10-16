@@ -39,8 +39,9 @@ through the menus and existing keyboard shortcuts.
 
 Post-1.0.0rc1 development adds **Tools > Surface Meshing (Experimental)**.
 It exposes all seven concrete generators in the locked PyNite Mesh module,
-without another solver or meshing dependency. Mesh geometry is independent of
-frame projects. The published rc1 wheel does not contain this workspace.
+without another solver or meshing dependency. Recipes can be stored in spatial
+projects as uncoupled geometry, alongside frames. The published rc1 wheel does
+not contain this workspace or the main-model surface integration.
 
 | Generator | Shape-specific options | Element families |
 | --- | --- | --- |
@@ -98,8 +99,54 @@ and export only: boundary conditions, surface-normal pressure, membrane/shell
 analysis and curved result recovery need separate benchmarks. The planar pilot's
 in-plane restraints must not be applied to curved shells. Shear-wall and mat
 foundation workflows are specialized model builders, not additional mesh choices
-in this catalog, and remain pending. Frame/surface assembly, autosave and MCP
-integration are also pending.
+in this catalog, and remain pending. Coupled frame/surface analysis and MCP
+surface editing are also pending.
+
+### Surfaces in the Main 3D Model
+
+This first integration stage is **geometry only**, not slab analysis. In a
+**New 3D Frame** or an existing spatial project, choose **Tools > Surface Meshing
+(Experimental)**, or **Add Surface** in the unselected model inspector. Generate
+the mesh and choose **Apply to 3D Model**. All seven generators are supported.
+In a 2D project the tool remains a separate recipe workspace; it does not silently
+convert the model to 3D.
+
+The main viewport displays surface faces and element edges beside frame members,
+with orbit, orientation gizmo, Fit and PNG export. Click a face or select its
+entry under **Surfaces**. The inspector's **Edit Surface**
+reopens the full recipe editor; apply commits one undo step. Renaming requires
+a unique name distinct from frame nodes, members and loads. Delete removes the
+selected recipe, with undo/redo; mixed selections and Select All include surfaces.
+**View > Surface Geometry** hides/shows meshes without changing the project.
+Surface box selection is not implemented; use face clicks or the tree.
+
+The project owns mesh recipes, not additional frame joints. Generated nodes and
+four-node connectivity are regenerated deterministically and retained in a bounded
+geometry cache. A surface node coincident with a frame joint is **not connected**.
+Different meshes may overlap; no mesh-to-mesh merge, topology compatibility or
+load transfer is inferred. Editing/remeshing/deleting a surface does not alter
+frame nodes, members, loads or supports. Surface material definitions remain
+recipe-local rather than references into the frame material library.
+
+Version 19 spatial project files include the recipes. Normal save/open,
+autosave/recovery, unit changes, model-table edits, undo/redo and MCP frame edits
+retain them. Projects are limited to 16 surface recipes and 4,096 pre-opening
+elements in total, in addition to the existing 1,024-element per-mesh limit and
+generation checks. The separate `.pynitemesh` recipe files remain available.
+
+**Analysis is blocked while any surface is present**, even if hidden. Manual
+Analyze explains the limitation, live analysis does not schedule a solve, and
+MCP returns `surface_geometry_only`. Direct solver entry rejects the same model.
+This prevents an apparently successful frame-only solve that ignores the slab.
+MCP `read_model` includes the surface recipes and its schema documents their
+read-only status; batch editing cannot create, update or delete surfaces yet.
+
+Next gates are explicit shared-node ownership and interface topology, compatible
+frame segmentation, surface loads/restraints and drilling-rotation treatment,
+mixed-model benchmarks and surface result/deformed-mesh rendering. No slab load,
+self-weight, support, stress or coupled structural result is implied by this
+geometry stage. Use the separate plate workspace below for validated plate-only
+bending workflows.
 
 ### Experimental Rectangular Plates
 
@@ -1308,12 +1355,16 @@ incorrect collection/entity shapes, unknown entity fields, invalid references,
 boolean/string/nonfinite numerical values, and duplicate JSON keys produce
 readable errors. JSON syntax errors include their line and column. Supported
 planar versions 1 through 15 are migrated without modifying the input; spatial
-versions 16/17/18 require an explicit `dimension: "3D"` marker and are validated separately.
+versions 16/17/18/19 require an explicit `dimension: "3D"` marker and are validated separately.
 Spatial version 17 adds global angular forces with azimuth (`angle`) and
 `elevation`; version 16 axis-based loads migrate without changing their physics.
 Unsupported future versions and angular fields in version 16 are rejected.
 Spatial version 18 adds axial-only truss members; versions 16/17 remain frame-only
 inputs and migrate without changing their geometry, supports or loads.
+Spatial version 19 adds a required `surfaces` recipe map; versions 16/17/18
+migrate to an empty map and cannot contain a surface field. Surface recipes keep
+their own strict format/version metadata and are validated/generated before a
+project replaces the active model. Planar files remain at version 15.
 Spatial files retain XYZ, all six restraints/springs, and roll. Unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be
 distinct so load targets are unambiguous.
@@ -1350,6 +1401,8 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/released_member.py`: linear released-translation recovery using PyNite matrices.
 - `src/pynitegui/qt/analysis.py`: project-to-PyNite adapter and analysis results.
 - `src/pynitegui/qt/spatial_model.py`: separate six-DOF spatial definitions and format.
+- `src/pynitegui/qt/spatial_surfaces.py`: uncoupled project mesh ownership,
+  bounded immutable geometry cache and explicit analysis limitation.
 - `src/pynitegui/qt/spatial_analysis.py`: linear spatial solver and mechanism checks.
 - `src/pynitegui/qt/spatial_view.py` and `viewport3d/`: native controls/bridge and Three.js.
 - `src/pynitegui/qt/spatial_results.py`, `spatial_diagrams.py`: spatial sampling/exports/plots.

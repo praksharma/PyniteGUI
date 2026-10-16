@@ -175,6 +175,9 @@ class AutomationCommands:
             return {**self.identity(), "changed": changed, "result_snapshot": self.snapshot()}
         if name == "run_analysis":
             self.require_idle_editor()
+            if getattr(window.project, "surfaces", {}):
+                from .spatial_surfaces import SURFACE_ANALYSIS_LIMIT
+                raise AutomationError("surface_geometry_only", SURFACE_ANALYSIS_LIMIT)
             if window.thread is not None:
                 raise AutomationError("analysis_busy", "An analysis is already running.")
             if cancelled():

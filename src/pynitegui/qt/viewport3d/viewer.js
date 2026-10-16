@@ -34,6 +34,7 @@ const labelTextures=new LabelTextures();
 let sceneSignature=null,rebuilds=0,incrementalUpdates=0;
 const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2();
 const vector = a => new THREE.Vector3(...a);
+const modelPoints = payload => [...payload.nodes, ...(payload.surfaceMeshes || []).flatMap(mesh => mesh.nodes)].map(n => vector(n.position));
 const axisColors = [0xd65058,0x21955c,0x3786bd];
 const nodeDrag=attachNodeDrag(renderer.domElement,camera,controls,()=>data,event=>{
   ray(event);const hit=raycaster.intersectObjects(picks).find(hit=>hit.object.userData.nodeInstances);
@@ -114,7 +115,7 @@ function update(payload,dragPreview=false) {
   // visibility and analysis changes always rebuild the affected scene.
   const {selection,mode,boxSelect,moveNodes,...appearance}=payload;
   const signature=JSON.stringify(appearance);
-  const incremental=!dragPreview&&!start&&!data.localAxes&&!payload.localAxes&&signature===sceneSignature;
+  const incremental=!dragPreview&&!start&&!data.localAxes&&!payload.localAxes&&!payload.surfaceMeshes?.length&&signature===sceneSignature;
   if(incremental){
     data=payload;recolorFrame(data,group);interaction();incrementalUpdates++;return;
   }
@@ -122,13 +123,15 @@ function update(payload,dragPreview=false) {
   data=payload;const c=data.colors;scene.background=new THREE.Color(c.canvas);
   legend.replaceChildren(...legendLines(data.diagram).map(text=>{const row=document.createElement('div');row.textContent=text;return row;}));
   legend.hidden=!data.diagram;legend.style.color=c.text||c.label;legend.style.background=c.canvas;
-  const positions=data.nodes.map(n=>vector(n.position)),box=new THREE.Box3().setFromPoints(positions);
+  const positions=modelPoints(data),box=new THREE.Box3().setFromPoints(positions);
   span=Math.max(box.isEmpty()?240:box.getSize(new THREE.Vector3()).length(),data.grid*8,1);
   const r=span*.004;raycaster.params.Line.threshold=span*.012;
   dispose();if(!data.labels)labelTextures.clearUnused();grid();
   const nodes=new Map(data.nodes.map(n=>[n.name,n])), selected=(kind,name)=>data.selection.some(s=>s[0]===kind&&s[1]===name);
   if(data.showNodes!==false)drawFrame(data,r,group,picks);
   drawSurfaces(data,group);
+  for (const mesh of data.surfaceMeshes || []) drawSurfaces({...mesh,colors:c,surfaceName:mesh.name,
+    surfaceSelected:selected('surfaces',mesh.name)},group,picks);
   for(const member of data.members) {
     const a=vector(nodes.get(member.start).position),b=vector(nodes.get(member.end).position);
     label(member.name+(member.kind==='truss'?' [truss]':''),a.clone().lerp(b,.5).add(new THREE.Vector3(0,span*.023,0)),c.label);
@@ -163,7 +166,7 @@ function fit() {
   resize();
   supportTooltip.hide();
   stopMotion();
-  const points=data.nodes.map(n=>vector(n.position));
+  const points=modelPoints(data);
   for(const symbol of supports)for(const sign of [-1,1])points.push(symbol.center.clone().addScalar(sign*span*.02));
   if(data.deformed)for(const m of data.members)if(m.points)points.push(...m.points.map((p,i)=>vector(p).addScaledVector(vector(m.displacements[i]),data.factor)));
   for(const member of data.members)points.push(...diagramPoints(member,data.diagram));

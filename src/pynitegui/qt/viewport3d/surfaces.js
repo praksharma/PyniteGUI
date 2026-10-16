@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 // Render four-node solver faces. Display triangles do not change connectivity.
-export function drawSurfaces(data, group) {
+export function drawSurfaces(data, group, picks = []) {
   if (!data.surfaces?.length) return;
   const bounds = new THREE.Box3().setFromPoints(data.nodes.map(node => new THREE.Vector3(...node.position)));
   const centre = bounds.getCenter(new THREE.Vector3());
@@ -20,10 +20,11 @@ export function drawSurfaces(data, group) {
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setIndex(triangles);geometry.computeVertexNormals();
     const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
-      color: data.colors.accent, side: THREE.DoubleSide, roughness: .8,
+      color: data.surfaceSelected ? data.colors.load : data.colors.accent, side: THREE.DoubleSide, roughness: .8,
       polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
     }));
     mesh.position.copy(centre);mesh.userData.surfaceFaces = data.surfaces.length;group.add(mesh);
+    if (data.surfaceName) {mesh.userData.identity = ['surfaces', data.surfaceName];picks.push(mesh);}
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(edges, 3));

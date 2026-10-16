@@ -60,6 +60,7 @@ class SpatialModelTests(unittest.TestCase):
         project.loads["L1"] = SpatialLoad("L1","N2","FY",-2)
         old = project.to_dict()
         old["version"] = 16
+        old.pop("surfaces")
         old["loads"]["L1"].pop("elevation")
         self.assertEqual(Project.from_dict(old).to_dict(), project.to_dict())
         old["loads"]["L1"]["direction"] = "Angle"
@@ -98,7 +99,7 @@ class SpatialModelTests(unittest.TestCase):
         self.assertEqual(Project().to_dict()["version"], 15)
 
     def test_schema_rejects_future_missing_and_unknown_fields(self):
-        for key, value in (("version", 19), ("version", True), ("dimension", "4D"), ("units", "m-kN"), ("extra", 1)):
+        for key, value in (("version", 20), ("version", True), ("dimension", "4D"), ("units", "m-kN"), ("extra", 1)):
             data = beam().to_dict()
             data[key] = value
             with self.subTest(key=key, value=value), self.assertRaises(ValueError):

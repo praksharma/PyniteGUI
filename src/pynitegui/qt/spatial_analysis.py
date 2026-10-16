@@ -38,6 +38,9 @@ def analyze_spatial(project, progress=None):
     phase = progress or (lambda message: None)
     phase("Checking 3D model and supports")
     project.validate()
+    if project.surfaces:
+        from .spatial_surfaces import SURFACE_ANALYSIS_LIMIT
+        raise ValueError(SURFACE_ANALYSIS_LIMIT)
     if not project.members:
         raise ValueError("Draw at least one 3D frame member.")
     issues = project.analysis_topology_issues() + project.analysis_release_issues()

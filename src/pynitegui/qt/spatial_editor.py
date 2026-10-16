@@ -110,6 +110,27 @@ def load_fields(form, project, load):
 def populate_inspector(window):
     from .app import number, unit_number, unit_value
     project, form = window.project, window.form
+    if any(kind == "surfaces" for kind, _ in window.selections):
+        from .mesh_model import GENERATORS
+        from .spatial_surfaces import surface_geometry
+        if len(window.selections) == 1:
+            name = window.selected[1]
+            definition = project.surfaces[name]
+            names, elements, _, _ = surface_geometry(definition)
+            for label, value in (("ID", name), ("Geometry", GENERATORS[definition.generator][0]),
+                                 ("Nodes", str(len(names))), ("Elements", f"{len(elements)} {definition.element_type}"),
+                                 ("State", "Uncoupled geometry")):
+                form.addRow(label, QLabel(value))
+            edit = QPushButton("Edit Surface...")
+            edit.setObjectName("edit_surface")
+            edit.clicked.connect(lambda: window.show_mesh_workspace(name))
+            form.addRow(edit)
+        else:
+            form.addRow("Selected", QLabel(str(len(window.selections))))
+        delete = QPushButton("Delete Selected")
+        delete.clicked.connect(window.delete_selected)
+        form.addRow(delete)
+        return
     if len(window.selections) > 1:
         from .bulk_edit import populate_bulk_inspector
         populate_bulk_inspector(window)
@@ -125,6 +146,10 @@ def populate_inspector(window):
         button = QPushButton("Add Node...")
         button.clicked.connect(window.add_spatial_node)
         form.addRow(button)
+        surface = QPushButton("Add Surface...")
+        surface.setObjectName("add_surface")
+        surface.clicked.connect(lambda: window.show_mesh_workspace())
+        form.addRow(surface)
         return
     kind, name = window.selected
     entity = getattr(project, kind)[name]

@@ -1,5 +1,5 @@
 """Spatial frame definitions; legacy planar projects remain unchanged."""
-from dataclasses import asdict, dataclass, fields
+from dataclasses import asdict, dataclass, field, fields
 import math
 
 import numpy as np
@@ -66,20 +66,25 @@ class SpatialLoad(Load):
 @dataclass
 class SpatialProject(Project):
     dimension: str = "3D"
+    surfaces: dict = field(default_factory=dict)
 
     def to_dict(self):
-        return {"version": 18, "units": "in-kip", **asdict(self)}
+        return {"version": 19, "units": "in-kip", **asdict(self),
+                "surfaces": {name: mesh.to_dict() for name, mesh in self.surfaces.items()}}
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
+        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
             raise ValueError("Unsupported spatial project version, dimension, or units.")
+        if (data["version"] < 19 and "surfaces" in data) or (data["version"] == 19 and not isinstance(data.get("surfaces"), dict)):
+            raise ValueError("Surface geometry requires the version 19 spatial schema.")
         unknown = data.keys() - {f.name for f in fields(cls)} - {"version", "units"}
         if unknown:
             raise ValueError("Unknown spatial project fields: " + ", ".join(sorted(unknown)) + ".")
         # Reuse the established metadata migrations/validation, without projecting geometry.
         metadata = {**data, "version": 15, "nodes": {}, "members": {}, "loads": {}}
         metadata.pop("dimension")
+        metadata.pop("surfaces", None)
         shared = Project.from_dict(metadata)
         result = cls(**{f.name: getattr(shared, f.name) for f in fields(Project)})
         for key, constructor in (("nodes", SpatialNode), ("members", SpatialMember), ("loads", SpatialLoad)):
@@ -98,6 +103,8 @@ class SpatialProject(Project):
                 except TypeError as error:
                     raise ValueError(f"Invalid spatial {key} entry {name}: {error}") from error
             setattr(result, key, entities)
+        from .mesh_model import MeshDefinition
+        result.surfaces = {name: MeshDefinition.from_dict(value) for name, value in data.get("surfaces", {}).items()}
         result.validate()
         return result
 
@@ -167,6 +174,8 @@ class SpatialProject(Project):
                 raise ValueError(f"Load {name}: distributed forces require a member and 0 <= start < end <= 1; distributed moments are not supported.")
             if load.target in self.members and self.members[load.target].kind == "truss":
                 raise ValueError(f"Load {name}: truss members accept joint loads only.")
+        from .spatial_surfaces import validate_surfaces
+        validate_surfaces(self)
 
     def node_at(self, x, y, z=0):
         for name, node in self.nodes.items():
@@ -278,6 +287,9 @@ class SpatialProject(Project):
 
     def analysis_topology_issues(self):
         issues = []
+        if self.surfaces:
+            from .spatial_surfaces import SURFACE_ANALYSIS_LIMIT
+            issues.append(SURFACE_ANALYSIS_LIMIT)
         for name, member in self.members.items():
             for node in self.nodes.values():
                 if node.name not in (member.start, member.end) and self.member_position(name, *node.coords) is not None:

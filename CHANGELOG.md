@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Spatial project version 19 owns surface-mesh recipes alongside frames. Adds
+  native insertion/editing, main Three.js rendering/face picking, visibility,
+  fitting, tree/inspector selection and deletion with undo, persistence and
+  autosave/recovery. Surface nodes remain independent from frame joints.
+  Manual/live/MCP/direct analysis is guarded against silently ignoring surfaces;
+  MCP reads retain recipes but surface edits and coupled slab analysis are pending.
 - Main toolbar groups use icons with tooltips and vertical separators, without
   repeated File/View/Edit/Loads/Analysis/Results labels; the menu bar is unchanged.
 - PyNite surface-mesh catalog: Rectangle, Annulus, Annular Ring, Annular Transition

@@ -33,8 +33,9 @@ existing unreleased 2D model, or try the **3D** examples.
 If 3D graphics fail to start, launch with `uv run pynitegui --software-rendering`.
 
 Current development includes **Tools > Surface Meshing (Experimental)** with
-PyNite's seven generators, options, 3D previews and recipe/export files; rectangles
-with openings support the separate plate-analysis workspace.
+PyNite's seven generators, options, 3D previews and recipe/export files. Meshes can
+be saved in the main 3D model as uncoupled geometry; rectangles with openings
+support the separate plate-analysis workspace. Coupled slab/frame analysis is pending.
 See [scope and limits](GUIDE.md#experimental-surface-meshing); these are not in the rc1 wheel.
 
 For the release wheel, install the downloaded file without cloning:

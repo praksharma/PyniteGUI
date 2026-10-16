@@ -26,7 +26,7 @@ class MeshEdit(QUndoCommand):
 
 
 class MeshWorkspace(QDialog):
-    def __init__(self, parent=None, unit_system="imperial", definition=None, selection_only=False):
+    def __init__(self, parent=None, unit_system="imperial", definition=None, selection_only=False, model_mode=False, model_validator=None):
         super().__init__(parent)
         self.setWindowTitle("PyNite Surface Meshing (Experimental)")
         self.resize(1180, 820)
@@ -34,6 +34,7 @@ class MeshWorkspace(QDialog):
         self.definition = MeshDefinition.from_dict(definition.to_dict()) if definition else MeshDefinition(unit_system=unit_system)
         self.saved = self.definition.to_dict()
         self.selection_only = selection_only
+        self.model_validator = model_validator
         self.undo = QUndoStack(self)
         root = QVBoxLayout(self)
         toolbar = QToolBar()
@@ -119,9 +120,10 @@ class MeshWorkspace(QDialog):
         self.apply_button = QPushButton(self.style().standardIcon(QStyle.StandardPixmap.SP_BrowserReload), "Apply / Generate Mesh")
         self.apply_button.clicked.connect(self.apply)
         controls_layout.addWidget(self.apply_button)
-        if selection_only:
-            use = QPushButton("Use Mesh")
-            use.clicked.connect(lambda: self.accept() if self.apply() else None)
+        if selection_only or model_mode:
+            use = QPushButton("Apply to 3D Model" if model_mode else "Use Mesh")
+            use.setObjectName("use_mesh")
+            use.clicked.connect(self.use_mesh)
             controls_layout.addWidget(use)
         splitter.addWidget(controls)
         self.preview = MeshPreview(self)
@@ -133,6 +135,17 @@ class MeshWorkspace(QDialog):
         self.generator.currentIndexChanged.connect(self.change_generator)
         self.units.currentIndexChanged.connect(self.change_units)
         self.install(self.definition.to_dict())
+
+    def use_mesh(self):
+        if not self.apply():
+            return
+        try:
+            if self.model_validator is not None:
+                self.model_validator(self.definition)
+        except ValueError as error:
+            QMessageBox.warning(self, "Apply Mesh", str(error))
+            return
+        self.accept()
 
     def numeric(self, key):
         if key in COUNT_KEYS or key in ("node_start", "element_start"):

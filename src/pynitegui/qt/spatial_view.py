@@ -81,7 +81,10 @@ def viewport_payload(window):
     diagram = diagram_metadata(project, result, kind, window.view.diagram_scale.value(), samples)
     if diagram:
         diagram["values"] = window.view.diagram_values.isChecked()
-    return {"nodes": nodes, "members": members, "loads": loads if window.view.show_loads.isChecked() else [], "grid": project.grid, "colors": colors(),
+    from .spatial_surfaces import surface_payloads
+    return {"nodes": nodes, "members": members,
+            "surfaceMeshes": surface_payloads(project) if window.surface_visibility_action.isChecked() else [],
+            "loads": loads if window.view.show_loads.isChecked() else [], "grid": project.grid, "colors": colors(),
             "revision": window.revision,
             "diagram": diagram,
             "selection": [list(s) for s in window.selections], "mode": window.mode,
@@ -118,7 +121,9 @@ class Bridge(QObject):
     @Slot(str, str, bool)
     def select(self, kind, name, extend):
         window = self.view.window
-        if kind not in ("nodes", "members", "loads") or name not in getattr(window.project, kind):
+        if window.view is not self.view or getattr(window.project, "dimension", "2D") != "3D":
+            return
+        if kind not in ("nodes", "members", "loads", "surfaces") or name not in getattr(window.project, kind):
             if not extend:
                 window.select(None)
             return

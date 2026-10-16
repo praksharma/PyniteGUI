@@ -56,6 +56,7 @@ def model_reference(dimension="2D"):
     return {
         "dimension": dimension, "input_units": "Canonical inch-kip regardless of display units; angles in degrees, rotations in radians.",
         "entities": entities,
+        "surface_geometry": "Spatial project version 19 includes a read-only surfaces map of versioned mesh recipes. Surface edits are native-only; surface nodes are separate from frame joints. Analysis is blocked while any uncoupled surface is present." if spatial else None,
         "supports": {
             "dof_order": ["DX", "DY", "DZ", "RX", "RY", "RZ"] if spatial else ["DX", "DY", "RZ"],
             "presets": {"free": [False]*(6 if spatial else 3), "pin": [True, True, True, False, False, False] if spatial else [True, True, False],
