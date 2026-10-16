@@ -120,6 +120,30 @@ selected recipe, with undo/redo; mixed selections and Select All include surface
 **View > Surface Geometry** hides/shows meshes without changing the project.
 Surface box selection is not implemented; use face clicks or the tree.
 
+**Placement without typing XYZ:** a new Rectangle mesh first uses a valid selected
+boundary, otherwise the highest complete horizontal frame level. The geometry
+preview includes the reference frame (toggle **Frame** to hide it). Under
+**Fit rectangle to**, choose **Frame level** and select the desired elevation,
+or **Selected boundary** after selecting four rectangular corner nodes or all
+perimeter members in the main model. Split perimeter segments are supported;
+their intermediate stations become control lines. Node selection also supports
+global XY and YZ rectangles, not just horizontal XZ slabs. The fit tool updates
+origin, plane, width and height together, with preview undo/redo.
+
+Existing surfaces are never moved automatically when edited. Select the desired
+fit source to reposition one; use **Manual coordinates** for independent numeric
+editing. Only complete axis-aligned rectangles are inferred. Open perimeters,
+tilted/irregular outlines, diagonal selections and L-shaped extents are not filled
+as bounding boxes. Levels with interior beams may use their complete outer
+perimeter; select a specific bay's corners/perimeter to fit just that bay. Fitting
+preserves material, thickness, target size and openings/control lines. Incompatible
+openings/control lines or excessive mesh density reject the fit without changing
+the recipe. Coordinates and dimensions use the selected input units.
+
+Placement is a one-time geometric fit, not a live constraint: subsequent frame
+edits do not move the surface. Refit explicitly if the frame changes. Touching
+geometry does not merge nodes or enable coupled analysis.
+
 The project owns mesh recipes, not additional frame joints. Generated nodes and
 four-node connectivity are regenerated deterministically and retained in a bounded
 geometry cache. A surface node coincident with a frame joint is **not connected**.

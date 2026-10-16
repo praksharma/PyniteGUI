@@ -69,6 +69,10 @@ below and the secondary interface wishlist retain their more specific scope.
   edit/delete, visibility, fitting, undo/redo and save/autosave/recovery. Preserve
   recipes through frame-table/MCP edits; expose read-only MCP discovery and block
   manual/live/MCP/direct analysis rather than silently ignoring surfaces.
+- [x] Place rectangular surfaces from selected corner nodes/perimeter members or
+  detected complete frame levels. Default new slabs to the selected boundary or
+  highest valid level, preview with the reference frame, preserve recipe options
+  and provide one-step fitting undo without implying structural node coupling.
 - [ ] Define explicit shared frame/surface node ownership, merging tolerance,
   compatible member segmentation, adjacent-mesh conformity and remesh/delete
   behaviour; reject incompatible/overlapping interfaces rather than silently join.

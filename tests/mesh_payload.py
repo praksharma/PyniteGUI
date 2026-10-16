@@ -13,6 +13,7 @@ if __name__ == "__main__":
     from pynitegui.qt.examples import example_project
     from pynitegui.qt.spatial_surfaces import put_surface
     from pynitegui.qt.spatial_view import viewport_payload
+    from pynitegui.qt.mesh_workspace import MeshWorkspace
     app = QApplication.instance() or QApplication([])
     window = MainWindow()
     project = example_project("3d_space_frame")
@@ -21,6 +22,10 @@ if __name__ == "__main__":
     put_surface(project, MeshDefinition(name="Tower", generator="cylinder", origin=[360., 0., 0.],
                                        parameters=dict(GENERATORS["cylinder"][1])))
     window.load_project(project)
+    placement_dialog = MeshWorkspace(placement_project=project, auto_place=True)
+    payloads["placement_preview"] = placement_dialog.preview.render_payload()
+    placement_dialog.saved = placement_dialog.definition.to_dict()
+    placement_dialog.reject()
     payloads["mixed"] = {**viewport_payload(window), "labels": False, "plane": "XZ"}
     window.surface_visibility_action.setChecked(False)
     payloads["mixed_hidden"] = {**viewport_payload(window), "labels": False, "plane": "XZ"}

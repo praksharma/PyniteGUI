@@ -1,7 +1,7 @@
 """Native recipes/options for all concrete PyNite mesh generators."""
 import json
 
-from PySide6.QtCore import QIODevice, QSaveFile
+from PySide6.QtCore import QIODevice, QSaveFile, Qt
 from PySide6.QtGui import QUndoCommand, QUndoStack
 from PySide6.QtWidgets import (QComboBox, QDialog, QFileDialog, QFormLayout, QHBoxLayout,
     QLabel, QLineEdit, QMessageBox, QPushButton, QScrollArea, QSpinBox, QSplitter,
@@ -26,7 +26,8 @@ class MeshEdit(QUndoCommand):
 
 
 class MeshWorkspace(QDialog):
-    def __init__(self, parent=None, unit_system="imperial", definition=None, selection_only=False, model_mode=False, model_validator=None):
+    def __init__(self, parent=None, unit_system="imperial", definition=None, selection_only=False, model_mode=False, model_validator=None,
+                 placement_project=None, placement_selection=(), auto_place=False):
         super().__init__(parent)
         self.setWindowTitle("PyNite Surface Meshing (Experimental)")
         self.resize(1180, 820)
@@ -63,6 +64,39 @@ class MeshWorkspace(QDialog):
             if not selection_only or key == "rectangle":
                 self.generator.addItem(label, key)
         controls_layout.addWidget(self.generator)
+        self.placement_project = placement_project
+        self.selected_placement, self.level_placements = None, []
+        if placement_project is not None:
+            from .surface_placement import frame_levels, selected_rectangle
+            self.level_placements = frame_levels(placement_project)
+            selection_error = ""
+            try:
+                self.selected_placement = selected_rectangle(placement_project, placement_selection)
+            except ValueError as error:
+                selection_error = str(error)
+            self.placement_panel = QWidget()
+            placement_form = QFormLayout(self.placement_panel)
+            placement_form.setContentsMargins(0, 0, 0, 0)
+            self.fit_source = QComboBox()
+            self.fit_source.setObjectName("surface_fit_source")
+            self.fit_source.addItems(["Manual coordinates", "Selected boundary", "Frame level"])
+            self.fit_source.model().item(1).setEnabled(self.selected_placement is not None)
+            self.fit_source.setItemData(1, selection_error or "Fit to the selected rectangle corners or complete perimeter", Qt.ItemDataRole.ToolTipRole)
+            self.fit_source.model().item(2).setEnabled(bool(self.level_placements))
+            self.fit_source.setItemData(2, "Complete horizontal rectangular frame perimeters, highest level first", Qt.ItemDataRole.ToolTipRole)
+            row = QHBoxLayout()
+            row.addWidget(self.fit_source, 1)
+            self.fit_button = QToolButton()
+            self.fit_button.setObjectName("surface_fit")
+            self.fit_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogApplyButton))
+            self.fit_button.setToolTip("Fit rectangle position and dimensions to the chosen frame geometry")
+            self.fit_button.clicked.connect(self.fit_frame)
+            row.addWidget(self.fit_button)
+            placement_form.addRow("Fit rectangle to", row)
+            self.frame_level = QComboBox()
+            self.frame_level.setObjectName("surface_frame_level")
+            placement_form.addRow("Frame level", self.frame_level)
+            controls_layout.addWidget(self.placement_panel)
         self.tabs = QTabWidget()
         controls_layout.addWidget(self.tabs, 1)
         self.geometry_form, self.mesh_form = QFormLayout(), QFormLayout()
@@ -127,6 +161,8 @@ class MeshWorkspace(QDialog):
             controls_layout.addWidget(use)
         splitter.addWidget(controls)
         self.preview = MeshPreview(self)
+        if placement_project is not None:
+            self.preview.set_context(placement_project)
         splitter.addWidget(self.preview)
         splitter.setSizes([480, 700])
         self.status = QLabel()
@@ -135,6 +171,48 @@ class MeshWorkspace(QDialog):
         self.generator.currentIndexChanged.connect(self.change_generator)
         self.units.currentIndexChanged.connect(self.change_units)
         self.install(self.definition.to_dict())
+        if placement_project is not None:
+            self.fit_source.currentIndexChanged.connect(self.fit_frame)
+            self.frame_level.currentIndexChanged.connect(lambda: self.fit_frame() if self.fit_source.currentIndex() == 2 else None)
+            if auto_place and self.definition.generator == "rectangle":
+                if self.selected_placement is not None:
+                    self.fit_source.setCurrentIndex(1)
+                elif self.level_placements:
+                    self.fit_source.setCurrentIndex(2)
+
+    def fit_frame(self, *_):
+        source = self.fit_source.currentIndex()
+        self.fit_button.setEnabled(source != 0)
+        self.frame_level.setEnabled(source == 2)
+        if source == 0:
+            return
+        try:
+            placement = self.selected_placement if source == 1 else self.level_placements[self.frame_level.currentIndex()]
+            if placement is None:
+                raise ValueError("Select rectangle corner nodes or complete perimeter members in the main model first.")
+            candidate = placement.recipe(self.candidate())
+            generate_mesh(candidate)
+            before, after = self.definition.to_dict(), candidate.to_dict()
+            if before != after:
+                self.undo.push(MeshEdit(self, before, after))
+        except (ValueError, IndexError) as error:
+            QMessageBox.warning(self, "Fit Surface", str(error))
+
+    def update_placement_controls(self):
+        if self.placement_project is None:
+            return
+        self.placement_panel.setEnabled(self.definition.generator == "rectangle")
+        self.fit_button.setEnabled(self.fit_source.currentIndex() != 0)
+        self.frame_level.setEnabled(self.fit_source.currentIndex() == 2)
+        units = self.definition.units
+        previous = self.frame_level.currentIndex()
+        blocked = self.frame_level.blockSignals(True)
+        self.frame_level.clear()
+        for placement in self.level_placements:
+            self.frame_level.addItem(f"Y {units.to_display(placement.origin[1], 'length'):.6g} {units.length} | "
+                                    f"{units.to_display(placement.width, 'length'):.6g} x {units.to_display(placement.height, 'length'):.6g} {units.length}")
+        self.frame_level.setCurrentIndex(max(0, previous))
+        self.frame_level.blockSignals(blocked)
 
     def use_mesh(self):
         if not self.apply():
@@ -198,8 +276,10 @@ class MeshWorkspace(QDialog):
         while self.geometry_form.rowCount():
             row = self.geometry_form.takeRow(0)
             if row.labelItem:
+                row.labelItem.widget().hide()
                 row.labelItem.widget().deleteLater()
             if row.fieldItem and row.fieldItem.widget() not in (self.plane, self.axis, *self.origin_fields):
+                row.fieldItem.widget().hide()
                 row.fieldItem.widget().deleteLater()
         self.plane.hide()
         self.axis.hide()
@@ -247,6 +327,7 @@ class MeshWorkspace(QDialog):
         for opening in definition.openings:
             self.add_opening(opening=opening)
         self.loading, self.pending = False, False
+        self.update_placement_controls()
         self.analyze_action.setEnabled(rectangle)
         self.preview.set_mesh(definition, model)
         quality = mesh_quality(model)

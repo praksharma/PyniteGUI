@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Easier slab placement: fit rectangles to selected frame corners/perimeters or
+  detected complete horizontal levels, with frame-context preview and fitting
+  undo. New rectangles default to a valid selection or the highest level;
+  existing surfaces move only on explicit fit. This is geometric alignment,
+  not shared-node connectivity or coupled analysis.
 - Spatial project version 19 owns surface-mesh recipes alongside frames. Adds
   native insertion/editing, main Three.js rendering/face picking, visibility,
   fitting, tree/inspector selection and deletion with undo, persistence and

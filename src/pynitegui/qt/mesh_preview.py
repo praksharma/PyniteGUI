@@ -57,6 +57,7 @@ class MeshPreview(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.ready, self.web, self.payload = False, None, None
+        self.context_payload = None
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         row = QHBoxLayout()
@@ -70,6 +71,13 @@ class MeshPreview(QWidget):
         for control in (self.fill, self.nodes):
             control.toggled.connect(lambda: self.redraw(fit=False))
             row.addWidget(control)
+        self.frame = QCheckBox("Frame")
+        self.frame.setObjectName("mesh_frame_context")
+        self.frame.setToolTip("Reference frame geometry; surface and frame nodes remain independent")
+        self.frame.setChecked(True)
+        self.frame.hide()
+        self.frame.toggled.connect(lambda: self.redraw())
+        row.addWidget(self.frame)
         row.addStretch()
         fit = QToolButton()
         fit.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_TitleBarMaxButton))
@@ -101,6 +109,32 @@ class MeshPreview(QWidget):
         self.payload = mesh_payload(definition, model)
         self.redraw()
 
+    def set_context(self, project):
+        if not project.nodes:
+            self.context_payload = None
+            self.frame.hide()
+            return
+        self.context_payload = {
+            "nodes": [{"name": node.name, "position": list(node.coords)} for node in project.nodes.values()],
+            "members": [{"name": member.name, "start": member.start, "end": member.end, "kind": member.kind}
+                        for member in project.members.values()],
+        }
+        self.frame.show()
+
+    def render_payload(self):
+        if self.payload is None:
+            return None
+        result = {**self.payload, "surfaceFill": self.fill.isChecked(), "showNodes": self.nodes.isChecked()}
+        context = self.context_payload is not None and self.frame.isChecked()
+        self.nodes.setVisible(not context)
+        if context:
+            result.pop("surfaces")
+            result.update(self.context_payload)
+            result["surfaceMeshes"] = [{"name": "Preview", "nodes": self.payload["nodes"],
+                                         "surfaces": self.payload["surfaces"], "surfaceFill": self.fill.isChecked()}]
+            result["showNodes"] = True
+        return result
+
     def call(self, method, value=None):
         if self.web and self.ready:
             args = "" if value is None else json.dumps(value, allow_nan=False)
@@ -108,6 +142,6 @@ class MeshPreview(QWidget):
 
     def redraw(self, fit=True):
         if self.payload:
-            self.call("update", {**self.payload, "surfaceFill": self.fill.isChecked(), "showNodes": self.nodes.isChecked()})
+            self.call("update", self.render_payload())
             if fit:
                 self.call("fit")

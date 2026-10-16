@@ -1672,7 +1672,9 @@ class MainWindow(QMainWindow):
                 candidate = self.project.clone()
                 put_surface(candidate, mesh, previous)
                 candidate.validate()
-        dialog = MeshWorkspace(self, self.project.unit_system, definition=definition, model_mode=spatial, model_validator=validator)
+        dialog = MeshWorkspace(self, self.project.unit_system, definition=definition, model_mode=spatial, model_validator=validator,
+                               placement_project=self.project.clone() if spatial else None,
+                               placement_selection=list(self.selections), auto_place=spatial and previous is None)
         if dialog.exec() == QDialog.DialogCode.Accepted and spatial:
             from .spatial_surfaces import put_surface
             self.edit("Edit surface" if previous else "Add surface", lambda p: put_surface(p, dialog.definition, previous))
