@@ -1,0 +1,68 @@
+name: Documentation
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - "docs/**"
+      - "assets/**"
+      - "scripts/docs.py"
+      - "tests/test_docs.py"
+      - "zensical.toml"
+      - "*.md"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "assets/**"
+      - "scripts/docs.py"
+      - "tests/test_docs.py"
+      - "zensical.toml"
+      - "*.md"
+      - "pyproject.toml"
+      - "uv.lock"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.13.0"
+          python-version: "3.12"
+      - name: Install documentation tools only
+        run: uv sync --locked --only-group docs
+      - name: Test documentation pipeline
+        run: uv run --locked --only-group docs python -B -m unittest discover -s tests -p 'test_docs.py'
+      - name: Build and check documentation
+        run: uv run --locked --only-group docs python scripts/docs.py build
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: site
+
+  deploy:
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/configure-pages@v6
+      - uses: actions/deploy-pages@v5
+        id: deployment

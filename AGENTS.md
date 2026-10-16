@@ -19,3 +19,7 @@ rewrite existing commit history unless the user explicitly requests it.
   instructions in `GUIDE.md`.
 - Update `TODO.md` as features are implemented or new work is identified.
 - Commit completed, verified changes in coherent groups with their tests.
+- The Zensical site generates topic pages from `GUIDE.md` and the project records.
+  Do not edit `.docs-build/` or `site/`. Update `scripts/docs.py` topic mapping and
+  `zensical.toml` navigation for new GUIDE headings; keep `docs/features.md` and
+  authored tutorials in sync. Run the strict docs build and local-link check.

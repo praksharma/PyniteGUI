@@ -1,0 +1,85 @@
+[project]
+site_name = "PyniteGUI"
+site_description = "Desktop frame and truss modeling, analysis, results, surfaces and automation."
+site_url = "https://praksharma.github.io/PyniteGUI/"
+repo_url = "https://github.com/praksharma/PyniteGUI"
+repo_name = "praksharma/PyniteGUI"
+docs_dir = ".docs-build/docs"
+site_dir = "site"
+extra_css = ["stylesheets/extra.css"]
+nav = [
+  { "Manual" = [{ "PyniteGUI" = "index.md" }, { "Feature Index" = "features.md" }] },
+  { "Start" = [
+    { "Installation" = "start/install.md" }, { "Your First Model" = "start/first-model.md" },
+    { "Examples and Preferences" = "start/examples.md" }, { "Platform Validation" = "start/platforms.md" },
+    { "3D Graphics Recovery" = "start/graphics.md" }, { "NVIDIA and Wayland" = "start/nvidia.md" }
+  ] },
+  { "Modeling" = [
+    { "Workflows" = "modeling/index.md" }, { "Drawing and Selection" = "modeling/drawing.md" },
+    { "Moving Nodes" = "modeling/moving.md" }, { "Model Tables" = "modeling/tables.md" },
+    { "Materials and Sections" = "modeling/properties.md" }, { "Supports and Springs" = "modeling/supports.md" },
+    { "Member End Releases" = "modeling/releases.md" }, { "Axial-Only Trusses" = "modeling/trusses.md" },
+    { "Topology and Model Checks" = "modeling/topology.md" }, { "Construction Connections" = "modeling/construction.md" },
+    { "3D Frames and Trusses" = "modeling/3d.md" }
+  ] },
+  { "Loads and Analysis" = [
+    { "Point and Distributed Loads" = "analysis/loads.md" }, { "Cases and Combinations" = "analysis/combinations.md" },
+    { "Automatic Self-Weight" = "analysis/self-weight.md" }, { "Solve and Force Diagrams" = "analysis/solve.md" },
+    { "Live Recalculation" = "analysis/live.md" }, { "Stability Diagnostics" = "analysis/stability.md" }
+  ] },
+  { "Results" = [
+    { "Linked Tables and Equilibrium" = "results/linked.md" }, { "Combination Envelopes" = "results/envelopes.md" },
+    { "CSV and Printable Reports" = "results/reports.md" }, { "Result Snapshots" = "results/snapshots.md" },
+    { "Sign Conventions" = "results/conventions.md" }
+  ] },
+  { "Surfaces" = [
+    { "Mesh Generators" = "surfaces/meshing.md" }, { "Slab Placement and Main Model" = "surfaces/main-model.md" },
+    { "Rectangular Plate Analysis" = "surfaces/plates.md" }
+  ] },
+  { "Automation" = [{ "Optional MCP Server" = "automation/mcp.md" }] },
+  { "Reference" = [
+    { "Version and Scope" = "reference/version-scope.md" }, { "Engineering Limits" = "reference/engineering.md" },
+    { "Units and Conversions" = "reference/units.md" }, { "Material Library" = "reference/materials.md" },
+    { "Section Library" = "reference/sections.md" }, { "Release Formulation" = "reference/releases.md" },
+    { "Saving and History" = "reference/saving.md" }, { "Autosave and Recovery" = "reference/recovery.md" },
+    { "Project File Formats" = "reference/formats.md" }, { "Roadmap and PyNite Coverage" = "project/roadmap.md" },
+    { "Secondary Ideas" = "project/secondary.md" }, { "Changelog" = "project/changelog.md" },
+    { "Release Validation Record" = "project/releases.md" }
+  ] },
+  { "Development" = [
+    { "Architecture" = "development/architecture.md" }, { "Testing" = "development/testing.md" },
+    { "Performance" = "development/performance.md" }, { "Regression Coverage" = "development/regressions.md" },
+    { "Documentation" = "development/documentation.md" }
+  ] }
+]
+
+[project.theme]
+font = false
+logo = "assets/logo.png"
+favicon = "assets/logo.png"
+features = ["navigation.tabs", "navigation.sections", "navigation.path", "navigation.top",
+            "navigation.footer", "toc.follow", "search.highlight", "content.code.copy"]
+
+[[project.theme.palette]]
+scheme = "default"
+primary = "teal"
+accent = "red"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+scheme = "slate"
+primary = "teal"
+accent = "red"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to light mode"
+
+[project.markdown_extensions]
+admonition = {}
+attr_list = {}
+tables = {}
+toc.permalink = true
+pymdownx.superfences = {}
+pymdownx.highlight.pygments_lang_class = true
+pymdownx.details = {}
+pymdownx.tasklist.custom_checkbox = true

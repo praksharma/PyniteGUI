@@ -46,6 +46,11 @@ python-preference = "only-managed"
 requires = ["uv_build>=0.12.19,<0.13.0"]
 build-backend = "uv_build"
 
+[dependency-groups]
+docs = [
+    "zensical>=0.0.71,<0.1",
+]
+
 [tool.uv.build-backend]
 source-include = ["GUIDE.md", "TODO.md", "TODO_SECONDARY.md", "RELEASE.md", "CHANGELOG.md",
-                  "uv.lock", "assets/**", "tests/**", "scripts/**"]
+                  "uv.lock", "assets/**", "tests/**", "scripts/**", "docs/**", "zensical.toml"]

@@ -31,14 +31,17 @@ def check(wheel, source):
                 name = path.relative_to(root / "src").as_posix()
                 assert name in names, f"Missing wheel asset: {name}"
                 assert archive.read(name) == path.read_bytes(), f"Wheel asset differs: {name}"
-        assert not any(name.startswith(("tests/", ".venv/", "scripts/")) for name in names)
+        assert not any(name.startswith(("tests/", ".venv/", "scripts/", "docs/", ".docs-build/")) for name in names)
+        assert not any(value.name == "zensical" for value in requirements), "Documentation tooling leaked into runtime dependencies"
     with tarfile.open(source, "r:gz") as archive:
         prefix = f"pynitegui-{version}/"
         names = {item.name for item in archive.getmembers()}
         required = ["pyproject.toml", "README.md", "LICENSE", "uv.lock", "GUIDE.md", "TODO.md",
                     "TODO_SECONDARY.md", "CHANGELOG.md", "RELEASE.md", "scripts/check_dist.py",
                     "scripts/smoke_installed.py", "tests/test_qt_automation_server.py",
-                    "assets/structure.png", "assets/SFD.png", "assets/PyniteGUI Structural Frame Logo.png"]
+                    "assets/structure.png", "assets/SFD.png", "assets/PyniteGUI Structural Frame Logo.png",
+                    "zensical.toml", "scripts/docs.py", "docs/index.md", "docs/features.md",
+                    "docs/start/first-model.md", "docs/stylesheets/extra.css", "tests/test_docs.py"]
         for name in required:
             assert prefix + name in names, f"Missing source file: {name}"
             content, expected = archive.extractfile(prefix + name).read(), (root / name).read_bytes()

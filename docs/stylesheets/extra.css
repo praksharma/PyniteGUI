@@ -1,0 +1,18 @@
+:root {
+  --md-primary-fg-color: #176b73;
+  --md-accent-fg-color: #bd3549;
+  --md-text-font: system-ui, sans-serif;
+  --md-code-font: ui-monospace, monospace;
+}
+[data-md-color-scheme="slate"] {
+  --md-default-bg-color: #191c1f;
+  --md-default-fg-color: #eef1f2;
+  --md-code-bg-color: #292d31;
+  --md-primary-fg-color: #236d73;
+  --md-accent-fg-color: #ff7b8a;
+}
+.md-typeset { letter-spacing: 0; }
+.md-typeset .product-logo { width: 24rem; max-width: 100%; height: auto; }
+.md-typeset img { max-width: 100%; height: auto; }
+.md-typeset table:not([class]) { font-size: .76rem; }
+.md-typeset h1, .md-typeset h2, .md-typeset h3 { letter-spacing: 0; }

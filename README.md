@@ -64,6 +64,7 @@ Whole-frame shear-force diagram.
 
 ## More
 
+- [Documentation website](GUIDE.md#documentation-site): preview with `uv run --group docs python scripts/docs.py serve`.
 - [User and developer guide](GUIDE.md): workflows, units, engineering scope, tests and performance benchmarks.
 - [Roadmap](TODO.md): completed and planned features.
 - [Release notes](CHANGELOG.md) and [release validation](RELEASE.md).

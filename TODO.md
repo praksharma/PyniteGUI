@@ -203,15 +203,18 @@ below and the secondary interface wishlist retain their more specific scope.
 
 ## Project Quality
 
-- [ ] Low priority: build a searchable documentation website on GitHub Pages,
-  splitting and polishing GUIDE.md into repository-maintained pages rather than
-  maintaining duplicate content. Cover installation/examples, modeling, analysis
-  and limitations, 3D graphics troubleshooting, MCP and reference/release notes;
-  include screenshots, light/dark themes and automatic documentation deployment.
+- [x] Build a searchable Zensical documentation website with topic navigation,
+  first-model tutorial, feature index, logo/screenshots and light/dark appearance.
+  Generate detailed pages from the GUIDE/project records to avoid drift; add
+  strict build/link checks and PR/build/GitHub Pages deployment workflow.
+- [ ] Owner: enable GitHub Pages with GitHub Actions as the source and push/run
+  the documentation workflow; verify the public URL after deployment.
+- [ ] Continue expanding worked tutorials and screenshots alongside new features.
 - [x] Prepare 1.0.0rc1 metadata, consistent desktop/MCP version reporting,
   release notes/checklist, source/wheel audits and isolated installed-wheel smoke scripts.
-- [ ] Publish the approved GitHub 1.0.0rc1 prerelease after completing the
-  platform/manual validation gates in RELEASE.md; promote to 1.0.0 only after feedback.
+- [x] Publish the GitHub 1.0.0rc1 prerelease (see README for the published release).
+- [ ] Complete platform/manual validation gates in RELEASE.md and collect
+  prerelease feedback before promoting to stable 1.0.0.
 
 - [x] Use uv-managed Python and locked project dependencies without relying on
   Conda or a system interpreter; document setup and normal uv launches.

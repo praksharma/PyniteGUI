@@ -6,6 +6,9 @@ wheel is tested separately from this repository's editable, locked environment.
 `pynitegui --version` reports installed metadata without initializing Qt; the
 desktop application and MCP server use the same version.
 
+The searchable Zensical manual is built from this GUIDE and the project records.
+See **Documentation Site** below for local preview and publication instructions.
+
 A Python desktop editor for 2D/3D frames and axial-only trusses with PyNite.
 
 For an audited comparison of PyNite engine capabilities with features actually
@@ -811,6 +814,8 @@ This panel does not query the compositor's physical GPU or a driver package vers
 
 ## Workflow
 
+### Examples and Appearance
+
 - The unit selector also offers SI (mm, N) and Imperial (ft, kip). The mm/N
   preset uses N-mm moments, N/mm line loads, MPa stresses, and mm2/mm4 sections.
   The ft/kip preset uses kip-ft moments and kip/ft line loads, while keeping
@@ -835,6 +840,8 @@ This panel does not query the compositor's physical GPU or a driver package vers
   labels, property tables, results, and open diagrams use the selected system.
   Switching is undoable, preserves the physical model and valid results, and is
   saved with the project. New projects keep the currently selected system.
+### Drawing and Selection
+
 - Choose Member (M), then click two points. Coordinates snap to the project grid
   or an existing node. Escape or right-click cancels an unfinished member.
 - Choose Select (V) and click a node or member, or select it in the structure
@@ -859,6 +866,8 @@ This panel does not query the compositor's physical GPU or a driver package vers
   do. Single-node dragging and single-entity commands still require one target.
   Hiding a load case removes its loads from the selection without clearing
   selected geometry. Opening another project clears the selection.
+### Model Tables
+
 - Edit > Model Tables opens draft Nodes, Members, and Loads tables. Enter signed
   coordinates and load values directly (scientific notation is accepted), choose
   endpoints/materials/sections/cases, and set custom restraints or end hinges.
@@ -875,6 +884,8 @@ This panel does not query the compositor's physical GPU or a driver package vers
   distributed loads only. Preset restraint checkboxes show the effective supports
   but are editable only for custom supports. Generated self-weight is not listed
   as a manual load; configure it separately in Edit > Self-Weight.
+### Topology and Model Checks
+
 - Select a member and choose Split in its inspector, or Edit > Split Selected
   Member, to divide it at a fraction measured from its start node. The first
   segment keeps the original member ID. Point loads and moments retain their
@@ -897,6 +908,8 @@ This panel does not query the compositor's physical GPU or a driver package vers
   engineering properties. New internal frame connections are rigid. Axial-only
   trusses are rejected because subdivision creates unbraced intermediate joints;
   use explicit split/connect operations with appropriate bracing instead.
+### Member End Releases
+
 - Select a member and check Released for its Start or End moment RZ in
   the inspector, then press Apply. Hollow circles mark released member ends.
   These releases disconnect in-plane moment transfer at the member connection;
@@ -910,6 +923,8 @@ This panel does not query the compositor's physical GPU or a driver package vers
   or more than two DY/RZ releases on one member. Joint mechanisms are still checked
   during analysis. Clear axial/shear releases before converting a frame to truss.
 - Assign a node support using Support, or select a node/member and use Load (L).
+### Autosave and Recovery
+
 - The desktop app keeps a separate autosave snapshot of unsaved changes every
   30 seconds in Qt's per-user application-data recovery directory. These files
   never overwrite your project. After an interrupted session, startup offers
@@ -917,6 +932,8 @@ This panel does not query the compositor's physical GPU or a driver package vers
   another running process are excluded. Saving or intentionally closing clears
   this window's snapshot; a cancelled close retains it. Unsaved recovered work
   stays marked dirty. File > Recent Projects remembers the latest ten files.
+### Supports and Springs
+
 - Choose custom in the node Support inspector for independent global horizontal
   (DX), vertical (DY), and rotational (RZ) restraint checkboxes. Checked means
   restrained. Existing free/pin/roller/fixed presets remain available. Custom
@@ -929,10 +946,14 @@ This panel does not query the compositor's physical GPU or a driver package vers
   same direction: explicitly free that direction or set its spring to zero.
   Springs and releases are also editable atomically through bulk properties and
   Model Tables, with normal undo/redo and result invalidation.
+### Moving Nodes
+
 - In Select mode, drag a node to move it with snapping. Dashed connected members
   preview the move; releasing creates one undoable edit. Escape/right-click
   cancels. Coincident nodes and collapsed members are rejected without changing
   the model. Moving geometry invalidates analysis results.
+### Point and Distributed Loads
+
 - The selector above the structure tree shows all load cases, one case, or hides
   loads. It filters load arrows and tree entries only; analysis still includes
   all loads according to the selected combination.
@@ -965,6 +986,8 @@ This panel does not query the compositor's physical GPU or a driver package vers
   a global angled nodal load with the same vector, since a node has no unique
   member-local axes. Reassigning a local point load to a node in the inspector
   also preserves its current global vector.
+### Load Cases and Combinations
+
 - Edit > Load Cases and Combinations manages named load cases and linear
   combinations. Assign each load a Case in its creation dialog or inspector.
   Set Default chooses the case for new loads without reassigning existing loads.
@@ -972,6 +995,8 @@ This panel does not query the compositor's physical GPU or a driver package vers
   or the default cannot be deleted until those references are removed.
   Add or edit a combination by checking its included cases and entering factors.
   At least one combination is required; zero and negative factors are supported.
+### Materials and Sections
+
 - Edit > Materials opens reusable material definitions. Add or edit a name, E,
   Poisson ratio, and density; G is calculated for an isotropic material. Select
   a member, choose Material in its inspector, and press Apply to assign it.
@@ -993,6 +1018,8 @@ This panel does not query the compositor's physical GPU or a driver package vers
   catalog definitions from custom properties. Renaming preserves provenance;
   changing any numerical property makes the definition custom.
   Edit > Grid changes the drawing grid spacing.
+### Analysis and Force Diagrams
+
 - Use Pan (P) to drag the view, the mouse wheel to zoom, and Fit (F) to frame it.
 - Analyze (F5) runs PyNite in an isolated worker process supervised off the GUI
   thread. The status bar shows a busy indicator and actual phases: checking the
@@ -1046,6 +1073,8 @@ This panel does not query the compositor's physical GPU or a driver package vers
   Diagram windows have their own combination selector and retain the analyzed
   snapshot even when the editor changes. The inspector always edits original
   case values, not the factored values displayed after analysis.
+### Combination Envelopes
+
 - Diagrams > Envelopes compares checked combinations from that analyzed
   snapshot without another solve. The main combination selector does not change
   the envelope selection. Nodes lists displacement/reaction bounds; Members
@@ -1072,6 +1101,8 @@ This panel does not query the compositor's physical GPU or a driver package vers
   reports, single-combination sections and envelope sections are labelled
   separately. Unit/theme changes retain the selection. Envelope choices are
   window-local, not saved in the project.
+### CSV and Printable Reports
+
 - File > Export Results saves node reactions/displacements or member end/extrema
   values as CSV in the selected units and combination. Files include source,
   analysis ID, UTC timestamp, model signature, and unit system. Undefined joint
@@ -1089,12 +1120,16 @@ This panel does not query the compositor's physical GPU or a driver package vers
   diagram settings. Charts use a light print palette even in dark mode and have
   their own pages. Reports can be printed or saved to PDF through the print
   dialog. Cancelling content selection does not open preview or change the model.
+### Result Snapshots
+
 - Diagram windows show their analysis ID, analysis time, original editor revision,
   and whether their model matches the current editor. A new analysis of the same
   model is distinguished from the earlier snapshot. The export icon in a diagram
   window exports/prints that snapshot, even after editor results are invalidated.
   Unit and combination changes retain the snapshot ID; engineering changes
   require a new analysis before exporting from the main editor.
+### Saving and History
+
 - Save/Open uses versioned `.pynite.json` project files. Ctrl+Z and Ctrl+Shift+Z
   undo and redo model edits. Delete removes the selected entity and its dependent
   members/loads. Unsaved changes are marked in the title and checked on exit.
@@ -1228,6 +1263,8 @@ Loads belong to named cases. User-defined combinations superpose those cases
 with finite factors using linear elastic analysis. The initial project has
 Case 1 and a Service combination at factor 1. No design-code factors or
 envelopes are generated automatically.
+### Automatic Self-Weight
+
 Edit > Self-Weight opts into automatic gravity loading in a chosen load case,
 with a positive multiplier and total unfactored weight in the current force
 units. Frame members receive global downward FY uniform loads using their
@@ -1243,6 +1280,8 @@ undoable and invalidates results; case renaming follows the reference, and a
 referenced case cannot be deleted. Density is weight per volume, not kg/m3;
 do not multiply it by gravity again.
 Member load positions are fractions measured from the start node.
+
+### Release Formulation
 
 Member moment releases act about local Z, normal to the XY frame. End releases
 are independent: one member may hinge at a shared node while other members
@@ -1262,6 +1301,8 @@ PyNite's uncondensed stiffness and fixed-end vectors with zero released-end forc
 then uses PyNite's own deflection/extrema routines. It does not alter the global
 solve or nodal reactions. Analytical axial-release and fixed-guided bending
 benchmarks cover this behavior, including split members and result transport.
+
+### Axial-Only Trusses
 
 Choose Type = truss in the member inspector, bulk inspector, or Model Tables
 for an explicitly axial-only member. Truss ends are implicitly pinned; saved
@@ -1287,6 +1328,8 @@ A net nodal MZ on such a joint is rejected for each analyzed combination unless
 a moment-resisting connection, rotational support restraint, or RZ spring is provided. Real translational
 mechanisms are not hidden by adding translational restraints.
 
+### Stability Diagnostics
+
 Analysis checks whether the actual supports prevent planar rigid-body motion
 and lists affected global DX/DY/RZ directions when they do not. Solver
 instability errors are translated into joint-level messages where possible.
@@ -1303,6 +1346,8 @@ sparse check does not certify the model: a found mechanism is reported, otherwis
 results are rejected with a convergence message. Nonfinite-result checks remain
 active. These are linear-model checks, not nonlinear stability verification;
 sparse factorization can still consume substantial memory for large models.
+
+### Material Library Reference
 
 Each member references a reusable material definition. Editing that definition
 updates every member assigned to it and invalidates results. Split member
@@ -1323,6 +1368,8 @@ Concrete presets assume uncracked, short-term stiffness. The RC-weight variant
 changes density only, not reinforcement stiffness. No preset adds cracking,
 creep, plasticity, yield strength, buckling, or a design-code check. Verify
 properties for the actual grade, alloy, aggregate, and conditions of use.
+
+### Section Library Reference
 
 Each member also references a reusable section definition. Area uses in2 or mm2;
 Iy, Iz, and J use in4 or mm4 in the member local axes. Iz governs in-plane bending
@@ -1349,6 +1396,8 @@ validated on reopen; modified values must be classified as custom. Materials
 remain a separate assignment, and imports do not change them. This is a stiffness
 library, not a strength, buckling, or code-compliance check. Verify suitability
 and section properties independently for engineering use.
+
+### Project File Formats
 
 Version 1 files migrate their shared material to a named Project material.
 Version 1 and 2 files migrate their shared section to a named Project section.
@@ -1405,6 +1454,8 @@ in this section apply to 2D; spatial editing currently requires explicit segment
 Results are invalidated after engineering edits and belong to the analyzed project revision.
 Unit selection changes presentation only and retains valid analysis results.
 Result diagrams already open remain snapshots of that analysis.
+
+### Diagram Sign Conventions
 
 Whole-structure diagrams use a consistent cut orientation from the endpoint with
 the smaller (X, Y) coordinate to the larger endpoint. Positive shear and moment
@@ -1500,6 +1551,62 @@ appearance. Screenshots go to `/tmp/pynite-3d-qa`
 by default, configurable with `VIEWPORT_QA_OUTPUT`. It does not launch the user's GUI.
 `PLAYWRIGHT_EXECUTABLE_PATH` optionally selects an installed Chromium-compatible
 test browser; otherwise Playwright uses its downloaded Chromium.
+
+### Documentation Site
+
+Zensical is an optional **docs dependency group**, not an application dependency
+or an MCP extra. From the repository root:
+
+```sh
+uv run --locked --group docs python scripts/docs.py build
+uv run --locked --group docs python scripts/docs.py serve --port 8000
+```
+
+The preview binds to `127.0.0.1` only. Choose another port if 8000 is occupied.
+Preparation runs once at startup; restart the preview after editing the GUIDE,
+project records or authored `docs/` sources to regenerate the topic pages.
+The build performs a clean strict Zensical build, then checks local HTML links,
+anchors, images and assets. `python scripts/docs.py check` repeats that check
+without rebuilding. `prepare` only regenerates the documentation input tree.
+No Qt, PyNite, server or application module is imported by the docs tooling.
+CI uses `--only-group docs` so it need not install the desktop/scientific stack.
+
+The GUIDE remains the maintained detailed reference. `scripts/docs.py` maps every
+GUIDE heading into a topic page and copies the roadmaps, changelog and release
+record, rewriting repository-document links. Unmapped or duplicate headings and
+navigation omissions fail preparation. `docs/` contains only authored entry pages,
+the first-model tutorial, feature index and custom styles. Add or update detailed
+workflows here in GUIDE.md, not in generated topic files. Update the topic map and
+`zensical.toml` navigation if you add a heading. Keep the feature index and tutorial
+accurate when workflows change. This avoids two competing copies of the manual.
+
+Generated Markdown/assets live under `.docs-build/docs`; built HTML lives under
+`site`. Both are ignored. The existing logo and screenshots are copied from
+`assets/`, not maintained as duplicate binaries. Search and light/dark appearance
+are provided by Zensical; system fonts avoid runtime Google Fonts requests.
+The documentation describes the current checkout and explicitly distinguishes
+experimental surface geometry from validated frame and plate-only workflows.
+
+`.github/workflows/docs.yml` builds/checks pull requests, uploads the generated
+site and deploys only trusted pushes to `master` or manual runs on that branch.
+It does not publish Python packages or alter release tags. To enable the planned
+site at `https://praksharma.github.io/PyniteGUI/`, the repository owner must select
+**Settings > Pages > Build and deployment > Source: GitHub Actions**, then push
+the documentation commit or run the Documentation workflow on master. The website
+URL is a deployment target, not a claim that the site is already live.
+
+For standalone documentation tests:
+
+```sh
+uv run --locked --group docs python -B -m unittest discover -s tests -p 'test_docs.py'
+```
+
+Optional desktop browser QA: after building, run `node tests/docs_site.spec.cjs`
+with Playwright/Chromium installed separately (or set `PLAYWRIGHT_MODULE` as in
+the viewport checks). It serves `site/` under the GitHub Pages `/PyniteGUI/` prefix
+and checks images, search navigation, dark mode, key topics and desktop overflow.
+It closes its temporary server/browser and writes screenshots to
+`/tmp/pynite-docs-qa` (override with `DOCS_QA_OUTPUT`).
 
 ### Spatial Performance Checks
 

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Searchable Zensical documentation site with the project logo/screenshots,
+  light/dark appearance, first-model tutorial and complete feature index. Builds
+  topic pages from the maintained GUIDE and project records; includes strict
+  link/anchor checks, an optional docs-only dependency group and GitHub Pages CI.
 - Easier slab placement: fit rectangles to selected frame corners/perimeters or
   detected complete horizontal levels, with frame-context preview and fitting
   undo. New rectangles default to a valid selection or the highest level;
@@ -31,8 +35,8 @@
 
 ## 1.0.0rc1 - Release Candidate
 
-First release candidate for the frame-focused desktop application. Not yet
-published; promote to 1.0.0 only after the release checklist is completed.
+First release candidate for the frame-focused desktop application, published as
+a GitHub prerelease. Promote to 1.0.0 only after the release checklist is completed.
 
 - Qt desktop editing for 2D/3D elastic frames and bilateral axial-only trusses.
 - Materials/sections and starter libraries, support restraints/springs, 2D end
