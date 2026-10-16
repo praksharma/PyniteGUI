@@ -713,6 +713,19 @@ numeric model editing remains available but rendering is unavailable.
 
 ### Graphics Recovery
 
+To close a terminal-launched session, use the window close button or press
+Ctrl+C once. Terminal interrupts request normal Qt shutdown, including unsaved
+changes prompts and analysis/server cleanup. Finish or cancel an open modal
+editor first, then press Ctrl+C again. Repeated interrupts do not bypass a save
+prompt. This requires a responsive Qt event loop; it cannot resolve a native
+driver deadlock.
+
+If the entire application is unresponsive, identify that session's process and
+terminate only that process as a last resort. Forced termination can lose unsaved
+work and does not run normal cleanup. On relaunch, check for autosave recovery;
+recovery is not a substitute for saving. An EGL warning alone does not establish
+that the application is frozen.
+
 When a Linux graphics driver/EGL/Vulkan mismatch prevents WebGL2 from starting,
 close PyniteGUI after saving and launch with:
 

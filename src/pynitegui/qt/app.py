@@ -2023,7 +2023,13 @@ def main():
     window = MainWindow(recovery_directory, settings)
     window.show()
     QTimer.singleShot(0, window.offer_recovery)
-    sys.exit(application.exec())
+    from .shutdown import TerminalShutdown
+    application.terminal_shutdown = TerminalShutdown(application)
+    try:
+        exit_code = application.exec()
+    finally:
+        application.terminal_shutdown.restore()
+    sys.exit(exit_code)
 
 
 if __name__ == "__main__":

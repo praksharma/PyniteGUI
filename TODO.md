@@ -203,6 +203,8 @@ below and the secondary interface wishlist retain their more specific scope.
 
 ## Project Quality
 
+- [x] Route terminal Ctrl+C through normal Qt shutdown, preserving save/cancel
+  prompts and modal editors; cover deferred/repeated signals and real-process exit.
 - [x] Build a searchable Zensical documentation website with topic navigation,
   first-model tutorial, feature index, logo/screenshots and light/dark appearance.
   Generate detailed pages from the GUIDE/project records to avoid drift; add

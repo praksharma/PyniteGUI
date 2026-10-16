@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Terminal Ctrl+C now requests normal Qt shutdown instead of repeatedly raising
+  KeyboardInterrupt inside timer callbacks. Preserves save/cancel prompts,
+  open modal editors and existing analysis/server cleanup.
 - Searchable Zensical documentation site with the project logo/screenshots,
   light/dark appearance, first-model tutorial and complete feature index. Builds
   topic pages from the maintained GUIDE and project records; includes strict
