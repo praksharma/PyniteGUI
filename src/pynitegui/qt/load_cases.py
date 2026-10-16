@@ -121,7 +121,7 @@ class LoadCasesDialog(QDialog):
             table.blockSignals(True)
             table.setRowCount(len(names))
             for row, name in enumerate(names):
-                values = (name, str(sum(load.case == name for load in project.loads.values())),
+                values = (name, str(sum(load.case == name for load in project.loads.values()) + sum(name in pressures for pressures in getattr(project, "surface_pressures", {}).values())),
                           str(len(project.self_weight_loads())) if name == project.self_weight_case else "0",
                           "Yes" if name == project.default_load_case else "") if key == "cases" else (
                               name, "; ".join(f"{case}: {factor:g}" for case, factor in project.combinations[name].items()))
@@ -140,6 +140,7 @@ class LoadCasesDialog(QDialog):
         project = self.window.project
         case = self.selected_name("cases")
         used = (case == project.self_weight_case or any(load.case == case for load in project.loads.values())
+                or any(case in pressures for pressures in getattr(project, "surface_pressures", {}).values())
                 or any(case in factors for factors in project.combinations.values()))
         self.buttons["cases", "edit"].setEnabled(case is not None)
         self.buttons["cases", "default"].setEnabled(case is not None and case != project.default_load_case)

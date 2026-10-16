@@ -26,15 +26,15 @@ the exact missing part. Summary: **8 done, 4 partial, 6 pending**.
 | Member point/distributed and nodal loading | Done | Nodal/member forces and moments, uniform/linear-varying distributed forces and partial spans in 2D/3D. Distributed member moments are excluded. |
 | Cases and factored combinations | Done | Named cases, combination editing, selected-combination results and visible factored loads in 2D/3D. |
 | Member shear, moment and deflection output | Done | Member detail curves in 2D/3D; spatial biaxial shear/bending, torsion and deformation; whole-frame force/moment overlays. |
-| Physical-member internal joints | Partial | Explicit load-preserving split/connect workflows exist in 2D/3D. Automatic solver-only internal-node handling is not exposed; connections require explicit segments and shared endpoints. |
+| Physical-member internal joints | Partial | Explicit split/connect workflows in 2D/3D; experimental coupled slabs add solver-only subdivision at conforming shell nodes. General implicit user-frame intersections remain excluded. |
 | Unilateral member behaviour | Pending | Add tension-only/compression-only flags, iterative active-set analysis and activation/mechanism benchmarks; ordinary 2D/3D trusses are not unilateral members. |
 | Node-to-node spring elements | Pending | Add separate spring entities, axial stiffness units and bilateral/tension-only/compression-only behaviour; support springs are not spring elements. |
 | Bilateral/unilateral support springs | Partial | Bilateral global DX/DY/RZ springs in 2D and all six DOFs in 3D are implemented. One-way support springs and iterative activation remain pending. |
-| DKMQ quadrilaterals | Partial | Separate experimental rectangular transverse-plate workspace: thickness/E/nu, uniform pressure, edge supports, cancellable solve, nodal displacement/reaction CSV and centre moment/shear contours with Navier refinement benchmarks. General membrane/shell editing and frame coupling remain pending. |
+| DKMQ quadrilaterals | Partial | Plate-only bending tool plus opt-in rectangular Quad/frame coupling with pressure cases, self-weight, shared joints, conformity checks, nodal results/deformation and equilibrium. General shell result inspection, stress contours and curved-shell benchmarks remain pending. |
 | Polynomial rectangles | Partial | Quad/Rect choice for rectangular plate bending (including openings) with centre-coordinate recovery, deflection comparison and equilibrium regressions. General membrane/shell workflows and additional formulation-specific benchmarks remain pending. |
 | Shape/opening meshing | Done | All seven concrete PyNite generators with shape-specific/common options, bounded checks, control lines/openings, offline 3D geometry preview, recipes/undo and connectivity export. Curved-shell analysis and frame assembly remain distinct pending capabilities. |
 | Support reactions | Done | Unit-aware reaction tables, CSV and printable output; all six components for spatial frames, including bilateral support springs. |
-| Geometry/load/deformation rendering | Done | Current frame/truss geometry, supports, loads and deformed shapes; plate pilot has planar contours and mesh catalog has orbitable 3D surfaces. 3D surface analysis/deformed-mesh rendering remains pending. |
+| Geometry/load/deformation rendering | Done | Frame/truss loads, supports and deformed shapes; plate-only contours, seven mesh previews, plus experimental coupled rectangular slab pressures and deformed meshes. |
 | Shear walls and mats | Pending | Add dedicated wall/foundation definitions, meshing, openings, soil/support input and specialized results; verify the locked engine before exposing workflows. |
 | Model/result PDF output | Done | Native printable model definitions/results with save-to-PDF; 2D diagrams and numerical envelopes; 3D six-component diagrams with selectable orthographic views and numerical envelopes. |
 
@@ -73,12 +73,22 @@ below and the secondary interface wishlist retain their more specific scope.
   detected complete frame levels. Default new slabs to the selected boundary or
   highest valid level, preview with the reference frame, preserve recipe options
   and provide one-step fitting undo without implying structural node coupling.
-- [ ] Define explicit shared frame/surface node ownership, merging tolerance,
+- [x] Define rectangular Quad shared frame/surface solver-node ownership, merging tolerance,
   compatible member segmentation, adjacent-mesh conformity and remesh/delete
   behaviour; reject incompatible/overlapping interfaces rather than silently join.
-- [ ] Add geometry-owned surface pressure/support cases, drilling-rotation and
-  membrane treatment, coupled slab/frame solver assembly, benchmarks, results
-  and deformed-mesh rendering. Only then enable mixed-project analysis.
+- [x] Opt-in rectangular Quad/frame assembly with geometry-owned pressure cases,
+  combinations, surface self-weight, existing shared-joint supports, unchanged
+  upstream membrane/drilling formulation, nodal results, equilibrium and deformed
+  meshes. Add classical plate and symmetric slab/column benchmarks; keep legacy
+  geometry-only projects disabled on migration to version 20.
+- [x] Refuse all coupled result publication if any combination fails independent
+  global force/moment equilibrium; regression-test lateral moment imbalance from
+  the locked engine's weak drilling approximation without relaxing tolerances.
+- [ ] Add coupled-slab local stress/moment/shear inspection, contours and surface
+  edge-support editors; extend independent membrane, drilling, interface and
+  mesh-convergence benchmarks before broadening the experimental scope.
+- [ ] Add eccentric slab/beam offsets or explicit connectors with tested load
+  transfer; current connections require coincident centreline/mid-surface nodes.
 - [ ] Add surface-aware MCP edit schemas and atomic topology/assignment validation;
   add surface box selection after the geometry ownership rules are established.
 - [x] Add rectangular openings/control lines with geometry-owned assignments,

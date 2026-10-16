@@ -40,6 +40,9 @@ class ExampleTests(unittest.TestCase):
             imperial, si = example_project(key).to_dict(), example_project(key, "si").to_dict()
             self.assertEqual(si.pop("unit_system"), "si")
             imperial.pop("unit_system")
+            for document in (imperial, si):
+                for recipe in document.get("surfaces", {}).values():
+                    recipe.pop("unit_system")
             self.assertEqual(imperial, si)
 
     def test_fresh_models_and_unknown_key(self):

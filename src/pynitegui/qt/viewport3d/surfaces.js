@@ -21,6 +21,8 @@ export function drawSurfaces(data, group, picks = []) {
     geometry.setIndex(triangles);geometry.computeVertexNormals();
     const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
       color: data.surfaceSelected ? data.colors.load : data.colors.accent, side: THREE.DoubleSide, roughness: .8,
+      transparent: (data.surfaceOpacity ?? 1) < 1, opacity: data.surfaceOpacity ?? 1,
+      depthWrite: (data.surfaceOpacity ?? 1) === 1,
       polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1,
     }));
     mesh.position.copy(centre);mesh.userData.surfaceFaces = data.surfaces.length;group.add(mesh);

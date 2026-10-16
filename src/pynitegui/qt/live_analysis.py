@@ -101,7 +101,8 @@ class LiveRecalculation(QObject):
         if not self.enabled:
             return
         self.discard()
-        if not self.window.project.members or getattr(self.window.project, "surfaces", {}):
+        from .spatial_surfaces import surface_analysis_issue
+        if not self.window.project.members or surface_analysis_issue(self.window.project):
             return
         self.pending = True
         self.timer.start()

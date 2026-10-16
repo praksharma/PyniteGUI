@@ -94,10 +94,26 @@ def check_equilibrium(project, result):
                 force = vector * magnitude
                 add(applied, force, np.cross(point, force))
 
+    if spatial and project.surfaces:
+        from .spatial_surfaces import surface_geometry
+        from .surface_solver import face_weights
+        factors = project.combinations[result.combination]
+        for name, definition in project.surfaces.items():
+            _, _, points, cells = surface_geometry(definition)
+            pressure = math.fsum(value*factors.get(case, 0.) for case, value in project.surface_pressures.get(name, {}).items())
+            gravity = (-definition.material.rho*definition.thickness*project.self_weight_factor
+                       * factors.get(project.self_weight_case, 0.)) if project.self_weight_case is not None else 0.
+            for cell in cells:
+                area, normal, centre = face_weights(np.asarray(points)[list(cell)])
+                force = (normal*pressure + np.array((0., gravity, 0.)))*area
+                add(applied, force, np.cross(centre-origin, force))
+
     for name, values in result.reactions.items():
         force = np.array(values[:3] if spatial else (values[0], values[1], 0.), dtype=float)
         couple = np.array(values[3:] if spatial else (0., 0., values[2]), dtype=float)
-        add(reactions, force, couple + np.cross(coordinates(project.nodes[name]) - origin, force))
+        node = result.solver.nodes[name]
+        point = np.array((node.X, node.Y, node.Z)) if spatial else coordinates(project.nodes[name])
+        add(reactions, force, couple + np.cross(point - origin, force))
 
     rows = []
     for index in (range(6) if spatial else (0, 1, 5)):

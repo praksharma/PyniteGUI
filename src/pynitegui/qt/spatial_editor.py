@@ -119,12 +119,55 @@ def populate_inspector(window):
             names, elements, _, _ = surface_geometry(definition)
             for label, value in (("ID", name), ("Geometry", GENERATORS[definition.generator][0]),
                                  ("Nodes", str(len(names))), ("Elements", f"{len(elements)} {definition.element_type}"),
-                                 ("State", "Uncoupled geometry")):
+                                 ("State", "Coupled (experimental)" if project.surface_analysis_enabled else "Uncoupled geometry")):
                 form.addRow(label, QLabel(value))
             edit = QPushButton("Edit Surface...")
             edit.setObjectName("edit_surface")
             edit.clicked.connect(lambda: window.show_mesh_workspace(name))
             form.addRow(edit)
+            enabled = QCheckBox("Coupled analysis (experimental)")
+            enabled.setObjectName("surface_analysis_enabled")
+            enabled.setChecked(project.surface_analysis_enabled)
+            enabled.setToolTip("Include all rectangular Quad surfaces. Requires conforming mesh/frame nodes. Other families block analysis.")
+            enabled.toggled.connect(lambda checked: window.edit("Set coupled surface analysis", lambda p: setattr(p, "surface_analysis_enabled", checked)))
+            form.addRow(enabled)
+            case = choices(project.load_cases, project.default_load_case, "surface_pressure_case")
+            pressures = project.surface_pressures.get(name, {})
+            pressure = unit_number(pressures.get(case.currentText(), 0.), project.units, "pressure", decimals=8)
+            pressure.setObjectName("surface_pressure")
+            # Recreate the input's canonical preservation properties when cases change.
+            def load_case_value():
+                value = pressures.get(case.currentText(), 0.)
+                pressure.setValue(project.units.to_display(value, "pressure"))
+                pressure.setProperty("original_value", value)
+                pressure.setProperty("initial_value", pressure.value())
+            case.currentTextChanged.connect(load_case_value)
+            form.addRow("Pressure case", case)
+            form.addRow(project.units.pressure, pressure)
+            normal_label = {"XY": "+Z", "XZ": "-Y", "YZ": "+X"}[definition.plane] if definition.generator == "rectangle" else "Element-local (geometry only)"
+            form.addRow("Positive pressure", QLabel(normal_label))
+            apply = QPushButton("Apply Pressure")
+            apply.setObjectName("surface_pressure_apply")
+            def apply_pressure():
+                value, selected_case = unit_value(pressure, project.units, "pressure"), case.currentText()
+                def mutate(p):
+                    values = p.surface_pressures.setdefault(name, {})
+                    if value:
+                        values[selected_case] = value
+                    else:
+                        values.pop(selected_case, None)
+                window.edit("Set surface pressure", mutate)
+            apply.clicked.connect(apply_pressure)
+            supported = definition.generator == "rectangle" and definition.element_type == "Quad"
+            for control in (case, pressure, apply):
+                control.setEnabled(supported)
+                control.setToolTip("Signed uniform local-normal pressure by load case; zero removes it." if supported else "Main-model analysis supports rectangular Quad meshes only.")
+            form.addRow(apply)
+            if window.result is not None:
+                mapping = getattr(window.result.solver, "_pynitegui_surfaces", {}).get(name)
+                if mapping:
+                    peak = max(math.sqrt(sum(v*v for v in window.result.displacements[n][:3])) for n in mapping["nodes"])
+                    form.addRow("Peak displacement", QLabel(f"{project.units.to_display(peak, 'length'):.6g} {project.units.length}"))
         else:
             form.addRow("Selected", QLabel(str(len(window.selections))))
         delete = QPushButton("Delete Selected")

@@ -34,9 +34,10 @@ If 3D graphics fail to start, launch with `uv run pynitegui --software-rendering
 
 Current development includes **Tools > Surface Meshing (Experimental)** with
 PyNite's seven generators, options, 3D previews and recipe/export files. Meshes can
-be fitted to frame levels/perimeters and saved in the main 3D model as uncoupled
-geometry; rectangles with openings
-support the separate plate-analysis workspace. Coupled slab/frame analysis is pending.
+be fitted to frame levels/perimeters and saved in the main 3D model. Rectangular
+Quad slabs offer opt-in experimental frame coupling, pressure loads and deformed
+meshes; other generators remain geometry-only. A separate Quad/Rect plate workspace
+is also available.
 See [scope and limits](GUIDE.md#experimental-surface-meshing); these are not in the rc1 wheel.
 
 For the release wheel, install the downloaded file without cloning:

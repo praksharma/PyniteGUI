@@ -1,4 +1,4 @@
-"""Uncoupled surface geometry owned by spatial projects, not solver nodes."""
+"""Project surface recipes, bounded geometry and explicit analysis opt-in."""
 from functools import lru_cache
 import json
 
@@ -8,12 +8,21 @@ from .model import identifier
 
 SURFACE_ANALYSIS_LIMIT = (
     "This project contains uncoupled surface geometry. Mixed frame/slab analysis "
-    "is not enabled yet: surface nodes are not shared with frame joints, and "
-    "surface loads and supports are not assigned. Use the separate rectangular "
-    "plate workspace for plate-only analysis, or remove the surfaces to analyze "
-    "the frame. No frame-only result will be produced for this project."
+    "is disabled. Select a surface and enable Coupled analysis (experimental) "
+    "to include rectangular Quad slabs and their pressure loads. Mesh nodes "
+    "must match frame joints; no frame-only result will silently ignore surfaces."
 )
 MAX_PROJECT_SURFACE_ELEMENTS = 4096
+
+
+def surface_analysis_issue(project):
+    if not getattr(project, "surfaces", {}):
+        return None
+    if not project.surface_analysis_enabled:
+        return SURFACE_ANALYSIS_LIMIT
+    if any(mesh.generator != "rectangle" or mesh.element_type != "Quad" for mesh in project.surfaces.values()):
+        return "Coupled analysis currently supports rectangular Quad meshes only. Other mesh families remain geometry-only."
+    return None
 
 
 @lru_cache(maxsize=32)
@@ -30,8 +39,19 @@ def surface_geometry(definition):
 
 
 def validate_surfaces(project):
+    from .model import finite_number
     if not isinstance(project.surfaces, dict) or len(project.surfaces) > 16:
         raise ValueError("Use at most 16 surface meshes per spatial project.")
+    if type(project.surface_analysis_enabled) is not bool:
+        raise ValueError("Coupled surface analysis must be a boolean.")
+    if not isinstance(project.surface_pressures, dict):
+        raise ValueError("Surface pressures must be keyed by surface and load case.")
+    for name, pressures in project.surface_pressures.items():
+        if name not in project.surfaces or not isinstance(pressures, dict):
+            raise ValueError("Surface pressures require an existing surface.")
+        if any(case not in project.load_cases or not finite_number(value) or abs(value) > 1e6
+               for case, value in pressures.items()):
+            raise ValueError("Surface pressures require valid load cases and finite values within +/-1e6 kip/in2.")
     total = 0
     for name, definition in project.surfaces.items():
         if (not identifier(name) or not isinstance(definition, MeshDefinition)
@@ -54,13 +74,30 @@ def put_surface(project, definition, previous=None):
         if previous not in project.surfaces:
             raise ValueError("The surface being edited no longer exists.")
         del project.surfaces[previous]
+        if previous in project.surface_pressures:
+            project.surface_pressures[definition.name] = project.surface_pressures.pop(previous)
     project.surfaces[definition.name] = definition
 
 
-def surface_payloads(project):
+def surface_payloads(project, result=None, case_filter=None):
     payloads = []
     for name, definition in project.surfaces.items():
         _, _, points, cells = surface_geometry(definition)
-        payloads.append({"name": name, "nodes": [{"position": list(p)} for p in points],
+        nodes = [{"position": list(p)} for p in points]
+        mapping = getattr(result.solver, "_pynitegui_surfaces", {}).get(name) if result else None
+        if mapping:
+            for node, solver_name in zip(nodes, mapping["nodes"]):
+                node["displacement"] = list(result.displacements[solver_name][:3])
+        factors = project.combinations[result.combination] if result else {case: 1. for case in project.load_cases}
+        pressures = [{"case": case, "value": value*factors.get(case, 0.)}
+                     for case, value in project.surface_pressures.get(name, {}).items()
+                     if case_filter is not False and (case_filter is None or case_filter == case) and value*factors.get(case, 0.)]
+        weight_case = project.self_weight_case
+        gravity = (-definition.material.rho*definition.thickness*project.self_weight_factor*factors.get(weight_case, 0.)
+                   if project.surface_analysis_enabled and weight_case is not None and case_filter is not False
+                   and (case_filter is None or case_filter == weight_case) else 0.)
+        payloads.append({"name": name, "nodes": nodes, "pressures": pressures,
+                         "gravity": gravity, "weightCase": weight_case,
+                         "pressureUnit": project.units.pressure, "pressureFactor": project.units.factor("pressure"),
                          "surfaces": [list(cell) for cell in cells]})
     return payloads

@@ -63,7 +63,7 @@ def truss_motion(result, name, distance):
     return (a + distance / member.L() * (b - a)) @ member.T()[:3, :3].T
 
 
-def member_breaks(project, name):
+def member_breaks(project, name, result=None):
     definition = project.members[name]
     length = math.dist(project.nodes[definition.start].coords, project.nodes[definition.end].coords)
     breaks = {0., length}
@@ -72,6 +72,14 @@ def member_breaks(project, name):
             breaks.add(load.position * length)
             if load.kind == "distributed":
                 breaks.add(load.end_position * length)
+    if result is not None:
+        solver = result.solver.members[name]
+        origin = (solver.i_node.X, solver.i_node.Y, solver.i_node.Z)
+        for sub in solver.sub_members.values():
+            for node in (sub.i_node, sub.j_node):
+                station = math.dist(origin, (node.X, node.Y, node.Z))
+                if all(abs(station-boundary) > max(length*1e-10, 1e-10) for boundary in breaks):
+                    breaks.add(station)
     return length, sorted(breaks)
 
 
@@ -80,7 +88,7 @@ def inspect_member(project, result, name, distance, side="right"):
     from .analysis import model_signature
     if result.model_signature != model_signature(project):
         raise ValueError("The model does not match this analyzed snapshot.")
-    length, boundaries = member_breaks(project, name)
+    length, boundaries = member_breaks(project, name, result)
     if isinstance(distance, bool) or not math.isfinite(distance) or not 0 <= distance <= length:
         raise ValueError("Inspection distance must be within the member.")
     if side not in ("left", "right"):
@@ -146,7 +154,7 @@ class SampleCache:
 
 def sampled_member(project, result, name):
     """Reuse immutable samples across viewport/detail/report and combo views."""
-    length, boundaries = member_breaks(project, name)
+    length, boundaries = member_breaks(project, name, result)
     member = project.members[name]
     cache = getattr(result.solver, "_pynitegui_samples", None)
     if cache is None:
@@ -227,6 +235,27 @@ def definition_tables(project):
                          load.angle if load.direction == "Angle" else "", load.elevation if load.direction == "Angle" else ""])
         return rows
     headers = ["Load", "Target", "Case", "Type", "Direction", "Magnitude / start", "Units", "Start fraction", f"End ({units.intensity})", "End fraction", "Azimuth (deg)", "Elevation (deg)"]
+    surfaces = (["Surface", "State", "Type / plane", "Positive pressure", "Thickness ("+units.length+")", "Case", "Normal pressure ("+units.pressure+")"],
+                [[name, "Coupled (experimental)" if project.surface_analysis_enabled else "Geometry only", mesh.element_type+" / "+mesh.plane,
+                  {"XY": "+Z", "XZ": "-Y", "YZ": "+X"}[mesh.plane] if mesh.generator == "rectangle" else "Element-local",
+                  units.to_display(mesh.thickness, "length"), case, units.to_display(value, "pressure")]
+                 for name, mesh in project.surfaces.items()
+                 for case, value in (project.surface_pressures.get(name) or {"None": 0.}).items()])
+    details = []
+    for name, mesh in project.surfaces.items():
+        values = [("Generator", mesh.generator, ""), ("Plane / axis", mesh.plane+" / "+mesh.axis, ""),
+                  ("Origin", ", ".join(f"{units.to_display(value, 'length'):.8g}" for value in mesh.origin), units.length),
+                  ("Target size", units.to_display(mesh.mesh_size, "length"), units.length),
+                  ("Elastic modulus", units.to_display(mesh.material.E, "stress"), units.stress),
+                  ("Poisson ratio", mesh.material.nu, ""),
+                  ("Weight density", units.to_display(mesh.material.rho, "density"), units.density),
+                  ("kx / ky modifiers", f"{mesh.kx_mod:g} / {mesh.ky_mod:g}", "")]
+        values.extend((key, value if key.startswith("num_") else units.to_display(value, "length"),
+                       "" if key.startswith("num_") else units.length) for key, value in mesh.parameters.items())
+        details.extend([name, *row] for row in values)
+    surface_tables = [("Surface Meshes and Normal Pressures", *surfaces),
+                      ("Surface Geometry and Material", ["Surface", "Property", "Value", "Units"], details)] if project.surfaces else []
     return [("Nodes and Supports (3D)", *nodes), ("Members and Assignments (3D)", *members), *shared[2:4],
+            *surface_tables,
             ("Manual Loads (Unfactored)", headers, loads(project.loads.values())),
             ("Generated Self-Weight (Unfactored)", headers, loads(project.self_weight_loads())), shared[-1]]

@@ -4,6 +4,18 @@ from .spatial_model import SpatialLoad, SpatialProject
 
 
 def example_project(key, unit_system="imperial"):
+    if key == "3d_slab_frame":
+        from .mesh_model import MeshDefinition
+        project = example_project("3d_space_frame", unit_system)
+        project.loads.clear()
+        project.set_load_case("Uplift", "Wind")
+        project.set_combination("Uplift", {"Uplift": 1}, "Wind")
+        project.surfaces["Floor"] = MeshDefinition(name="Floor", plane="XZ", origin=[0., 144., 0.],
+            parameters={"width": 240., "height": 180.}, mesh_size=30., thickness=6., unit_system=unit_system)
+        project.surface_pressures = {"Floor": {"Gravity": .001, "Uplift": -.0003}}
+        project.surface_analysis_enabled = True
+        project.validate()
+        return project
     project = SpatialProject(unit_system=unit_system)
     def load(target, direction, magnitude, **kwargs):
         name = project.next_name("L", project.loads)

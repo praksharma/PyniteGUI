@@ -50,6 +50,8 @@ def viewport_payload(window):
         members.append(definition)
     extent = max((max(n.coords[i] for n in project.nodes.values()) - min(n.coords[i] for n in project.nodes.values())
                   for i in range(3)), default=0) if project.nodes else 0
+    if result is not None and project.surfaces:
+        peak = max(peak, *(math.sqrt(sum(value*value for value in values[:3])) for values in result.displacements.values()))
     mode = window.deformation_mode.currentData()
     visible = result is not None and window.deformed_action.isChecked()
     window.deformation_mode.setEnabled(visible)
@@ -83,7 +85,7 @@ def viewport_payload(window):
         diagram["values"] = window.view.diagram_values.isChecked()
     from .spatial_surfaces import surface_payloads
     return {"nodes": nodes, "members": members,
-            "surfaceMeshes": surface_payloads(project) if window.surface_visibility_action.isChecked() else [],
+            "surfaceMeshes": surface_payloads(project, result, window.load_filter.currentData() if window.view.show_loads.isChecked() else False) if window.surface_visibility_action.isChecked() else [],
             "loads": loads if window.view.show_loads.isChecked() else [], "grid": project.grid, "colors": colors(),
             "revision": window.revision,
             "diagram": diagram,

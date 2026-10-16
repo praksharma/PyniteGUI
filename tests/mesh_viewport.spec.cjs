@@ -48,6 +48,22 @@ const server = http.createServer((request,response) => {
       const after=await page.evaluate(()=>window.pyniteViewer.state().camera);
       assert(Math.hypot(...after.map((value,i)=>value-before[i]))>1,`Orbit inactive for ${kind}`);
     }
+    const coupled=payloads.coupled;
+    assert(coupled.surfaceMeshes[0].nodes.some(node=>Math.abs(node.displacement[1])>.01),'Coupled slab displacement missing');
+    await page.setViewportSize({width:1920,height:1080});
+    await page.evaluate(payload=>{window.pyniteViewer.update(payload);window.pyniteViewer.fit();window.pyniteViewer.orient(0);},coupled);
+    await page.waitForTimeout(150);
+    const pixels=()=>page.evaluate(()=>{
+      const canvas=document.querySelector('canvas'),gl=canvas.getContext('webgl2');
+      const values=new Uint8Array(canvas.width*canvas.height*4);gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,values);
+      let hash=2166136261;for(let i=0;i<values.length;i+=16)hash=Math.imul(hash^values[i],16777619);return hash;
+    });
+    const deformedPixels=await pixels();
+    await page.screenshot({path:path.join(output,'coupled-desktop.png')});
+    await page.evaluate(payload=>window.pyniteViewer.update({...payload,deformed:false}),coupled);
+    await page.waitForTimeout(150);
+    assert.notEqual(await pixels(),deformedPixels,'Coupled slab deformation did not change canvas pixels');
+    await page.setViewportSize({width:1280,height:800});
     await page.evaluate(payload=>{
       window.pyniteViewer.update(payload);window.pyniteViewer.orient(0);
       window.selectedModel=null;

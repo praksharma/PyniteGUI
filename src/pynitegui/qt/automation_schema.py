@@ -56,7 +56,7 @@ def model_reference(dimension="2D"):
     return {
         "dimension": dimension, "input_units": "Canonical inch-kip regardless of display units; angles in degrees, rotations in radians.",
         "entities": entities,
-        "surface_geometry": "Spatial project version 19 includes a read-only surfaces map of versioned mesh recipes. Surface edits are native-only; surface nodes are separate from frame joints. Analysis is blocked while any uncoupled surface is present." if spatial else None,
+        "surface_geometry": "Spatial project version 20 includes read-only surfaces, surface_pressures (surface -> case -> kip/in2), and surface_analysis_enabled. Surface edits and opt-in are native-only. Enabled rectangular Quad surfaces share coincident solver nodes with frames; physical members subdivide at mesh nodes. Nonconforming/disconnected meshes and unsupported families block analysis. Disabled surfaces remain geometry-only and block analysis." if spatial else None,
         "supports": {
             "dof_order": ["DX", "DY", "DZ", "RX", "RY", "RZ"] if spatial else ["DX", "DY", "RZ"],
             "presets": {"free": [False]*(6 if spatial else 3), "pin": [True, True, True, False, False, False] if spatial else [True, True, False],

@@ -9,9 +9,10 @@ properties and loads, running analysis, interpreting results and using automatio
 !!! warning "Current development, not just the rc1 wheel"
     The manual follows the repository checkout. **1.0.0rc1** is the published
     prerelease; later surface-meshing and slab-placement work is available from
-    source, not that wheel. Main-model surfaces are currently **uncoupled geometry**,
-    and mixed slab/frame analysis is blocked. The separate rectangular plate tool
-    supports the documented experimental plate-only workflow.
+    source, not that wheel. Main-model rectangular Quad slabs offer **opt-in
+    experimental frame coupling** with conforming mesh connections; other surface
+    families remain geometry-only. The separate rectangular plate tool supports
+    its documented plate-only workflow.
 
 ## Start Here
 

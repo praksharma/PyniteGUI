@@ -102,12 +102,13 @@ and export only: boundary conditions, surface-normal pressure, membrane/shell
 analysis and curved result recovery need separate benchmarks. The planar pilot's
 in-plane restraints must not be applied to curved shells. Shear-wall and mat
 foundation workflows are specialized model builders, not additional mesh choices
-in this catalog, and remain pending. Coupled frame/surface analysis and MCP
-surface editing are also pending.
+in this catalog, and remain pending. Rectangular Quad meshes can now participate
+in the experimental coupled main-model workflow below; MCP surface editing is pending.
 
 ### Surfaces in the Main 3D Model
 
-This first integration stage is **geometry only**, not slab analysis. In a
+Surfaces start as **geometry only**; rectangular Quad slabs offer explicit
+experimental coupled analysis. In a
 **New 3D Frame** or an existing spatial project, choose **Tools > Surface Meshing
 (Experimental)**, or **Add Surface** in the unselected model inspector. Generate
 the mesh and choose **Apply to 3D Model**. All seven generators are supported.
@@ -149,31 +150,85 @@ geometry does not merge nodes or enable coupled analysis.
 
 The project owns mesh recipes, not additional frame joints. Generated nodes and
 four-node connectivity are regenerated deterministically and retained in a bounded
-geometry cache. A surface node coincident with a frame joint is **not connected**.
-Different meshes may overlap; no mesh-to-mesh merge, topology compatibility or
-load transfer is inferred. Editing/remeshing/deleting a surface does not alter
+geometry cache. With coupled analysis disabled, coincident nodes are not connected
+and different meshes may overlap for geometry exploration. Editing/remeshing/deleting a surface does not alter
 frame nodes, members, loads or supports. Surface material definitions remain
 recipe-local rather than references into the frame material library.
 
-Version 19 spatial project files include the recipes. Normal save/open,
+Version 20 spatial project files include recipes, coupled-analysis opt-in and
+surface pressures by load case. Version 19 geometry projects migrate with analysis
+disabled and no pressures. Normal save/open,
 autosave/recovery, unit changes, model-table edits, undo/redo and MCP frame edits
 retain them. Projects are limited to 16 surface recipes and 4,096 pre-opening
 elements in total, in addition to the existing 1,024-element per-mesh limit and
 generation checks. The separate `.pynitemesh` recipe files remain available.
 
-**Analysis is blocked while any surface is present**, even if hidden. Manual
-Analyze explains the limitation, live analysis does not schedule a solve, and
-MCP returns `surface_geometry_only`. Direct solver entry rejects the same model.
-This prevents an apparently successful frame-only solve that ignores the slab.
-MCP `read_model` includes the surface recipes and its schema documents their
-read-only status; batch editing cannot create, update or delete surfaces yet.
+**Coupled rectangular slabs (experimental):** select a surface and check
+**Coupled analysis (experimental)** in Properties. This project-wide option
+includes every surface; all must be Rectangle/Quad. Choose **Pressure case**,
+enter the signed uniform pressure and **Apply Pressure**. Zero removes that
+case's pressure. Positive pressure follows the displayed local normal: +Z for
+XY, -Y for XZ and +X for YZ. Pressure uses force per geometry-length squared
+(for example kN/m2), not the independent material stress units.
 
-Next gates are explicit shared-node ownership and interface topology, compatible
-frame segmentation, surface loads/restraints and drilling-rotation treatment,
-mixed-model benchmarks and surface result/deformed-mesh rendering. No slab load,
-self-weight, support, stress or coupled structural result is implied by this
-geometry stage. Use the separate plate workspace below for validated plate-only
-bending workflows.
+Try **File > Examples > 3D Frame and Slab - Coupled Pressure (Experimental)**,
+then Analyze. The 240 by 180 inch slab carries 0.001 kip/in2 downward, giving
+43.2 kip total and 10.8 kip vertical reaction at each base in the Gravity
+combination. This example replaces the frame-only gravity line loads, rather
+than double-counting the same slab load. Uplift is a separate negative-pressure case.
+
+At each solve, the adapter shares coincident surface/frame and conforming
+mesh-to-mesh vertices within **1e-8 inches**. No nearest-face ties, rigid offsets
+or proximity links are created. Frame centreline geometry must agree with the
+slab mid-surface. PyNite physical members subdivide at shell nodes along their
+axes, preserving the user member ID and load stations. Beam-axis collinearity
+also must satisfy the locked engine's stricter `1e-12*(1+L)` tolerance; near misses
+are rejected, not assumed connected. Original model nodes inside unsplit user
+members still require **Connect Intersections**.
+Axial-only truss members touching intermediate surface nodes must be split
+explicitly there; solver-only truss subdivision is rejected to preserve releases.
+Member diagrams and left/right station inspection retain the force jumps at
+mesh-to-beam connections instead of smoothing across them.
+
+Mesh vertices must match all frame joints touching a face. Use rectangle control
+lines at intermediate supports or beam lines; an opening cannot retain support
+where the surface has been removed. Hanging/nonmatching mesh nodes, overlapping
+coplanar faces, beams cutting faces without grid intersections, ambiguous joints
+and disconnected components block the solve. There is no automatic remeshing or
+node-to-face constraint. Refit/remesh after moving the frame, then analyze again.
+
+Slab supports come from existing shared model joints and their six-DOF restraints
+or springs, not hidden plate-pilot in-plane constraints. Quad membrane/bending
+stiffness and the engine's drilling approximation are retained; the adapter adds
+no surface restraints. The weak drilling approximation can produce global moment
+imbalance under lateral/membrane loading. **Every combination must pass independent
+force/moment equilibrium before any coupled snapshot is accepted.** Tolerances
+are not relaxed to accommodate drilling imbalance; failing models return an error,
+not apparently valid results. General lateral/membrane behaviour needs further
+validation. Material weight density contributes slab weight in global
+-Y when project self-weight is enabled, using the same case/factor as frame
+self-weight. Do not separately enter that weight as pressure unless intentional.
+
+Results include original and generated solver-node translations/rotations and
+support reactions in the tables/CSV, member forces, independently integrated
+force/moment equilibrium, and amplified slab mesh deformation. Generated
+`__S...` nodes are result-only, not editable project joints. The inspector shows
+the selected surface's peak nodal translation magnitude. Reports include surface
+pressure definitions and mesh outlines. Slab moment/stress contours, local
+element-force inspection, surface-specific edge-support editors, shear connectors,
+eccentric/composite beam-slab offsets and design checks remain pending.
+
+Manual, live, MCP and direct solver analysis use the same opt-in and element-family
+guards. With analysis disabled, any surface (even hidden) blocks a frame-only
+solve; MCP reports `surface_geometry_only`. With it enabled, the worker validates
+connectivity, solves the combined stiffness and checks finite results/stability
+and independent force/moment equilibrium for every combination.
+MCP reads retain recipes, pressures and opt-in, but their editing remains native-only.
+Nonrectangular generators and Rect elements remain geometry-only in the main
+model. The separate plate workspace below retains its independent Quad/Rect
+bending workflow. Initial regressions cover slab-to-column load transfer,
+combinations, self-weight, invalid interfaces and classical square-plate deflection;
+independently verify mesh convergence and engineering results before relying on them.
 
 ### Experimental Rectangular Plates
 
@@ -693,10 +748,12 @@ again. Closing the source window does not close the copy.
   choose additional views. Dense labels are omitted instead of overlapped; use
   numerical model/results tables for exact definitions and solver extrema.
 
-Current spatial scope is linear, unreleased frame members and bilateral axial-only
-trusses. No plates/shells, solids, nonlinear effects, manual frame member releases,
-or implicit physical-member segmentation
-are implemented in this mode yet. Multi-selection supports bulk assignments and
+Current spatial scope is linear, unreleased frame members, bilateral axial-only
+trusses and opt-in experimental rectangular Quad slabs. General curved-shell
+analysis, solids, nonlinear effects and manual frame member releases are not
+implemented. Coupled slabs use solver-only frame segmentation at mesh nodes;
+user-defined frame intersections still require explicit shared endpoints.
+Multi-selection supports bulk assignments and
 deletion; use Model Tables for coordinated geometry editing. Geometry requires explicit shared endpoints;
 overlaps, interior nodes, crossings without a shared joint and disconnected groups
 are rejected before analysis. Skew lines are not mistaken for intersecting members.
@@ -1441,7 +1498,7 @@ incorrect collection/entity shapes, unknown entity fields, invalid references,
 boolean/string/nonfinite numerical values, and duplicate JSON keys produce
 readable errors. JSON syntax errors include their line and column. Supported
 planar versions 1 through 15 are migrated without modifying the input; spatial
-versions 16/17/18/19 require an explicit `dimension: "3D"` marker and are validated separately.
+versions 16/17/18/19/20 require an explicit `dimension: "3D"` marker and are validated separately.
 Spatial version 17 adds global angular forces with azimuth (`angle`) and
 `elevation`; version 16 axis-based loads migrate without changing their physics.
 Unsupported future versions and angular fields in version 16 are rejected.
@@ -1451,6 +1508,10 @@ Spatial version 19 adds a required `surfaces` recipe map; versions 16/17/18
 migrate to an empty map and cannot contain a surface field. Surface recipes keep
 their own strict format/version metadata and are validated/generated before a
 project replaces the active model. Planar files remain at version 15.
+Spatial version 20 adds required `surface_analysis_enabled` (boolean) and
+`surface_pressures` (surface identifier to case-to-pressure map, canonical kip/in2).
+Older spatial files migrate with coupled analysis disabled and empty pressures.
+Surface rename/delete and load-case rename/delete preserve or guard these references.
 Spatial files retain XYZ, all six restraints/springs, and roll. Unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be
 distinct so load targets are unambiguous.
@@ -1489,8 +1550,10 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/released_member.py`: linear released-translation recovery using PyNite matrices.
 - `src/pynitegui/qt/analysis.py`: project-to-PyNite adapter and analysis results.
 - `src/pynitegui/qt/spatial_model.py`: separate six-DOF spatial definitions and format.
-- `src/pynitegui/qt/spatial_surfaces.py`: uncoupled project mesh ownership,
-  bounded immutable geometry cache and explicit analysis limitation.
+- `src/pynitegui/qt/spatial_surfaces.py`: project mesh ownership, immutable geometry
+  cache, explicit analysis opt-in and mesh result payloads.
+- `src/pynitegui/qt/surface_solver.py`: conforming rectangular Quad assembly,
+  pressure/self-weight loading and shared solver-node ownership.
 - `src/pynitegui/qt/spatial_analysis.py`: linear spatial solver and mechanism checks.
 - `src/pynitegui/qt/spatial_view.py` and `viewport3d/`: native controls/bridge and Three.js.
 - `src/pynitegui/qt/spatial_results.py`, `spatial_diagrams.py`: spatial sampling/exports/plots.
@@ -1598,7 +1661,8 @@ Generated Markdown/assets live under `.docs-build/docs`; built HTML lives under
 `assets/`, not maintained as duplicate binaries. Search and light/dark appearance
 are provided by Zensical; system fonts avoid runtime Google Fonts requests.
 The documentation describes the current checkout and explicitly distinguishes
-experimental surface geometry from validated frame and plate-only workflows.
+experimental surface geometry/coupled slabs from established frame and separate
+plate-only workflows.
 
 `.github/workflows/docs.yml` builds/checks pull requests, uploads the generated
 site and deploys only trusted pushes to `master` or manual runs on that branch.

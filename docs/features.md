@@ -57,7 +57,8 @@ elements and inclined supports are **not implemented GUI workflows**. See the
 | --- | --- |
 | Seven PyNite generators, Quad/Rect where supported, sizing, origins, modifiers and numbering | [Experimental mesh catalog](surfaces/meshing.md) |
 | Rectangle control lines/openings, recipe files, undo and connectivity export | [Mesh options](surfaces/meshing.md) |
-| Main-model surfaces, selection/edit/delete, saved recipes and reference-frame placement | [Uncoupled geometry only](surfaces/main-model.md) |
+| Main-model surfaces, selection/edit/delete, saved recipes and reference-frame placement | [Surface geometry](surfaces/main-model.md) |
+| Opt-in rectangular Quad/frame coupling, normal pressure cases, self-weight and deformed mesh | [Experimental coupled slabs](surfaces/main-model.md) |
 | Rectangle fitting to selected corners/perimeters or complete frame levels | [Slab placement](surfaces/main-model.md) |
 | Separate rectangular Quad/Rect bending tool, pressure/edge supports, contours and nodal CSV | [Experimental plate-only analysis](surfaces/plates.md) |
 | Four display-unit presets and canonical inch/kip storage | [Units](reference/units.md) |
@@ -66,6 +67,7 @@ elements and inclined supports are **not implemented GUI workflows**. See the
 | Software-rendering recovery, observed renderer diagnostics, NVIDIA/Wayland profiles | [Graphics](start/graphics.md), [Linux NVIDIA](start/nvidia.md) |
 | Optional localhost MCP server, permission groups, guarded atomic edits and background solve lifecycle | [MCP server](automation/mcp.md) |
 
-Coupled slab/frame analysis, general membrane/curved-shell analysis, arbitrary CAD
-meshing, shear-wall/mat workflows and MCP surface editing remain pending. A surface
-touching a frame member does not establish structural connectivity.
+General curved-shell analysis, slab stress contours, arbitrary CAD meshing,
+shear-wall/mat workflows and MCP surface editing remain pending. A touching
+surface is not connected unless coupled analysis is enabled and the mesh passes
+the shared-node/interface checks.

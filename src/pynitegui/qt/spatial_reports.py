@@ -76,6 +76,13 @@ def draw_report(ax, project, result, rows, kind, view, options):
     span = max(float(np.ptp(coordinates, axis=0).max()), project.grid)
     def project_points(points):
         return (np.asarray(points) - origin) @ basis.T * length_factor
+    if project.surfaces:
+        from .spatial_surfaces import surface_geometry
+        polygons = []
+        for definition in project.surfaces.values():
+            _, _, points, cells = surface_geometry(definition)
+            polygons.extend(project_points(np.asarray(points)[list(cell)]) for cell in cells)
+        ax.add_collection(PolyCollection(polygons, facecolors=LIGHT["accent"], edgecolors=LIGHT["member"], linewidths=.3, alpha=.18))
     index = QUANTITIES.index(kind)
     color = LIGHT["axial" if index in (0, 3) else "shear" if index in (1, 2) else "moment"]
     geometry, bounds = diagram_geometry(rows, kind, options.amplitude, span, options.side, options.sign)

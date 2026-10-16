@@ -36,6 +36,16 @@ if __name__ == "__main__":
     window.load_project(project)
     window.surface_visibility_action.setChecked(True)
     payloads["surface_only"] = {**viewport_payload(window), "labels": False, "plane": "XZ"}
+    import contextlib
+    import io
+    from pynitegui.qt.analysis import analyze
+    window.load_project(example_project("3d_slab_frame"))
+    with contextlib.redirect_stdout(io.StringIO()):
+        result = analyze(window.project)
+    window.analysis_revision = window.revision
+    window.analysis_finished(result, "")
+    window.deformed_action.setChecked(True)
+    payloads["coupled"] = {**viewport_payload(window), "labels": False, "plane": "XZ"}
     window.saved = window.project.to_dict()
     window.close()
     print(json.dumps(payloads, allow_nan=False))

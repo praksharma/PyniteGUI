@@ -130,8 +130,26 @@ function update(payload,dragPreview=false) {
   const nodes=new Map(data.nodes.map(n=>[n.name,n])), selected=(kind,name)=>data.selection.some(s=>s[0]===kind&&s[1]===name);
   if(data.showNodes!==false)drawFrame(data,r,group,picks);
   drawSurfaces(data,group);
-  for (const mesh of data.surfaceMeshes || []) drawSurfaces({...mesh,colors:c,surfaceName:mesh.name,
-    surfaceSelected:selected('surfaces',mesh.name)},group,picks);
+  for (const mesh of data.surfaceMeshes || []) {
+    drawSurfaces({...mesh,colors:c,surfaceName:mesh.name,surfaceSelected:selected('surfaces',mesh.name),
+      surfaceOpacity:data.deformed&&mesh.nodes.some(node=>node.displacement)?.2:1},group,picks);
+    if(data.deformed && mesh.nodes.some(node=>node.displacement))drawSurfaces({...mesh,colors:{...c,member:c.load,accent:c.load},
+      nodes:mesh.nodes.map(node=>({...node,position:node.position.map((v,i)=>v+(node.displacement?.[i]||0)*data.factor)})),surfaceFill:false},group);
+    if(mesh.pressures?.length || mesh.gravity){
+      const stride=Math.max(1,Math.ceil(mesh.surfaces.length/20));
+      const magnitude=(mesh.pressures||[]).reduce((sum,item)=>sum+item.value,0);
+      for(let i=0;i<mesh.surfaces.length;i+=stride){
+        const points=mesh.surfaces[i].map(n=>vector(mesh.nodes[n].position));
+        const centre=points.reduce((a,b)=>a.add(b),new THREE.Vector3()).multiplyScalar(.25);
+        const normal=points[1].clone().sub(points[0]).cross(points[3].clone().sub(points[0])).normalize();
+        const force=normal.clone().multiplyScalar(magnitude).add(new THREE.Vector3(0,mesh.gravity||0,0));
+        loadArrow(centre,force.clone().normalize(),force.length(),span*.06,['surfaces',mesh.name]);
+        const labels=(mesh.pressures||[]).map(p=>`${mesh.name}: ${(p.value*mesh.pressureFactor).toPrecision(4)} ${mesh.pressureUnit} | ${p.case}`);
+        if(mesh.gravity)labels.push(`${mesh.name} self-weight: ${(mesh.gravity*mesh.pressureFactor).toPrecision(4)} ${mesh.pressureUnit} | ${mesh.weightCase}`);
+        if(i===0)label(labels.join('; '),centre.clone().addScaledVector(force.clone().normalize(),-span*.09),c.load);
+      }
+    }
+  }
   for(const member of data.members) {
     const a=vector(nodes.get(member.start).position),b=vector(nodes.get(member.end).position);
     label(member.name+(member.kind==='truss'?' [truss]':''),a.clone().lerp(b,.5).add(new THREE.Vector3(0,span*.023,0)),c.label);

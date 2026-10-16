@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Opt-in experimental rectangular Quad slab/frame analysis: coincident six-DOF
+  solver nodes, physical-member subdivision, explicit conformity/overlap and
+  connectivity checks, pressure cases/combinations, slab self-weight and global
+  equilibrium. Rejects results if any combination fails independent balance,
+  including lateral moment imbalance from the engine's drilling approximation.
+  Adds pressure controls, deformed meshes, generated-node results,
+  report context and a coupled example. Spatial format 20 migrates older files
+  with coupling disabled. Curved/Rect main-model analysis, stress contours and
+  MCP surface editing remain pending.
 - Terminal Ctrl+C now requests normal Qt shutdown instead of repeatedly raising
   KeyboardInterrupt inside timer callbacks. Preserves save/cancel prompts,
   open modal editors and existing analysis/server cleanup.

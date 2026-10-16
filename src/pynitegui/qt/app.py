@@ -802,7 +802,7 @@ class MainWindow(QMainWindow):
         self.surface_visibility_action = self.action("Surface Geometry", lambda: self.view.redraw())
         self.surface_visibility_action.setCheckable(True)
         self.surface_visibility_action.setChecked(True)
-        self.surface_visibility_action.setToolTip("Show uncoupled surface geometry; hiding it does not enable analysis")
+        self.surface_visibility_action.setToolTip("Show surface meshes; hiding them does not remove them from analysis")
         self.menuBar_view.addAction(self.surface_visibility_action)
         self.menuBar_view.addSeparator()
         self.tree = QTreeWidget()
@@ -862,7 +862,7 @@ class MainWindow(QMainWindow):
         self.mode_actions[mode].setChecked(True)
         self.view.setDragMode(QGraphicsView.DragMode.ScrollHandDrag if mode == "pan" else QGraphicsView.DragMode.NoDrag)
         self.view.setCursor(Qt.CursorShape.CrossCursor if mode == "draw" else Qt.CursorShape.ArrowCursor)
-        surface_state = " | Uncoupled surfaces: geometry only" if getattr(self.project, "surfaces", {}) else ""
+        surface_state = (" | Coupled slabs (experimental)" if self.project.surface_analysis_enabled else " | Uncoupled surfaces: geometry only") if getattr(self.project, "surfaces", {}) else ""
         self.statusBar().showMessage(f"{mode.capitalize()} | {getattr(self.project, 'dimension', '2D')} frame | {self.project.units.summary}{surface_state}")
 
     def edit(self, title, mutate):
@@ -916,7 +916,10 @@ class MainWindow(QMainWindow):
         self.diagrams_action.setEnabled(False)
         self.deformed_action.setChecked(False)
         self.refresh()
-        state = "Uncoupled surfaces: analysis unavailable" if getattr(self.project, "surfaces", {}) else "Results require analysis"
+        state = "Results require analysis"
+        if getattr(self.project, "surfaces", {}):
+            from .spatial_surfaces import surface_analysis_issue
+            state = surface_analysis_issue(self.project) or "Coupled slab results require analysis"
         self.statusBar().showMessage(f"Model updated | {state} | {self.project.units.summary}")
         self.live_analysis.schedule()
 
@@ -1698,12 +1701,13 @@ class MainWindow(QMainWindow):
     def run_analysis(self, *, automatic=False, automation=False):
         if self.thread is not None:
             return
-        if getattr(self.project, "surfaces", {}):
-            from .spatial_surfaces import SURFACE_ANALYSIS_LIMIT
+        from .spatial_surfaces import surface_analysis_issue
+        surface_issue = surface_analysis_issue(self.project)
+        if surface_issue:
             self.live_analysis.discard()
             self.statusBar().showMessage("Analysis unavailable: uncoupled surface geometry")
             if not automatic:
-                QMessageBox.information(self, "Surface Geometry", SURFACE_ANALYSIS_LIMIT)
+                QMessageBox.information(self, "Surface Analysis", surface_issue)
             return
         self.live_analysis.discard()
         self.analysis_automatic = automatic

@@ -41,11 +41,17 @@ To add a rectangular surface in a source checkout, open **Tools > Surface Meshin
 The rectangle defaults to the highest detected complete frame level. Check the
 reference frame in the preview and choose **Apply to 3D Model**.
 
-!!! warning "A touching slab is not a connected slab"
-    Main-model surfaces are geometry-only. Their nodes are not merged with frame
-    joints, and analysis is intentionally blocked while they are present.
-    Use the [separate plate tool](../surfaces/plates.md) for its supported plate-only
-    bending workflow. See [slab placement](../surfaces/main-model.md) for the exact limits.
+To try combined slab/frame analysis, open **File > Examples > 3D Frame and Slab -
+Coupled Pressure (Experimental)**. Analyze the Gravity combination: each base's
+vertical reaction should be **10.8 kip**, balancing **43.2 kip** slab pressure.
+Enable Deformed to see the slab and beams together.
+
+!!! warning "Coupling must be explicit and conforming"
+    On your own model, select the rectangular Quad surface, enable **Coupled
+    analysis (experimental)** and apply pressure by load case. Merely touching
+    does not establish a connection: shared mesh vertices and valid beam/grid
+    alignment are required. Other surface families remain geometry-only.
+    See [coupled slab limits](../surfaces/main-model.md) before using this workflow.
 
 ## Build Your Own
 

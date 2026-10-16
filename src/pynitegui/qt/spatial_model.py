@@ -67,17 +67,23 @@ class SpatialLoad(Load):
 class SpatialProject(Project):
     dimension: str = "3D"
     surfaces: dict = field(default_factory=dict)
+    surface_analysis_enabled: bool = False
+    surface_pressures: dict = field(default_factory=dict)
 
     def to_dict(self):
-        return {"version": 19, "units": "in-kip", **asdict(self),
+        return {"version": 20, "units": "in-kip", **asdict(self),
                 "surfaces": {name: mesh.to_dict() for name, mesh in self.surfaces.items()}}
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
+        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
             raise ValueError("Unsupported spatial project version, dimension, or units.")
-        if (data["version"] < 19 and "surfaces" in data) or (data["version"] == 19 and not isinstance(data.get("surfaces"), dict)):
+        if (data["version"] < 19 and "surfaces" in data) or (data["version"] >= 19 and not isinstance(data.get("surfaces"), dict)):
             raise ValueError("Surface geometry requires the version 19 spatial schema.")
+        if data["version"] < 20 and (data.get("surface_analysis_enabled", False) is not False or data.get("surface_pressures", {})):
+            raise ValueError("Coupled surface analysis requires spatial version 20.")
+        if data["version"] == 20 and not {"surface_analysis_enabled", "surface_pressures"} <= data.keys():
+            raise ValueError("Missing coupled surface analysis fields.")
         unknown = data.keys() - {f.name for f in fields(cls)} - {"version", "units"}
         if unknown:
             raise ValueError("Unknown spatial project fields: " + ", ".join(sorted(unknown)) + ".")
@@ -85,6 +91,8 @@ class SpatialProject(Project):
         metadata = {**data, "version": 15, "nodes": {}, "members": {}, "loads": {}}
         metadata.pop("dimension")
         metadata.pop("surfaces", None)
+        metadata.pop("surface_analysis_enabled", None)
+        metadata.pop("surface_pressures", None)
         shared = Project.from_dict(metadata)
         result = cls(**{f.name: getattr(shared, f.name) for f in fields(Project)})
         for key, constructor in (("nodes", SpatialNode), ("members", SpatialMember), ("loads", SpatialLoad)):
@@ -105,6 +113,8 @@ class SpatialProject(Project):
             setattr(result, key, entities)
         from .mesh_model import MeshDefinition
         result.surfaces = {name: MeshDefinition.from_dict(value) for name, value in data.get("surfaces", {}).items()}
+        result.surface_analysis_enabled = data.get("surface_analysis_enabled", False)
+        result.surface_pressures = data.get("surface_pressures", {})
         result.validate()
         return result
 
@@ -212,12 +222,25 @@ class SpatialProject(Project):
         return loads
 
     def self_weight_total(self):
-        return -sum(load.magnitude if load.target in self.nodes else load.magnitude *
+        total = -sum(load.magnitude if load.target in self.nodes else load.magnitude *
                     math.dist(self.nodes[self.members[load.target].start].coords,
                               self.nodes[self.members[load.target].end].coords) for load in self.self_weight_loads())
+        if self.surfaces and self.surface_analysis_enabled and self.self_weight_case is not None:
+            from .surface_solver import face_weights
+            from .spatial_surfaces import surface_geometry
+            for definition in self.surfaces.values():
+                _, _, points, cells = surface_geometry(definition)
+                area = math.fsum(face_weights(np.asarray(points)[list(cell)])[0] for cell in cells)
+                total += area*definition.thickness*definition.material.rho*self.self_weight_factor
+        return total
 
     def inactive_rotations(self):
         frame_nodes = {node for member in self.members.values() if member.kind == "frame" for node in (member.start, member.end)}
+        if self.surfaces and self.surface_analysis_enabled:
+            from .spatial_surfaces import surface_geometry
+            points = [point for mesh in self.surfaces.values() for point in surface_geometry(mesh)[2]]
+            frame_nodes.update(name for name, node in self.nodes.items()
+                               if any(math.dist(node.coords, point) <= 1e-8 for point in points))
         connected = {node for member in self.members.values() for node in (member.start, member.end)}
         return {(name, dof) for name in connected - frame_nodes for index, dof in enumerate(DOFS[3:], 3)
                 if not self.nodes[name].restraints[index] and not self.nodes[name].springs[index]}
@@ -288,8 +311,10 @@ class SpatialProject(Project):
     def analysis_topology_issues(self):
         issues = []
         if self.surfaces:
-            from .spatial_surfaces import SURFACE_ANALYSIS_LIMIT
-            issues.append(SURFACE_ANALYSIS_LIMIT)
+            from .spatial_surfaces import surface_analysis_issue
+            issue = surface_analysis_issue(self)
+            if issue:
+                issues.append(issue)
         for name, member in self.members.items():
             for node in self.nodes.values():
                 if node.name not in (member.start, member.end) and self.member_position(name, *node.coords) is not None:
@@ -317,6 +342,25 @@ class SpatialProject(Project):
                     pending.extend(adjacency[node] - group)
             remaining -= group
             groups.append(", ".join(sorted(group)))
-        if len(groups) > 1:
+        # Coupled connectivity includes shell edges and physical-member mesh
+        # nodes, and is checked by attach_surfaces before any solver call.
+        if len(groups) > 1 and not (self.surfaces and self.surface_analysis_enabled):
             issues.append("Disconnected node groups: " + "; ".join(groups) + ".")
         return issues
+
+    def delete(self, kind, name):
+        super().delete(kind, name)
+        if kind == "surfaces":
+            self.surface_pressures.pop(name, None)
+
+    def set_load_case(self, name, previous=None):
+        super().set_load_case(name, previous)
+        if previous is not None and previous != name:
+            for pressures in self.surface_pressures.values():
+                if previous in pressures:
+                    pressures[name] = pressures.pop(previous)
+
+    def delete_load_case(self, name):
+        if any(name in pressures for pressures in self.surface_pressures.values()):
+            raise ValueError("Reassign surface pressures before deleting their load case.")
+        super().delete_load_case(name)
