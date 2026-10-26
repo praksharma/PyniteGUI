@@ -55,6 +55,14 @@ class SparseStabilityTests(unittest.TestCase):
         self.assertIn("N201 RZ", message)
         self.assertNotIn("N1 DX", message)
 
+    def test_effective_sparse_stiffness_detects_negative_mode_far_from_zero(self):
+        model, matrix = sparse_model()
+        matrix[1201, 1205] = matrix[1205, 1201] = 3
+        with patch.object(csr_matrix, "toarray", side_effect=AssertionError("Dense matrix conversion")):
+            message = stiffness_issue(model, stiffness=matrix.tocsr())
+        self.assertIn("N201 DY", message)
+        self.assertIn("N201 RZ", message)
+
     def test_zero_stiffness_is_localized_before_spectral_solve(self):
         model, matrix = sparse_model()
         matrix[1205, 1205] = 0
@@ -104,6 +112,16 @@ class SparseStabilityTests(unittest.TestCase):
 
 
 class AnalysisJobTests(unittest.TestCase):
+    def test_p_delta_worker_returns_picklable_method_labelled_snapshot(self):
+        from test_qt_nonlinear import column, reference
+        project, tip, compression = column()
+        phases = []
+        result = execute_analysis(project, phases.append, Event())
+        self.assertEqual(result.analysis_method, "p_delta")
+        self.assertIsNone(result.solver._analysis_progress)
+        self.assertAlmostEqual(result.displacements[tip][0]/reference(project, compression), 1, places=5)
+        self.assertTrue(any("P-Delta" in phase for phase in phases))
+
     @classmethod
     def setUpClass(cls):
         cls.app = QApplication.instance() or QApplication([])

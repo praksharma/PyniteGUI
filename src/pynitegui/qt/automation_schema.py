@@ -57,14 +57,16 @@ def model_reference(dimension="2D"):
     settings = {"unit_system": {"enum": list(UNIT_SYSTEMS)}, "grid": "positive inches",
                 "default_material": "existing material ID", "default_section": "existing section ID",
                 "default_load_case": "existing case ID", "self_weight_case": "existing case ID or null",
-                "self_weight_factor": "positive finite multiplier"}
+                "self_weight_factor": "positive finite multiplier",
+                "analysis_method": {"enum": ["linear", "p_delta"], "default": "linear",
+                    "description": "Elastic analysis. p_delta solves each combination independently with geometric stiffness. Frame-only: no surfaces, trusses or released translations. Not steel pushover or concrete plasticity."}}
     if spatial:
         entities["surfaces"] = surface_reference(entities["materials"])
         entities["surface_pressures"] = {"type": "object", "additionalProperties": {"type": "number", "minimum": -1e6, "maximum": 1e6},
             "description": "Collection key is an existing surface ID. put replaces its entire case -> signed pressure map (kip/in2); delete removes the map. Cases must exist. Remove assignments explicitly when deleting a surface/case."}
         settings["surface_analysis_enabled"] = {"type": "boolean", "default": False,
             "description": "Experimental coupled analysis opt-in. When true, the complete candidate must contain only conforming, connected rectangular Quad surfaces. No solve occurs during editing."}
-        surface_info = "Spatial v20: surfaces and surface_pressures are editable via put/delete; surface_analysis_enabled via settings/set. Recipes use canonical inches/kip, pressure kip/in2. Geometry-only surfaces block analysis. Coupled candidate topology is checked once after all operations; stability and independent equilibrium remain analysis gates."
+        surface_info = "Spatial v22 (legacy v20 coupling): surfaces and surface_pressures are editable via put/delete; surface_analysis_enabled via settings/set. Recipes use canonical inches/kip, pressure kip/in2. Geometry-only surfaces block analysis. Coupled candidate topology is checked once after all operations; stability and independent equilibrium remain analysis gates."
     return {
         "dimension": dimension, "input_units": "Canonical inch-kip regardless of display units; angles in degrees, rotations in radians.",
         "entities": entities,

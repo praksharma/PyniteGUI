@@ -112,7 +112,7 @@ def export_envelope_csv(path, project, result, combinations, source="Untitled"):
                 json.dumps(list(combinations), ensure_ascii=True), project.units.label,
                 json.dumps({name: result.solver.load_combos[name].factors for name in combinations}, ensure_ascii=True),
                 project.self_weight_case or "", project.self_weight_factor if project.self_weight_case is not None else "",
-                "Independent extrema; local member axes; N positive compression; first selected combination wins ties")
+                "Independent extrema; local member axes; N positive compression; first selected combination wins ties", result.method_label)
     path, temporary = Path(path), None
     try:
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", newline="", dir=path.parent,
@@ -120,7 +120,7 @@ def export_envelope_csv(path, project, result, combinations, source="Untitled"):
             temporary = Path(stream.name)
             writer = csv.writer(stream)
             writer.writerow(("Source", "Analysis ID", "Analyzed (UTC)", "Model signature", "Selected combinations",
-                             "Unit system", "Combination factors", "Self-weight case", "Self-weight factor", "Convention", *HEADERS))
+                             "Unit system", "Combination factors", "Self-weight case", "Self-weight factor", "Convention", "Analysis method", *HEADERS))
             writer.writerows([csv_text(value) for value in (*metadata, *row)] for row in display_rows(project, rows))
             stream.flush()
             os.fsync(stream.fileno())

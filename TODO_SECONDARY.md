@@ -190,10 +190,12 @@ an audit of Stabileo's engineering calculations. PRO is labelled beta.
   behaviour via member flags and iterative `analyze`, not `analyze_linear`.
   Verify unloaded joint rotations and do not silently apply transverse member
   loads to an axial-only idealization. Primary owner: truss elements in TODO.md.
-- [ ] **First-order versus P-Delta (Adapter).** Expose `analyze_PDelta` as a
-  separate method with convergence feedback, method-labelled snapshots, and
-  benchmark comparisons. Evaluate each factored combination as its own solve;
-  do not superpose nonlinear results. This is not an eigenvalue buckling tool.
+- [x] **First-order versus P-Delta (Adapter).** Saved linear/P-Delta elastic
+  choice for frame-only 2D/3D models, actual solve phases, method-labelled
+  snapshots/exports/MCP, effective-stiffness checks and analytical beam-column
+  benchmarks. Each complete combination is solved independently. Slabs, trusses
+  and released translations are excluded; this is not a buckling-load finder
+  or material-plastic solver. Steel pushover/RC follow-ups are owned by TODO.md.
 - [ ] **Free-body and stiffness inspection (Adapter).** Show solved member-end
   forces, applied loads, reactions, and equilibrium residuals. An optional
   educational inspector can read PyNite's `Ke`, `FER`, `P`, `D`, and member

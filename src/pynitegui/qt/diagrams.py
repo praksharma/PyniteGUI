@@ -412,7 +412,7 @@ class DiagramDialog(QDialog):
             else:
                 status = "Matches current editor model"
         revision = f" | Editor revision {self.model_revision}" if self.model_revision is not None else ""
-        self.snapshot_label.setText(f"Analysis {self.result.snapshot_id} | {self.result.analyzed_at} (UTC)\nModel {self.result.model_signature[:12]}{revision} | {status}")
+        self.snapshot_label.setText(f"Analysis {self.result.snapshot_id} | {self.result.method_label} | {self.result.analyzed_at} (UTC)\nModel {self.result.model_signature[:12]}{revision} | {status}")
         self.snapshot_label.setToolTip(self.source)
         self.setWindowTitle(f"Force Diagrams | {self.result.combination} | {self.result.snapshot_id}")
 

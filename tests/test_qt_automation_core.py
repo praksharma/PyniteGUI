@@ -60,6 +60,29 @@ class AutomationCoreTests(unittest.TestCase):
         self.permissions.set_group("Model edits", True)
         return self.invoke("apply_batch", **{**self.identity(), **guard}, operations=operations)
 
+    def test_analysis_method_batch_schema_results_and_unsupported_gate(self):
+        from test_qt_nonlinear import column
+        project, _, _ = column()
+        project.analysis_method = "linear"
+        self.window.load_project(project)
+        response = self.edits([{"op": "set", "collection": "settings", "value": {"analysis_method": "p_delta"}}])
+        self.assertTrue(response["ok"], response)
+        schema = self.invoke("read_schema", session_id=self.window.project_session)["data"]["schema"]
+        self.assertEqual(schema["settings"]["analysis_method"]["enum"], ["linear", "p_delta"])
+        self.permissions.set_group("Analysis", True)
+        started = self.invoke("run_analysis", **self.identity())
+        self.assertTrue(started["ok"], started)
+        self.wait_until(lambda: self.window.thread is None)
+        status = self.invoke("analysis_status", session_id=self.window.project_session)["data"]
+        self.assertEqual(status["snapshot"]["analysis_method"], "p_delta")
+        results = self.invoke("read_results", session_id=self.window.project_session, kind="nodes")
+        self.assertEqual(results["data"]["method_label"], "P-Delta elastic")
+        self.window.project.members["M1"].release_end_x = True
+        with patch.object(self.window, "run_analysis") as run:
+            rejected = self.invoke("run_analysis", **self.identity())
+        self.assertEqual(rejected["error"]["code"], "unsupported_analysis")
+        run.assert_not_called()
+
     def test_new_project_session_rejects_old_job_even_with_identical_geometry(self):
         self.window.analysis_revision = self.window.revision
         self.window.analysis_job_session = self.window.project_session

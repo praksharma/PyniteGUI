@@ -238,7 +238,7 @@ class ResultsPanel(QWidget):
             return
         result = self.result
         qualifier = "Analysis" if state == "Current" else "Showing previous analysis"
-        self.snapshot.setText(f"{state} | {qualifier} {result.snapshot_id} | {result.combination} | {self.project.units.summary}")
+        self.snapshot.setText(f"{state} | {qualifier} {result.snapshot_id} | {result.combination} | {result.method_label} | {self.project.units.summary}")
         self.snapshot.setToolTip(f"{detail}\nAnalyzed (UTC): {result.analyzed_at}\nModel signature: {result.model_signature}".strip())
 
     def update_equilibrium(self):
@@ -248,9 +248,12 @@ class ResultsPanel(QWidget):
         origin = ", ".join(f"{units.to_display(value, 'length'):.6g}" for value in
                            (check.origin if self.result.spatial else check.origin[:2]))
         outcome = "Within numerical tolerance" if check.passed else "Outside numerical tolerance"
+        basis = ("Global force components" if check.note else
+                 f"Global components; moments about {check.origin_node} ({origin}) {units.length}")
         self.equilibrium_summary.setText(
-            f"{outcome} | Global components; moments about {check.origin_node} ({origin}) {units.length}.\n"
-            "Includes factored manual loads, self-weight and all support reactions. Balance alone does not verify structural design.")
+            f"{outcome} | {basis}.\n"
+            "Includes factored manual loads, self-weight and all support reactions. Balance alone does not verify structural design."
+            + ("\n" + check.note if check.note else ""))
         self.equilibrium_summary.setToolTip(
             f"Tolerance = absolute floor + {RELATIVE_TOLERANCE:g} × sum of absolute load/reaction contributions.\n"
             f"Canonical absolute floors: {FORCE_TOLERANCE:g} kip; {MOMENT_TOLERANCE:g} kip-in.\n"

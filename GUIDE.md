@@ -314,6 +314,12 @@ generator geometry, nonblank desktop pixels, fit/orbit and bounded rebuilds.
 
 ### Optional MCP Automation
 
+MCP `settings/set` accepts `analysis_method: "linear" | "p_delta"`. Read the schema
+before editing. `run_analysis` uses this saved choice and returns
+`unsupported_analysis` for P-Delta models containing unsupported entities.
+`analysis_status.snapshot` and `read_results` include `analysis_method` and
+`method_label`, alongside the snapshot identity. Poll normally until the job stops.
+
 Install the optional extra and launch with it from the repository:
 
 ```sh
@@ -793,10 +799,10 @@ again. Closing the source window does not close the copy.
   choose additional views. Dense labels are omitted instead of overlapped; use
   numerical model/results tables for exact definitions and solver extrema.
 
-Current spatial scope is linear, unreleased frame members, bilateral axial-only
-trusses and opt-in experimental rectangular Quad slabs. General curved-shell
-analysis, solids, nonlinear effects and manual frame member releases are not
-implemented. Coupled slabs use solver-only frame segmentation at mesh nodes;
+Current spatial scope includes linear elastic frames/trusses and opt-in
+experimental rectangular Quad slabs, plus P-Delta elastic analysis of frame-only
+models. General curved-shell analysis, solids, material plasticity and manual
+spatial frame member releases are not implemented. Coupled slabs use solver-only frame segmentation at mesh nodes;
 user-defined frame intersections still require explicit shared endpoints.
 Multi-selection supports bulk assignments and
 deletion; use Model Tables for coordinated geometry editing. Geometry requires explicit shared endpoints;
@@ -1135,6 +1141,49 @@ This panel does not query the compositor's physical GPU or a driver package vers
   Edit > Grid changes the drawing grid spacing.
 ### Analysis and Force Diagrams
 
+**Edit > Analysis Method** (also in the Properties menu) selects **Linear elastic**
+(default) or **P-Delta elastic** for the project. This is saved, undoable and shared
+by manual, live and MCP analysis. Changing the method invalidates results. The
+Analyze tooltip, result snapshot, diagram windows, CSV and printable result reports
+identify the solved method; changing combinations preserves it.
+
+P-Delta is available for 2D/3D **frame-only** models, including bilateral support
+springs and supported planar moment releases. Coupled/uncoupled surfaces, truss
+members and released member translations are rejected for this method. The
+[PyNite procedure](https://pynite.readthedocs.io/en/latest/PDelta.html) preloads
+**each complete combination independently**, then adds its geometric stiffness;
+nonlinear combinations are never made by superposing solved cases. Progress names
+the combination and geometric-stiffness/second-order phases. This adapter exposes
+no artificial convergence percentage or displacement tolerance: the locked engine
+uses an elastic preload and a geometric-stiffness solve for bilateral frames.
+Failure, nonfinite values or nonpositive effective stiffness reject the snapshot.
+The usual worker cancellation and stale-reply checks apply throughout.
+
+Use explicit intermediate joints along slender members and compare refinements to
+resolve member curvature. Loads retain their defined directions. This is elastic
+second-order frame analysis, not a general large-rotation solver, a buckling-load
+finder or material plasticity. Concrete frames use only the assigned elastic
+stiffness; no concrete cracking, reinforcement yielding or plastic slab effects
+are introduced. The equilibrium tab retains the usual force residual/tolerance
+checks but omits undeformed-geometry moment balance for P-Delta and explains why.
+PyNite's approximate second-order force recovery can leave force residuals above
+those strict numerical tolerances; these remain visible rather than being hidden
+by relaxed tolerances. Inspect them and refine the model. Numerical envelopes
+compare independently solved combinations, never combine their responses.
+
+**Plastic behaviour remains a separate pending workflow.** The locked engine has
+`add_steel_section` and `analyze_pushover`, requiring yield strength and plastic
+section moduli for its steel interaction surface. A usable GUI must also define
+preload/push patterns, load increments, displacement stop conditions, accepted-step
+histories and capacity curves with benchmarks. Its public pushover uses first-order
+preload and push steps; combining it with P-Delta is not supported. Plasticity acts
+at member nodes and its interaction equation targets steel I sections. It is not
+a reinforced-concrete constitutive model. Nonlinear plate/Quad behaviour is excluded
+by [upstream pushover limitations](https://pynite.readthedocs.io/en/latest/pushover.html).
+Concrete cracking, reinforcement layouts, yielding and slab plasticity need a
+separate validated formulation/solver; concrete material presets alone do not
+supply these capabilities.
+
 - Use Pan (P) to drag the view, the mouse wheel to zoom, and Fit (F) to frame it.
 - Analyze (F5) runs PyNite in an isolated worker process supervised off the GUI
   thread. The status bar shows a busy indicator and actual phases: checking the
@@ -1236,6 +1285,9 @@ This panel does not query the compositor's physical GPU or a driver package vers
   their own pages. Reports can be printed or saved to PDF through the print
   dialog. Cancelling content selection does not open preview or change the model.
 ### Result Snapshots
+
+Snapshots also retain the solved analysis method. Switching units or combinations
+preserves the method; changing the project method requires a new solve.
 
 - Diagram windows show their analysis ID, analysis time, original editor revision,
   and whether their model matches the current editor. A new analysis of the same
@@ -1374,8 +1426,9 @@ and semi-rigid member-end springs are not implemented. Point loads support globa
 MZ, and signed angled forces. Member point/distributed forces additionally
 support local x/y and member-relative angles. Nodal forces use global axes only;
 distributed moments are not implemented.
-Loads belong to named cases. User-defined combinations superpose those cases
-with finite factors using linear elastic analysis. The initial project has
+Loads belong to named cases. User-defined combinations apply finite case factors.
+Linear elastic analysis uses superposition; P-Delta elastic solves each complete
+combination independently with its own axial-load-dependent geometric stiffness. The initial project has
 Case 1 and a Service combination at factor 1. No design-code factors or
 envelopes are generated automatically.
 ### Automatic Self-Weight
@@ -1459,8 +1512,12 @@ not a unique identification of every defective member. Very large stiffness
 contrasts can cause poor conditioning without a physical mechanism. An incomplete
 sparse check does not certify the model: a found mechanism is reported, otherwise
 results are rejected with a convergence message. Nonfinite-result checks remain
-active. These are linear-model checks, not nonlinear stability verification;
-sparse factorization can still consume substantial memory for large models.
+active. P-Delta additionally checks the actual effective stiffness used for each
+combination before the second-order solve. For larger systems it targets the
+smallest algebraic eigenvalue, since an indefinite stiffness can have modes far
+from zero. Nonpositive effective stiffness rejects the result; this is not a
+buckling load-factor calculation or a material-plastic stability assessment.
+Sparse factorization can still consume substantial memory for large models.
 
 ### Material Library Reference
 
@@ -1520,7 +1577,7 @@ Versions 1 through 4 migrate existing loads into Case 1 with the original
 Service combination. Version 3 point loads and version 4 distributed loads
 remain supported. Versions 1 through 5 migrate to rigid member ends.
 Versions 1 through 6 open in Imperial, preserving their original inch-kip values.
-New 2D saves use version 15 and retain material/section definitions, member
+New 2D saves use version 21 and retain material/section definitions, member
 assignments, load cases, combination factors, the default load case, and each
 member end moment release, plus the selected unit system, point-load angle,
 and custom support restraints. Version 10 adds local force directions and
@@ -1542,8 +1599,8 @@ Malformed files are rejected before replacing the active project. Missing fields
 incorrect collection/entity shapes, unknown entity fields, invalid references,
 boolean/string/nonfinite numerical values, and duplicate JSON keys produce
 readable errors. JSON syntax errors include their line and column. Supported
-planar versions 1 through 15 are migrated without modifying the input; spatial
-versions 16/17/18/19/20 require an explicit `dimension: "3D"` marker and are validated separately.
+planar versions 1 through 15 and 21 are supported; legacy files are migrated without modifying the input; spatial
+versions 16/17/18/19/20/22 require an explicit `dimension: "3D"` marker and are validated separately.
 Spatial version 17 adds global angular forces with azimuth (`angle`) and
 `elevation`; version 16 axis-based loads migrate without changing their physics.
 Unsupported future versions and angular fields in version 16 are rejected.
@@ -1552,11 +1609,14 @@ inputs and migrate without changing their geometry, supports or loads.
 Spatial version 19 adds a required `surfaces` recipe map; versions 16/17/18
 migrate to an empty map and cannot contain a surface field. Surface recipes keep
 their own strict format/version metadata and are validated/generated before a
-project replaces the active model. Planar files remain at version 15.
+project replaces the active model.
 Spatial version 20 adds required `surface_analysis_enabled` (boolean) and
 `surface_pressures` (surface identifier to case-to-pressure map, canonical kip/in2).
 Older spatial files migrate with coupled analysis disabled and empty pressures.
 Surface rename/delete and load-case rename/delete preserve or guard these references.
+Planar version 21 and spatial version 22 add required `analysis_method`
+(`linear` or `p_delta`). Earlier files default to linear elastic and cannot silently
+contain a second-order setting. New saves use these versions, including linear models.
 Spatial files retain XYZ, all six restraints/springs, and roll. Unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be
 distinct so load targets are unambiguous.
@@ -1592,6 +1652,7 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/model.py`: validated, serializable project data.
 - `src/pynitegui/qt/units.py`: canonical-to-display conversion factors and presets.
 - `src/pynitegui/qt/annotations.py`: shared support/release symbols and factored load context.
+- `src/pynitegui/qt/analysis_method.py`: saved elastic analysis choices, supported scope and native settings.
 - `src/pynitegui/qt/released_member.py`: linear released-translation recovery using PyNite matrices.
 - `src/pynitegui/qt/analysis.py`: project-to-PyNite adapter and analysis results.
 - `src/pynitegui/qt/spatial_model.py`: separate six-DOF spatial definitions and format.
@@ -1599,7 +1660,7 @@ and concentrated moments include both sides of each discontinuity.
   cache, explicit analysis opt-in and mesh result payloads.
 - `src/pynitegui/qt/surface_solver.py`: conforming rectangular Quad assembly,
   pressure/self-weight loading and shared solver-node ownership.
-- `src/pynitegui/qt/spatial_analysis.py`: linear spatial solver and mechanism checks.
+- `src/pynitegui/qt/spatial_analysis.py`: linear/P-Delta spatial solver and mechanism checks.
 - `src/pynitegui/qt/spatial_view.py` and `viewport3d/`: native controls/bridge and Three.js.
 - `src/pynitegui/qt/spatial_results.py`, `spatial_diagrams.py`: spatial sampling/exports/plots.
 - `src/pynitegui/qt/analysis_jobs.py`: isolated solver processes, phase messages,

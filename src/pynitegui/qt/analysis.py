@@ -56,7 +56,7 @@ def rigid_body_issue(project):
             "A pin alone does not prevent rotation; Y-only rollers do not prevent horizontal motion.")
 
 
-def stiffness_issue(model, spatial=False):
+def stiffness_issue(model, spatial=False, stiffness=None):
     labels, indices = [], []
     for node in model.nodes.values():
         directions = tuple(enumerate(("DX", "DY", "DZ", "RX", "RY", "RZ"))) if spatial else ((0, "DX"), (1, "DY"), (5, "RZ"))
@@ -67,7 +67,8 @@ def stiffness_issue(model, spatial=False):
     if not indices:
         return None
     combination = next(iter(model.load_combos))
-    stiffness = model.Ke(combination, check_stability=False, sparse=True).tocsr()
+    effective = stiffness is not None
+    stiffness = (model.Ke(combination, check_stability=False, sparse=True) if stiffness is None else stiffness).tocsr()
     matrix = stiffness[indices, :][:, indices]
     if not np.all(np.isfinite(matrix.data)):
         raise ValueError("The stiffness matrix contains nonfinite values.")
@@ -88,9 +89,15 @@ def stiffness_issue(model, spatial=False):
         bound = max(1.0, float(np.asarray(abs(normalized).sum(axis=1)).max()))
         tolerance = 10 * np.finfo(float).eps * len(indices) * bound
         try:
-            eigenvalues, modes = eigsh(normalized, k=6, sigma=-max(1e-8, 100 * tolerance), which="LM",
-                                       tol=1e-9, maxiter=max(1000, 5 * len(indices)),
-                                       v0=np.random.default_rng(0).normal(size=len(indices)))
+            options = dict(tol=1e-9, maxiter=max(1000, 5 * len(indices)),
+                           v0=np.random.default_rng(0).normal(size=len(indices)))
+            if effective:
+                # Effective stiffness can be indefinite. Inspect the smallest
+                # algebraic eigenvalue, not just modes near zero.
+                eigenvalues, modes = eigsh(normalized, k=1, which="SA", **options)
+            else:
+                eigenvalues, modes = eigsh(normalized, k=6, sigma=-max(1e-8, 100 * tolerance),
+                                           which="LM", **options)
         except ArpackNoConvergence as error:
             if error.eigenvalues is None or not np.any(error.eigenvalues <= tolerance):
                 raise ValueError("The sparse stability check did not converge. Results were not accepted; review stiffness contrasts and model geometry.") from error
@@ -126,6 +133,12 @@ class AnalysisResult:
     analyzed_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds"))
     model_signature: str = ""
     spatial: bool = False
+    analysis_method: str = "linear"
+
+    @property
+    def method_label(self):
+        from .analysis_method import METHODS
+        return METHODS[self.analysis_method]
 
     @classmethod
     def from_solver(cls, model, combination, inactive_rotations=frozenset(), spatial=False):
@@ -150,7 +163,7 @@ class AnalysisResult:
     def for_combination(self, combination):
         return replace(self.from_solver(self.solver, combination, self.inactive_rotations, spatial=self.spatial),
                        snapshot_id=self.snapshot_id, analyzed_at=self.analyzed_at,
-                       model_signature=self.model_signature)
+                       model_signature=self.model_signature, analysis_method=self.analysis_method)
 
 
 def analyze(project: Project, progress=None) -> AnalysisResult:
@@ -162,6 +175,10 @@ def analyze(project: Project, progress=None) -> AnalysisResult:
             progress(message)
     phase("Checking model and supports")
     project.validate()
+    from .analysis_method import analysis_method_issue
+    issue = analysis_method_issue(project)
+    if issue:
+        raise ValueError(issue)
     if not project.members:
         raise ValueError("Add at least one member before running analysis.")
     issues = project.analysis_topology_issues() + project.analysis_release_issues()
@@ -174,7 +191,7 @@ def analyze(project: Project, progress=None) -> AnalysisResult:
         raise ValueError(issue)
     inactive_rotations = project.inactive_rotations()
     phase("Building the analysis model")
-    model = FEModel3D()
+    model = FrameSolver()
     for material in project.materials.values():
         model.add_material(material.name, material.E, material.G, material.nu, material.rho)
     for section in project.sections.values():
@@ -221,8 +238,10 @@ def analyze(project: Project, progress=None) -> AnalysisResult:
         model.add_load_combo(name, dict(factors))
     phase(f"Solving {len(project.combinations)} combination(s)")
     try:
-        model.analyze_linear(check_stability=True, check_statics=True)
+        solve_model(model, project, phase)
     except Exception as error:
+        if project.analysis_method == "p_delta":
+            raise
         if not any(word in str(error).lower() for word in ("unstable", "singular", "instability")):
             raise
         phase("Checking instability details")
@@ -241,4 +260,44 @@ def analyze(project: Project, progress=None) -> AnalysisResult:
     recover_released_translations(model)
     result = AnalysisResult.from_solver(model, next(iter(project.combinations)), inactive_rotations)
     result.model_signature = model_signature(project)
+    result.analysis_method = project.analysis_method
     return result
+
+
+class FrameSolver(FEModel3D):
+    """Check the actual geometric stiffness used by PyNite before its solve.
+
+    PyNite's nodal zero-diagonal check alone can accept an indefinite matrix
+    above buckling. The callback is removed before returning/pickling results.
+    """
+    _analysis_progress = None
+    _spatial = False
+
+    def Kg(self, combo_name="Combo 1", log=False, sparse=True, first_step=True):
+        geometric = super().Kg(combo_name, log, sparse, first_step)
+        if self._analysis_progress is not None and not first_step:
+            self._analysis_progress(f"P-Delta | {combo_name}: checking geometric stiffness")
+            issue = stiffness_issue(self, spatial=self._spatial,
+                                    stiffness=self.Ke(combo_name, check_stability=False, sparse=True) + geometric)
+            if issue:
+                raise ValueError(f"P-Delta instability in combination {combo_name}: {issue} "
+                                 "The effective stiffness is not positive definite; no results were accepted.")
+            self._analysis_progress(f"P-Delta | {combo_name}: solving second-order response")
+        return geometric
+
+
+def solve_model(model, project, phase):
+    if project.analysis_method == "linear":
+        model.analyze_linear(check_stability=True, check_statics=True)
+        return
+    model._spatial = getattr(project, "dimension", "2D") == "3D"
+    model._analysis_progress = phase
+    try:
+        # The engine independently preloads each combination, then adds Kg;
+        # it does not superpose first-order result cases for this method.
+        model.analyze_PDelta(check_stability=True)
+        phase(f"P-Delta completed for {len(project.combinations)} combination(s)")
+    except Exception as error:
+        raise ValueError(f"P-Delta analysis failed: {error}") from error
+    finally:
+        model._analysis_progress = None

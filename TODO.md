@@ -15,14 +15,14 @@ workflows, plus the locked **PyniteFEA 3.0.0** source. The
 [upstream capability list](https://github.com/JWock82/Pynite#current-capabilities)
 describes the engine, not features automatically available in this GUI.
 **Done** means usable in the stated application workflow; **Partial** identifies
-the exact missing part. Summary: **8 done, 4 partial, 6 pending**.
+the exact missing part. Summary: **9 done, 4 partial, 5 pending**. P-Delta coverage rechecked 2026-10-26.
 
 | Engine capability | GUI status | Coverage or remaining task |
 | --- | --- | --- |
 | Elastic 3D statics | Done | Linear spatial-frame and axial-only truss analysis, six DOFs, rolled frame members, materials/sections and validated results. |
-| Frame P-Delta | Pending | Add a separate analysis method, convergence feedback, method-labelled snapshots and second-order benchmarks. |
+| Frame P-Delta | Done | Saved linear/P-Delta choice for 2D/3D frame-only models; independent combination solves, actual phase feedback, effective-stiffness rejection, method-labelled snapshots/reports/MCP and analytical compression/tension/refinement benchmarks. No coupled slabs, trusses or released translations. |
 | Frame modal analysis | Pending | Add an explicit mass source, gravity/unit conversion, frequencies, mode shapes and a separate modal result workflow. |
-| Steel-frame pushover | Pending | Add yield/plastic section data, push/control settings, load steps, convergence and capacity-curve results; benchmark supported steel assumptions. |
+| Steel-frame pushover | Pending | Confirmed locked-engine steel I-section interaction model: needs fy, Zy/Zz, section/material binding, elastic preload, push increments, displacement stop, accepted-step histories and capacity curves. First-order only; no P-Delta integration or nonlinear shells. Benchmark before GUI exposure. |
 | Member point/distributed and nodal loading | Done | Nodal/member forces and moments, uniform/linear-varying distributed forces and partial spans in 2D/3D. Distributed member moments are excluded. |
 | Cases and factored combinations | Done | Named cases, combination editing, selected-combination results and visible factored loads in 2D/3D. |
 | Member shear, moment and deflection output | Done | Member detail curves in 2D/3D; spatial biaxial shear/bending, torsion and deformation; whole-frame force/moment overlays. |
@@ -146,6 +146,16 @@ below and the secondary interface wishlist retain their more specific scope.
 - [ ] Add inclined support orientation (separate constrained-coordinate feasibility work).
 
 ## Loads and Analysis
+
+- [x] Saved, undoable Linear elastic/P-Delta elastic choice across native/manual,
+  live and MCP frame analysis; independent combinations, method-labelled results,
+  effective-stiffness checks and analytical beam-column/refinement regressions.
+- [ ] Steel plastic pushover: implement validated yield/plastic section data,
+  push/preload settings, displacement stop, load-step histories and capacity
+  curves. Keep distinct from elastic P-Delta; the locked engine does not combine them.
+- [ ] Reinforced-concrete nonlinear frames/slabs: evaluate a separate validated
+  formulation/solver for cracking, reinforcement and plasticity. The locked
+  PyNite steel pushover and elastic concrete presets do not supply RC plasticity.
 
 - [x] Add angled nodal/member point forces with automatic FX/FY resolution,
   global angle input, component previews, and oriented arrows.

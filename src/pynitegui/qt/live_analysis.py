@@ -102,7 +102,9 @@ class LiveRecalculation(QObject):
             return
         self.discard()
         from .spatial_surfaces import surface_analysis_issue
-        if not self.window.project.members or surface_analysis_issue(self.window.project):
+        from .analysis_method import analysis_method_issue
+        if (not self.window.project.members or surface_analysis_issue(self.window.project)
+                or analysis_method_issue(self.window.project)):
             return
         self.pending = True
         self.timer.start()

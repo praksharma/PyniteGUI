@@ -209,6 +209,7 @@ class Project:
     combinations: dict[str, dict[str, float]] = field(default_factory=lambda: {"Service": {"Case 1": 1.0}})
     self_weight_case: str | None = None
     self_weight_factor: float = 1.0
+    analysis_method: str = "linear"
 
     @property
     def units(self):
@@ -380,7 +381,7 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 15, "units": "in-kip", **asdict(self)}
+        return {"version": 21, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
@@ -392,7 +393,7 @@ class Project:
         if "dimension" in data:
             raise ValueError("Unsupported project dimension.")
         version = data.get("version")
-        if type(version) is not int or version not in range(1, 16) or data.get("units") != "in-kip":
+        if type(version) is not int or version not in (*range(1, 16), 21) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         required = {"grid", "nodes", "members", "loads"}
         required.update({"E", "nu", "rho"} if version == 1 else {"materials", "default_material"})
@@ -403,6 +404,10 @@ class Project:
             required.add("unit_system")
         if version >= 11:
             required.update({"self_weight_case", "self_weight_factor"})
+        if version == 21:
+            required.add("analysis_method")
+        elif data.get("analysis_method", "linear") != "linear":
+            raise ValueError("Analysis method settings require project version 21 or spatial version 22.")
         missing = required - data.keys()
         if missing:
             raise ValueError("Missing project fields: " + ", ".join(sorted(missing)) + ".")
@@ -420,7 +425,7 @@ class Project:
                     raise ValueError(f"Invalid {key} entry {name}: {error}") from error
             return result
 
-        result = cls(grid=data["grid"])
+        result = cls(grid=data["grid"], analysis_method=data.get("analysis_method", "linear"))
         if version >= 11:
             result.self_weight_case = data["self_weight_case"]
             result.self_weight_factor = data["self_weight_factor"]
@@ -463,6 +468,9 @@ class Project:
         return self.from_dict(self.to_dict())
 
     def validate(self):
+        from .analysis_method import METHODS
+        if not isinstance(self.analysis_method, str) or self.analysis_method not in METHODS:
+            raise ValueError("Analysis method must be linear or p_delta.")
         for key in ("nodes", "members", "loads", "materials", "sections", "combinations"):
             if not isinstance(getattr(self, key), dict):
                 raise ValueError(f"Project {key} must be an object keyed by identifiers.")

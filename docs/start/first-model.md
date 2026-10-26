@@ -60,6 +60,17 @@ slabs; use the Surfaces tree for an exact floor selection when they overlap.
 Frame/surface/pressure changes can also be submitted as one guarded
 [MCP batch](../automation/mcp.md); coupled interfaces validate before committing.
 
+## Choose a Frame Analysis Method
+
+Use **Edit > Analysis Method** to switch a frame-only project from **Linear elastic**
+to **P-Delta elastic**, then analyze again. The result label records the method.
+P-Delta solves each load combination independently; compare lateral response under
+combined gravity/wind with wind alone. Add intermediate joints along slender
+columns and check refinement. Keep coupled slab examples on Linear elastic.
+P-Delta keeps materials elastic. Steel plastic pushover and reinforced-concrete
+plastic behaviour are separate pending workflows; read the
+[analysis scope](../analysis/solve.md) before using a method.
+
 ## Build Your Own
 
 Continue with [drawing and selection](../modeling/drawing.md),

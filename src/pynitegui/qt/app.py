@@ -664,7 +664,7 @@ class MainWindow(QMainWindow):
         self.property_actions = [self.action(text, callback) for text, callback in (
             ("Model Tables...", self.manage_model_tables), ("Materials...", self.manage_materials),
             ("Sections...", self.manage_sections), ("Load Cases and Combinations...", self.manage_load_cases),
-            ("Self-Weight...", self.manage_self_weight))]
+            ("Self-Weight...", self.manage_self_weight), ("Analysis Method...", self.manage_analysis_method))]
         edit_menu.addActions(self.property_actions)
         edit_menu.addAction(self.action("Grid...", self.settings))
         edit_menu.addAction(self.action("Units...", self.choose_units))
@@ -924,6 +924,8 @@ class MainWindow(QMainWindow):
         self.live_analysis.schedule()
 
     def refresh(self):
+        from .analysis_method import METHODS
+        self.analyze_action.setToolTip(f"Analyze (F5) | {METHODS[self.project.analysis_method]}; change in Edit > Analysis Method")
         spatial = getattr(self.project, "dimension", "2D") == "3D"
         self.surface_visibility_action.setEnabled(spatial)
         self.convert_spatial_action.setEnabled(not spatial and bool(self.project.members))
@@ -1514,6 +1516,13 @@ class MainWindow(QMainWindow):
                     setattr(project, kind, getattr(definition, kind))
             self.edit("Edit model tables", mutate)
 
+    def manage_analysis_method(self):
+        from .analysis_method import settings_dialog
+        dialog = settings_dialog(self, self.project)
+        if dialog.exec():
+            method = dialog.method.currentData()
+            self.edit("Change analysis method", lambda project: setattr(project, "analysis_method", method))
+
     def manage_self_weight(self):
         from .self_weight import SelfWeightDialog
         dialog = SelfWeightDialog(self, self.project)
@@ -1702,12 +1711,13 @@ class MainWindow(QMainWindow):
         if self.thread is not None:
             return
         from .spatial_surfaces import surface_analysis_issue
-        surface_issue = surface_analysis_issue(self.project)
+        from .analysis_method import analysis_method_issue
+        surface_issue = analysis_method_issue(self.project) or surface_analysis_issue(self.project)
         if surface_issue:
             self.live_analysis.discard()
-            self.statusBar().showMessage("Analysis unavailable: uncoupled surface geometry")
+            self.statusBar().showMessage("Analysis unavailable: unsupported model configuration")
             if not automatic:
-                QMessageBox.information(self, "Surface Analysis", surface_issue)
+                QMessageBox.information(self, "Analysis Unavailable", surface_issue)
             return
         self.live_analysis.discard()
         self.analysis_automatic = automatic

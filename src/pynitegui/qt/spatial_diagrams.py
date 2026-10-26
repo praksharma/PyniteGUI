@@ -95,7 +95,7 @@ class SpatialDiagramDialog(QDialog):
         parent = self.parent()
         current = (parent is not None and model_signature(parent.project) == self.result.model_signature
                    and parent.result is not None and parent.result.snapshot_id == self.result.snapshot_id)
-        self.snapshot_status.setText(f"Analysis {self.result.snapshot_id} | {'Current model' if current else 'Retained snapshot'}")
+        self.snapshot_status.setText(f"Analysis {self.result.snapshot_id} | {self.result.method_label} | {'Current model' if current else 'Retained snapshot'}")
 
     def redraw(self, *unused):
         self.figure.clear()

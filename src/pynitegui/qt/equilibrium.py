@@ -31,6 +31,7 @@ class EquilibriumCheck:
     origin_node: str
     origin: tuple[float, float, float]
     rows: tuple[EquilibriumRow, ...]
+    note: str = ""
 
     @property
     def passed(self):
@@ -116,7 +117,9 @@ def check_equilibrium(project, result):
         add(reactions, force, couple + np.cross(point - origin, force))
 
     rows = []
-    for index in (range(6) if spatial else (0, 1, 5)):
+    second_order = result.analysis_method == "p_delta"
+    indices = (range(3) if spatial else (0, 1)) if second_order else (range(6) if spatial else (0, 1, 5))
+    for index in indices:
         load_sum, reaction_sum = math.fsum(applied[index]), math.fsum(reactions[index])
         residual = math.fsum((load_sum, reaction_sum))
         scale = math.fsum(abs(value) for value in (*applied[index], *reactions[index]))
@@ -127,4 +130,6 @@ def check_equilibrium(project, result):
             raise ValueError("Equilibrium totals exceed the finite numerical range.")
         rows.append(EquilibriumRow(("FX", "FY", "FZ", "MX", "MY", "MZ")[index], quantity,
                                    load_sum, reaction_sum, residual, tolerance))
-    return EquilibriumCheck(reference.name, tuple(float(value) for value in origin), tuple(rows))
+    note = ("P-Delta: force balance only. Moments on the undeformed geometry exclude second-order effects and are not checked."
+            if second_order else "")
+    return EquilibriumCheck(reference.name, tuple(float(value) for value in origin), tuple(rows), note)

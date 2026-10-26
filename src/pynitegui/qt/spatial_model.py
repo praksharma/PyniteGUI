@@ -71,24 +71,28 @@ class SpatialProject(Project):
     surface_pressures: dict = field(default_factory=dict)
 
     def to_dict(self):
-        return {"version": 20, "units": "in-kip", **asdict(self),
+        return {"version": 22, "units": "in-kip", **asdict(self),
                 "surfaces": {name: mesh.to_dict() for name, mesh in self.surfaces.items()}}
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
+        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
             raise ValueError("Unsupported spatial project version, dimension, or units.")
         if (data["version"] < 19 and "surfaces" in data) or (data["version"] >= 19 and not isinstance(data.get("surfaces"), dict)):
             raise ValueError("Surface geometry requires the version 19 spatial schema.")
         if data["version"] < 20 and (data.get("surface_analysis_enabled", False) is not False or data.get("surface_pressures", {})):
             raise ValueError("Coupled surface analysis requires spatial version 20.")
-        if data["version"] == 20 and not {"surface_analysis_enabled", "surface_pressures"} <= data.keys():
+        if data["version"] >= 20 and not {"surface_analysis_enabled", "surface_pressures"} <= data.keys():
             raise ValueError("Missing coupled surface analysis fields.")
+        if data["version"] == 22 and "analysis_method" not in data:
+            raise ValueError("Missing analysis_method setting.")
+        if data["version"] < 22 and data.get("analysis_method", "linear") != "linear":
+            raise ValueError("Analysis method settings require spatial version 22.")
         unknown = data.keys() - {f.name for f in fields(cls)} - {"version", "units"}
         if unknown:
             raise ValueError("Unknown spatial project fields: " + ", ".join(sorted(unknown)) + ".")
         # Reuse the established metadata migrations/validation, without projecting geometry.
-        metadata = {**data, "version": 15, "nodes": {}, "members": {}, "loads": {}}
+        metadata = {**data, "version": 21, "analysis_method": data.get("analysis_method", "linear"), "nodes": {}, "members": {}, "loads": {}}
         metadata.pop("dimension")
         metadata.pop("surfaces", None)
         metadata.pop("surface_analysis_enabled", None)

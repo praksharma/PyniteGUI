@@ -1,7 +1,6 @@
-"""Six-DOF linear PyNite analysis without artificial planar restraints."""
+"""Six-DOF elastic frame analysis without artificial planar restraints."""
 import math
 import numpy as np
-from Pynite import FEModel3D
 
 from .spatial_model import DOFS
 
@@ -34,10 +33,14 @@ def rigid_body_issue(project):
 
 
 def analyze_spatial(project, progress=None):
-    from .analysis import AnalysisResult, model_signature, stiffness_issue
+    from .analysis import AnalysisResult, FrameSolver, model_signature, stiffness_issue, solve_model
     phase = progress or (lambda message: None)
     phase("Checking 3D model and supports")
     project.validate()
+    from .analysis_method import analysis_method_issue
+    issue = analysis_method_issue(project)
+    if issue:
+        raise ValueError(issue)
     from .spatial_surfaces import surface_analysis_issue
     issue = surface_analysis_issue(project)
     if issue:
@@ -51,7 +54,7 @@ def analyze_spatial(project, progress=None):
     if issue:
         raise ValueError(issue)
     phase("Building spatial solver model")
-    model = FEModel3D()
+    model = FrameSolver()
     inactive = project.inactive_rotations()
     for material in project.materials.values():
         model.add_material(material.name, material.E, material.G, material.nu, material.rho)
@@ -94,8 +97,10 @@ def analyze_spatial(project, progress=None):
         model.add_load_combo(name, dict(factors))
     phase(f"Solving {len(project.combinations)} spatial combination(s)")
     try:
-        model.analyze_linear(check_stability=True, check_statics=True)
+        solve_model(model, project, phase)
     except Exception as error:
+        if project.analysis_method == "p_delta":
+            raise
         if not any(word in str(error).lower() for word in ("unstable", "singular", "instability")):
             raise
         phase("Checking spatial instability")
@@ -115,6 +120,7 @@ def analyze_spatial(project, progress=None):
     phase("Collecting spatial result snapshot")
     result = AnalysisResult.from_solver(model, next(iter(project.combinations)), frozenset(inactive), spatial=True)
     result.model_signature = model_signature(project)
+    result.analysis_method = project.analysis_method
     if project.surfaces:
         from .equilibrium import check_equilibrium
         phase("Verifying coupled force and moment equilibrium")

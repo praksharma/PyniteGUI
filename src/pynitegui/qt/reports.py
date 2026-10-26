@@ -289,7 +289,7 @@ def csv_text(value):
 def export_csv(path, project, result, kind, source="Untitled"):
     headers, rows = result_table(project, result, kind)
     metadata = [source, result.snapshot_id, result.analyzed_at, result.model_signature, result.combination, project.units.label,
-                project.self_weight_case or "", project.self_weight_factor if project.self_weight_case is not None else ""]
+                project.self_weight_case or "", project.self_weight_factor if project.self_weight_case is not None else "", result.method_label]
     path, temporary = Path(path), None
     try:
         with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", newline="", dir=path.parent,
@@ -297,7 +297,7 @@ def export_csv(path, project, result, kind, source="Untitled"):
             temporary = Path(stream.name)
             writer = csv.writer(stream)
             writer.writerow(["Source", "Analysis ID", "Analyzed (UTC)", "Model signature", "Combination", "Unit system",
-                             "Self-weight case", "Self-weight factor", *headers])
+                             "Self-weight case", "Self-weight factor", "Analysis method", *headers])
             writer.writerows([csv_text(value) for value in (*metadata, *row)] for row in rows)
             stream.flush()
             os.fsync(stream.fileno())
@@ -399,6 +399,7 @@ def report_html(project, result, source="Untitled", options=None, *, image_urls=
         </style></head><body><h1>PyniteGUI Analysis Results</h1>
         <p><b>Source:</b> {escape(source)}<br>
         <b>Analysis ID:</b> {escape(result.snapshot_id)} | <b>Model:</b> {escape(result.model_signature[:12])}<br>
+        <b>Analysis method:</b> {escape(result.method_label)}<br>
         <b>Analyzed (UTC):</b> {escape(result.analyzed_at)}<br>
         {combination_metadata}<br>
         <b>Units:</b> {escape(project.units.label)}<br>

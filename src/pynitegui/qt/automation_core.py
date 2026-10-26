@@ -14,7 +14,7 @@ TOOLS = {
     "read_units": ("Model reads", "Read display units and canonical conversion factors."),
     "read_results": ("Result reads", "Read paginated snapshot-labelled results: kind=nodes|members. Output units follow the display units in headers. Use analysis_status.available_combinations for solved names; omit combination to use the snapshot default. Only the active snapshot is retained."),
     "apply_batch": ("Model edits", "Apply a validated model batch as one undoable edit."),
-    "run_analysis": ("Analysis", "Start background analysis and return a job_id immediately. Poll analysis_status with that job_id until running=false, then check state/error before read_results. phase is human-readable progress text, not a fixed enum."),
+    "run_analysis": ("Analysis", "Start background analysis using settings.analysis_method (linear|p_delta) and return a job_id immediately. Poll analysis_status with that job_id until running=false, then check state/error before read_results. phase is human-readable progress text, not a fixed enum."),
     "analysis_status": ("Analysis", "Read job progress, failures, the active snapshot and available_combinations (solved names). Poll after run_analysis until running=false; check state/error. Only one active result snapshot is retained; job_id rejects replaced jobs."),
     "cancel_analysis": ("Analysis", "Cancel the identified running analysis job."),
 }
@@ -68,7 +68,7 @@ def batch_candidate(project, operations):
         from .spatial_model import SpatialNode, SpatialMember, SpatialLoad
         constructors.update(nodes=SpatialNode, members=SpatialMember, loads=SpatialLoad)
     settings = {"unit_system", "grid", "default_material", "default_section", "default_load_case",
-                "self_weight_case", "self_weight_factor"}
+                "self_weight_case", "self_weight_factor", "analysis_method"}
     if spatial:
         settings.add("surface_analysis_enabled")
     for index, operation in enumerate(operations):
@@ -209,6 +209,10 @@ class AutomationCommands:
             return {**self.identity(), "changed": changed, "result_snapshot": self.snapshot()}
         if name == "run_analysis":
             self.require_idle_editor()
+            from .analysis_method import analysis_method_issue
+            method_issue = analysis_method_issue(window.project)
+            if method_issue:
+                raise AutomationError("unsupported_analysis", method_issue)
             from .spatial_surfaces import surface_analysis_issue
             surface_issue = surface_analysis_issue(window.project)
             if surface_issue:
@@ -262,7 +266,8 @@ class AutomationCommands:
     def snapshot(self):
         result = self.window.result
         return None if result is None else {"snapshot_id": result.snapshot_id, "analyzed_at": result.analyzed_at,
-                                           "model_signature": result.model_signature}
+                                           "model_signature": result.model_signature,
+                                           "analysis_method": result.analysis_method, "method_label": result.method_label}
 
     def status(self):
         window = self.window

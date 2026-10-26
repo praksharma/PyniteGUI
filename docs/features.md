@@ -29,13 +29,16 @@ when comparing with the published rc1 wheel.
 | Uniform, triangular, varying and partial-span distributed member forces | [Distributed loads](analysis/loads.md) |
 | Named load cases, default cases and signed/zero combination factors | [Cases and combinations](analysis/combinations.md) |
 | Opt-in self-weight from member material density and area | [Self-weight](analysis/self-weight.md) |
-| Linear elastic static analysis, progress phases, cancellation and stale-result rejection | [Solve workflow](analysis/solve.md), [snapshots](results/snapshots.md) |
+| Linear elastic and frame-only P-Delta analysis, saved method, progress phases, cancellation and stale-result rejection | [Solve workflow](analysis/solve.md), [snapshots](results/snapshots.md) |
 | Opt-in debounced live recalculation | [Live recalculation](analysis/live.md) |
 | Rigid-body/mechanism/stiffness checks and affected-node findings | [Diagnostics](analysis/stability.md), [topology](modeling/topology.md) |
 
-P-Delta, modal analysis, pushover, unilateral members/springs, node-to-node spring
-elements and inclined supports are **not implemented GUI workflows**. See the
+Modal analysis, steel pushover, reinforced-concrete plasticity, unilateral
+members/springs, node-to-node spring elements and inclined supports are **not implemented GUI workflows**. See the
 [audited roadmap](project/roadmap.md), not the upstream feature list alone.
+
+P-Delta keeps materials elastic and excludes slabs/trusses/released translations.
+See [method limits and plasticity boundaries](analysis/solve.md).
 
 ## Results
 

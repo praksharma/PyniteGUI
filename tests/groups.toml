@@ -5,6 +5,7 @@
 description = "Native appearance, presentation, window controls and editor interaction; no structural benchmark suites."
 tests = [
   "test_qt_annotations",
+  "test_qt_nonlinear.AnalysisMethodUITests",
   "test_qt_deformation",
   "test_qt_diagrams",
   "test_qt_graphics",
@@ -37,6 +38,7 @@ tests = [
   "test_qt_model_cleanup",
   "test_qt_model_tables",
   "test_qt_project",
+  "test_qt_nonlinear.AnalysisMethodModelTests",
   "test_qt_releases.ReleaseEditorTests",
   "test_qt_section_library",
   "test_qt_sections.SectionEditorTests",
@@ -64,6 +66,7 @@ tests = [
   "test_qt_angled.AngledModelTests",
   "test_qt_axial.AxialTests",
   "test_qt_benchmarks",
+  "test_qt_nonlinear.PDeltaEngineeringTests",
   "test_qt_distributed.DistributedTests",
   "test_qt_elastic_supports.ElasticSupportTests",
   "test_qt_envelopes",

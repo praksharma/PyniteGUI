@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Saved, undoable Linear elastic/P-Delta elastic selection for 2D/3D frame-only
+  analysis, shared by native/manual/live/MCP workflows. Solves combinations
+  independently, checks actual effective stiffness against instability and labels
+  snapshots, diagrams, CSV and printable results with the solved method. Planar
+  format 21/spatial 22 retain the choice; older files remain linear. Adds analytical
+  compression/tension, mesh refinement, biaxial bending, support-spring, release,
+  buckling-rejection and worker/MCP regressions. P-Delta omits the inapplicable
+  undeformed moment-balance check while retaining strict force residuals. This
+  keeps materials elastic; steel pushover and reinforced-concrete plasticity
+  remain explicitly separate pending work.
+
 - Focused test groups and a standard-library runner: smoke/UI/model/engineering/
   surface/MCP/lifecycle/docs/release/tooling selection, dotted test selectors,
   deduplication and strict class ownership. Full Python, viewport and strict docs
