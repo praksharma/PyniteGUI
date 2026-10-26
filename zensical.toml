@@ -11,6 +11,7 @@ nav = [
   { "Manual" = [{ "PyniteGUI" = "index.md" }, { "Feature Index" = "features.md" }] },
   { "Start" = [
     { "Installation" = "start/install.md" }, { "Your First Model" = "start/first-model.md" },
+    { "Help and Workspace" = "start/help.md" },
     { "Examples and Preferences" = "start/examples.md" }, { "Platform Validation" = "start/platforms.md" },
     { "3D Graphics Recovery" = "start/graphics.md" }, { "NVIDIA and Wayland" = "start/nvidia.md" }
   ] },

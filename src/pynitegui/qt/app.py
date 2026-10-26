@@ -527,6 +527,8 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.view_stack)
         self.build_actions()
         self.build_panels()
+        from .help_menu import build_help_menu
+        build_help_menu(self)
         self.analysis_phase = QLabel()
         self.analysis_phase.setMaximumWidth(300)
         self.analysis_progress = QProgressBar()
@@ -555,6 +557,7 @@ class MainWindow(QMainWindow):
         self.statusBar().addPermanentWidget(self.mcp_mode_button)
         self.refresh()
         self.view.fit()
+        self.default_layout_state = self.saveState()
         self.autosave_timer = QTimer(self)
         self.autosave_timer.setInterval(30000)
         self.autosave_timer.timeout.connect(self.autosave_now)
@@ -565,6 +568,7 @@ class MainWindow(QMainWindow):
 
     def action(self, text, callback, shortcut=None, icon=None):
         action = QAction(text, self)
+        action.setProperty("command_label", text)
         if shortcut:
             action.setShortcut(shortcut)
         if icon:
@@ -662,6 +666,8 @@ class MainWindow(QMainWindow):
         undo.setShortcut("Ctrl+Z")
         redo = self.undo.createRedoAction(self, "Redo")
         redo.setShortcuts(["Ctrl+Shift+Z", "Ctrl+Y"])
+        undo.setProperty("command_label", "Undo")
+        redo.setProperty("command_label", "Redo")
         edit_menu.addActions([undo, redo])
         edit_menu.addAction(self.action("Delete Selection", self.delete_selected, "Delete", "edit-delete"))
         edit_menu.addAction(self.action("Select All", self.select_all, "Ctrl+A"))
@@ -679,7 +685,7 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.action("Connect Member Midpoints...", lambda: self.construct_connection("midpoints")))
         edit_menu.addAction(self.action("Connect Intersections", self.connect_intersections))
         edit_menu.addAction(self.action("Check Model", self.check_model))
-        tools_menu = self.menuBar().addMenu("&Tools")
+        tools_menu = self.tools_menu = self.menuBar().addMenu("&Tools")
         tools_menu.addAction(self.action("Surface Meshing (Experimental)...", lambda: self.show_mesh_workspace()))
         tools_menu.addAction(self.action("Rectangular Plate (Experimental)...", self.show_plate_workspace))
         tools_menu.addAction(self.action("Automation Server...", self.show_automation_server))
@@ -743,6 +749,7 @@ class MainWindow(QMainWindow):
         group("Results").addAction(self.diagrams_action)
         self.addToolBarBreak()
         deformation_toolbar = self.addToolBar("Deformation")
+        deformation_toolbar.setObjectName("toolbar_deformation")
         deformation_toolbar.setMovable(False)
         self.deformed_action = self.action("Deformed", lambda: self.view.redraw())
         self.deformed_action.setCheckable(True)
@@ -767,6 +774,7 @@ class MainWindow(QMainWindow):
 
     def dock(self, title, widget, area):
         dock = QDockWidget(title, self)
+        dock.setObjectName("dock_" + title.lower().replace(" ", "_"))
         dock.setWidget(widget)
         dock.setAllowedAreas(Qt.DockWidgetArea.AllDockWidgetAreas)
         self.addDockWidget(area, dock)
@@ -774,7 +782,8 @@ class MainWindow(QMainWindow):
         return dock
 
     def build_panels(self):
-        self.menuBar_view = self.menuBar().addMenu("&View")
+        self.menuBar_view = QMenu("&View", self)
+        self.menuBar().insertMenu(self.tools_menu.menuAction(), self.menuBar_view)
         appearance = self.menuBar_view.addMenu("Appearance")
         self.theme_group = QActionGroup(self)
         self.theme_actions = {}
@@ -822,7 +831,7 @@ class MainWindow(QMainWindow):
         self.load_filter.currentIndexChanged.connect(self.filter_loads)
         structure_layout.addWidget(self.load_filter)
         structure_layout.addWidget(self.tree)
-        self.dock("Structure", structure_panel, Qt.DockWidgetArea.LeftDockWidgetArea)
+        self.structure_dock = self.dock("Structure", structure_panel, Qt.DockWidgetArea.LeftDockWidgetArea)
         self.inspector = QWidget()
         self.form = QFormLayout(self.inspector)
         self.form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
@@ -833,7 +842,7 @@ class MainWindow(QMainWindow):
         self.inspector_scroll.setFrameShape(QScrollArea.Shape.NoFrame)
         self.inspector_scroll.setMinimumWidth(260)
         self.inspector_scroll.setWidget(self.inspector)
-        self.dock("Properties", self.inspector_scroll, Qt.DockWidgetArea.RightDockWidgetArea)
+        self.properties_dock = self.dock("Properties", self.inspector_scroll, Qt.DockWidgetArea.RightDockWidgetArea)
         from .results_panel import ResultsPanel
         self.results_panel = ResultsPanel(self)
         self.results_table = self.results_panel.tables["nodes"]
@@ -855,6 +864,20 @@ class MainWindow(QMainWindow):
         self.model_findings.entities_requested.connect(self.select_finding_entities)
         self.findings_dock = self.dock("Model Findings", self.model_findings, Qt.DockWidgetArea.BottomDockWidgetArea)
         self.findings_dock.hide()
+        self.menuBar_view.addSeparator()
+        self.restore_layout_action = self.action("Restore Default Layout", self.restore_default_layout)
+        self.restore_layout_action.setStatusTip("Restore the editor panels and toolbars without changing your model or view")
+        self.menuBar_view.addAction(self.restore_layout_action)
+
+    def restore_default_layout(self):
+        if self.mcp_mode:
+            return
+        self.restoreState(self.default_layout_state)
+        if self.result is not None:
+            self.results_dock.show()
+        if self.model_findings.list.count():
+            self.findings_dock.show()
+        self.statusBar().showMessage("Default panel and toolbar layout restored", 5000)
 
     def update_title(self):
         dirty = self.project.to_dict() != self.saved

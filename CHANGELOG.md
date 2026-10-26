@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Native Help menu with documentation/F1 and Getting Started links, a searchable
+  reference generated from current keyboard shortcuts, About/version/license
+  information, source/issue links and copyable support version details. Dialogs
+  are reusable and work in both themes. Restores conventional File/Edit/View/
+  Tools/Help menu order and adds View > Restore Default Layout for misplaced
+  panels/toolbars while preserving engineering work and unapplied Properties
+  inputs. Solver expansion is on hold while usability/quality work takes priority.
+
 - Categorized Examples submenus for 2D Frames, 3D Frames, Trusses, Slabs and
   P-Delta, retaining stable example identifiers. Adds a three-storey steel frame
   with three coupled elastic concrete slabs, Dead/Live pressures and independent

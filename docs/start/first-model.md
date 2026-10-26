@@ -94,6 +94,11 @@ plastic behaviour are separate pending workflows; read the
 
 ## Build Your Own
 
+Press **F1** for the documentation website, or use **Help > Keyboard Shortcuts**
+for an offline command reference. **View > Restore Default Layout** brings back
+misplaced panels without changing your model or unapplied property edits. See
+[Help and workspace](help.md).
+
 Continue with [drawing and selection](../modeling/drawing.md),
 [materials and sections](../modeling/properties.md),
 [supports](../modeling/supports.md), and [loads](../analysis/loads.md).

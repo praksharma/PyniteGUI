@@ -45,6 +45,9 @@ workflow has validated inputs, usable results and regression coverage; an API
 existing in PyNite alone does not count. Keep this checklist and the capability
 table above in sync as methods are implemented.
 
+**Current priority:** software quality and UI polish. New solver implementation
+is on hold at the user’s request; existing analysis methods remain available.
+
 - [x] **Linear elastic** (`analyze_linear`): 2D/3D frames, bilateral axial-only
   trusses and opt-in rectangular Quad slab/frame coupling; reactions,
   displacements, member results, combinations and exports.
@@ -58,7 +61,7 @@ table above in sync as methods are implemented.
   load stepping. Add persisted behaviour flags, iteration/tolerance controls,
   convergence/active-state results, independent combination solves and activation/
   mechanism benchmarks. Materials remain elastic; this is not plastic yielding.
-- [ ] **Steel plastic pushover** (`analyze_pushover`) — next solver priority:
+- [ ] **Steel plastic pushover** (`analyze_pushover`) — planned after the solver hold:
   validated yield strength and plastic section moduli (`fy`, `Zy`, `Zz`), section/
   material binding, elastic preload and push patterns, load increments,
   displacement stop conditions, accepted-step histories and base-shear/roof-
@@ -252,6 +255,16 @@ below and the secondary interface wishlist retain their more specific scope.
   unfactored load definitions, unit conversion, and a print-friendly palette.
 
 ## Project Quality
+
+Current focus: usability, presentation and reliability; solver expansion is on
+hold. Keep the analysis checklist's completed methods and pending scope intact.
+
+- [x] Add a native Help menu with website/F1, Getting Started, searchable current
+  keyboard shortcuts, About/version/license information and user-initiated source/
+  issue links. Copy version details for support without submitting a report.
+- [x] Use File/Edit/View/Tools/Help menu order and add View > Restore Default
+  Layout for hidden/floating/moved panels and toolbars. Preserve model/selection,
+  result snapshots, undo history and unapplied inspector inputs; verify both themes.
 
 - [x] Add focused smoke/UI/model/engineering/surface/MCP/lifecycle/docs/release
   test groups, individual selectors and an explicit full-suite runner. Enforce

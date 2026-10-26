@@ -937,6 +937,38 @@ This panel does not query the compositor's physical GPU or a driver package vers
 
 ## Workflow
 
+### Help and Workspace
+
+The main menus follow **File, Edit, View, Tools, Help**. **Help > Documentation**
+(or **F1**) opens the [PyniteGUI website](https://praksharma.github.io/PyniteGUI/)
+in your default browser. **Getting Started** opens its first-model walkthrough.
+These links open only when requested; the editor does not require an online
+connection. If your system cannot launch the browser, a dialog provides the
+address to open manually.
+
+**Help > Keyboard Shortcuts** opens a searchable native reference built from the
+current editor commands. It displays the platform's shortcut notation, includes
+both redo bindings, and keeps Undo/Redo labels stable after edits. Single-letter
+tools apply when the model view has focus; Escape cancels the current gesture.
+The reference is available offline.
+
+**Help > About PyniteGUI** shows the installed application version, project
+credits and license, with buttons for documentation, source and issue reports.
+On macOS, the native menu may place About in the application menu.
+**Copy Version Details**, available in Help and About, copies the application,
+Python, Qt, PySide6, PyNite, NumPy/SciPy and operating-system versions for a bug
+report. It does not submit an issue; **Report an Issue** opens the project's
+issue page for you to review and write a report. About and Shortcuts windows
+can stay beside the editor and reuse the same window when reopened.
+
+Use **View > Restore Default Layout** if a dock or toolbar has been hidden,
+floated or moved. It restores the Structure and Properties panels and the
+normal toolbar arrangement; Results remains accessible when a result exists,
+and Model Findings when there are findings. It does not change the project,
+selection, undo history, result snapshot, display units or unapplied Properties
+values. Model-view zoom remains under your control; **Fit (F)** is separate.
+Layout recovery is a per-window presentation action, not an engineering edit.
+
 ### Examples and Appearance
 
 - The unit selector also offers SI (mm, N) and Imperial (ft, kip). The mm/N
@@ -1673,6 +1705,7 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/model.py`: validated, serializable project data.
 - `src/pynitegui/qt/units.py`: canonical-to-display conversion factors and presets.
 - `src/pynitegui/qt/annotations.py`: shared support/release symbols and factored load context.
+- `src/pynitegui/qt/help_menu.py`: native documentation links, searchable shortcuts, About and copyable version details.
 - `src/pynitegui/qt/analysis_method.py`: saved elastic analysis choices, supported scope and native settings.
 - `src/pynitegui/qt/released_member.py`: linear released-translation recovery using PyNite matrices.
 - `src/pynitegui/qt/analysis.py`: project-to-PyNite adapter and analysis results.

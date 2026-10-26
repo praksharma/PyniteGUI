@@ -26,6 +26,7 @@ SECTION_PAGES = {
     "Graphics Recovery": ("start/graphics.md", "3D Graphics Recovery"),
     "NVIDIA Hardware Rendering on Linux": ("start/nvidia.md", "NVIDIA and Wayland"),
     "Workflow": ("modeling/index.md", "Modeling Workflows"),
+    "Help and Workspace": ("start/help.md", "Help, Shortcuts and Workspace Layout"),
     "Examples and Appearance": ("start/examples.md", "Examples, Themes and Preferences"),
     "Drawing and Selection": ("modeling/drawing.md", "Drawing and Selection"),
     "Model Tables": ("modeling/tables.md", "Model Tables"),
