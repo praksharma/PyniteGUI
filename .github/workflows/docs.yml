@@ -7,7 +7,9 @@ on:
       - "docs/**"
       - "assets/**"
       - "scripts/docs.py"
-      - "tests/test_docs.py"
+      - "tests/test*.py"
+      - "tests/groups.toml"
+      - "scripts/test.py"
       - "zensical.toml"
       - "*.md"
       - "pyproject.toml"
@@ -18,7 +20,9 @@ on:
       - "docs/**"
       - "assets/**"
       - "scripts/docs.py"
-      - "tests/test_docs.py"
+      - "tests/test*.py"
+      - "tests/groups.toml"
+      - "scripts/test.py"
       - "zensical.toml"
       - "*.md"
       - "pyproject.toml"
@@ -44,8 +48,8 @@ jobs:
           python-version: "3.12"
       - name: Install documentation tools only
         run: uv sync --locked --only-group docs
-      - name: Test documentation pipeline
-        run: uv run --locked --only-group docs python -B -m unittest discover -s tests -p 'test_docs.py'
+      - name: Test documentation pipeline and group coverage
+        run: uv run --locked --only-group docs python -B scripts/test.py docs tooling
       - name: Build and check documentation
         run: uv run --locked --only-group docs python scripts/docs.py build
       - uses: actions/upload-pages-artifact@v5

@@ -216,6 +216,11 @@ below and the secondary interface wishlist retain their more specific scope.
 
 ## Project Quality
 
+- [x] Add focused smoke/UI/model/engineering/surface/MCP/lifecycle/docs/release
+  test groups, individual selectors and an explicit full-suite runner. Enforce
+  test-class ownership, deduplicate combined groups, retain unittest discovery
+  and keep viewport/docs builds explicit. Record change-based selection policy.
+
 - [x] Route terminal Ctrl+C through normal Qt shutdown, preserving save/cancel
   prompts and modal editors; cover deferred/repeated signals and real-process exit.
 - [x] Build a searchable Zensical documentation website with topic navigation,

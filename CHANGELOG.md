@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Focused test groups and a standard-library runner: smoke/UI/model/engineering/
+  surface/MCP/lifecycle/docs/release/tooling selection, dotted test selectors,
+  deduplication and strict class ownership. Full Python, viewport and strict docs
+  checks remain explicit; ordinary UI changes can use focused verification.
+
 - Surface-aware MCP batches edit all recipe generators, pressure maps and the
   coupled-analysis opt-in with deferred assignment validation, production
   interface/conformity checks and one-step undo. Invalid candidates retain results

@@ -1,0 +1,155 @@
+# Primary groups own every test class exactly once. Add new modules/classes here.
+# Profiles may select subsets. No tests are moved or deleted.
+
+[groups.ui]
+description = "Native appearance, presentation, window controls and editor interaction; no structural benchmark suites."
+tests = [
+  "test_qt_annotations",
+  "test_qt_deformation",
+  "test_qt_diagrams",
+  "test_qt_graphics",
+  "test_qt_inspection",
+  "test_qt_linked_results",
+  "test_qt_presentation",
+  "test_qt_result_polish",
+  "test_qt_theme",
+  "test_qt_ui",
+  "test_qt_window_controls",
+]
+
+[groups.model]
+description = "Geometry/editing, units, assignments, libraries, validation, persistence and native model editors."
+tests = [
+  "test_qt_angled.AngledEditorTests",
+  "test_qt_axial.AxialEditorTests",
+  "test_qt_bulk_edit",
+  "test_qt_construction",
+  "test_qt_custom_units",
+  "test_qt_distributed.DistributedEditorTests",
+  "test_qt_editing",
+  "test_qt_elastic_supports.ElasticEditorsTests",
+  "test_qt_equilibrium.EquilibriumPanelTests",
+  "test_qt_examples",
+  "test_qt_load_cases.LoadCaseEditorTests",
+  "test_qt_local_loads.LocalLoadEditorTests",
+  "test_qt_material_library",
+  "test_qt_materials.MaterialEditorTests",
+  "test_qt_model_cleanup",
+  "test_qt_model_tables",
+  "test_qt_project",
+  "test_qt_releases.ReleaseEditorTests",
+  "test_qt_section_library",
+  "test_qt_sections.SectionEditorTests",
+  "test_qt_spatial.SpatialModelTests",
+  "test_qt_spatial.SpatialWidgetTests",
+  "test_qt_spatial.SpatialExportTests",
+  "test_qt_spatial_conversion",
+  "test_qt_spatial_drag",
+  "test_qt_spatial_reports",
+  "test_qt_spatial_topology",
+  "test_qt_spatial_truss.SpatialTrussEditorTests",
+  "test_qt_supports.SupportEditorTests",
+  "test_qt_topology",
+  "test_qt_truss.TrussUITests",
+  "test_qt_unit_presets",
+  "test_qt_units",
+  "test_qt_validation",
+  "test_qt_reports",
+]
+
+[groups.engineering]
+description = "Solver mechanics, analytical comparisons, equilibrium, stability and frame/truss benchmarks."
+tests = [
+  "test_qt_analysis_jobs.SparseStabilityTests",
+  "test_qt_angled.AngledModelTests",
+  "test_qt_axial.AxialTests",
+  "test_qt_benchmarks",
+  "test_qt_distributed.DistributedTests",
+  "test_qt_elastic_supports.ElasticSupportTests",
+  "test_qt_envelopes",
+  "test_qt_equilibrium.EquilibriumTests",
+  "test_qt_load_cases.LoadCaseTests",
+  "test_qt_local_loads.LocalLoadTests",
+  "test_qt_materials.MaterialTests",
+  "test_qt_releases.ReleaseTests",
+  "test_qt_sections.SectionTests",
+  "test_qt_self_weight",
+  "test_qt_spatial.SpatialAnalysisTests",
+  "test_qt_spatial_envelopes",
+  "test_qt_spatial_truss.SpatialTrussTests",
+  "test_qt_stability",
+  "test_qt_supports.SupportTests",
+  "test_qt_truss.TrussTests",
+  "test_spatial_sample_cache",
+]
+
+[groups.surfaces]
+description = "Mesh/plate/coupled-slab geometry, native workspaces, placement and structural benchmarks."
+tests = [
+  "test_coupled_surfaces",
+  "test_mesh_model",
+  "test_plate_model",
+  "test_qt_coupled_surfaces",
+  "test_qt_mesh_workspace",
+  "test_qt_plate_workspace",
+  "test_qt_spatial_surfaces",
+  "test_qt_surface_placement",
+  "test_surface_placement",
+  "test_qt_automation_surfaces.MultistoreySurfaceBenchmarks",
+]
+
+[groups.mcp]
+description = "MCP permissions, schemas, atomic edits, native control mode and optional localhost wire tests."
+tests = [
+  "test_qt_automation_core",
+  "test_qt_automation_mode",
+  "test_qt_automation_server",
+  "test_qt_automation_surfaces.SurfaceAutomationTests",
+]
+
+[groups.integration]
+description = "Worker lifecycle, live recalculation, recovery and terminal shutdown."
+tests = [
+  "test_qt_analysis_jobs.AnalysisJobTests",
+  "test_qt_live_analysis",
+  "test_qt_recovery",
+  "test_qt_shutdown",
+]
+
+[groups.docs]
+description = "Documentation pipeline unit tests; also run scripts/docs.py build for strict site/link checks."
+tests = [
+  "test_docs",
+]
+
+[groups.release]
+description = "Installed version metadata and the lightweight version entrypoint."
+tests = [
+  "test_release_metadata",
+]
+
+[groups.tooling]
+description = "Focused runner selection, coverage and exit status."
+tests = [
+  "test_test_groups",
+]
+
+[profiles.smoke]
+description = "Three fast checks: 2D drawing/undo, 3D window creation and the version entrypoint."
+tests = [
+  "test_qt_ui.EditorTests.test_canvas_drawing_and_undo",
+  "test_qt_spatial.SpatialWidgetTests.test_new_3d_project_respects_discard_and_units",
+  "test_release_metadata.ReleaseMetadataTests.test_version_entrypoint_does_not_import_qt",
+]
+
+[external.viewport-frame]
+description = "Real offline 3D frame interaction/rendering checks."
+scripts = ["tests/viewport3d.spec.cjs"]
+
+[external.viewport-surfaces]
+description = "Real surface rendering and enclosed/crossing box-selection checks."
+scripts = ["tests/mesh_viewport.spec.cjs"]
+
+[external.viewport]
+description = "Both offline viewport suites (separate Playwright/Chromium installation required)."
+scripts = ["tests/viewport3d.spec.cjs", "tests/mesh_viewport.spec.cjs"]

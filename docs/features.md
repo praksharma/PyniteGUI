@@ -71,3 +71,7 @@ General curved-shell analysis, slab stress contours, arbitrary CAD meshing,
 shear-wall/mat workflows remain pending. A touching
 surface is not connected unless coupled analysis is enabled and the mesh passes
 the shared-node/interface checks.
+
+For contributors, [focused test groups](development/testing.md) separate native
+UI checks from engineering, surface and MCP suites. Combine affected groups;
+full-suite and release verification remain available.

@@ -1643,10 +1643,73 @@ and concentrated moments include both sides of each discontinuity.
 
 ## Development
 
-Run the project, solver, diagram, and Qt interaction tests:
+Use the focused runner during development. With no group it runs three smoke
+checks; it does not default to the full suite:
 
 ```sh
-uv run python -m unittest discover -s tests
+uv run --locked python -B scripts/test.py
+uv run --locked python -B scripts/test.py smoke ui
+uv run --locked python -B scripts/test.py --list
+uv run --locked python -B scripts/test.py ui --dry-run
+```
+
+| Change | Focused checks |
+| --- | --- |
+| Label, spacing, palette or generic native widget interaction | `smoke ui`, plus the affected feature class/module |
+| Geometry, assignments, material/section editors, persistence or unit editors | `model`, plus `engineering` when definitions, conversions or solver input change |
+| Structural calculations, stability, loads, supports or shared solver logic | `engineering` and affected `model`/`surfaces` checks; full suite for shared contracts |
+| Mesh recipes, slab/plate workspaces, coupling or surface topology | `surfaces`; add `mcp` for remote editing and `viewport-surfaces` for rendering/selection changes |
+| MCP schemas, permissions, edits or control mode | `mcp` with `--extra mcp`; add affected model/surface/engineering groups |
+| Analysis workers, live recalculation, recovery or shutdown | `integration` and affected feature groups |
+| 3D frame drawing, picking, orbit or rendering | `viewport-frame`; both viewer suites with `viewport` when shared renderer code changes |
+| Documentation | `docs tooling`, followed by the strict docs build/link check below |
+| Packaging/version metadata | `release`; complete the release validation checklist for distributions |
+| Test runner/group definitions | `tooling` and `--check`; verify full selection and the full suite when changing shared test infrastructure |
+
+Groups select existing modules or complete test classes; files with mixed
+responsibilities can be split between groups without moving code or breaking
+fixture imports. Some UI/model integration tests perform small example solves to
+check displayed results or editing behaviour. The dedicated engineering and
+surface benchmark suites are excluded from `ui`.
+
+Combine groups or target one module, class or method; overlapping selections run
+each test once:
+
+```sh
+uv run --locked --extra mcp python -B scripts/test.py mcp surfaces
+uv run --locked python -B scripts/test.py test_qt_materials.MaterialEditorTests
+uv run --locked python -B scripts/test.py test_qt_theme.ThemeTests.test_multiple_editors_sync_theme_actions
+uv run --locked python -B scripts/test.py --check
+```
+
+`tests/groups.toml` assigns every test class to exactly one primary group. New
+classes or modules without ownership, unknown selectors and duplicate primary
+ownership fail validation. The smoke profile selects a few methods across groups.
+Listing, dry runs and coverage checks use only Python's standard library and do
+not import unrelated tests, Qt, PyNite or optional SDKs. `--collect-only` imports
+only the selected Python tests and lists their IDs without executing them.
+`-v` prints individual results; `--failfast` stops after a failure. Failures and
+missing viewport tools return a nonzero status. This runner installs nothing.
+
+The viewport groups invoke the existing offline scripts, using the separately
+installed Node/Playwright/Chromium tools described below and the same
+`PLAYWRIGHT_MODULE` / `PLAYWRIGHT_BROWSERS_PATH` environment settings. The `docs`
+group runs documentation unit checks; the strict site build remains a separate
+command so normal tests do not require Zensical. `mcp` needs the optional extra to
+include wire tests; otherwise those tests retain their existing skip behaviour.
+
+Run the complete Python suite for changes to shared infrastructure/model/solver
+contracts and before releases. A passing focused group is not permission to
+ignore a known failure elsewhere. `all` includes every Python group, including
+smoke cases through their primary classes, but does not start browser checks,
+performance benchmarks or a documentation build automatically. An explicit `all`
+run compares actual test IDs with ordinary unittest discovery before execution,
+including inherited or dynamically supplied cases:
+
+```sh
+uv run --locked --extra mcp python -B scripts/test.py all
+# Original unittest discovery remains supported:
+uv run --locked --extra mcp python -B -m unittest discover -s tests
 ```
 
 The Qt interaction tests run offscreen. The suite covers project persistence,
