@@ -73,6 +73,13 @@ and placement. Turn on Deformed to see all three slabs and their supporting
 frames. Keep the method Linear elastic: coupled slabs are outside the P-Delta
 workflow. The example uses elastic concrete slabs and steel frame members.
 
+[![Three-storey frame with three slab surfaces, downward pressures and red deformation overlay](../assets/screenshots/three-storey-slabs.png)](../assets/screenshots/three-storey-slabs.png)
+
+*The actual 3D viewport after a Gravity analysis, with labels hidden for clarity.
+The red overlay exaggerates slab and frame displacement; use the result tables
+for numerical values. All three floors transfer their prescribed pressures to
+the supporting frame.*
+
 ## Choose a Frame Analysis Method
 
 Open **File > Examples > P-Delta > Slender Column - Gravity and Lateral Load**
@@ -82,6 +89,14 @@ The larger combined displacement comes from the compressive Gravity load.
 Changing the method to Linear elastic makes Combined give 2.4925 in as well.
 The strict equilibrium tab can flag small force residuals from PyNite's
 approximate second-order recovery; see the [method limits](../analysis/solve.md).
+
+[![P-Delta column with amplified red sway and the N9 tip displacement selected in the results](../assets/screenshots/p-delta-column.png)](../assets/screenshots/p-delta-column.png)
+
+*Open the image for full-size text. Select N9 to see the Combined tip DX of about
+3.9919 in in the Nodes table.
+The red deformed shape is visually amplified. Its sampled maximum label can
+differ slightly from the nodal tip value; compare table values when checking
+the example.*
 
 Use **Edit > Analysis Method** to switch a frame-only project from **Linear elastic**
 to **P-Delta elastic**, then analyze again. The result label records the method.
@@ -96,6 +111,12 @@ plastic behaviour are separate pending workflows; read the
 
 Select an item and press **Shift+F** to frame it; **F** fits the whole model.
 Double-click a recognized Model Findings row to select and zoom to the problem.
+
+[![A real interior-node finding selects N5 and column M1 and frames the affected geometry](../assets/screenshots/model-findings.png)](../assets/screenshots/model-findings.png)
+
+*Here an extra node lies inside a column without a shared member connection.
+The finding explains the repair; double-clicking it brings the affected geometry
+into view. Follow the [model-check example](../modeling/topology.md) to reproduce it.*
 
 Press **F1** for the documentation website, or use **Help > Keyboard Shortcuts**
 for an offline command reference. **View > Restore Default Layout** brings back

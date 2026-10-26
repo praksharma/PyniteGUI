@@ -946,11 +946,21 @@ These links open only when requested; the editor does not require an online
 connection. If your system cannot launch the browser, a dialog provides the
 address to open manually.
 
+![Help menu with documentation, shortcuts and support commands](docs/assets/screenshots/help-menu.png)
+
+*Help commands in the current checkout. Native menu placement and shortcut symbols
+vary by platform; the screenshots below use example projects and disposable settings.*
+
 **Help > Keyboard Shortcuts** opens a searchable native reference built from the
 current editor commands. It displays the platform's shortcut notation, includes
 both redo bindings, and keeps Undo/Redo labels stable after edits. Single-letter
 tools apply when the model view has focus; Escape cancels the current gesture.
 The reference is available offline.
+
+![Dark shortcut reference filtered to Fit and Fit Selection](docs/assets/screenshots/shortcuts.png)
+
+*Search for `fit` to compare whole-model **F** and selection-only **Shift+F**.
+The reference follows the application's light or dark appearance.*
 
 **Help > About PyniteGUI** shows the installed application version and
 license, with buttons for documentation, the repository and issue reports.
@@ -961,6 +971,11 @@ Python, Qt, PySide6, PyNite, NumPy/SciPy and operating-system versions for a bug
 report. It does not submit an issue; **Report an Issue** opens the project's
 issue page for you to review and write a report. About and Shortcuts windows
 can stay beside the editor and reuse the same window when reopened.
+
+![About window with version, license and Repository button](docs/assets/screenshots/about.png)
+
+*About links directly to the repository. Copy Version Details prepares text for
+your report; it does not send anything.*
 
 Use **View > Restore Default Layout** if a dock or toolbar has been hidden,
 floated or moved. It restores the Structure and Properties panels and the
@@ -1024,6 +1039,11 @@ appears in the searchable Help reference.
   labels, property tables, results, and open diagrams use the selected system.
   Switching is undoable, preserves the physical model and valid results, and is
   saved with the project. New projects keep the currently selected system.
+
+See the [illustrated first-model walkthrough](https://praksharma.github.io/PyniteGUI/start/first-model/)
+for views of the three-storey slab and P-Delta examples, including the expected
+reactions and tip displacement to check after analysis.
+
 ### Drawing and Selection
 
 - Choose Member (M), then click two points. Coordinates snap to the project grid
@@ -1087,6 +1107,15 @@ appears in the searchable Help reference.
   and zoom disabled. Referenced loads are revealed when navigating to them.
   Navigation does not edit the model. Engineering edits clear findings;
   unit changes preserve them. Analysis also runs the model checks.
+
+[![Model Findings highlights node N5 inside column M1 and zooms to the connection](docs/assets/screenshots/model-findings.png)](docs/assets/screenshots/model-findings.png)
+
+*Open the image for full-size text. To reproduce this connectivity finding,
+open **File > Examples > 2D Frames > Portal Frame - Distributed Load** and add
+a node at (0, 72 in), inside M1. Run **Edit > Check Model**, then double-click the
+first finding. N5 and M1 are selected and framed together. Use **Edit > Connect
+Intersections** to make the joint explicit, then check again before analysis.*
+
 - **Edit > Subdivide Selected Members** divides selected frame members into
   2–100 equal segments in one undoable edit. The first segment retains the member
   ID; outer-end releases, assignments, load locations/cases and distributed
@@ -1371,6 +1400,12 @@ changes the open model, its dirty state or undo history. Recent-file opens still
 use the normal unsaved-change prompt. A file that disappears after the menu opens
 reports its unavailable location before prompting to discard work. Malformed
 history preferences are ignored instead of preventing startup.
+
+![Recent Projects menu with an unavailable slab file and history cleanup actions](docs/assets/screenshots/recent-projects.png)
+
+*Example history: Portal is available; Slabs is unavailable. Remove Unavailable
+Entries removes the grey entry; Clear Recent Projects empties the list. Project
+files remain on disk.*
 
 - Save/Open uses versioned `.pynite.json` project files. Ctrl+Z and Ctrl+Shift+Z
   undo and redo model edits. Delete removes the selected entity and its dependent
@@ -1897,19 +1932,35 @@ CI uses `--only-group docs` so it need not install the desktop/scientific stack.
 The GUIDE remains the maintained detailed reference. `scripts/docs.py` maps every
 GUIDE heading into a topic page and copies the roadmaps, changelog and release
 record, rewriting repository-document links. Unmapped or duplicate headings and
-navigation omissions fail preparation. `docs/` contains only authored entry pages,
-the first-model tutorial, feature index and custom styles. Add or update detailed
+navigation omissions fail preparation. `docs/` contains authored entry pages,
+the first-model tutorial, feature index, custom styles and screenshot assets. Add or update detailed
 workflows here in GUIDE.md, not in generated topic files. Update the topic map and
 `zensical.toml` navigation if you add a heading. Keep the feature index and tutorial
 accurate when workflows change. This avoids two competing copies of the manual.
 
 Generated Markdown/assets live under `.docs-build/docs`; built HTML lives under
 `site`. Both are ignored. The existing logo and screenshots are copied from
-`assets/`, not maintained as duplicate binaries. Search and light/dark appearance
+`assets/`; current workflow screenshots live in `docs/assets/screenshots/` and
+are copied with the authored pages. GUIDE image links use `docs/assets/...` so
+they resolve in the repository; generation rebases them for each site topic.
+Search and light/dark appearance
 are provided by Zensical; system fonts avoid runtime Google Fonts requests.
 The documentation describes the current checkout and explicitly distinguishes
 experimental surface geometry/coupled slabs from established frame and separate
 plate-only workflows.
+
+Refresh the native screenshots from the desktop development environment with
+`python -B scripts/capture_docs.py` (or use `--output` for a review directory).
+The script captures real widgets with temporary example files and settings,
+including a genuine topology finding and solved P-Delta result. It does not
+open web links or use personal project history. It defaults to Qt's offscreen
+platform; platform fonts can change the resulting pixels. Inspect every image
+before committing it. The three-storey image comes from the real offline 3D
+viewport check: run `node tests/mesh_viewport.spec.cjs` with Playwright configured,
+then copy `/tmp/pynite-mesh-qa/multistorey.png` to
+`docs/assets/screenshots/three-storey-slabs.png`. See the mesh viewport QA setup
+above. Capturing images requires the desktop/viewport dependencies; building
+the manual still requires only the docs dependency group.
 
 `.github/workflows/docs.yml` builds/checks pull requests, uploads the generated
 site and deploys only trusted pushes to `master` or manual runs on that branch.

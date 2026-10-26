@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Illustrated Help, shortcuts, model findings, recent history and slab/P-Delta
+  walkthroughs with real desktop/viewport screenshots. Adds a disposable-example
+  native capture script and repository-to-site image-link rebasing with docs checks.
+
 - Finding-focused zoom and View > Fit Selection (Shift+F) frame nodes, members,
   load points/spans and whole surfaces in 2D/3D. Preserve model/results and spatial
   viewing direction, reveal referenced load/surface graphics and retain full-model

@@ -44,6 +44,13 @@ class DocsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Unmapped'):
             docs.rewrite_links('[Bad](GUIDE.md#missing)', 'index.md')
 
+    def test_repository_screenshots_resolve_at_each_topic_depth(self):
+        text = '![Help](docs/assets/screenshots/help-menu.png) [Remote](https://example.com/docs/assets/a.png)'
+        for page, prefix in (('index.md', ''), ('start/help.md', '../'), ('a/b/c.md', '../../')):
+            rewritten = docs.rewrite_links(text, page)
+            self.assertIn(f'![Help]({prefix}assets/screenshots/help-menu.png)', rewritten)
+            self.assertIn('[Remote](https://example.com/docs/assets/a.png)', rewritten)
+
     def test_prepare_is_deterministic_and_never_changes_canonical_sources(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -61,6 +68,8 @@ class DocsTests(unittest.TestCase):
             for name, content in originals.items():
                 self.assertEqual((root/name).read_bytes(), content)
             self.assertEqual((output/'assets/logo.png').read_bytes(), (ROOT/'assets/PyniteGUI Structural Frame Logo.png').read_bytes())
+            self.assertEqual((output/'assets/screenshots/help-menu.png').read_bytes(),
+                             (ROOT/'docs/assets/screenshots/help-menu.png').read_bytes())
             with (root/'GUIDE.md').open('a') as stream:
                 stream.write('\n## Unmapped new feature\nDetails\n')
             with self.assertRaisesRegex(ValueError, 'mapping'):

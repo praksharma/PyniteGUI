@@ -116,6 +116,10 @@ def rewrite_links(text, page):
             if anchor and guide_target is None:
                 raise ValueError(f"Unmapped GUIDE anchor: {anchor}")
             return "](" + relative(guide_target or SECTION_PAGES["PyniteGUI Guide"][0], page) + ")"
+        if name.startswith("docs/assets/"):
+            # GUIDE links resolve in the repository root; topic pages live at
+            # different depths, with authored assets copied under assets/.
+            return "](" + relative(name.removeprefix("docs/"), page) + ("#"+anchor if anchor else "") + ")"
         return match[0]
     return re.sub(r"\]\(([^\s)]+)\)", replacement, text)
 

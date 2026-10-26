@@ -283,6 +283,9 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
 - [ ] Owner: enable GitHub Pages with GitHub Actions as the source and push/run
   the documentation workflow; verify the public URL after deployment.
 - [ ] Continue expanding worked tutorials and screenshots alongside new features.
+- [x] Illustrate Help/About, shortcut search, finding-focused navigation, recent
+  history cleanup and the three-storey slab/P-Delta walkthroughs with real app
+  screenshots. Add repeatable native captures and check image links on the site.
 - [x] Prepare 1.0.0rc1 metadata, consistent desktop/MCP version reporting,
   release notes/checklist, source/wheel audits and isolated installed-wheel smoke scripts.
 - [x] Publish the GitHub 1.0.0rc1 prerelease (see README for the published release).
