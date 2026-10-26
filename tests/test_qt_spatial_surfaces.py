@@ -222,7 +222,7 @@ class SpatialSurfaceEditorTests(unittest.TestCase):
         self.assertEqual(error.exception.code, "surface_geometry_only")
         response = commands.execute("read_model", {})
         self.assertIn("S1", response["model"]["surfaces"])
-        self.assertIn("native-only", response["schema"]["surface_geometry"])
+        self.assertIn("editable", response["schema"]["surface_geometry"])
 
     def test_model_tables_and_mcp_frame_edits_retain_surface_recipes(self):
         self.add_surface()
@@ -235,8 +235,9 @@ class SpatialSurfaceEditorTests(unittest.TestCase):
             self.assertEqual(dialog.definition.surfaces, project.surfaces)
         finally:
             dialog.deleteLater()
-        with self.assertRaises(AutomationError):
-            batch_candidate(project, [{"op": "delete", "collection": "surfaces", "key": "S1"}])
+        candidate = batch_candidate(project, [{"op": "delete", "collection": "surfaces", "key": "S1"}])
+        self.assertFalse(candidate.surfaces)
+        self.assertIn("S1", project.surfaces)
 
     def test_surface_changes_invalidate_results_and_failed_generation_is_atomic(self):
         from contextlib import redirect_stdout

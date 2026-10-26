@@ -208,6 +208,52 @@ class ServerWireTests(ServerWindowTests):
         self.assertEqual(self.window.project.to_dict(), before)
         self.assertEqual(self.window.undo.count(), count)
 
+    def test_wire_multistorey_surface_batch_analysis_results_and_atomic_rejection(self):
+        from copy import deepcopy
+        from surface_fixtures import two_storey_slabs
+        project = two_storey_slabs()
+        definitions, pressures = deepcopy(project.surfaces), deepcopy(project.surface_pressures)
+        project.surfaces.clear()
+        project.surface_pressures.clear()
+        project.surface_analysis_enabled = False
+        self.window.load_project(project)
+        self.server.permissions.set_group("Model edits", True)
+        self.server.permissions.set_group("Analysis", True)
+        self.window.automation_mode.set_enabled(True)
+        async def callback(client):
+            model = (await client.call_tool("read_model", {})).structured_content["data"]
+            self.assertIn("surfaces", model["schema"]["entities"])
+            operations = [{"op":"put","collection":"surfaces","key":name,"value":mesh.to_dict()} for name,mesh in definitions.items()]
+            operations += [{"op":"put","collection":"surface_pressures","key":name,"value":value} for name,value in pressures.items()]
+            operations += [{"op":"set","collection":"settings","value":{"surface_analysis_enabled":True}}]
+            edited = await client.call_tool("apply_batch", {"session_id":model["session_id"], "expected_revision":model["revision"], "operations":operations})
+            self.assertFalse(edited.is_error, edited)
+            revision = edited.structured_content["data"]["revision"]
+            started = await client.call_tool("run_analysis", {"session_id":model["session_id"], "expected_revision":revision})
+            self.assertFalse(started.is_error, started)
+            job = started.structured_content["data"]["job_id"]
+            for _ in range(300):
+                status = (await client.call_tool("analysis_status", {"session_id":model["session_id"], "job_id":job})).structured_content["data"]
+                if not status["running"]:
+                    break
+                await asyncio.sleep(.02)
+            self.assertEqual(status["state"], "Current", status)
+            result = await client.call_tool("read_results", {"session_id":model["session_id"], "combination":"Factored"})
+            self.assertFalse(result.is_error, result)
+            self.assertGreater(result.structured_content["data"]["total_rows"], len(project.nodes))
+            rejected = await client.call_tool("apply_batch", {"session_id":model["session_id"], "expected_revision":revision,
+                "operations":[{"op":"put","collection":"surfaces","key":"Floor2","value":{"origin":[0,241,0]}}]})
+            self.assertTrue(rejected.is_error)
+            current = (await client.call_tool("analysis_status", {"session_id":model["session_id"]})).structured_content["data"]
+            self.assertEqual(current["revision"], revision)
+            self.assertEqual(current["snapshot"], status["snapshot"])
+        self.with_client(callback)
+        self.assertEqual(self.window.undo.count(), 1)
+        self.assertEqual(set(self.window.project.surfaces), {"Floor1","Floor2"})
+        self.window.automation_mode.set_enabled(False)
+        self.window.undo.undo()
+        self.assertEqual(self.window.project.to_dict(), project.to_dict())
+
     def test_cached_tool_calls_cannot_bypass_revocation_and_real_wire_edits_undo(self):
         self.server.permissions.set_group("Model edits", True)
         original = self.window.project.to_dict()

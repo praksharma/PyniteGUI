@@ -1,5 +1,5 @@
 """Discoverable model reference derived from the actual desktop dataclasses."""
-from dataclasses import MISSING, fields
+from dataclasses import MISSING, asdict, fields
 from .model import Node, Member, Load, Material, Section
 from .spatial_model import SpatialNode, SpatialMember, SpatialLoad
 from .units import UNIT_SYSTEMS
@@ -53,10 +53,22 @@ def model_reference(dimension="2D"):
                                                "FX/FY/MZ are global; Local x/y/angle require a member. Angle is a global force angle measured from +X.")
     loads["magnitude"]["description"] = "Signed kip for point forces, kip-in for point moments, kip/in for distributed forces."
     loads["case"]["description"] = "Existing load_cases identifier; specify read_model's default_load_case explicitly."
+    surface_info = None
+    settings = {"unit_system": {"enum": list(UNIT_SYSTEMS)}, "grid": "positive inches",
+                "default_material": "existing material ID", "default_section": "existing section ID",
+                "default_load_case": "existing case ID", "self_weight_case": "existing case ID or null",
+                "self_weight_factor": "positive finite multiplier"}
+    if spatial:
+        entities["surfaces"] = surface_reference(entities["materials"])
+        entities["surface_pressures"] = {"type": "object", "additionalProperties": {"type": "number", "minimum": -1e6, "maximum": 1e6},
+            "description": "Collection key is an existing surface ID. put replaces its entire case -> signed pressure map (kip/in2); delete removes the map. Cases must exist. Remove assignments explicitly when deleting a surface/case."}
+        settings["surface_analysis_enabled"] = {"type": "boolean", "default": False,
+            "description": "Experimental coupled analysis opt-in. When true, the complete candidate must contain only conforming, connected rectangular Quad surfaces. No solve occurs during editing."}
+        surface_info = "Spatial v20: surfaces and surface_pressures are editable via put/delete; surface_analysis_enabled via settings/set. Recipes use canonical inches/kip, pressure kip/in2. Geometry-only surfaces block analysis. Coupled candidate topology is checked once after all operations; stability and independent equilibrium remain analysis gates."
     return {
         "dimension": dimension, "input_units": "Canonical inch-kip regardless of display units; angles in degrees, rotations in radians.",
         "entities": entities,
-        "surface_geometry": "Spatial project version 20 includes read-only surfaces, surface_pressures (surface -> case -> kip/in2), and surface_analysis_enabled. Surface edits and opt-in are native-only. Enabled rectangular Quad surfaces share coincident solver nodes with frames; physical members subdivide at mesh nodes. Nonconforming/disconnected meshes and unsupported families block analysis. Disabled surfaces remain geometry-only and block analysis." if spatial else None,
+        "surface_geometry": surface_info,
         "supports": {
             "dof_order": ["DX", "DY", "DZ", "RX", "RY", "RZ"] if spatial else ["DX", "DY", "RZ"],
             "presets": {"free": [False]*(6 if spatial else 3), "pin": [True, True, True, False, False, False] if spatial else [True, True, False],
@@ -67,10 +79,7 @@ def model_reference(dimension="2D"):
                        "delete": "op,collection,key; no value. Fix all dependent references explicitly in the same batch.",
                        "load_cases": "put/delete with key and no value.",
                        "settings": "op='set',collection='settings',value=partial settings; no key."},
-        "settings": {"unit_system": {"enum": list(UNIT_SYSTEMS)}, "grid": "positive inches",
-                     "default_material": "existing material ID", "default_section": "existing section ID",
-                     "default_load_case": "existing case ID", "self_weight_case": "existing case ID or null",
-                     "self_weight_factor": "finite signed multiplier"},
+        "settings": settings,
         "validation": ["All operations validate together and create one undo step; errors make no changes.",
                        "Material E and section A/Iy/Iz/J must be positive; rho nonnegative; nu between -1 and 0.5 (exclusive).",
                        "Distributed loads require a frame member, force direction and 0 <= position < end_position <= 1; end_magnitude is the intensity at the end, so set both magnitudes equal for a uniform load.",
@@ -80,10 +89,55 @@ def model_reference(dimension="2D"):
 
 def batch_examples(project):
     # Separate examples avoid suggesting that a custom support is needed for a preset.
-    return {"note": "Example identifiers must be changed if they already exist. Use the current session/revision from read_model.",
+    examples = {"note": "Example identifiers must be changed if they already exist. Use the current session/revision from read_model.",
             "create_cantilever": [
                 {"op": "put", "collection": "nodes", "key": "ExampleA", "value": {"x": 0, "y": 0, "support": "fixed"}},
                 {"op": "put", "collection": "nodes", "key": "ExampleB", "value": {"x": 120, "y": 0}},
                 {"op": "put", "collection": "members", "key": "ExampleBeam", "value": {"start": "ExampleA", "end": "ExampleB", "material": project.default_material, "section": project.default_section}},
                 {"op": "put", "collection": "loads", "key": "ExampleForce", "value": {"target": "ExampleB", "kind": "point", "direction": "FY", "magnitude": -1, "case": project.default_load_case}}],
             "update_custom_support": {"op": "put", "collection": "nodes", "key": "ExampleA", "value": {"support": "custom", "restraint_x": True, "restraint_y": True, "restraint_rz": False}}}
+
+    if getattr(project, "dimension", "2D") == "3D":
+        examples["create_surface_geometry"] = [
+            {"op":"put", "collection":"surfaces", "key":"ExampleFloor", "value":{
+                "plane":"XZ", "origin":[0,144,0], "parameters":{"width":240,"height":180}, "mesh_size":60, "thickness":6}},
+            {"op":"put", "collection":"surface_pressures", "key":"ExampleFloor", "value":{project.default_load_case:.001}}]
+        examples["surface_note"] = "ExampleFloor is geometry-only until settings.surface_analysis_enabled is true. Positive XZ pressure acts in -Y. Enabling requires a conforming connected frame/interface; include matching frame/surface edits together."
+    return examples
+
+
+def surface_reference(material_schema):
+    from copy import deepcopy
+    from .mesh_model import MeshDefinition, GENERATORS
+    defaults = asdict(MeshDefinition())
+    properties = {}
+    for field in fields(MeshDefinition):
+        kind = {str:"string", float:"number", int:"integer", dict:"object", list:"array", Material:"object"}[field.type]
+        properties[field.name] = {"type":kind, "default":defaults[field.name]}
+    material = deepcopy(material_schema)
+    material.pop("required_on_create", None)
+    for name, value in defaults["material"].items():
+        material["properties"][name]["default"] = value
+    material["properties"]["name"]["description"] = "Recipe-local material name; independent of the surface ID and project material library."
+    material["update"] = "Nested material fields merge during a surface put."
+    material["description"] = "Recipe-local material object, not a project-material ID. put merges its fields; numeric changes clear preset provenance unless explicitly supplied."
+    properties["material"].update(material)
+    properties["name"]["description"] = "Omit to use the operation key, or supply the identical name."
+    for name, values in (("generator",list(GENERATORS)), ("plane",["XY","XZ","YZ"]), ("axis",["X","Y","Z"]), ("element_type",["Quad","Rect"]), ("unit_system",list(UNIT_SYSTEMS))):
+        properties[name]["enum"] = values
+    properties["parameters"]["description"] = "Replace the complete generator-specific parameter map; see generator_parameters. Lengths are inches; num_* values are integer counts. Changing generator requires matching parameters in the final batch."
+    properties["origin"].update(items={"type":"number"}, minItems=3, maxItems=3)
+    for name in ("x_control","y_control"):
+        properties[name].update(items={"type":"number"}, maxItems=32,
+            description="Replace the list of local rectangle coordinates, strictly inside its bounds (inches).")
+    properties["openings"].update(maxItems=16, items={"type":"object", "additionalProperties":False,
+        "required":["name","x_left","y_bott","width","height"], "properties":{
+            key:{"type":"string" if key=="name" else "number"} for key in ("name","x_left","y_bott","width","height")}},
+        description="Replace all rectangular openings; inches in local recipe coordinates. Openings must lie within the rectangle and cannot overlap/touch.")
+    for name, value in (("format","pynitegui-mesh"),("version",1),("units","in-kip")):
+        properties[name] = {"const":value, "description":"Optional fixed metadata when copying a read_model recipe."}
+    return {"type":"object", "properties":properties, "additionalProperties":False, "required_on_create":[],
+        "update":"put merges recipe fields; material merges nested fields; parameters, lists and openings replace whole values. delete needs explicit pressure-map cleanup. All final recipe and coupled interface checks are atomic.",
+        "generator_parameters":{name:dict(parameters) for name,(_,parameters) in GENERATORS.items()},
+        "limits":"16 project meshes; 1024 elements/mesh; 4096 total before openings. Analysis supports rectangle/Quad only; other families are geometry-only.",
+        "positive_pressure_normal":{"XY":"+Z", "XZ":"-Y", "YZ":"+X"}}

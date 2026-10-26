@@ -48,6 +48,9 @@ const server = http.createServer((request,response) => {
       const after=await page.evaluate(()=>window.pyniteViewer.state().camera);
       assert(Math.hypot(...after.map((value,i)=>value-before[i]))>1,`Orbit inactive for ${kind}`);
     }
+    await require("./surface_selection.cjs")(page,payloads.mixed);
+    assert.equal(payloads.multistorey.surfaceMeshes.length,2);
+    assert(payloads.multistorey.surfaceMeshes.every(mesh=>mesh.nodes.some(node=>Math.abs(node.displacement[1])>0)), 'Each storey must carry its own deformed slab nodes');
     const coupled=payloads.coupled;
     assert(coupled.surfaceMeshes[0].nodes.some(node=>Math.abs(node.displacement[1])>.01),'Coupled slab displacement missing');
     await page.setViewportSize({width:1920,height:1080});
@@ -87,6 +90,6 @@ const server = http.createServer((request,response) => {
     await page.waitForTimeout(100);
     assert((await page.evaluate(()=>window.pyniteViewer.state().resources.geometries))<=resources+2,'Surface rebuild leaks');
     assert.deepEqual(errors,[]);
-    console.log('PASS: seven PyNite meshes, mixed frame/surface and surface-only scenes, desktop pixels/framing, surface picking, orbit, visibility and bounded rebuild resources');
+    console.log('PASS: seven PyNite meshes, mixed frame/surface and surface-only scenes, desktop pixels/framing, surface picking/box selection (enclosed, crossing, openings, additive and cancellation), orbit, visibility and bounded rebuild resources');
   } finally {await browser.close();server.close();}
 })().catch(error=>{console.error(error);server.close();process.exitCode=1;});

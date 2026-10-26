@@ -37,7 +37,7 @@ PyNite's seven generators, options, 3D previews and recipe/export files. Meshes 
 be fitted to frame levels/perimeters and saved in the main 3D model. Rectangular
 Quad slabs offer opt-in experimental frame coupling, pressure loads and deformed
 meshes; other generators remain geometry-only. A separate Quad/Rect plate workspace
-is also available.
+is also available. Main-model surfaces support box selection and guarded MCP edits.
 See [scope and limits](GUIDE.md#experimental-surface-meshing); these are not in the rc1 wheel.
 
 For the release wheel, install the downloaded file without cloning:

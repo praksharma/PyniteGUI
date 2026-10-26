@@ -46,6 +46,14 @@ if __name__ == "__main__":
     window.analysis_finished(result, "")
     window.deformed_action.setChecked(True)
     payloads["coupled"] = {**viewport_payload(window), "labels": False, "plane": "XZ"}
+    from surface_fixtures import two_storey_slabs
+    window.load_project(two_storey_slabs())
+    with contextlib.redirect_stdout(io.StringIO()):
+        result = analyze(window.project)
+    window.analysis_revision = window.revision
+    window.analysis_finished(result, "")
+    window.deformed_action.setChecked(True)
+    payloads["multistorey"] = {**viewport_payload(window), "labels": False, "plane": "XZ"}
     window.saved = window.project.to_dict()
     window.close()
     print(json.dumps(payloads, allow_nan=False))

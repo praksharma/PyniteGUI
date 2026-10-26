@@ -63,11 +63,14 @@ def batch_candidate(project, operations):
         raise AutomationError("invalid_batch", "Batch exceeds 512 KiB.")
     data = project.to_dict()
     constructors = {"nodes": Node, "members": Member, "loads": Load, "materials": Material, "sections": Section}
-    if getattr(project, "dimension", "2D") == "3D":
+    spatial = getattr(project, "dimension", "2D") == "3D"
+    if spatial:
         from .spatial_model import SpatialNode, SpatialMember, SpatialLoad
         constructors.update(nodes=SpatialNode, members=SpatialMember, loads=SpatialLoad)
     settings = {"unit_system", "grid", "default_material", "default_section", "default_load_case",
                 "self_weight_case", "self_weight_factor"}
+    if spatial:
+        settings.add("surface_analysis_enabled")
     for index, operation in enumerate(operations):
         try:
             if not isinstance(operation, dict) or set(operation)-{"op", "collection", "key", "value"}:
@@ -80,7 +83,34 @@ def batch_candidate(project, operations):
                 continue
             if not isinstance(key, str) or not key.strip() or key != key.strip():
                 raise AutomationError("invalid_batch", "Entity keys must be nonempty identifiers.")
-            if collection in constructors:
+            if spatial and collection == "surfaces":
+                from .mesh_model import MeshDefinition
+                entities = data[collection]
+                if action == "put":
+                    allowed = {field.name for field in fields(MeshDefinition)} | {"format", "version", "units"}
+                    if not isinstance(value, dict) or set(value)-allowed or value.get("name", key) != key:
+                        raise AutomationError("invalid_batch", "Unsupported surface field or inconsistent name.")
+                    previous = entities.get(key) or MeshDefinition(name=key).to_dict()
+                    values = {**previous, **value, "name": key}
+                    if "material" in value and isinstance(value["material"], dict):
+                        material = value["material"]
+                        values["material"] = {**previous["material"], **material}
+                        if "preset" not in material and any(field in material and material[field] != previous["material"].get(field)
+                                                            for field in ("E", "nu", "rho")):
+                            values["material"]["preset"] = None
+                    entities[key] = values
+                elif action == "delete" and value is None and key in entities:
+                    del entities[key]
+                else:
+                    raise AutomationError("invalid_batch", "Invalid surface operation.")
+            elif spatial and collection == "surface_pressures":
+                if action == "put" and isinstance(value, dict):
+                    data[collection][key] = value
+                elif action == "delete" and value is None and key in data[collection]:
+                    del data[collection][key]
+                else:
+                    raise AutomationError("invalid_batch", "Use put with a complete case-pressure map, or delete an existing map.")
+            elif collection in constructors:
                 entities = data[collection]
                 if action == "put":
                     allowed = {field.name for field in fields(constructors[collection])}
@@ -121,7 +151,11 @@ def batch_candidate(project, operations):
         except (ValueError, TypeError, KeyError, OverflowError) as error:
             raise AutomationError("invalid_batch", str(error), index) from error
     try:
-        return Project.from_dict(data)
+        candidate = Project.from_dict(data)
+        if spatial:
+            from .surface_solver import validate_coupled_topology
+            validate_coupled_topology(candidate)
+        return candidate
     except (ValueError, TypeError, KeyError, OverflowError) as error:
         # Cross-entity constraints apply to the completed batch; do not blame an
         # operation when several cooperating changes can cause or fix the issue.

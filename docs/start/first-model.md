@@ -53,6 +53,13 @@ Enable Deformed to see the slab and beams together.
     alignment are required. Other surface families remain geometry-only.
     See [coupled slab limits](../surfaces/main-model.md) before using this workflow.
 
+For multiple storeys, create a complete frame perimeter at each floor elevation
+and explicitly choose the matching placement level for each slab. New rectangles
+default to the highest valid level. Box selection can include several projected
+slabs; use the Surfaces tree for an exact floor selection when they overlap.
+Frame/surface/pressure changes can also be submitted as one guarded
+[MCP batch](../automation/mcp.md); coupled interfaces validate before committing.
+
 ## Build Your Own
 
 Continue with [drawing and selection](../modeling/drawing.md),

@@ -165,3 +165,23 @@ def attach_surfaces(project, model):
         raise ValueError("Disconnected frame/surface components. Align mesh vertices with frame joints; proximity is not a connection.")
     model._pynitegui_surfaces = maps
     return maps
+
+
+def validate_coupled_topology(project):
+    """Check a complete automation candidate without solving or modifying it.
+
+    Reuse the production assembler for conformity, coincident-node ownership,
+    overlap and connected-component checks. Stability/equilibrium remain solve
+    gates; model editing must not claim to certify an unsolved structure.
+    """
+    if not getattr(project, "surfaces", {}) or not project.surface_analysis_enabled:
+        return
+    from Pynite import FEModel3D
+    from .spatial_surfaces import surface_analysis_issue
+    issue = surface_analysis_issue(project)
+    if issue:
+        raise ValueError(issue)
+    model = FEModel3D()
+    for name, node in project.nodes.items():
+        model.add_node(name, *node.coords)
+    attach_surfaces(project, model)

@@ -12,6 +12,21 @@ function crosses(a,b,rect){
   return true;
 }
 
+function inTriangle(point,a,b,c){
+  const cross=(u,v,w)=>(v.x-u.x)*(w.y-u.y)-(v.y-u.y)*(w.x-u.x);
+  if(Math.abs(cross(a,b,c))<1e-9)return false;
+  const signs=[cross(a,b,point),cross(b,c,point),cross(c,a,point)];
+  return signs.every(value=>value>=-1e-9)||signs.every(value=>value<=1e-9);
+}
+
+function faceCrosses(points,rect){
+  if(points.some(point=>rect.containsPoint(point)))return true;
+  if(points.some((point,index)=>crosses(point,points[(index+1)%points.length],rect)))return true;
+  // A small crossing rectangle can lie wholly inside a large face.
+  return [rect.min,rect.max,new THREE.Vector2(rect.min.x,rect.max.y),new THREE.Vector2(rect.max.x,rect.min.y)]
+    .some(point=>inTriangle(point,points[0],points[1],points[2])||inTriangle(point,points[0],points[2],points[3]));
+}
+
 export function rectangleSelection(data,camera,width,height,from,to){
   const rect=new THREE.Box2(new THREE.Vector2(Math.min(from[0],to[0]),Math.min(from[1],to[1])),
     new THREE.Vector2(Math.max(from[0],to[0]),Math.max(from[1],to[1])));
@@ -26,6 +41,18 @@ export function rectangleSelection(data,camera,width,height,from,to){
   for(const member of data.members){
     const a=points.get(member.start),b=points.get(member.end);
     if(a&&b&&(crossing?crosses(a,b,rect):rect.containsPoint(a)&&rect.containsPoint(b)))selected.push(['members',member.name]);
+  }
+  for(const mesh of data.surfaceMeshes||[]){
+    const vertices=mesh.nodes.map(node=>{
+      const p=new THREE.Vector3(...node.position).project(camera);
+      return p.z < -1 || p.z > 1?null:new THREE.Vector2((p.x+1)*width/2,(1-p.y)*height/2);
+    });
+    // Use actual cells rather than the recipe's bounding box: openings and
+    // curved meshes must not select empty space. IDs remain recipe-owned.
+    const faces=mesh.surfaces.map(cell=>cell.map(index=>vertices[index]));
+    const hit=crossing?faces.some(face=>face.every(Boolean)&&faceCrosses(face,rect)):
+      faces.length>0&&faces.every(face=>face.every(point=>point&&rect.containsPoint(point)));
+    if(hit)selected.push(['surfaces',mesh.name]);
   }
   return selected;
 }

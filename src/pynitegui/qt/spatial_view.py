@@ -144,7 +144,7 @@ class Bridge(QObject):
         try:
             selections = json.loads(data)
             if not isinstance(selections, list) or any(not isinstance(item, list) or len(item) != 2
-                    or item[0] not in ("nodes", "members") or not isinstance(item[1], str)
+                    or item[0] not in ("nodes", "members", "surfaces") or not isinstance(item[1], str)
                     or item[1] not in getattr(window.project, item[0]) for item in selections):
                 return
         except (ValueError, TypeError):

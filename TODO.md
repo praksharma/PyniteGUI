@@ -89,8 +89,11 @@ below and the secondary interface wishlist retain their more specific scope.
   mesh-convergence benchmarks before broadening the experimental scope.
 - [ ] Add eccentric slab/beam offsets or explicit connectors with tested load
   transfer; current connections require coincident centreline/mid-surface nodes.
-- [ ] Add surface-aware MCP edit schemas and atomic topology/assignment validation;
+- [x] Add surface-aware MCP edit schemas and atomic topology/assignment validation;
   add surface box selection after the geometry ownership rules are established.
+  Cover deferred recipe/pressure/case references, one-step undo, invalid-interface
+  rollback and a real client building/analyzing two-storey slabs. Box selection
+  includes enclosed/crossing faces, holes, additive selection and cancellation.
 - [x] Add rectangular openings/control lines with geometry-owned assignments,
   Quad/Rect analysis, origin/options transfer, version 1 plate-file migration,
   basic mesh-quality checks and net-area pressure/reaction regressions.

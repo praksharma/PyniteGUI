@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Surface-aware MCP batches edit all recipe generators, pressure maps and the
+  coupled-analysis opt-in with deferred assignment validation, production
+  interface/conformity checks and one-step undo. Invalid candidates retain results
+  and model history. Adds two-storey/two-slab load-path, combination, refinement,
+  self-weight and official-client regressions.
+- Main 3D box selection includes whole surface recipes: enclosed/crossing faces,
+  empty openings, additive selection and cancellation, synchronized with the tree.
+
 - Opt-in experimental rectangular Quad slab/frame analysis: coincident six-DOF
   solver nodes, physical-member subdivision, explicit conformity/overlap and
   connectivity checks, pressure cases/combinations, slab self-weight and global
@@ -10,7 +18,7 @@
   Adds pressure controls, deformed meshes, generated-node results,
   report context and a coupled example. Spatial format 20 migrates older files
   with coupling disabled. Curved/Rect main-model analysis, stress contours and
-  MCP surface editing remain pending.
+  surface edge-support editors remain pending.
 - Terminal Ctrl+C now requests normal Qt shutdown instead of repeatedly raising
   KeyboardInterrupt inside timer callbacks. Preserves save/cancel prompts,
   open modal editors and existing analysis/server cleanup.
@@ -28,7 +36,7 @@
   fitting, tree/inspector selection and deletion with undo, persistence and
   autosave/recovery. Surface nodes remain independent from frame joints.
   Manual/live/MCP/direct analysis is guarded against silently ignoring surfaces;
-  MCP reads retain recipes but surface edits and coupled slab analysis are pending.
+  MCP reads retain recipes; explicit opt-in gates experimental coupled analysis.
 - Main toolbar groups use icons with tooltips and vertical separators, without
   repeated File/View/Edit/Loads/Analysis/Results labels; the menu bar is unchanged.
 - PyNite surface-mesh catalog: Rectangle, Annulus, Annular Ring, Annular Transition

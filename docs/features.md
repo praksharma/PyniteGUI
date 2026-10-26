@@ -57,7 +57,7 @@ elements and inclined supports are **not implemented GUI workflows**. See the
 | --- | --- |
 | Seven PyNite generators, Quad/Rect where supported, sizing, origins, modifiers and numbering | [Experimental mesh catalog](surfaces/meshing.md) |
 | Rectangle control lines/openings, recipe files, undo and connectivity export | [Mesh options](surfaces/meshing.md) |
-| Main-model surfaces, selection/edit/delete, saved recipes and reference-frame placement | [Surface geometry](surfaces/main-model.md) |
+| Main-model surfaces, face and enclosed/crossing box selection, edit/delete, saved recipes and frame placement | [Surface geometry](surfaces/main-model.md) |
 | Opt-in rectangular Quad/frame coupling, normal pressure cases, self-weight and deformed mesh | [Experimental coupled slabs](surfaces/main-model.md) |
 | Rectangle fitting to selected corners/perimeters or complete frame levels | [Slab placement](surfaces/main-model.md) |
 | Separate rectangular Quad/Rect bending tool, pressure/edge supports, contours and nodal CSV | [Experimental plate-only analysis](surfaces/plates.md) |
@@ -65,9 +65,9 @@ elements and inclined supports are **not implemented GUI workflows**. See the
 | Versioned save/open, migrations, undo/redo, recent files and autosave/recovery | [History](reference/saving.md), [formats](reference/formats.md), [recovery](reference/recovery.md) |
 | Editable examples, light/dark themes and scrollable properties | [Examples and preferences](start/examples.md) |
 | Software-rendering recovery, observed renderer diagnostics, NVIDIA/Wayland profiles | [Graphics](start/graphics.md), [Linux NVIDIA](start/nvidia.md) |
-| Optional localhost MCP server, permission groups, guarded atomic edits and background solve lifecycle | [MCP server](automation/mcp.md) |
+| Optional localhost MCP server, frame/surface/pressure batch edits, coupling opt-in, permission groups and background solve lifecycle | [MCP server](automation/mcp.md) |
 
 General curved-shell analysis, slab stress contours, arbitrary CAD meshing,
-shear-wall/mat workflows and MCP surface editing remain pending. A touching
+shear-wall/mat workflows remain pending. A touching
 surface is not connected unless coupled analysis is enabled and the mesh passes
 the shared-node/interface checks.

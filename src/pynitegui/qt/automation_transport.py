@@ -90,7 +90,7 @@ def build_application(bridge, permissions, token, port, network_event, *, requir
                                                snapshot_id=snapshot_id, offset=offset, limit=limit))
 
     @server.tool(description=TOOLS["apply_batch"][1] + " Canonical inch-kip inputs. Operations: "
-                 "put/delete on nodes,members,loads,materials,sections,combinations; put/delete key on load_cases; "
+                 "put/delete on nodes,members,loads,materials,sections,combinations; 3D also surfaces and surface_pressures; put/delete key on load_cases; "
                  "set value on settings. Each operation has op,collection,key,value. Entity put merges fields; "
                  "deletion requires explicit dependent-reference updates in the same batch. All operations validate together. "
                  "REQUIRED WORKFLOW: read_model then inspect its schema or call read_schema; do not guess fields. "
@@ -101,6 +101,9 @@ def build_application(bridge, permissions, token, port, network_event, *, requir
                  "Distributed loads use magnitude and end_magnitude; equal for uniform. See read_schema for allowed directions and all fields. "
                  "2D directions: FX,FY,MZ,Angle,Local x,Local y,Local angle. "
                  "3D directions: FX,FY,FZ,MX,MY,MZ,Angle; members also accept Fx,Fy,Fz,Mx,My,Mz. "
+                 "3D surfaces: put merges recipe fields and nested material; surface_pressures put replaces a surface-keyed case->kip/in2 map. "
+                 "settings/set may enable surface_analysis_enabled. Read read_schema for exact recipes, limits and pressure signs. "
+                 "Coupled final-candidate topology/assignments validate once before commit; remove dependent pressure maps explicitly on deletion. "
                  "Local operation errors include a zero-based error.operation_index. Whole-batch reference/constraint errors omit it; no changes apply.")
     async def apply_batch(session_id: str, expected_revision: StrictInt, operations: list[dict]) -> dict[str, Any]:
         return await call("apply_batch", dict(session_id=session_id, expected_revision=expected_revision, operations=operations))

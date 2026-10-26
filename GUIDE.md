@@ -103,7 +103,8 @@ analysis and curved result recovery need separate benchmarks. The planar pilot's
 in-plane restraints must not be applied to curved shells. Shear-wall and mat
 foundation workflows are specialized model builders, not additional mesh choices
 in this catalog, and remain pending. Rectangular Quad meshes can now participate
-in the experimental coupled main-model workflow below; MCP surface editing is pending.
+in the experimental coupled main-model workflow below; atomic MCP surface edits
+are supported through the main project server.
 
 ### Surfaces in the Main 3D Model
 
@@ -122,7 +123,14 @@ reopens the full recipe editor; apply commits one undo step. Renaming requires
 a unique name distinct from frame nodes, members and loads. Delete removes the
 selected recipe, with undo/redo; mixed selections and Select All include surfaces.
 **View > Surface Geometry** hides/shows meshes without changing the project.
-Surface box selection is not implemented; use face clicks or the tree.
+In 3D Select mode, Box Selection or Shift-drag includes whole surface recipes.
+Left-to-right selects meshes wholly enclosed by the rectangle; right-to-left
+selects any mesh whose projected faces intersect it, including a box wholly inside
+a face. Ctrl/Command adds to the existing selection; Escape cancels. Openings are
+empty space, hidden surfaces are excluded, and no mesh elements or generated
+solver nodes become editable entities. Boxes use undeformed geometry and projected
+faces rather than depth/occlusion, so several storeys can be selected together.
+Use the tree for an exact floor selection when projected slabs overlap.
 
 **Placement without typing XYZ:** a new Rectangle mesh first uses a valid selected
 boundary, otherwise the highest complete horizontal frame level. The geometry
@@ -223,7 +231,10 @@ guards. With analysis disabled, any surface (even hidden) blocks a frame-only
 solve; MCP reports `surface_geometry_only`. With it enabled, the worker validates
 connectivity, solves the combined stiffness and checks finite results/stability
 and independent force/moment equilibrium for every combination.
-MCP reads retain recipes, pressures and opt-in, but their editing remains native-only.
+MCP reads and atomic batch edits support recipes, pressure maps and coupling
+opt-in. A coupled candidate reuses the production interface/conformity checks once
+after the entire batch; invalid edits preserve the model, results and undo history.
+Editing does not solve or certify stability/equilibrium; those remain analysis gates.
 Nonrectangular generators and Rect elements remain geometry-only in the main
 model. The separate plate workspace below retains its independent Quad/Rect
 bending workflow. Initial regressions cover slab-to-column load transfer,
@@ -457,6 +468,40 @@ Entity collections are `nodes`, `members`, `loads`, `materials`, `sections` and
 `combinations`; cases use `load_cases` with no value. For `settings`, use `op: "set"`
 and a value containing only `unit_system`, `grid`, `default_material`,
 `default_section`, `default_load_case`, `self_weight_case` or `self_weight_factor`.
+Spatial projects also support `surfaces` and `surface_pressures` collections and
+`settings.surface_analysis_enabled`. Surface `put` merges recipe fields and nested
+recipe-local material fields; generator `parameters`, control lists and openings
+replace whole values. Copying a full `read_model` recipe is supported; its fixed
+format/version/unit metadata must remain valid. The schema describes all seven
+generators, exact defaults, fields, pressure normals and mesh budgets.
+
+Pressure-map `put` uses a surface ID as key and replaces its complete
+`{case: pressure}` map, in canonical **kip/in2** regardless of display units.
+Deleting a surface or load case requires explicit pressure-map cleanup and other
+reference updates in the same batch. No dependent assignment is silently dropped.
+For example, in an existing matching 3D frame (with a `Gravity` case):
+
+```json
+[
+  {"op":"put","collection":"surfaces","key":"Floor1","value":{
+    "plane":"XZ","origin":[0,144,0],"parameters":{"width":240,"height":180},
+    "mesh_size":60,"thickness":6}},
+  {"op":"put","collection":"surface_pressures","key":"Floor1","value":{"Gravity":0.001}},
+  {"op":"set","collection":"settings","value":{"surface_analysis_enabled":true}}
+]
+```
+
+This is the `operations` array for `apply_batch`; include the current session and
+expected revision. Positive XZ pressure acts in -Y. Coupled batches require only
+rectangular Quad surfaces and a conforming connected interface. Edit frame nodes,
+mesh placement/controls, cases and assignments together when they depend on each
+other. Alternatively stage geometry with coupling disabled, then enable it in a
+complete valid batch. Existing geometry-only analysis guards remain in force.
+Surface editing uses the same Model edits group/tool switch, revision/session
+checks, GUI dispatch and one-step undo as other batch edits. Native MCP mode also
+applies. Multistorey regressions check two slabs at separate levels, symmetric
+base load transfer, combinations, refinement and frame/slab self-weight.
+
 Model reads expose the entity fields for each project's 2D/3D dimension. Active
 input drafts, gestures and editing dialogs block remote edits/analysis. Drawing
 mode also blocks them: switch to Select mode first. `editor_busy` identifies the
