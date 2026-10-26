@@ -17,6 +17,20 @@ EXAMPLES = {
     "3d_space_frame": "3D Space Frame - Gravity and Wind",
     "3d_slab_frame": "3D Frame and Slab - Coupled Pressure (Experimental)",
     "3d_tripod": "3D Truss Tripod - Joint Load",
+    "3d_multistorey_slabs": "Three-Storey Frame and Slabs (Experimental)",
+    "p_delta_column": "Slender Column - Gravity and Lateral Load",
+}
+
+
+# Keep stable example IDs and the flat catalog available to scripts/clients.
+# The native menu uses this ordered grouping; each example belongs exactly once.
+EXAMPLE_GROUPS = {
+    "2D Frames": ("simple_beam", "portal", "cantilever", "continuous", "pitched",
+                  "multistorey", "self_weight", "elastic", "shear_release"),
+    "3D Frames": ("3d_cantilever", "3d_space_frame"),
+    "Trusses": ("truss", "3d_tripod"),
+    "Slabs": ("3d_slab_frame", "3d_multistorey_slabs"),
+    "P-Delta": ("p_delta_column",),
 }
 
 
@@ -47,6 +61,20 @@ def example_project(key, unit_system="imperial"):
             project.self_weight_case = "Self-weight"
         else:
             load(beam, "FY", -10)
+    elif key == "p_delta_column":
+        project.analysis_method = "p_delta"
+        project.set_load_case("Gravity", "Case 1")
+        project.set_load_case("Lateral")
+        project.combinations = {"Combined": {"Gravity": 1., "Lateral": 1.},
+                                "Gravity": {"Gravity": 1.}, "Lateral": {"Lateral": 1.}}
+        # Eight explicit segments resolve the member curvature; all values are
+        # canonical inch-kip and independent of the display-unit preference.
+        for segment in range(8):
+            member((0., segment*60.), (0., (segment+1)*60.))
+        support((0., 0.), "fixed")
+        tip = project.node_at(0., 480.)
+        load(tip, "FY", -60., case="Gravity")
+        load(tip, "FX", 1., case="Lateral")
     elif key == "elastic":
         member((0, 0), (120, 0))
         base = project.nodes[project.node_at(0, 0)]

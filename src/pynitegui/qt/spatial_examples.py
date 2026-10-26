@@ -4,6 +4,30 @@ from .spatial_model import SpatialLoad, SpatialProject
 
 
 def example_project(key, unit_system="imperial"):
+    if key == "3d_multistorey_slabs":
+        from .mesh_model import MeshDefinition
+        from .model import Material
+        project = SpatialProject(unit_system=unit_system, load_cases=["Dead", "Live"],
+            default_load_case="Dead", combinations={"Gravity": {"Dead": 1., "Live": 1.},
+                "Dead": {"Dead": 1.}, "Factored": {"Dead": 1.2, "Live": 1.6}})
+        corners = ((0., 0.), (240., 0.), (240., 180.), (0., 180.))
+        for floor in range(1, 4):
+            height = floor*144.
+            for x, z in corners:
+                project.add_member((x, height-144., z), (x, height, z))
+                if floor == 1:
+                    project.nodes[project.node_at(x, 0., z)].support = "fixed"
+            for index, (x, z) in enumerate(corners):
+                end_x, end_z = corners[(index+1) % len(corners)]
+                project.add_member((x, height, z), (end_x, height, end_z))
+            name = f"Floor{floor}"
+            project.surfaces[name] = MeshDefinition(name=name, plane="XZ", origin=[0., height, 0.],
+                parameters={"width": 240., "height": 180.}, mesh_size=60., thickness=6.,
+                material=Material("Slab concrete", E=3600., nu=.2, rho=.0000868), unit_system=unit_system)
+            project.surface_pressures[name] = {"Dead": .001, "Live": .00025 if floor == 3 else .0005}
+        project.surface_analysis_enabled = True
+        project.validate()
+        return project
     if key == "3d_slab_frame":
         from .mesh_model import MeshDefinition
         project = example_project("3d_space_frame", unit_system)

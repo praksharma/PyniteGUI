@@ -179,7 +179,7 @@ case's pressure. Positive pressure follows the displayed local normal: +Z for
 XY, -Y for XZ and +X for YZ. Pressure uses force per geometry-length squared
 (for example kN/m2), not the independent material stress units.
 
-Try **File > Examples > 3D Frame and Slab - Coupled Pressure (Experimental)**,
+Try **File > Examples > Slabs > 3D Frame and Slab - Coupled Pressure (Experimental)**,
 then Analyze. The 240 by 180 inch slab carries 0.001 kip/in2 downward, giving
 43.2 kip total and 10.8 kip vertical reaction at each base in the Gravity
 combination. This example replaces the frame-only gravity line loads, rather
@@ -574,9 +574,11 @@ it off and use Analyze when ready.
 
 ## Spatial Frames
 
-Use **File > New 3D Frame** for a new spatial project. **File > Examples** includes
-**3D Cantilever - Biaxial Bending and Torsion** and **3D Space Frame - Gravity and Wind**.
-**3D Truss Tripod - Joint Load** provides a pin-jointed spatial benchmark.
+Use **File > New 3D Frame** for a new spatial project. **File > Examples > 3D Frames**
+includes **3D Cantilever - Biaxial Bending and Torsion** and
+**3D Space Frame - Gravity and Wind**. **Examples > Trusses > 3D Truss Tripod - Joint Load**
+provides a pin-jointed spatial benchmark. **Examples > Slabs** contains the single-floor
+and three-storey coupled slab examples.
 The existing New command still creates a 2D project. Dimensions never change
 implicitly. Use **File > Create 3D Copy** to convert an existing 2D definition into
 an independent, unsaved 3D window; the original geometry, undo history, file and
@@ -942,14 +944,33 @@ This panel does not query the compositor's physical GPU or a driver package vers
   The ft/kip preset uses kip-ft moments and kip/ft line loads, while keeping
   section properties in in2/in4 and material stiffness in kip/in2. Weight
   density follows the geometry volume units (N/mm3 or kip/ft3).
-- File > Examples opens fresh, editable models: a simply supported beam,
-  distributed-load portal frame, cantilever with partial distributed/angled/tip
-  loads and a moment, partially loaded continuous beam, pitched frame with local
-  roof loads, and a two-storey gravity/wind frame with separate combinations.
-  A seventh example demonstrates a beam loaded only by automatic self-weight.
-  A triangular truss example demonstrates axial-only members and joint loads.
-  Examples retain the current unit system and prompt before replacing unsaved
-  work. They start as unsaved projects, not as files to overwrite.
+- File > Examples organizes fresh, editable models in **2D Frames**, **3D Frames**,
+  **Trusses**, **Slabs** and **P-Delta** submenus. The beam, portal, continuous/pitched/
+  two-storey frames, self-weight, elastic-base and release examples are in 2D Frames;
+  cantilever/space frames are in 3D Frames. Both planar and spatial trusses share
+  Trusses. Examples retain the current unit system and prompt before replacing
+  unsaved work. They start as unsaved projects, not as files to overwrite.
+- **Slabs > Three-Storey Frame and Slabs (Experimental)** has three 12-foot storeys,
+  four fixed-base steel columns, a 20 by 15 foot perimeter frame at every level,
+  and three 6-inch elastic concrete Quad slabs with a 60-inch mesh. The frame
+  centrelines and slab midsurfaces share conforming joints. All floors carry
+  0.001 kip/in2 Dead pressure; Floors 1/2 carry 0.0005 kip/in2 Live, and Floor 3
+  carries 0.00025 kip/in2 Live. Positive XZ pressure acts downward. The default
+  **Gravity** combination is Dead + Live: 183.6 kip total, **45.9 kip vertical
+  reaction per base**. **Dead** gives 32.4 kip per base; **Factored** (1.2 Dead +
+  1.6 Live) gives **60.48 kip per base**. These are illustrative factors. Only
+  prescribed pressure loads are applied; automatic self-weight is off. Coupling
+  is already enabled and the analysis method is Linear elastic. Use the Surfaces
+  tree to select each floor and Deformed to see its displacement.
+- **P-Delta > Slender Column - Gravity and Lateral Load** opens a 480-inch planar
+  fixed-base column with eight 60-inch frame segments, a 60-kip downward Gravity
+  tip load and a 1-kip horizontal Lateral tip load. **P-Delta elastic** is already
+  selected. The default **Combined** result has approximately **3.9919 in** tip DX;
+  **Lateral** alone gives **2.4925 in**. Choosing Linear elastic in Edit > Analysis
+  Method gives 2.4925 in for Combined too. This demonstrates axial-load-dependent
+  amplification without material yielding. Gravity alone has zero lateral sway.
+  See Analysis and Force Diagrams for the second-order force-recovery/equilibrium
+  limits; the strict force-residual check is not relaxed for this example.
 - View > Appearance selects Light or Dark. The preference is saved between app
   sessions, separately from project files. It updates all open editor/diagram
   windows, including the grid, engineering symbols, labels, tables, and plots,
@@ -1300,7 +1321,7 @@ preserves the method; changing the project method requires a new solve.
 - Save/Open uses versioned `.pynite.json` project files. Ctrl+Z and Ctrl+Shift+Z
   undo and redo model edits. Delete removes the selected entity and its dependent
   members/loads. Unsaved changes are marked in the title and checked on exit.
-- File > Examples > Simply Supported Beam loads a 420-inch beam with a 10-kip downward
+- File > Examples > 2D Frames > Simply Supported Beam loads a 420-inch beam with a 10-kip downward
   midspan load. Each support should react with 5 kip. In SI the same physical
   example displays a 10.668 m span, 44.4822 kN load, and 22.2411 kN reactions.
 

@@ -49,7 +49,7 @@ const server = http.createServer((request,response) => {
       assert(Math.hypot(...after.map((value,i)=>value-before[i]))>1,`Orbit inactive for ${kind}`);
     }
     await require("./surface_selection.cjs")(page,payloads.mixed);
-    assert.equal(payloads.multistorey.surfaceMeshes.length,2);
+    assert.equal(payloads.multistorey.surfaceMeshes.length,3);
     assert(payloads.multistorey.surfaceMeshes.every(mesh=>mesh.nodes.some(node=>Math.abs(node.displacement[1])>0)), 'Each storey must carry its own deformed slab nodes');
     const coupled=payloads.coupled;
     assert(coupled.surfaceMeshes[0].nodes.some(node=>Math.abs(node.displacement[1])>.01),'Coupled slab displacement missing');

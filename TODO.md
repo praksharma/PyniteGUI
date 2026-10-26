@@ -249,6 +249,9 @@ below and the secondary interface wishlist retain their more specific scope.
 - [x] Use uv-managed Python and locked project dependencies without relying on
   Conda or a system interpreter; document setup and normal uv launches.
 - [x] Add a File > Examples catalog of editable, validated beam/frame models.
+- [x] Group examples into 2D Frames, 3D Frames, Trusses, Slabs and P-Delta; add
+  a ready-to-solve three-storey/three-slab gravity model and segmented P-Delta
+  column with independent reaction, load-path and analytical displacement checks.
 - [x] Add recent projects and per-window atomic autosave/recovery.
 - [x] Expand validation for malformed project files and supported format migrations,
   including safe rejection of future versions.

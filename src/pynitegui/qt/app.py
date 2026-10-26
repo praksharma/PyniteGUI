@@ -647,10 +647,14 @@ class MainWindow(QMainWindow):
         if self.recovery is not None:
             file_menu.addAction(self.action("Recover Autosave...", self.offer_recovery))
         file_menu.addSeparator()
-        from .examples import EXAMPLES
+        from .examples import EXAMPLES, EXAMPLE_GROUPS
         self.examples_menu = file_menu.addMenu("Examples")
-        for key, label in EXAMPLES.items():
-            self.examples_menu.addAction(self.action(label, lambda checked=False, key=key: self.example(key)))
+        for category, keys in EXAMPLE_GROUPS.items():
+            submenu = self.examples_menu.addMenu(category)
+            for key in keys:
+                action = self.action(EXAMPLES[key], lambda checked=False, key=key: self.example(key))
+                action.setData(key)
+                submenu.addAction(action)
         file_menu.addSeparator()
         file_menu.addAction(self.action("Exit", self.close, "Ctrl+Q"))
         edit_menu = self.menuBar().addMenu("&Edit")

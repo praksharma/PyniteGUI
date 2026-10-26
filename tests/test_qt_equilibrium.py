@@ -111,6 +111,8 @@ class EquilibriumTests(unittest.TestCase):
     def test_example_springs_trusses_releases_and_all_combinations(self):
         for key in EXAMPLES:
             project = example_project(key)
+            if project.analysis_method != "linear":
+                continue  # Second-order force recovery is checked against its own reference.
             result = solve(project)
             for combo in project.combinations:
                 with self.subTest(example=key, combo=combo):

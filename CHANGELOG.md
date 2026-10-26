@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Categorized Examples submenus for 2D Frames, 3D Frames, Trusses, Slabs and
+  P-Delta, retaining stable example identifiers. Adds a three-storey steel frame
+  with three coupled elastic concrete slabs, Dead/Live pressures and independent
+  load-path/reaction checks, plus a segmented P-Delta column demonstrating
+  gravity-induced lateral amplification. Both open ready to analyze, preserve
+  display units, save normally and prompt before replacing unsaved work.
+
 - Saved, undoable Linear elastic/P-Delta elastic selection for 2D/3D frame-only
   analysis, shared by native/manual/live/MCP workflows. Solves combinations
   independently, checks actual effective stiffness against instability and labels

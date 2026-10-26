@@ -11,7 +11,7 @@ os.environ.setdefault("PYNITEGUI_NO_WEBENGINE", "1")
 from PySide6.QtWidgets import QApplication
 from pynitegui.qt.analysis import analyze
 from pynitegui.qt.app import MainWindow
-from pynitegui.qt.examples import EXAMPLES, example_project
+from pynitegui.qt.examples import EXAMPLES, EXAMPLE_GROUPS, example_project
 
 
 def solve(project):
@@ -60,11 +60,42 @@ class ExampleTests(unittest.TestCase):
         self.assertAlmostEqual(result.reactions["N1"][1], force_y)
         self.assertAlmostEqual(result.reactions["N1"][2], moment)
 
+    def test_groups_cover_each_stable_example_identifier_once(self):
+        keys = [key for group in EXAMPLE_GROUPS.values() for key in group]
+        self.assertEqual(set(keys), set(EXAMPLES))
+        self.assertEqual(len(keys), len(set(keys)))
+        self.assertTrue(all(EXAMPLE_GROUPS.values()))
+
+    def test_new_examples_are_fresh_and_round_trip_in_all_unit_presets(self):
+        from pynitegui.qt.model import Project
+        from pynitegui.qt.units import UNIT_SYSTEMS
+        for key in ("p_delta_column", "3d_multistorey_slabs"):
+            for units in UNIT_SYSTEMS:
+                project = example_project(key, units)
+                before = project.to_dict()
+                self.assertEqual(Project.from_dict(before).to_dict(), before)
+                project.nodes[next(iter(project.nodes))].x = 99
+                if key == "3d_multistorey_slabs":
+                    project.surface_pressures["Floor1"]["Dead"] = 99
+                    project.surfaces["Floor1"].material.E = 99
+                self.assertEqual(example_project(key, units).to_dict(), before)
+
     def test_menu_loads_each_distinct_example_as_unsaved_in_current_units(self):
         window = MainWindow()
         window.project.unit_system = "si"
         with patch.object(window, "confirm_discard", return_value=True):
-            for key, action in zip(EXAMPLES, window.examples_menu.actions()):
+            categories = window.examples_menu.actions()
+            self.assertEqual([action.text() for action in categories], list(EXAMPLE_GROUPS))
+            actions = []
+            for category in categories:
+                submenu = category.menu()
+                self.assertIsNotNone(submenu)
+                self.assertEqual([action.data() for action in submenu.actions()], list(EXAMPLE_GROUPS[category.text()]))
+                actions.extend(submenu.actions())
+            self.assertEqual(len(actions), len(EXAMPLES))
+            for action in actions:
+                key = action.data()
+                self.assertEqual(action.text(), EXAMPLES[key])
                 action.trigger()
                 self.assertEqual(window.project.to_dict(), example_project(key, "si").to_dict())
                 self.assertIsNone(window.path)
