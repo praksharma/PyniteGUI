@@ -952,8 +952,9 @@ both redo bindings, and keeps Undo/Redo labels stable after edits. Single-letter
 tools apply when the model view has focus; Escape cancels the current gesture.
 The reference is available offline.
 
-**Help > About PyniteGUI** shows the installed application version, project
-credits and license, with buttons for documentation, source and issue reports.
+**Help > About PyniteGUI** shows the installed application version and
+license, with buttons for documentation, the repository and issue reports.
+About uses the repository link rather than personal author credits.
 On macOS, the native menu may place About in the application menu.
 **Copy Version Details**, available in Help and About, copies the application,
 Python, Qt, PySide6, PyNite, NumPy/SciPy and operating-system versions for a bug

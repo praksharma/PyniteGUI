@@ -132,11 +132,11 @@ class AboutDialog(QDialog):
         description = QLabel("Desktop structural modelling for 2D and 3D frames and trusses.\nPowered by PyNite and Qt.")
         description.setWordWrap(True)
         layout.addWidget(description)
-        credits = QLabel("By Prakhar and contributors\nGNU Affero General Public License v3.0")
-        credits.setWordWrap(True)
-        layout.addWidget(credits)
+        license_label = QLabel("GNU Affero General Public License v3.0")
+        license_label.setWordWrap(True)
+        layout.addWidget(license_label)
         links = QHBoxLayout()
-        for label, target in (("Documentation", "documentation"), ("Source Code", "source"), ("Report an Issue", "issues")):
+        for label, target in (("Documentation", "documentation"), ("Repository", "source"), ("Report an Issue", "issues")):
             button = QPushButton(label)
             button.setAutoDefault(False)
             button.clicked.connect(lambda checked=False, target=target: open_link(window, target))

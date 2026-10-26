@@ -88,7 +88,7 @@ class HelpQualityTests(unittest.TestCase):
         self.assertFalse(second.isModal())
         buttons = {button.text(): button for button in second.findChildren(QPushButton)}
         with patch("pynitegui.qt.help_menu.QDesktopServices.openUrl", return_value=True) as browser:
-            buttons["Source Code"].click()
+            buttons["Repository"].click()
         self.assertEqual(browser.call_args.args[0].toString(), LINKS["source"])
         buttons["Copy Version Details"].click()
         self.assertEqual(self.app.clipboard().text(), support_information())
