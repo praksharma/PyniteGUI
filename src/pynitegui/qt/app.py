@@ -348,6 +348,14 @@ class StructureView(QGraphicsView):
         self.fitInView(rect, Qt.AspectRatioMode.KeepAspectRatio)
         self.redraw()
 
+    def focus_bounds(self, bounds):
+        self.cancel()
+        low, high = bounds
+        rect = QRectF(low[0], -high[1], high[0]-low[0], high[1]-low[1])
+        self.setSceneRect(self.sceneRect().united(rect))
+        self.fitInView(rect, Qt.AspectRatioMode.KeepAspectRatio)
+        self.redraw()
+
     def label(self, text, x, y, color=None, offset=(7, 7)):
         item = self.scene().addSimpleText(text)
         item.setBrush(QColor(color or colors()["label"]))
@@ -648,6 +656,7 @@ class MainWindow(QMainWindow):
         file_menu.addMenu(self.export_menu)
         self.recent_menu = file_menu.addMenu("Recent Projects")
         self.update_recent_menu()
+        file_menu.aboutToShow.connect(self.update_recent_menu)
         if self.recovery is not None:
             file_menu.addAction(self.action("Recover Autosave...", self.offer_recovery))
         file_menu.addSeparator()
@@ -794,6 +803,10 @@ class MainWindow(QMainWindow):
             self.theme_group.addAction(action)
             self.theme_actions[key] = action
             appearance.addAction(action)
+        self.fit_selection_action = self.action("Fit Selection", self.fit_selection, "Shift+F")
+        self.fit_selection_action.setEnabled(False)
+        self.fit_selection_action.setToolTip("Frame selected nodes, members, loaded spans or surfaces (Shift+F)")
+        self.menuBar_view.addAction(self.fit_selection_action)
         self.menuBar_view.addSeparator()
         rendering = self.menuBar_view.addMenu("3D Rendering")
         self.graphics_group = QActionGroup(self)
@@ -862,6 +875,7 @@ class MainWindow(QMainWindow):
         from .model_findings import ModelFindings
         self.model_findings = ModelFindings(self)
         self.model_findings.entities_requested.connect(self.select_finding_entities)
+        self.model_findings.focus_requested.connect(self.focus_finding_entities)
         self.findings_dock = self.dock("Model Findings", self.model_findings, Qt.DockWidgetArea.BottomDockWidgetArea)
         self.findings_dock.hide()
         self.menuBar_view.addSeparator()
@@ -1053,6 +1067,7 @@ class MainWindow(QMainWindow):
                 item.setToolTip(1, f"{load.name}: generated from material weight density and section area; configure via Edit > Self-Weight.")
             parent.setExpanded(True)
         self.tree.blockSignals(False)
+        self.fit_selection_action.setEnabled(bool(self.selections))
         self.results_panel.sync_selection(self.selections, reveal=False)
         self.update_inspector()
         self.view.redraw()
@@ -1103,6 +1118,7 @@ class MainWindow(QMainWindow):
                     if identity and tuple(identity) in selected:
                         item.setSelected(True)
             self.tree.blockSignals(False)
+        self.fit_selection_action.setEnabled(bool(self.selections))
         self.results_panel.sync_selection(self.selections)
         self.update_inspector()
         self.view.redraw()
@@ -1350,6 +1366,28 @@ class MainWindow(QMainWindow):
         self.set_mode("select")
         self.select_many(entities)
         self.statusBar().showMessage(f"Selected {len(self.selections)} entities from Model Findings")
+
+    def fit_selection(self):
+        if self.mcp_mode:
+            return False
+        from .view_focus import selection_bounds
+        bounds = selection_bounds(self.project, self.selections)
+        if bounds is None:
+            self.statusBar().showMessage("Select geometry to fit", 4000)
+            return False
+        if any(kind == "surfaces" for kind, _ in self.selections):
+            self.surface_visibility_action.setChecked(True)
+        if any(kind == "loads" for kind, _ in self.selections) and self.view is self.spatial_view:
+            self.view.show_loads.setChecked(True)
+        self.view.focus_bounds(bounds)
+        self.statusBar().showMessage(f"Focused {len(self.selections)} selected item(s)", 4000)
+        return True
+
+    def focus_finding_entities(self, entities):
+        if self.mcp_mode:
+            return
+        self.select_finding_entities(entities)
+        self.fit_selection()
 
     def construct_connection(self, operation):
         from .construction import ConnectionPreview, plan_connection
@@ -2003,21 +2041,22 @@ class MainWindow(QMainWindow):
         if self.settings_store is None:
             return
         path = str(Path(path).resolve())
-        recent = self.settings_store.value("recent_projects", [], type=list)
+        from .recent_projects import recent_paths
+        recent = [str(item) for item in recent_paths(self.settings_store)]
         self.settings_store.setValue("recent_projects", [path, *(item for item in recent if item != path)][:10])
         self.update_recent_menu()
 
     def update_recent_menu(self):
-        self.recent_menu.clear()
-        recent = self.settings_store.value("recent_projects", [], type=list) if self.settings_store else []
-        self.recent_menu.setEnabled(bool(recent))
-        for filename in recent:
-            path = Path(filename)
-            action = self.action(f"{path.name} ({path.parent.name})", lambda checked=False, path=path: self.open_recent(path))
-            action.setToolTip(str(path))
-            self.recent_menu.addAction(action)
+        from .recent_projects import update_menu
+        update_menu(self)
 
     def open_recent(self, path):
+        path = Path(path)
+        from .recent_projects import available
+        if not available(path):
+            self.update_recent_menu()
+            QMessageBox.warning(self, "Open Project", "This recent project is unavailable. Check that its drive or folder is accessible.\n\n" + str(path))
+            return
         if not self.confirm_discard():
             return
         try:

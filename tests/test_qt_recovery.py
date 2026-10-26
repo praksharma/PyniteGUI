@@ -106,7 +106,7 @@ class RecoveryEditorTests(unittest.TestCase):
         self.assertFalse(self.window.recovery.path.exists())
         self.assertEqual(self.settings.value("recent_projects", [], type=list), [str(filename.resolve())])
         self.window.record_recent(filename)
-        self.assertEqual(len(self.window.recent_menu.actions()), 1)
+        self.assertEqual([action.data() for action in self.window.recent_menu.actions() if action.data()], [str(filename.resolve())])
 
     def test_cancelled_close_keeps_recovery(self):
         self.window.edit("Grid", lambda p: setattr(p, "grid", 24))

@@ -35,6 +35,7 @@ const server = http.createServer((request,response)=>{
     assert.equal(driver.lost,false);
     assert(['Unmasked WebGL driver','Masked WebGL information'].includes(driver.source));
     await require('./viewport3d_cache.cjs')(page,payload);
+    await require('./viewport_focus.cjs')(page,payload,[payload.nodes[0].position],path.join(output,'focused-node.png'));
     const batches=await page.evaluate(async()=>{
       const THREE=await import('three'),{drawFrame,hitIdentity}=await import('./frame_meshes.js');
       const group=new THREE.Group(),picks=[];

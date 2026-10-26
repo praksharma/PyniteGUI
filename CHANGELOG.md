@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Finding-focused zoom and View > Fit Selection (Shift+F) frame nodes, members,
+  load points/spans and whole surfaces in 2D/3D. Preserve model/results and spatial
+  viewing direction, reveal referenced load/surface graphics and retain full-model
+  Fit. Pending viewport focus is discarded after model/session changes. Adds
+  native and real-viewport framing, orientation and resource regressions.
+- Recent history refreshes on File-menu opening, marks unavailable files and
+  offers explicit remove-unavailable/clear-history actions without deleting files
+  or touching unsaved work/recovery. Ignores malformed/duplicate preferences and
+  disposes old menu actions during refresh. Corrects stale secondary-roadmap ticks
+  for existing numerical tables/bulk assignments and combination envelopes.
+
 - Native Help menu with documentation/F1 and Getting Started links, a searchable
   reference generated from current keyboard shortcuts, About/version/license
   information, source/issue links and copyable support version details. Dialogs

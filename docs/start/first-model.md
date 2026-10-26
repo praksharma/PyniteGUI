@@ -94,6 +94,9 @@ plastic behaviour are separate pending workflows; read the
 
 ## Build Your Own
 
+Select an item and press **Shift+F** to frame it; **F** fits the whole model.
+Double-click a recognized Model Findings row to select and zoom to the problem.
+
 Press **F1** for the documentation website, or use **Help > Keyboard Shortcuts**
 for an offline command reference. **View > Restore Default Layout** brings back
 misplaced panels without changing your model or unapplied property edits. See

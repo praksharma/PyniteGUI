@@ -970,6 +970,15 @@ selection, undo history, result snapshot, display units or unapplied Properties
 values. Model-view zoom remains under your control; **Fit (F)** is separate.
 Layout recovery is a per-window presentation action, not an engineering edit.
 
+**View > Fit Selection (Shift+F)** frames the currently selected nodes, members,
+load application points/loaded spans or whole surface recipes. It uses undeformed
+geometry with padding, preserves the current 3D viewing direction and does not
+edit the project or replace a result snapshot. For a single node, a useful local
+context remains visible. Fitting a selected hidden surface shows Surface Geometry;
+fitting selected spatial loads shows their load arrows. **Fit (F)** remains the
+whole-model command. Empty selections disable Fit Selection. Its shortcut also
+appears in the searchable Help reference.
+
 ### Examples and Appearance
 
 - The unit selector also offers SI (mm, N) and Imperial (ft, kip). The mm/N
@@ -1070,11 +1079,13 @@ Layout recovery is a per-window presentation action, not an engineering edit.
   Splitting and connecting are each a single undoable edit.
 - Edit > Check Model reports overlapping members, interior-node connections that
   need splitting, and disconnected groups in the **Model Findings** dock.
-  Select a finding and press **Select affected geometry**, or double-click it,
-  to highlight its referenced entities in the canvas and tree. Analysis failures
+  Select a finding and press **Select affected geometry** to highlight its
+  referenced entities in the canvas and tree. **Zoom to affected geometry**, or
+  double-clicking a finding, also frames the affected area in 2D/3D. Analysis failures
   also populate this dock, including recognized node/DOF instability references.
   General failures without a specific reference remain readable with selection
-  disabled. Navigation does not edit the model. Engineering edits clear findings;
+  and zoom disabled. Referenced loads are revealed when navigating to them.
+  Navigation does not edit the model. Engineering edits clear findings;
   unit changes preserve them. Analysis also runs the model checks.
 - **Edit > Subdivide Selected Members** divides selected frame members into
   2–100 equal segments in one undoable edit. The first segment retains the member
@@ -1350,6 +1361,16 @@ preserves the method; changing the project method requires a new solve.
   Unit and combination changes retain the snapshot ID; engineering changes
   require a new analysis before exporting from the main editor.
 ### Saving and History
+
+**File > Recent Projects** refreshes when the File menu opens and shows up to ten
+unique project paths. Full paths appear in tooltips/status text. Unavailable
+files are labelled and disabled, retaining entries for temporarily disconnected
+drives until you choose **Remove Unavailable Entries**. **Clear Recent Projects**
+clears only the history list. Neither action deletes project/recovery files or
+changes the open model, its dirty state or undo history. Recent-file opens still
+use the normal unsaved-change prompt. A file that disappears after the menu opens
+reports its unavailable location before prompting to discard work. Malformed
+history preferences are ignored instead of preventing startup.
 
 - Save/Open uses versioned `.pynite.json` project files. Ctrl+Z and Ctrl+Shift+Z
   undo and redo model edits. Delete removes the selected entity and its dependent
@@ -1706,6 +1727,8 @@ and concentrated moments include both sides of each discontinuity.
 - `src/pynitegui/qt/model.py`: validated, serializable project data.
 - `src/pynitegui/qt/units.py`: canonical-to-display conversion factors and presets.
 - `src/pynitegui/qt/annotations.py`: shared support/release symbols and factored load context.
+- `src/pynitegui/qt/view_focus.py`: canonical geometry bounds for selection/finding camera navigation.
+- `src/pynitegui/qt/recent_projects.py`: bounded recent-history display and preferences-only cleanup.
 - `src/pynitegui/qt/help_menu.py`: native documentation links, searchable shortcuts, About and copyable version details.
 - `src/pynitegui/qt/analysis_method.py`: saved elastic analysis choices, supported scope and native settings.
 - `src/pynitegui/qt/released_member.py`: linear released-translation recovery using PyNite matrices.

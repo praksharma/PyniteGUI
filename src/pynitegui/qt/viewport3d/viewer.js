@@ -188,11 +188,20 @@ function fit() {
   for(const symbol of supports)for(const sign of [-1,1])points.push(symbol.center.clone().addScalar(sign*span*.02));
   if(data.deformed)for(const m of data.members)if(m.points)points.push(...m.points.map((p,i)=>vector(p).addScaledVector(vector(m.displacements[i]),data.factor)));
   for(const member of data.members)points.push(...diagramPoints(member,data.diagram));
+  framePoints(points,Math.max(data.grid*5,1));
+}
+function framePoints(points,minimumRadius) {
   const box=new THREE.Box3().setFromPoints(points),center=box.isEmpty()?new THREE.Vector3():box.getCenter(new THREE.Vector3());
-  const radius=Math.max(box.isEmpty()?120:box.getSize(new THREE.Vector3()).length()*.65,data.grid*5,1);
+  const radius=Math.max(box.isEmpty()?120:box.getSize(new THREE.Vector3()).length()*.65,minimumRadius);
   const distance=radius/Math.sin(THREE.MathUtils.degToRad(camera.fov/2))/Math.min(1,camera.aspect);
   const direction=camera.position.clone().sub(controls.target).normalize();if(direction.length()<.1)direction.set(1,.7,1).normalize();
   controls.target.copy(center);camera.position.copy(center).addScaledVector(direction,distance);camera.near=Math.max(distance/10000,.001);camera.far=distance*100;camera.updateProjectionMatrix();controls.update();
+}
+function focus(bounds) {
+  if(!Array.isArray(bounds)||bounds.length!==2||bounds.some(point=>!Array.isArray(point)||point.length!==3||point.some(value=>typeof value!=='number'||!Number.isFinite(value)))||bounds[0].some((value,i)=>value>bounds[1][i]))return false;
+  cancel();resize();stopMotion();gizmo.cancel();
+  framePoints(bounds.map(vector),Math.max(data.grid,span*.02,1));
+  return true;
 }
 function orient(index) {
   if(index<0||index>6)return;
@@ -287,7 +296,7 @@ function exportImage(){
   }
   return canvas.toDataURL('image/png');
 }
-window.pyniteViewer={update,fit,orient,cancel,state:()=>({objects:group.children.length,drawCalls:renderer.info.render.calls,resources:{...renderer.info.memory},labelCache:labelTextures.state(),rebuilds,incrementalUpdates,camera:camera.position.toArray(),target:controls.target.toArray(),selection:data.selection,dragging:nodeDrag.active(),nodes:data.nodes.map(node=>({name:node.name,position:node.position}))}),project:position=>{const p=vector(position).project(camera);return[(p.x+1)*innerWidth/2,(1-p.y)*innerHeight/2];}};
+window.pyniteViewer={update,fit,focus,orient,cancel,state:()=>({objects:group.children.length,drawCalls:renderer.info.render.calls,resources:{...renderer.info.memory},labelCache:labelTextures.state(),rebuilds,incrementalUpdates,camera:camera.position.toArray(),target:controls.target.toArray(),selection:data.selection,dragging:nodeDrag.active(),nodes:data.nodes.map(node=>({name:node.name,position:node.position}))}),project:position=>{const p=vector(position).project(camera);return[(p.x+1)*innerWidth/2,(1-p.y)*innerHeight/2];}};
 window.pyniteViewer.exportImage=exportImage;
 window.pyniteViewer.diagnostics=()=>{
   const gl=renderer.getContext(),debug=gl.getExtension('WEBGL_debug_renderer_info');

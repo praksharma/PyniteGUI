@@ -249,6 +249,9 @@ below and the secondary interface wishlist retain their more specific scope.
   lifecycle states and retained snapshots explicitly in the results dock.
 - [x] Link recognized analysis failure and model-check diagnostics to affected
   geometry via a reviewable findings dock; clear findings after engineering edits.
+- [x] Add finding-focused zoom and View > Fit Selection (Shift+F) in 2D/3D,
+  including load stations/spans and whole surface recipes; preserve snapshot/
+  model identity and the spatial viewing direction. Full-model Fit remains available.
 - [x] Export reactions, forces, and displacements as CSV and a printable report.
 - [x] Extend printable reports with model definitions and selected diagrams.
   Select definitions/result tables/axial/SFD/BMD diagrams; retain snapshot identity,
@@ -293,6 +296,10 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
   a ready-to-solve three-storey/three-slab gravity model and segmented P-Delta
   column with independent reaction, load-path and analytical displacement checks.
 - [x] Add recent projects and per-window atomic autosave/recovery.
+- [x] Harden recent history against malformed/duplicate preferences, unavailable
+  paths and files disappearing after menu display. Add history-only cleanup,
+  refresh on menu opening, clear path labels and bounded menu-action ownership;
+  retain project files, recovery snapshots, unsaved work and undo history.
 - [x] Expand validation for malformed project files and supported format migrations,
   including safe rejection of future versions.
 - [x] Add benchmark tests for multi-storey frames and varied support/load setups.

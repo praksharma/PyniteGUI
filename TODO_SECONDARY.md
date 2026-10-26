@@ -55,10 +55,10 @@ These are the strongest ideas to adapt to a desktop engineering workflow.
   and extrema independently. Avoid label collisions and make local-axis/sign
   conventions inspectable. Primary owner: dense labels, sign preferences, and
   consistent result annotations in TODO.md.
-- [ ] **Combination envelopes (UI).** Add max/min curves and governing
-  combination identification, including both sides of load discontinuities.
-  PyNite member extrema accept combination tags; sampled curves can use the
-  existing span-result API. Primary owner: result envelopes in TODO.md.
+- [x] **Combination envelopes (UI).** Implemented for 2D/3D solved combinations:
+  numerical bounds, sampled member curves, governing combinations, one-sided
+  station inspection and snapshot-aware exports/reports. Primary completion
+  owner: result envelopes in TODO.md.
 
 ## Next: Faster Modelling and Exploration
 
@@ -66,14 +66,15 @@ Stabileo's Project panel groups examples and exports; its Explore panel offers
 temporary parameter multipliers and reset. Adapt these workflows without
 silently changing saved engineering definitions.
 
-- [ ] **Numerical tables and bulk assignment (UI).** Edit coordinates and load
-  values in tables; assign material, section, or case to a selection in one
-  undoable operation. Validate the whole transaction before applying it.
-  Primary owner: editable tables and multiple selection in TODO.md.
+- [x] **Numerical tables and bulk assignment (UI).** Implemented native node/
+  member/load tables and selection-based assignments in 2D/3D, with unit-aware
+  values, whole-transaction validation and single-step undo. Primary completion
+  owner: editable tables and multiple selection in TODO.md.
 - [ ] **Section chooser with previews (UI).** Browse named sections and show a
   dimensional sketch alongside A, Iy, Iz, and J. Feed validated properties to
   PyNite; do not imply a shape sketch provides stress recovery or code design.
-  Primary owner: section library in TODO.md.
+  The searchable starter catalog and numerical property previews are implemented;
+  dimensional sketches remain pending. Primary owner: section library in TODO.md.
 - [x] **Opt-in live linear recalculation (UI).** Promoted and completed in the
   primary roadmap: debounce completed edits, solve a clone through the isolated
   worker, show pending/failed/current state and reject stale replies. Draft input
@@ -86,8 +87,9 @@ silently changing saved engineering definitions.
 - [ ] **Deformation animation (UI).** Animate the scale of the existing static
   displacement field with pause/reset and a fixed reference outline. Label it
   as static deformation animation, not a dynamic response calculation.
-- [ ] **Example browser (UI).** Group beams, frames, and future trusses with a
-  preview, loading summary, and expected check values. Add Gerber/internal-hinge
+- [ ] **Example browser (UI).** Categorized menus and worked P-Delta/multistorey
+  slab examples are implemented. A dedicated browser with preview, loading
+  summary and expected check values remains pending. Add Gerber/internal-hinge
   and three-hinged polygonal-arch examples; keep tests and unsaved-change prompts.
 - [ ] **Model/result exchange and graphics (UI).** Add a validated spreadsheet
   template and richer model-plus-result reports, plus PNG/SVG diagram export.
@@ -130,7 +132,8 @@ an audit of Stabileo's engineering calculations. PRO is labelled beta.
   validation findings into select/zoom actions and previewed fixes. Finding
   selection, equal frame subdivision, previewed perpendicular connections and
   midpoint-to-midpoint members are completed in the primary roadmap;
-  finding-focused zoom and previewed topology fixes remain pending.
+  finding-focused zoom and Fit Selection are now also completed in 2D/3D.
+  Previewed topology fixes remain pending.
   Offer controlled node merging, orientation reversal, and renumbering; rewrite
   every reference and preserve loads, releases, and group membership. Merge
   collinear members only when the intermediate node has no engineering role

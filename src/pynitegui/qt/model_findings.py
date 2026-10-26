@@ -63,6 +63,7 @@ def finding_entities(project, message):
 
 class ModelFindings(QWidget):
     entities_requested = Signal(object)
+    focus_requested = Signal(object)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -78,17 +79,28 @@ class ModelFindings(QWidget):
         self.select_button.setEnabled(False)
         layout.addWidget(self.select_button)
         self.list.currentRowChanged.connect(self.update_button)
-        self.list.itemDoubleClicked.connect(lambda _: self.activate())
+        self.list.itemDoubleClicked.connect(lambda _: self.focus())
+        self.focus_button = QPushButton("Zoom to affected geometry")
+        self.focus_button.setEnabled(False)
+        layout.addWidget(self.focus_button)
+        self.focus_button.clicked.connect(self.focus)
         self.select_button.clicked.connect(self.activate)
 
     def update_button(self, *args):
         item = self.list.currentItem()
-        self.select_button.setEnabled(bool(item and item.data(Qt.ItemDataRole.UserRole)))
+        enabled = bool(item and item.data(Qt.ItemDataRole.UserRole))
+        self.select_button.setEnabled(enabled)
+        self.focus_button.setEnabled(enabled)
 
     def activate(self):
         item = self.list.currentItem()
         if item and item.data(Qt.ItemDataRole.UserRole):
             self.entities_requested.emit(item.data(Qt.ItemDataRole.UserRole))
+
+    def focus(self):
+        item = self.list.currentItem()
+        if item and item.data(Qt.ItemDataRole.UserRole):
+            self.focus_requested.emit(item.data(Qt.ItemDataRole.UserRole))
 
     def clear(self):
         self.list.clear()
@@ -97,12 +109,12 @@ class ModelFindings(QWidget):
 
     def show_findings(self, project, messages, title):
         self.list.clear()
-        self.summary.setText(f"{title} | {len(messages)} finding(s). Select a row to inspect its geometry.")
+        self.summary.setText(f"{title} | {len(messages)} finding(s). Double-click a row to select and zoom to its geometry.")
         for message in messages:
             item = QListWidgetItem(message)
             entities = finding_entities(project, message)
             item.setData(Qt.ItemDataRole.UserRole, entities)
-            item.setToolTip("Double-click to select affected geometry." if entities else
+            item.setToolTip("Double-click to select and zoom to affected geometry." if entities else
                             "No specific geometry reference is available for this finding.")
             self.list.addItem(item)
         if messages:

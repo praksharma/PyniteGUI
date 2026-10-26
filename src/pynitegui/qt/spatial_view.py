@@ -105,8 +105,9 @@ class Bridge(QObject):
         self.view.ready = True
         self.view.failure_panel.hide()
         self.view.web.show()
+        if self.view.pending_focus is None:
+            self.view.pending_fit = True
         self.view.redraw()
-        self.view.fit()
 
     @Slot(str)
     def failed(self, message):
@@ -230,6 +231,7 @@ class SpatialView(QWidget):
         super().__init__(window)
         self.window, self.ready = window, False
         self.pending_fit = True
+        self.pending_focus = None
         self.setObjectName("spatial_view")
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -397,6 +399,15 @@ class SpatialView(QWidget):
         self.offset_label.setText(units.length)
         payload.update(plane=self.plane.currentText(), offset=unit_value(self.offset, units), labels=self.labels.isChecked(), localAxes=self.axes.isChecked(), boxSelect=self.box_select.isChecked(), moveNodes=self.move_nodes.isChecked())
         self.call("update", payload)
+        if self.pending_focus is not None:
+            session, revision, bounds = self.pending_focus
+            if (session, revision) != (self.window.project_session, self.window.revision):
+                self.pending_focus = None
+                self.pending_fit = True
+            elif self.ready:
+                self.pending_focus = None
+                self.pending_fit = False
+                self.call("focus", bounds)
         if self.pending_fit and self.ready:
             self.pending_fit = False
             self.call("fit")
@@ -421,7 +432,13 @@ class SpatialView(QWidget):
         except (ValueError, OSError) as error:
             QMessageBox.warning(self, "Image Export", str(error))
 
+    def focus_bounds(self, bounds):
+        self.pending_focus = (self.window.project_session, self.window.revision, bounds)
+        self.pending_fit = False
+        self.redraw()
+
     def fit(self):
+        self.pending_focus = None
         self.pending_fit = True
         self.redraw()
 
