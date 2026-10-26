@@ -95,6 +95,54 @@ Separate solver/formulation work:
 This section owns engine-capability coverage. Existing 3D editing/report tasks
 below and the secondary interface wishlist retain their more specific scope.
 
+## Official PyNite Example Adaptations
+
+Requested 2026-10-26. Track the 20 scripts currently listed in the
+[official PyNite Examples directory](https://github.com/JWock82/Pynite/tree/main/Examples).
+These are pending adaptations, including cases where a similar GUI example
+already exists. Audit each script against the locked engine and current GUI
+before implementation; an upstream example does not establish GUI support.
+
+For each completed adaptation: provide an editable **File > Examples** entry in
+the appropriate category, record the upstream source commit/link and applicable
+license notices, preserve units/loading/analysis assumptions, document expected
+results, and add focused numerical and save/reopen checks. Reuse or update an
+existing matching example rather than adding duplicates. Record any deliberate
+differences from upstream. New solver work remains on hold; this checklist does
+not change the analysis-method priorities above.
+
+**Frames and existing analysis methods — first adaptation candidates:**
+
+- [ ] [Simple Beam - Point Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Simple%20Beam%20-%20Point%20Load.py)
+- [ ] [Simple Beam - Uniform Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Simple%20Beam%20-%20Uniform%20Load.py)
+- [ ] [Simple Beam - Factored Envelope.py](https://github.com/JWock82/Pynite/blob/main/Examples/Simple%20Beam%20-%20Factored%20Envelope.py)
+- [ ] [Moment Frame - Lateral Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Moment%20Frame%20-%20Lateral%20Load.py)
+- [ ] [Space Frame - Nodal Loads 1.py](https://github.com/JWock82/Pynite/blob/main/Examples/Space%20Frame%20-%20Nodal%20Loads%201.py)
+- [ ] [Space Frame - Nodal Loads 2.py](https://github.com/JWock82/Pynite/blob/main/Examples/Space%20Frame%20-%20Nodal%20Loads%202.py)
+- [ ] [Space Truss - Nodal Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Space%20Truss%20-%20Nodal%20Load.py)
+- [ ] [P-Delta Analysis.py](https://github.com/JWock82/Pynite/blob/main/Examples/P-Delta%20Analysis.py)
+
+**Springs and unilateral members — audit dependencies; defer missing behaviour:**
+
+- [ ] [Beam on Elastic Foundation.py](https://github.com/JWock82/Pynite/blob/main/Examples/Beam%20on%20Elastic%20Foundation.py)
+- [ ] [Braced Frame - Spring Supported.py](https://github.com/JWock82/Pynite/blob/main/Examples/Braced%20Frame%20-%20Spring%20Supported.py)
+- [ ] [Braced Frame - Tension Only.py](https://github.com/JWock82/Pynite/blob/main/Examples/Braced%20Frame%20-%20Tension%20Only.py)
+
+**Plates, shells, walls and foundations — gate on validated surface workflows:**
+
+- [ ] [Rectangular Plate Bending - Qauds.py](https://github.com/JWock82/Pynite/blob/main/Examples/Rectangular%20Plate%20Bending%20-%20Qauds.py) (upstream filename spelling)
+- [ ] [Rectangular Wall - Linear Varying Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Rectangular%20Wall%20-%20Linear%20Varying%20Load.py)
+- [ ] [Shear Wall - Basic.py](https://github.com/JWock82/Pynite/blob/main/Examples/Shear%20Wall%20-%20Basic.py)
+- [ ] [Shear Wall - Advanced.py](https://github.com/JWock82/Pynite/blob/main/Examples/Shear%20Wall%20-%20Advanced.py)
+- [ ] [Mat Foundation.py](https://github.com/JWock82/Pynite/blob/main/Examples/Mat%20Foundation.py)
+- [ ] [Circular Bin with Conical Hopper.py](https://github.com/JWock82/Pynite/blob/main/Examples/Circular%20Bin%20with%20Conical%20Hopper.py)
+
+**Additional solver workflows — on hold with the corresponding solver tasks:**
+
+- [ ] [Modal Analysis.py](https://github.com/JWock82/Pynite/blob/main/Examples/Modal%20Analysis.py)
+- [ ] [Moment Frame - Pushover.py](https://github.com/JWock82/Pynite/blob/main/Examples/Moment%20Frame%20-%20Pushover.py)
+- [ ] [Pushover Analysis.py](https://github.com/JWock82/Pynite/blob/main/Examples/Pushover%20Analysis.py)
+
 ## Surface Geometry and Meshing
 
 - [x] Experimental separate rectangular DKMQ plate workspace with geometry-owned
