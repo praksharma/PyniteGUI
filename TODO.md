@@ -38,6 +38,43 @@ the exact missing part. Summary: **9 done, 4 partial, 5 pending**. P-Delta cover
 | Shear walls and mats | Pending | Add dedicated wall/foundation definitions, meshing, openings, soil/support input and specialized results; verify the locked engine before exposing workflows. |
 | Model/result PDF output | Done | Native printable model definitions/results with save-to-PDF; 2D diagrams and numerical envelopes; 3D six-component diagrams with selectable orthographic views and numerical envelopes. |
 
+### Analysis Method Checklist
+
+Implementation status checked 2026-10-26. Tick a method only when its stated GUI
+workflow has validated inputs, usable results and regression coverage; an API
+existing in PyNite alone does not count. Keep this checklist and the capability
+table above in sync as methods are implemented.
+
+- [x] **Linear elastic** (`analyze_linear`): 2D/3D frames, bilateral axial-only
+  trusses and opt-in rectangular Quad slab/frame coupling; reactions,
+  displacements, member results, combinations and exports.
+- [x] **P-Delta elastic** (`analyze_PDelta`): saved, undoable method selection
+  across manual/live/MCP frame analysis; independent combination solves, actual
+  progress phases, effective-stiffness checks and method-labelled snapshots/
+  exports. Analytical compression/tension, refinement and instability regressions
+  plus a public example. Frame-only; no slabs, trusses or released translations.
+- [ ] **General iterative elastic** (`analyze`): tension-only/compression-only
+  members and one-way support springs, activation/deactivation and optional
+  load stepping. Add persisted behaviour flags, iteration/tolerance controls,
+  convergence/active-state results, independent combination solves and activation/
+  mechanism benchmarks. Materials remain elastic; this is not plastic yielding.
+- [ ] **Steel plastic pushover** (`analyze_pushover`) — next solver priority:
+  validated yield strength and plastic section moduli (`fy`, `Zy`, `Zz`), section/
+  material binding, elastic preload and push patterns, load increments,
+  displacement stop conditions, accepted-step histories and base-shear/roof-
+  displacement capacity curves. Benchmark the steel I-section interaction model.
+  The public engine method is first-order; no P-Delta integration or nonlinear slabs.
+- [ ] **Modal analysis** (`analyze_modal`): explicit mass-source combination,
+  load-to-mass direction and consistent gravity conversion, mode count, natural
+  frequencies/periods and mode shapes with their own results/visualization and
+  independent benchmarks. Modal analysis alone is not an earthquake-response solver.
+
+Separate solver/formulation work:
+
+- [ ] **Reinforced-concrete nonlinear frames/slabs:** evaluate a separate validated
+  formulation/solver for cracking, reinforcement and plasticity. The locked
+  PyNite steel pushover and elastic concrete presets do not supply RC plasticity.
+
 ### Implementation Gates
 
 - Keep the existing linear-static workflow intact. P-Delta, unilateral and
@@ -146,16 +183,6 @@ below and the secondary interface wishlist retain their more specific scope.
 - [ ] Add inclined support orientation (separate constrained-coordinate feasibility work).
 
 ## Loads and Analysis
-
-- [x] Saved, undoable Linear elastic/P-Delta elastic choice across native/manual,
-  live and MCP frame analysis; independent combinations, method-labelled results,
-  effective-stiffness checks and analytical beam-column/refinement regressions.
-- [ ] Steel plastic pushover: implement validated yield/plastic section data,
-  push/preload settings, displacement stop, load-step histories and capacity
-  curves. Keep distinct from elastic P-Delta; the locked engine does not combine them.
-- [ ] Reinforced-concrete nonlinear frames/slabs: evaluate a separate validated
-  formulation/solver for cracking, reinforcement and plasticity. The locked
-  PyNite steel pushover and elastic concrete presets do not supply RC plasticity.
 
 - [x] Add angled nodal/member point forces with automatic FX/FY resolution,
   global angle input, component previews, and oriented arrows.

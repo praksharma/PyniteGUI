@@ -177,6 +177,10 @@ an audit of Stabileo's engineering calculations. PRO is labelled beta.
 
 ## Later: Verified Solver Extensions
 
+The primary [analysis method checklist](TODO.md#analysis-method-checklist) owns
+solver completion ticks and the next solver priority. Keep these detailed
+follow-ups consistent with it.
+
 - [ ] **Elastic supports and settlement (Adapter).** Expose global DX/DY/RZ
   support stiffness via `def_support_spring` and imposed displacement/rotation
   via `def_node_disp`. Start with bilateral springs. Spring units, reaction
