@@ -1,7 +1,7 @@
 """Reusable section definitions and per-member assignments."""
 from PySide6.QtWidgets import (
     QAbstractItemView, QDialog, QDialogButtonBox, QFormLayout, QHBoxLayout,
-    QComboBox, QLabel, QLineEdit, QMessageBox, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout,
+    QComboBox, QSplitter, QWidget, QLabel, QLineEdit, QMessageBox, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout,
 )
 
 from .app import unit_number, unit_value
@@ -15,7 +15,7 @@ class SectionLibraryDialog(QDialog):
         self.project = project
         self.definition = None
         self.setWindowTitle("Section Library | " + SOURCE)
-        self.resize(820, 520)
+        self.resize(1050, 620)
         layout = QVBoxLayout(self)
         filters = QHBoxLayout()
         self.search = QLineEdit()
@@ -32,7 +32,22 @@ class SectionLibraryDialog(QDialog):
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-        layout.addWidget(self.table, 1)
+        from .section_preview import SectionPreview
+        splitter = QSplitter()
+        splitter.addWidget(self.table)
+        preview_panel = QWidget()
+        preview_layout = QVBoxLayout(preview_panel)
+        self.preview = SectionPreview()
+        preview_layout.addWidget(self.preview, 1)
+        self.dimensions = QLabel()
+        self.dimensions.setWordWrap(True)
+        preview_layout.addWidget(self.dimensions)
+        note = QLabel("Idealized outline; fillets/corner radii omitted. HSS uses design wall thickness. Dimensions do not recalculate A/I/J or provide stress recovery or code design.")
+        note.setWordWrap(True)
+        preview_layout.addWidget(note)
+        splitter.addWidget(preview_panel)
+        splitter.setSizes([640, 370])
+        layout.addWidget(splitter, 1)
         form = QFormLayout()
         self.axis = QComboBox()
         self.axis.addItems(["Strong axis (Iz = catalog Ix)", "Weak axis (Iz = catalog Iy)"])
@@ -82,7 +97,12 @@ class SectionLibraryDialog(QDialog):
         row = self.table.currentRow()
         exists = 0 <= row < len(self.rows)
         self.buttons.button(QDialogButtonBox.StandardButton.Ok).setEnabled(exists)
+        self.preview.set_section(self.rows[row].designation if exists else None, self.axis.currentIndex() == 1, self.project.units)
         if exists:
+            from .section_library import DIMENSIONS
+            dimensions = DIMENSIONS[self.rows[row].designation]
+            self.dimensions.setText(" · ".join(f"{key} = {self.project.units.to_display(value, 'length'):.6g} {self.project.units.length}"
+                                              for key, value in dimensions.labels()))
             base = self.rows[row].designation + (" (weak)" if self.axis.currentIndex() else "")
             name, suffix = base, 2
             while name in self.project.sections:
@@ -90,6 +110,7 @@ class SectionLibraryDialog(QDialog):
                 suffix += 1
             self.name.setText(name)
         else:
+            self.dimensions.clear()
             self.name.clear()
 
     def accept(self):

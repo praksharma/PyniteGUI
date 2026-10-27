@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Dimensioned section chooser sketches for all 15 offline AISC shapes, with
+  strong/weak-axis orientation, actual published depth/width/thickness, separate
+  HSS nominal/design walls, unit conversion and theme-aware empty states. Keep
+  numerical imports unchanged and preserve a source-workbook excerpt for checks.
+
 - Plain static storey drift in retained planar/spatial result windows: explicit
   lower/upper node pairs, global Y heights, X/Z translation differences, signed
   ratios and per-pair governing combinations. Preserve pairs across display-unit

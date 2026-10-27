@@ -44,6 +44,14 @@ def capture(output):
         app.processEvents()
         window.view.fit()
         try:
+            from pynitegui.qt.sections import SectionLibraryDialog
+            section = SectionLibraryDialog(window, window.project)
+            section.search.setText("W18X35")
+            section.show()
+            save(section, "section-dimensions.png")
+            section.reject()
+            section.deleteLater()
+
             from pynitegui.qt.example_browser import ExampleBrowser
             browser = ExampleBrowser(window)
             browser.search.setText("Gerber")

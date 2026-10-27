@@ -1975,10 +1975,14 @@ The offline library contains 15 doubly symmetric wide-flange, square,
 rectangular, and round HSS sections, not a complete catalog. Its numerical
 properties come from the August 2023 [AISC Shapes Database v16.0](https://www.aisc.org/aisc/publications/steel-construction-manual/aisc-shapes-database-v160/),
 consistent with the 16th Edition Manual, first printing. The source workbook was
-retrieved from this [public mirror](https://github.com/OpenCivil-Project/Open-Structures/blob/main/app/resources/aisc-shapes-database-v16.0.xlsx)
+retrieved from this [public mirror](https://github.com/OpenCivil-Project/Open-Structures/blob/f32abe5b162cb66aa590e3c2b107b7a726124713/app/resources/aisc-shapes-database-v16.0.xlsx)
 because the official download returned HTTP 403. Its SHA-256 is
 `82d0ceb96a0d938ae1a6bd9637cb10a1e269225b5d668dce5b0bdc8d86013496`.
-Only designation and A/Iy/Ix/J numerical facts are bundled, not the workbook.
+Only designation, A/Iy/Ix/J and the 15 shapes' dimensional numerical facts are
+bundled, not the workbook. The dimension excerpt and worksheet row references
+are preserved in `tests/fixtures/aisc_v16_dimensions.json`. The mirror revision
+used for these checks is `f32abe5b162cb66aa590e3c2b107b7a726124713`; its workbook
+hash matches the original library source above.
 Values use U.S. customary columns C, F, AQ, AM, AX; metric previews convert
 these values rather than using the workbook's separately rounded metric columns.
 Strong-axis bending maps catalog Ix to PyNite Iz and catalog Iy to PyNite Iy.
@@ -1989,6 +1993,24 @@ validated on reopen; modified values must be classified as custom. Materials
 remain a separate assignment, and imports do not change them. This is a stiffness
 library, not a strength, buckling, or code-compliance check. Verify suitability
 and section properties independently for engineering use.
+
+The chooser includes a resizable **dimensioned section sketch** alongside the
+numerical property table. Wide flanges show d (depth), bf (flange width), tw (web
+thickness) and tf (flange thickness). Box HSS shows Ht/B; round HSS shows OD.
+Both HSS families show nominal and design wall thickness separately, and draw
+the design wall. Source US columns are G/L/Q/T for wide flanges, I/N/W/X for box
+HSS, and K/W/X for round HSS. Dimensions convert to the current project's length
+units. They use the published actual dimensions, not values inferred from the
+section name: W18X35 depth is 17.7 in, while HSS6.625X0.280 has published OD
+6.63 in. Select Weak axis to rotate the sketch 90 degrees within the fixed local
+y/z axes, matching the table's Iy/Iz swap. Empty searches clear both previews.
+
+The outline is idealized: fillets and HSS corner radii are omitted. It does not
+recalculate A/I/J, supply stress recovery or perform code design. Browsing and
+rotating do not edit the project; Add to Project uses the existing validated
+catalog-property import and provenance workflow.
+
+[![Native section chooser with dimensions, numerical properties and axis orientation](docs/assets/screenshots/section-dimensions.png)](docs/assets/screenshots/section-dimensions.png)
 
 ### Project File Formats
 

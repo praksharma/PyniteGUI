@@ -285,6 +285,9 @@ Remaining 13 scripts are intentionally unchecked:
 - [x] Add a section library and distinguish custom properties from named sections.
   Searchable offline AISC starter subset, strong/weak-axis assignment, unit-aware
   previews, persisted provenance, and custom classification after property edits.
+  Dimensioned native sketches now cover all 15 shapes using sourced actual
+  dimensions, strong/weak-axis orientation and nominal/design HSS thicknesses;
+  idealized outlines never recalculate solver properties.
 - [ ] Expand the section library with additional regional catalogs and sizes.
 - [x] Add configurable global DX, DY, and RZ support degrees of freedom.
 - [x] Add global bilateral DX, DY, and RZ support springs with unit-aware

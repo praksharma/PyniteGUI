@@ -78,11 +78,13 @@ silently changing saved engineering definitions.
   member/load tables and selection-based assignments in 2D/3D, with unit-aware
   values, whole-transaction validation and single-step undo. Primary completion
   owner: editable tables and multiple selection in TODO.md.
-- [ ] **Section chooser with previews (UI).** Browse named sections and show a
+- [x] **Section chooser with previews (UI).** Browse named sections and show a
   dimensional sketch alongside A, Iy, Iz, and J. Feed validated properties to
   PyNite; do not imply a shape sketch provides stress recovery or code design.
-  The searchable starter catalog and numerical property previews are implemented;
-  dimensional sketches remain pending. Primary owner: section library in TODO.md.
+  Completed for all 15 offline AISC shapes: verified published dimensions,
+  strong/weak-axis sketches, HSS nominal/design wall distinction, display units
+  and theme-aware empty states. Preserve validated A/I/J imports; omit fillets
+  and corner radii explicitly. Primary owner: section library in TODO.md.
 - [x] **Opt-in live linear recalculation (UI).** Promoted and completed in the
   primary roadmap: debounce completed edits, solve a clone through the isolated
   worker, show pending/failed/current state and reject stale replies. Draft input

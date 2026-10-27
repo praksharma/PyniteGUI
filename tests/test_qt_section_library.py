@@ -1,5 +1,6 @@
 """Catalog axis mapping, provenance, persistence, and import workflow."""
 import copy
+import json
 import os
 from pathlib import Path
 import tempfile
@@ -36,6 +37,28 @@ class CatalogTests(unittest.TestCase):
                          {"A": 10.3, "Iy": 15.3, "Iz": 510, "J": 0.506})
         self.assertEqual(BY_DESIGNATION["HSS8X4X1/4"].properties(),
                          {"A": 5.24, "Iy": 14.4, "Iz": 42.5, "J": 35.3})
+
+    def test_dimensions_match_published_workbook_excerpt_and_preserve_properties(self):
+        from pynitegui.qt.section_library import DIMENSIONS
+        fixture = json.loads((Path(__file__).parent / "fixtures/aisc_v16_dimensions.json").read_text())
+        self.assertEqual(set(DIMENSIONS), set(BY_DESIGNATION))
+        for name, record in fixture["sections"].items():
+            dimensions = dict(DIMENSIONS[name].labels())
+            published = record["dimensions"]
+            for label, value in dimensions.items():
+                source_label = {"t nominal": "tnom", "t design": "tdes"}.get(label, label)
+                self.assertEqual(value, published[source_label])
+            section = BY_DESIGNATION[name]
+            self.assertEqual((section.A, section.Ix, section.Iy, section.J), tuple(record["properties"][k] for k in ("A", "Ix", "Iy", "J")))
+            geometry = DIMENSIONS[name]
+            if geometry.shape == "I":
+                self.assertGreater(geometry.depth, 2*geometry.flange)
+                self.assertGreater(geometry.width, geometry.web)
+            else:
+                self.assertGreater(geometry.nominal, geometry.design)
+                self.assertGreater(min(geometry.depth, geometry.width), 2*geometry.design)
+        self.assertEqual(DIMENSIONS["W18X35"].depth, 17.7)
+        self.assertEqual(DIMENSIONS["HSS6.625X0.280"].depth, 6.63)
 
     def test_roundtrip_and_clone_keep_provenance(self):
         project = Project()
@@ -135,6 +158,39 @@ class LibraryUITests(unittest.TestCase):
         self.assertEqual(dialog.table.rowCount(), 3)
         dialog.family.setCurrentIndex(0)
         self.assertEqual(dialog.table.rowCount(), 15)
+
+    def test_dimension_sketch_units_orientation_themes_and_empty_selection(self):
+        from pynitegui.qt.theme import configure_theme
+        before = self.window.project.to_dict()
+        for preset in ("imperial", "si", "si_mm", "imperial_ft"):
+            self.window.project.unit_system = preset
+            dialog = self.chooser()
+            dialog.show()
+            self.app.processEvents()
+            dialog.search.setText("W18X35")
+            self.assertEqual(dialog.preview.designation, "W18X35")
+            u = self.window.project.units
+            self.assertIn(f"d = {u.to_display(17.7, 'length'):.6g} {u.length}", dialog.dimensions.text())
+            strong = dialog.preview.grab().toImage()
+            dialog.axis.setCurrentIndex(1)
+            self.assertTrue(dialog.preview.weak)
+            weak = dialog.preview.grab().toImage()
+            self.assertNotEqual(strong, weak)
+            self.assertAlmostEqual(float(dialog.table.item(0, 4).text()), u.to_display(15.3, "inertia"), delta=abs(u.to_display(15.3, "inertia"))*1e-9)
+            for theme in ("light", "dark"):
+                configure_theme(self.app, theme)
+                dialog.search.clear()
+                for index in range(len(dialog.rows)):
+                    dialog.table.selectRow(index)
+                    self.assertFalse(dialog.preview.grab().isNull())
+            dialog.search.setText("no matching designation")
+            self.assertIsNone(dialog.preview.designation)
+            self.assertEqual(dialog.dimensions.text(), "")
+            self.assertFalse(dialog.buttons.button(QDialogButtonBox.StandardButton.Ok).isEnabled())
+            dialog.close()
+        configure_theme(self.app, "light")
+        self.window.project.unit_system = before["unit_system"]
+        self.assertEqual(self.window.project.to_dict(), before)
 
     def test_orientation_preview_and_import(self):
         dialog = self.chooser()

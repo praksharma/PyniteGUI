@@ -14,7 +14,7 @@ when comparing with the published rc1 wheel.
 | Atomic bulk edits and node/member/load tables | [Selection](modeling/drawing.md), [model tables](modeling/tables.md) |
 | Split, equal subdivision, explicit intersections and connectivity findings | [Topology and model checks](modeling/topology.md) |
 | Perpendicular and midpoint construction connections | [Construction connections](modeling/construction.md) |
-| Per-member materials and sections, searchable starter libraries, defaults and provenance | [Assignments](modeling/properties.md), [materials](reference/materials.md), [sections](reference/sections.md) |
+| Per-member materials and sections, searchable libraries with dimensioned section sketches, defaults and provenance | [Assignments](modeling/properties.md), [materials](reference/materials.md), [sections](reference/sections.md) |
 | Free/pin/roller/fixed/custom supports and bilateral support springs | [2D supports](modeling/supports.md), [six-DOF spatial supports](modeling/3d.md) |
 | Planar axial/shear/moment end releases | [Release editing](modeling/releases.md), [formulation and limits](reference/releases.md) |
 | Bilateral axial-only trusses and mixed frame/truss models | [Trusses](modeling/trusses.md), [3D models](modeling/3d.md) |

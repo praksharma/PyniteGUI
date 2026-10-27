@@ -43,3 +43,42 @@ CATALOG = tuple(CatalogSection(*row) for row in (
     ("HSS8.625X0.322", "Round HSS", 7.85, 68.1, 68.1, 136),
 ))
 BY_DESIGNATION = {section.designation: section for section in CATALOG}
+
+
+@dataclass(frozen=True)
+class SectionDimensions:
+    """Published inch dimensions; sketches omit fillets/corner radii."""
+    shape: str
+    depth: float
+    width: float
+    web: float = 0.
+    flange: float = 0.
+    nominal: float = 0.
+    design: float = 0.
+
+    def labels(self):
+        if self.shape == "I":
+            return (("d", self.depth), ("bf", self.width), ("tw", self.web), ("tf", self.flange))
+        outer = (("OD", self.depth),) if self.shape == "round" else (("Ht", self.depth), ("B", self.width))
+        return (*outer, ("t nominal", self.nominal), ("t design", self.design))
+
+
+# Database v16.0 US columns G/L/Q/T (W), I/N/W/X (box HSS), K/W/X (round HSS).
+# The round HSS OD column is rounded by AISC (6.63/8.63), not inferred from names.
+DIMENSIONS = {
+    "W8X10": SectionDimensions("I", 7.89, 3.94, .17, .205),
+    "W10X12": SectionDimensions("I", 9.87, 3.96, .19, .21),
+    "W12X26": SectionDimensions("I", 12.2, 6.49, .23, .38),
+    "W14X30": SectionDimensions("I", 13.8, 6.73, .27, .385),
+    "W16X26": SectionDimensions("I", 15.7, 5.5, .25, .345),
+    "W18X35": SectionDimensions("I", 17.7, 6., .3, .425),
+    "W21X44": SectionDimensions("I", 20.7, 6.5, .35, .45),
+    "W24X55": SectionDimensions("I", 23.6, 7.01, .395, .505),
+    "HSS4X4X1/4": SectionDimensions("box", 4., 4., nominal=.25, design=.233),
+    "HSS6X6X3/8": SectionDimensions("box", 6., 6., nominal=.375, design=.349),
+    "HSS8X8X1/2": SectionDimensions("box", 8., 8., nominal=.5, design=.465),
+    "HSS8X4X1/4": SectionDimensions("box", 8., 4., nominal=.25, design=.233),
+    "HSS10X6X3/8": SectionDimensions("box", 10., 6., nominal=.375, design=.349),
+    "HSS6.625X0.280": SectionDimensions("round", 6.63, 6.63, nominal=.28, design=.26),
+    "HSS8.625X0.322": SectionDimensions("round", 8.63, 8.63, nominal=.322, design=.3),
+}

@@ -1,0 +1,230 @@
+{
+  "source": "AISC Shapes Database v16.0, Database v16.0 US columns",
+  "workbook_sha256": "82d0ceb96a0d938ae1a6bd9637cb10a1e269225b5d668dce5b0bdc8d86013496",
+  "retrieval_url": "https://raw.githubusercontent.com/OpenCivil-Project/Open-Structures/f32abe5b162cb66aa590e3c2b107b7a726124713/app/resources/aisc-shapes-database-v16.0.xlsx",
+  "sections": {
+    "W8X10": {
+      "worksheet_row": 280,
+      "dimensions": {
+        "d": 7.89,
+        "bf": 3.94,
+        "tw": 0.17,
+        "tf": 0.205
+      },
+      "properties": {
+        "A": 2.96,
+        "Ix": 30.8,
+        "Iy": 2.09,
+        "J": 0.0426
+      }
+    },
+    "W10X12": {
+      "worksheet_row": 267,
+      "dimensions": {
+        "d": 9.87,
+        "bf": 3.96,
+        "tw": 0.19,
+        "tf": 0.21
+      },
+      "properties": {
+        "A": 3.54,
+        "Ix": 53.8,
+        "Iy": 2.18,
+        "J": 0.0547
+      }
+    },
+    "W12X26": {
+      "worksheet_row": 245,
+      "dimensions": {
+        "d": 12.2,
+        "bf": 6.49,
+        "tw": 0.23,
+        "tf": 0.38
+      },
+      "properties": {
+        "A": 7.65,
+        "Ix": 204.0,
+        "Iy": 17.3,
+        "J": 0.3
+      }
+    },
+    "W14X30": {
+      "worksheet_row": 218,
+      "dimensions": {
+        "d": 13.8,
+        "bf": 6.73,
+        "tw": 0.27,
+        "tf": 0.385
+      },
+      "properties": {
+        "A": 8.85,
+        "Ix": 291.0,
+        "Iy": 19.6,
+        "J": 0.38
+      }
+    },
+    "W16X26": {
+      "worksheet_row": 182,
+      "dimensions": {
+        "d": 15.7,
+        "bf": 5.5,
+        "tw": 0.25,
+        "tf": 0.345
+      },
+      "properties": {
+        "A": 7.68,
+        "Ix": 301.0,
+        "Iy": 9.59,
+        "J": 0.262
+      }
+    },
+    "W18X35": {
+      "worksheet_row": 171,
+      "dimensions": {
+        "d": 17.7,
+        "bf": 6.0,
+        "tw": 0.3,
+        "tf": 0.425
+      },
+      "properties": {
+        "A": 10.3,
+        "Ix": 510.0,
+        "Iy": 15.3,
+        "J": 0.506
+      }
+    },
+    "W21X44": {
+      "worksheet_row": 148,
+      "dimensions": {
+        "d": 20.7,
+        "bf": 6.5,
+        "tw": 0.35,
+        "tf": 0.45
+      },
+      "properties": {
+        "A": 13.0,
+        "Ix": 843.0,
+        "Iy": 20.7,
+        "J": 0.77
+      }
+    },
+    "W24X55": {
+      "worksheet_row": 127,
+      "dimensions": {
+        "d": 23.6,
+        "bf": 7.01,
+        "tw": 0.395,
+        "tf": 0.505
+      },
+      "properties": {
+        "A": 16.2,
+        "Ix": 1350.0,
+        "Iy": 29.1,
+        "J": 1.18
+      }
+    },
+    "HSS4X4X1/4": {
+      "worksheet_row": 1983,
+      "dimensions": {
+        "Ht": 4.0,
+        "B": 4.0,
+        "tnom": 0.25,
+        "tdes": 0.233
+      },
+      "properties": {
+        "A": 3.37,
+        "Ix": 7.8,
+        "Iy": 7.8,
+        "J": 12.8
+      }
+    },
+    "HSS6X6X3/8": {
+      "worksheet_row": 1915,
+      "dimensions": {
+        "Ht": 6.0,
+        "B": 6.0,
+        "tnom": 0.375,
+        "tdes": 0.349
+      },
+      "properties": {
+        "A": 7.58,
+        "Ix": 39.5,
+        "Iy": 39.5,
+        "J": 64.6
+      }
+    },
+    "HSS8X8X1/2": {
+      "worksheet_row": 1854,
+      "dimensions": {
+        "Ht": 8.0,
+        "B": 8.0,
+        "tnom": 0.5,
+        "tdes": 0.465
+      },
+      "properties": {
+        "A": 13.5,
+        "Ix": 125.0,
+        "Iy": 125.0,
+        "J": 204.0
+      }
+    },
+    "HSS8X4X1/4": {
+      "worksheet_row": 1870,
+      "dimensions": {
+        "Ht": 8.0,
+        "B": 4.0,
+        "tnom": 0.25,
+        "tdes": 0.233
+      },
+      "properties": {
+        "A": 5.24,
+        "Ix": 42.5,
+        "Iy": 14.4,
+        "J": 35.3
+      }
+    },
+    "HSS10X6X3/8": {
+      "worksheet_row": 1801,
+      "dimensions": {
+        "Ht": 10.0,
+        "B": 6.0,
+        "tnom": 0.375,
+        "tdes": 0.349
+      },
+      "properties": {
+        "A": 10.4,
+        "Ix": 137.0,
+        "Iy": 61.8,
+        "J": 139.0
+      }
+    },
+    "HSS6.625X0.280": {
+      "worksheet_row": 2182,
+      "dimensions": {
+        "OD": 6.63,
+        "tnom": 0.28,
+        "tdes": 0.26
+      },
+      "properties": {
+        "A": 5.2,
+        "Ix": 26.4,
+        "Iy": 26.4,
+        "J": 52.7
+      }
+    },
+    "HSS8.625X0.322": {
+      "worksheet_row": 2160,
+      "dimensions": {
+        "OD": 8.63,
+        "tnom": 0.322,
+        "tdes": 0.3
+      },
+      "properties": {
+        "A": 7.85,
+        "Ix": 68.1,
+        "Iy": 68.1,
+        "J": 136.0
+      }
+    }
+  }
+}
