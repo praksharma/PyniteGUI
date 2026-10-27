@@ -368,6 +368,13 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
 - [x] Group examples into 2D Frames, 3D Frames, Trusses, Slabs and P-Delta; add
   a ready-to-solve three-storey/three-slab gravity model and segmented P-Delta
   column with independent reaction, load-path and analytical displacement checks.
+- [x] Add File > Browse Examples with category/text search, native undeformed
+  geometry previews, unit-aware loading summaries and explicit-unit reference
+  checks. Preview without editing/solving, preserve drafts and use the existing
+  current-unit/unsaved-change path for opening; verify empty searches and themes.
+- [x] Add Gerber/internal-hinge and three-hinged polygonal-arch examples with
+  hand-equilibrium reactions, zero hinge moments, inactive-rotation handling,
+  persistence and menu tests. Retain the explicit 2D-to-3D release limitation.
 - [x] Add recent projects and per-window atomic autosave/recovery.
 - [x] Harden recent history against malformed/duplicate preferences, unavailable
   paths and files disappearing after menu display. Add history-only cleanup,

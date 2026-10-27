@@ -661,6 +661,8 @@ class MainWindow(QMainWindow):
             file_menu.addAction(self.action("Recover Autosave...", self.offer_recovery))
         file_menu.addSeparator()
         from .examples import EXAMPLES, EXAMPLE_GROUPS
+        self.browse_examples_action = self.action("Browse Examples…", self.browse_examples)
+        file_menu.addAction(self.browse_examples_action)
         self.examples_menu = file_menu.addMenu("Examples")
         for category, keys in EXAMPLE_GROUPS.items():
             submenu = self.examples_menu.addMenu(category)
@@ -1720,6 +1722,17 @@ class MainWindow(QMainWindow):
         self.record_recent(path)
         self.update_title()
         return True
+
+    def browse_examples(self):
+        if self.mcp_mode:
+            return
+        from .example_browser import ExampleBrowser
+        dialog = ExampleBrowser(self)
+        accepted = dialog.exec() == QDialog.DialogCode.Accepted
+        key = dialog.selected_key
+        dialog.deleteLater()
+        if accepted and key is not None:
+            self.example(key)
 
     def example(self, key="simple_beam"):
         if not self.confirm_discard():

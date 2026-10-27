@@ -55,10 +55,15 @@ class SpatialConversionTests(unittest.TestCase):
 
     def test_all_unreleased_planar_examples_retain_in_plane_results(self):
         for key in EXAMPLES:
-            if key.startswith("3d_") or key == "shear_release":
+            if key.startswith("3d_"):
                 continue
             with self.subTest(example=key):
                 source = example_project(key)
+                if any(member.kind == "frame" and any(any(end) for end in member.end_releases)
+                       for member in source.members.values()):
+                    with self.assertRaisesRegex(ValueError, "released frame"):
+                        to_spatial(source, offset=-54)
+                    continue
                 converted = to_spatial(source, offset=-54)
                 planar, spatial = solve(source), solve(converted)
                 for combination in source.combinations:

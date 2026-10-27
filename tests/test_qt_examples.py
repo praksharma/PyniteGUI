@@ -70,7 +70,7 @@ class ExampleTests(unittest.TestCase):
         from pynitegui.qt.model import Project
         from pynitegui.qt.official_examples import SOURCES
         from pynitegui.qt.units import UNIT_SYSTEMS
-        for key in ("p_delta_column", "3d_multistorey_slabs", *SOURCES):
+        for key in ("p_delta_column", "3d_multistorey_slabs", "gerber", "three_hinged_arch", *SOURCES):
             for units in UNIT_SYSTEMS:
                 project = example_project(key, units)
                 before = project.to_dict()

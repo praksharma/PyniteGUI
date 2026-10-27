@@ -996,6 +996,28 @@ appears in the searchable Help reference.
 
 ### Examples and Appearance
 
+Use **File > Browse Examples** for a searchable native catalog. Filter by
+category or type words from a title, description or expected check. Selecting a
+row shows an undeformed geometry sketch, model size/method, loading summary and
+combinations. Loads follow the editor's current display units; reference checks
+state their own units explicitly. The sketch omits load arrows and uses a fixed
+axonometric view for spatial models; inspect full supports/loads in the editor
+after opening. It is not a solved result or an interactive analysis viewport.
+Surface meshes and moment-release rings are included in the geometry preview.
+
+[![Native example browser filtered to the Gerber beam with geometry and loading summary](docs/assets/screenshots/example-browser.png)](docs/assets/screenshots/example-browser.png)
+
+*Open the image for full-size text. Search `Gerber` to review its internal hinge
+and the three support reactions before opening the model.*
+
+Browsing does not run analysis, edit the current project, replace its results or
+discard unapplied Properties input. **Open Example** (or a double-click) loads a
+fresh example in the current units after the normal unsaved-work prompt; Cancel
+leaves the current model intact. A search with no matches clears the preview and
+disables Open Example. The browser follows Light/Dark appearance and is unavailable
+while MCP mode locks manual controls. The categorized **File > Examples** menus
+remain available for direct loading.
+
 - The unit selector also offers SI (mm, N) and Imperial (ft, kip). The mm/N
   preset uses N-mm moments, N/mm line loads, MPa stresses, and mm2/mm4 sections.
   The ft/kip preset uses kip-ft moments and kip/ft line loads, while keeping
@@ -1121,6 +1143,24 @@ matching official examples.
   labels, property tables, results, and open diagrams use the selected system.
   Switching is undoable, preserves the physical model and valid results, and is
   saved with the project. New projects keep the currently selected system.
+
+**2D Frames > Gerber Beam - Internal Hinge** has nodes at x = 0, 120, 180 and
+300 in, with a pin at N1, rollers at N2/N4 and a shared internal hinge at N3.
+Three members carry -0.01 kip/in global-Y distributed load. The suspended
+120-inch right span supplies 0.6 kip at the hinge and 0.6 kip at N4. On the
+left assembly, equilibrium gives N2 FY = **2.25 kip** and N1 FY = **0.15 kip**.
+Local end moments at the shared hinge are zero; local Mz over N2 is +54 kip-in.
+
+**2D Frames > Three-Hinged Polygonal Arch** has nodes (0,0), (60,60),
+(120,96), (180,60), (240,0) inches, pinned bases and a shared crown moment hinge.
+Each of the three upper joints carries -5 kip FY. Vertical base reactions are
+**7.5 kip** each; horizontal thrust is **+6.25 kip** at N1 and **-6.25 kip** at
+N5. Crown-end moments are zero. Both examples use Linear elastic, default steel
+and W18x35 properties, and no automatic self-weight. The hinge releases both
+adjacent member-end moments while retaining shared translations; its unused
+joint RZ is n/a. These are straight-segment frame examples, not curved elements.
+They remain planar: **Create 3D Copy** rejects their released frame members
+until general spatial frame releases are implemented.
 
 See the [illustrated first-model walkthrough](https://praksharma.github.io/PyniteGUI/start/first-model/)
 for views of the three-storey slab and P-Delta examples, including the expected

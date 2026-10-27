@@ -87,10 +87,13 @@ silently changing saved engineering definitions.
 - [ ] **Deformation animation (UI).** Animate the scale of the existing static
   displacement field with pause/reset and a fixed reference outline. Label it
   as static deformation animation, not a dynamic response calculation.
-- [ ] **Example browser (UI).** Categorized menus and worked P-Delta/multistorey
-  slab examples are implemented. A dedicated browser with preview, loading
-  summary and expected check values remains pending. Add Gerber/internal-hinge
-  and three-hinged polygonal-arch examples; keep tests and unsaved-change prompts.
+- [x] **Example browser (UI).** File > Browse Examples provides category/search
+  filters, native geometry previews, loading summaries in current units and
+  explicit-unit expected checks for every example. Browsing never analyzes or
+  changes the project; opening uses the existing unsaved-change prompt and
+  current units. Includes validated Gerber/internal-hinge and three-hinged polygonal-
+  arch examples with reaction/hinge-moment checks. Retain categorized menus;
+  released frame examples remain 2D until spatial releases are supported.
 - [ ] **Model/result exchange and graphics (UI).** Add a validated spreadsheet
   template and richer model-plus-result reports, plus PNG/SVG diagram export.
   Import into a preview before replacing the project; show units and snapshot

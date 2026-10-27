@@ -25,6 +25,8 @@ EXAMPLES = {
     "official_moment_frame": "Official PyNite - Moment Frame with Lateral Load",
     "official_p_delta": "Official PyNite - P-Delta Column",
     "3d_official_truss": "Official PyNite - Space Truss with Nodal Load",
+    "gerber": "Gerber Beam - Internal Hinge",
+    "three_hinged_arch": "Three-Hinged Polygonal Arch",
 }
 
 
@@ -33,7 +35,8 @@ EXAMPLES = {
 EXAMPLE_GROUPS = {
     "2D Frames": ("simple_beam", "portal", "cantilever", "continuous", "pitched",
                   "multistorey", "self_weight", "elastic", "shear_release",
-                  "official_beam_point", "official_beam_uniform", "official_beam_envelope", "official_moment_frame"),
+                  "official_beam_point", "official_beam_uniform", "official_beam_envelope", "official_moment_frame",
+                  "gerber", "three_hinged_arch"),
     "3D Frames": ("3d_cantilever", "3d_space_frame"),
     "Trusses": ("truss", "3d_tripod", "3d_official_truss"),
     "Slabs": ("3d_slab_frame", "3d_multistorey_slabs"),
@@ -62,7 +65,26 @@ def example_project(key, unit_system="imperial"):
         name = project.next_name("L", project.loads)
         project.loads[name] = Load(name, target, direction, magnitude, **kwargs)
 
-    if key in ("simple_beam", "self_weight"):
+    if key == "gerber":
+        for a, b in (((0., 0.), (120., 0.)), ((120., 0.), (180., 0.)), ((180., 0.), (300., 0.))):
+            beam = member(a, b)
+            load(beam, "FY", -.01, position=0., kind="distributed", end_magnitude=-.01)
+        support((0., 0.), "pin")
+        support((120., 0.), "roller")
+        support((300., 0.), "roller")
+        project.members["M2"].release_end = True
+        project.members["M3"].release_start = True
+    elif key == "three_hinged_arch":
+        points = ((0., 0.), (60., 60.), (120., 96.), (180., 60.), (240., 0.))
+        for a, b in zip(points, points[1:]):
+            member(a, b)
+        support(points[0], "pin")
+        support(points[-1], "pin")
+        project.members["M2"].release_end = True
+        project.members["M3"].release_start = True
+        for point in points[1:-1]:
+            load(project.node_at(*point), "FY", -5.)
+    elif key in ("simple_beam", "self_weight"):
         beam = member((0, 0), (420, 0))
         support((0, 0), "pin")
         support((420, 0), "roller")

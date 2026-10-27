@@ -44,6 +44,13 @@ def capture(output):
         app.processEvents()
         window.view.fit()
         try:
+            from pynitegui.qt.example_browser import ExampleBrowser
+            browser = ExampleBrowser(window)
+            browser.search.setText("Gerber")
+            browser.show()
+            save(browser, "example-browser.png")
+            browser.reject()
+
             window.help_menu.popup(window.mapToGlobal(window.rect().center()))
             save(window.help_menu, "help-menu.png")
             window.help_menu.close()

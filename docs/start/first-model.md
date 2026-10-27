@@ -3,6 +3,11 @@
 Use a supplied example first. It gives you a known result to check before
 building your own structure.
 
+**File > Browse Examples** lets you search the full catalog and inspect geometry,
+loading and expected checks before opening a model. Previewing keeps your current
+work intact; **Open Example** uses your current units and asks before replacing
+unsaved work. The direct categorized menus below remain available.
+
 ## Open and Solve a Beam
 
 1. Launch PyniteGUI and choose **File > Examples > 2D Frames > Simply Supported Beam**.
@@ -68,6 +73,24 @@ force recovery can trigger the strict Equilibrium check; compare the
 [source/adaptation notes](examples.md) before interpreting results. The column
 approaches a 40.2740-inch analytical tip displacement when refined. All materials
 remain elastic. The truss uses the existing linear, bilateral axial-only method.
+
+## Try an Internal Hinge or Three-Hinged Arch
+
+In **File > Browse Examples**, search `Gerber` or `polygonal arch`. Review the
+reference checks, then open the example and analyze with **F5**. Both use the
+**Service** combination and Linear elastic analysis.
+
+| Example | Reaction check in inch/kip display |
+| --- | --- |
+| Gerber Beam - Internal Hinge | N1 FY = 0.15 kip, N2 FY = 2.25 kip, N4 FY = 0.6 kip |
+| Three-Hinged Polygonal Arch | N1/N5 FY = 7.5 kip each; FX = +6.25 / -6.25 kip |
+
+Select the two members meeting at the internal/crown hinge and inspect their
+member-end moments: both are zero there. The hinge shares its translations but
+has no single rotation; its unused nodal RZ appears as n/a. The arch uses four
+straight frame segments. These released-frame examples cannot yet be converted
+with Create 3D Copy. See the [example reference](examples.md) for dimensions and
+the supporting hand-equilibrium checks.
 
 ## Make One Change
 

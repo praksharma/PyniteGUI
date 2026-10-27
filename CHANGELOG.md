@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Native searchable example browser with category filters, theme-aware geometry
+  previews, current-unit loading summaries and explicit-unit reference checks.
+  Preview without solving or changing the active model/drafts; open through the
+  existing unsaved-work prompt. Add Gerber and three-hinged polygonal-arch models
+  with hand-equilibrium/zero-hinge-moment checks, persistence and native menu
+  coverage. Preserve the restriction on converting released frames to 3D.
+
 - Official moment-frame, P-Delta column and space-truss examples with original
   IDs/load assumptions, canonical unit conversion and explicit adaptation notes.
   Retain second-order method selection and strict recovery checks; compare the
