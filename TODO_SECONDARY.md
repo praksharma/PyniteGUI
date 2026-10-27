@@ -51,10 +51,13 @@ These are the strongest ideas to adapt to a desktop engineering workflow.
   reaction and member-force tabs; numeric sorting, two-way geometry/tree links,
   multi-selection, correct units and snapshot-preserving combination changes.
   Member rows load on demand and double-click opens that member's detail.
-- [ ] **Diagram readability controls (UI).** Toggle IDs, loads, supports, values,
-  and extrema independently. Avoid label collisions and make local-axis/sign
-  conventions inspectable. Primary owner: dense labels, sign preferences, and
-  consistent result annotations in TODO.md.
+- [x] **2D diagram readability controls (UI).** Independent node/member IDs,
+  supports, loads, end values and sampled-extrema labels on Whole Structure.
+  Retain collision handling, explicit display-sign/placement controls and local
+  Member Detail/probe conventions. Visibility never changes analytical results.
+- [ ] **Spatial readability parity (UI).** Add independent IDs, end-value and
+  extrema controls to whole-structure 3D overlays/projections; preserve local
+  rolled axes, snapshot identity and existing support/load display controls.
 - [x] **Combination envelopes (UI).** Implemented for 2D/3D solved combinations:
   numerical bounds, sampled member curves, governing combinations, one-sided
   station inspection and snapshot-aware exports/reports. Primary completion
@@ -94,10 +97,14 @@ silently changing saved engineering definitions.
   current units. Includes validated Gerber/internal-hinge and three-hinged polygonal-
   arch examples with reaction/hinge-moment checks. Retain categorized menus;
   released frame examples remain 2D until spatial releases are supported.
-- [ ] **Model/result exchange and graphics (UI).** Add a validated spreadsheet
-  template and richer model-plus-result reports, plus PNG/SVG diagram export.
-  Import into a preview before replacing the project; show units and snapshot
-  metadata in exports. Primary owner: richer printable reports in TODO.md.
+- [x] **Snapshot plot images (UI).** Save 2D Whole Structure/Member Detail,
+  spatial Member Detail and combination-envelope plots as PNG/SVG with a visible
+  analysis stamp and embedded snapshot/method/combination/unit/context metadata.
+  Preserve zoom/probes and write atomically; retain earlier snapshots explicitly.
+- [ ] **Model/result exchange (UI).** Add a validated spreadsheet template and
+  import preview before replacing the project. Native model-plus-result reports
+  and PNG/SVG snapshot plots are implemented; spreadsheet exchange remains pending.
+  Primary owner: model/result exchange and richer reports in TODO.md.
 
 ## PRO: Larger-Model Workflows
 

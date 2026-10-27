@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Independent 2D whole-structure node/member-ID, end-value and sampled-extrema
+  visibility, retaining existing load/support controls and numerical results.
+  Native plot toolbar PNG/SVG saving adds a visible analysis stamp and embedded
+  snapshot/method/combination/units/context, including envelope selections and
+  spatial member plots. Preserve live zoom/probes/layout, record only source
+  basenames, and write atomically without damaging prior exports.
+
 - Native searchable example browser with category filters, theme-aware geometry
   previews, current-unit loading summaries and explicit-unit reference checks.
   Preview without solving or changing the active model/drafts; open through the

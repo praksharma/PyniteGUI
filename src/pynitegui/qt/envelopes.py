@@ -7,13 +7,14 @@ import tempfile
 
 import numpy as np
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (QComboBox, QDoubleSpinBox, QFileDialog, QHBoxLayout, QLabel, QListWidget,
                                QListWidgetItem, QMenu, QMessageBox, QStyle, QTabWidget,
                                QTableWidget, QTableWidgetItem, QToolButton, QVBoxLayout, QWidget)
 
 from .analysis import model_signature
+from .plot_export import SnapshotPlotToolbar, snapshot_metadata
 from .theme import colors, style_axes
 
 
@@ -204,7 +205,10 @@ class EnvelopeWidget(QWidget):
         plot_layout.addWidget(self.inspection)
         self.figure = Figure(figsize=(9, 5), layout="constrained")
         self.canvas = FigureCanvasQTAgg(self.figure)
-        plot_layout.addWidget(NavigationToolbar2QT(self.canvas, self))
+        plot_layout.addWidget(SnapshotPlotToolbar(self.canvas, self, lambda: snapshot_metadata(
+            self, "Combination Envelope", combinations=self.selected_combinations(), member=self.member.currentText(),
+            quantity=self.quantity.currentData(), inspection_distance=self.distance.value(),
+            inspection_side=self.side.currentData())))
         plot_layout.addWidget(self.canvas)
         self.views.addTab(plot, "Member Curves")
         self.combinations.itemChanged.connect(self.refresh)

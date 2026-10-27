@@ -15,6 +15,7 @@ tests = [
   "test_qt_inspection",
   "test_qt_linked_results",
   "test_qt_presentation",
+  "test_qt_plot_quality",
   "test_qt_result_polish",
   "test_qt_theme",
   "test_qt_ui",

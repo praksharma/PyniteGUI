@@ -6,11 +6,12 @@ from matplotlib.figure import Figure
 from matplotlib.offsetbox import AnnotationBbox, DrawingArea
 from matplotlib.patches import Circle
 from matplotlib.lines import Line2D
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QDoubleSpinBox, QHBoxLayout, QLabel, QStyle, QTabWidget, QTableWidget, QTableWidgetItem, QToolButton, QVBoxLayout, QWidget
 
 from .analysis import model_signature
+from .plot_export import SnapshotPlotToolbar, snapshot_metadata
 from .diagram_labels import add_diagram_label, reserve_annotation
 from .annotations import combination_loads, load_label, support_label, support_geometry, spring_geometry, release_geometry, moment_geometry
 from .theme import colors, restyle_figure, style_axes
@@ -190,7 +191,8 @@ def draw_context(ax, project, result, palette, supports=True, loads=True):
         add_diagram_label(ax, load_label(project, load), location, c["load"], c["canvas"], member=True)
 
 
-def draw_structure(ax, project, result, quantity, amplitude=20, side=1, sign=1, palette=None, supports=True, loads=True):
+def draw_structure(ax, project, result, quantity, amplitude=20, side=1, sign=1, palette=None, supports=True, loads=True,
+                   ids=True, end_values=True, extrema=True):
     if type(side) is not int or side not in (-1, 1) or type(sign) is not int or sign not in (-1, 1):
         raise ValueError("Diagram side and sign must be +1 or -1.")
     data = structure_data(project, result, quantity)
@@ -214,21 +216,25 @@ def draw_structure(ax, project, result, quantity, amplitude=20, side=1, sign=1, 
         ax.fill(polygon[:, 0], polygon[:, 1], color=color, alpha=0.12)
         for index in (0, len(values) - 1):
             ax.plot([base[index, 0], offset[index, 0]], [base[index, 1], offset[index, 1]], color=color, linewidth=0.8)
-        labels = sorted({0, len(values) - 1, int(np.argmax(values)), int(np.argmin(values))})
+        labels = set((0, len(values)-1)) if end_values else set()
+        if extrema:
+            labels.update((int(np.argmax(values)), int(np.argmin(values))))
         # Coincident endpoint/extreme labels need only one annotation.
         used = []
-        for index in labels:
+        for index in sorted(labels):
             point = offset[index]
             if any(np.linalg.norm(point - previous) < units.to_display(extent * 1e-12, "length") for previous in used):
                 continue
             used.append(point)
             add_diagram_label(ax, f"{units.to_display(values[index], value_quantity):.4g}", point, color, c["canvas"])
         midpoint = (base[0] + base[-1]) / 2
-        add_diagram_label(ax, name, midpoint, c["member"], c["canvas"], member=True)
+        if ids:
+            add_diagram_label(ax, name, midpoint, c["member"], c["canvas"], member=True)
     for node in project.nodes.values():
         x, y = units.to_display(node.x, "length"), units.to_display(node.y, "length")
         ax.plot(x, y, "o", color=c["member"], markersize=3, zorder=4)
-        add_diagram_label(ax, node.name, (x, y), c["member"], c["canvas"], member=True)
+        if ids:
+            add_diagram_label(ax, node.name, (x, y), c["member"], c["canvas"], member=True)
     draw_context(ax, project, result, c, supports, loads)
     for name, row in data.items():
         member = project.members[name]
@@ -335,9 +341,27 @@ class DiagramDialog(QDialog):
         display.addWidget(self.show_loads)
         display.addStretch()
         structure_layout.addLayout(display)
+        labels = QHBoxLayout()
+        self.show_ids = QCheckBox("Node/member IDs")
+        self.show_end_values = QCheckBox("End values")
+        self.show_extrema = QCheckBox("Sampled extrema")
+        self.show_ids.setToolTip("Node and member names. Load descriptions follow the Loads control.")
+        self.show_end_values.setToolTip("Numerical ordinates at member ends, independent of extrema labels.")
+        self.show_extrema.setToolTip("Minimum/maximum of plotted samples; an extremum may be at an end. Use result tables for solver extrema.")
+        for control in (self.show_ids, self.show_end_values, self.show_extrema):
+            control.setChecked(True)
+            labels.addWidget(control)
+            control.toggled.connect(self.update_structure)
+        labels.addStretch()
+        structure_layout.addLayout(labels)
         self.structure_figure = Figure(figsize=(9, 7), layout="constrained")
         self.structure_canvas = FigureCanvasQTAgg(self.structure_figure)
-        structure_layout.addWidget(NavigationToolbar2QT(self.structure_canvas, self))
+        structure_layout.addWidget(SnapshotPlotToolbar(self.structure_canvas, self, lambda: snapshot_metadata(
+            self, "2D whole structure", quantity=self.quantity.currentData(), display={
+                "side": self.diagram_side.currentData(), "sign": -1 if self.reverse_sign.isChecked() else 1,
+                "amplitude_percent": self.amplitude.value(), "ids": self.show_ids.isChecked(),
+                "end_values": self.show_end_values.isChecked(), "sampled_extrema": self.show_extrema.isChecked(),
+                "supports": self.show_supports.isChecked(), "loads": self.show_loads.isChecked()})))
         structure_layout.addWidget(self.structure_canvas)
         self.tabs.addTab(structure, "Whole Structure")
         detail = QWidget()
@@ -375,7 +399,9 @@ class DiagramDialog(QDialog):
         self.probes = []
         self.member_figure = Figure(figsize=(9, 7), layout="constrained")
         self.member_canvas = FigureCanvasQTAgg(self.member_figure)
-        detail_layout.addWidget(NavigationToolbar2QT(self.member_canvas, self))
+        detail_layout.addWidget(SnapshotPlotToolbar(self.member_canvas, self, lambda: snapshot_metadata(
+            self, "2D Member Detail", member=self.member.currentText(),
+            inspection_distance=self.distance.value(), inspection_side=self.inspection_side.currentData())))
         detail_layout.addWidget(self.member_canvas)
         self.tabs.addTab(detail, "Member Detail")
         self.member_results = QTableWidget(0, 7)
@@ -443,7 +469,9 @@ class DiagramDialog(QDialog):
         ax = self.structure_figure.add_subplot(111)
         draw_structure(ax, self.project, self.result, self.quantity.currentData(), self.amplitude.value(),
                        self.diagram_side.currentData(), -1 if self.reverse_sign.isChecked() else 1,
-                       supports=self.show_supports.isChecked(), loads=self.show_loads.isChecked())
+                       supports=self.show_supports.isChecked(), loads=self.show_loads.isChecked(),
+                       ids=self.show_ids.isChecked(), end_values=self.show_end_values.isChecked(),
+                       extrema=self.show_extrema.isChecked())
         self.structure_canvas.draw_idle()
 
     def update_member(self):

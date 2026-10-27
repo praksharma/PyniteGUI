@@ -51,6 +51,21 @@ def capture(output):
             save(browser, "example-browser.png")
             browser.reject()
 
+            from pynitegui.qt.diagrams import DiagramDialog
+            from pynitegui.qt.plot_export import export_plot
+            with redirect_stdout(StringIO()):
+                result = analyze(window.project)
+            diagrams = DiagramDialog(window, window.project, result)
+            diagrams.quantity.setCurrentIndex(1)
+            diagrams.show_end_values.setChecked(False)
+            diagrams.show()
+            app.processEvents()
+            diagrams.structure_canvas.draw()
+            save(diagrams, "diagram-controls.png")
+            export_plot(output / "snapshot-diagram.png", diagrams.structure_figure,
+                        diagrams.structure_canvas.toolbar.metadata())
+            diagrams.close()
+
             window.help_menu.popup(window.mapToGlobal(window.rect().center()))
             save(window.help_menu, "help-menu.png")
             window.help_menu.close()

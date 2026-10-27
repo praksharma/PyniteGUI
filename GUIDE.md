@@ -1453,6 +1453,24 @@ supply these capabilities.
   Diagram windows have their own combination selector and retain the analyzed
   snapshot even when the editor changes. The inspector always edits original
   case values, not the factored values displayed after analysis.
+**2D Whole Structure** also has independent **Node/member IDs**, **End values**
+and **Sampled extrema** checkboxes beside the existing Supports/Loads controls.
+IDs affects node/member names; load descriptions follow Loads. End values shows
+ordinates at member endpoints. Sampled extrema shows the minimum/maximum among
+plotted samples, which can occur at endpoints too. Turn off both numerical
+controls for a curve-only drawing. Coincident labels are deduplicated and dense
+labels still use collision handling. These are display settings: Member Detail,
+tables, CSV, solver results and printed report defaults remain unchanged. Controls
+survive combination/unit/theme changes. Use result tables for solver extrema;
+sampled labels are not an independent exact-extremum search. Whole-structure 3D
+overlays retain their current separate visibility controls; these new toggles
+apply to the 2D diagram window.
+
+[![2D diagram window with independent ID, end-value and sampled-extrema controls](docs/assets/screenshots/diagram-controls.png)](docs/assets/screenshots/diagram-controls.png)
+
+*End values is off here; Sampled extrema remains on, so an endpoint that is also
+a plotted extremum can still have a numerical label.*
+
 ### Combination Envelopes
 
 - Diagrams > Envelopes compares checked combinations from that analyzed
@@ -1482,6 +1500,32 @@ supply these capabilities.
   separately. Unit/theme changes retain the selection. Envelope choices are
   window-local, not saved in the project.
 ### CSV and Printable Reports
+
+The **Save** icon in each native plot's pan/zoom toolbar offers **PNG** or **SVG**
+for the displayed figure: 2D Whole Structure/Member Detail, spatial Member Detail
+and combination-envelope Member Curves. It exports the current view, including
+display settings and inspection lines. PNG is raster; SVG is vector. Both add a
+visible analysis-ID/method/combination/unit stamp. Embedded image metadata also
+records the analysis time, model signature, plot/member/inspection context and
+source project basename (not its full path). Envelope images identify the checked
+combinations, independently of the single-combination selector. Select at least
+one combination before saving an envelope.
+
+[![Exported moment diagram with visible analysis snapshot stamp](docs/assets/screenshots/snapshot-diagram.png)](docs/assets/screenshots/snapshot-diagram.png)
+
+*The footer belongs to the exported image; saving leaves the live figure's
+zoom, inspection lines and layout intact.*
+
+Retained diagram windows export their retained analysis, even if the editor has
+changed. The stamp describes that snapshot and does not certify the current
+editor model. Saving does not analyze or edit the model. Cancel writes nothing;
+an unsuccessful save preserves an existing destination file. Choose a .png or
+.svg filename; if no extension is entered, the selected format supplies it.
+**Other Matplotlib formats** retains the backend's existing formats (enter their
+extension, such as .pdf); these receive the visible stamp, while embedded analysis
+metadata is provided for PNG/SVG.
+The offline 3D viewport's separate PNG capture remains a viewport screenshot,
+not this native Matplotlib plot-export workflow.
 
 - File > Export Results saves node reactions/displacements or member end/extrema
   values as CSV in the selected units and combination. Files include source,

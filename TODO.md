@@ -301,6 +301,13 @@ not change the analysis-method priorities above.
 - [x] Improve label placement for dense structures and overlapping diagrams.
   Renderer-aware, member-ID-first placement with leader lines; crowded labels
   are omitted and retried when zoomed/resized, including printed diagrams.
+- [x] Add independent 2D Whole Structure controls for node/member IDs, end-value
+  labels and sampled extrema alongside existing load/support visibility. Retain
+  numerical data, labels at shared end/extreme locations, themes and unit changes.
+- [x] Add snapshot-aware PNG/SVG plot saving to native 2D whole/member, spatial
+  member and envelope plot toolbars. Include visible analysis identity and embedded
+  method/combination/units/context, use only the source basename, preserve live
+  zoom/probes/layout and retain existing files on failed/cancelled writes.
 - [x] Add diagram side/sign display preferences with clear conventions.
   Per-window whole-structure placement/sign controls; analytical tables and CSV
   retain solver signs, and report diagrams explicitly identify display conventions.

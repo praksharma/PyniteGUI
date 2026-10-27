@@ -1,11 +1,12 @@
 """Retained spatial member diagrams in both bending planes and torsion."""
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg
 from PySide6.QtWidgets import (QComboBox, QDialog, QDoubleSpinBox, QHBoxLayout, QLabel,
                                QStyle, QTabWidget, QTableWidget, QTableWidgetItem,
                                QToolButton, QVBoxLayout, QWidget)
 
 from .analysis import model_signature
+from .plot_export import SnapshotPlotToolbar, snapshot_metadata
 from .spatial_results import LABELS, UNITS, inspect_member, member_breaks, sampled_member
 from .theme import colors, style_axes
 
@@ -68,7 +69,9 @@ class SpatialDiagramDialog(QDialog):
         self.probes = []
         self.figure = Figure(layout="constrained")
         self.canvas = FigureCanvasQTAgg(self.figure)
-        detail_layout.addWidget(NavigationToolbar2QT(self.canvas, self))
+        detail_layout.addWidget(SnapshotPlotToolbar(self.canvas, self, lambda: snapshot_metadata(
+            self, "3D Member Detail", member=self.member.currentText(),
+            inspection_distance=self.distance.value(), inspection_side=self.inspection_side.currentData())))
         detail_layout.addWidget(self.canvas)
         from .envelopes import EnvelopeWidget
         self.envelopes = EnvelopeWidget(self, self.project, self.result, self.source, selected)

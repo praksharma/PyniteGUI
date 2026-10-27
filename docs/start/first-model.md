@@ -25,6 +25,15 @@ unsaved work. The direct categorized menus below remain available.
 8. Save under a new project filename. Examples start as unsaved models and do
    not overwrite an example file.
 
+In **Diagrams > Whole Structure**, use **Node/member IDs**, **End values** and
+**Sampled extrema** to reduce labels independently. An extremum can be at an end;
+turn off both numerical controls to hide all ordinate labels. Supports and Loads
+remain separate controls. These settings do not change result tables.
+
+Use the plot toolbar's **Save** icon to export PNG or SVG. The image includes a
+snapshot stamp and embedded analysis details while preserving the live view.
+See [image export and reports](../results/reports.md).
+
 ## Try the Official PyNite Beams
 
 Under **File > Examples > 2D Frames**, choose one of the three **Official PyNite**
