@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Prune the roadmap to seven focused UI/modelling tasks. Remove unrequested
+  what-if/spreadsheet/template/tapered/matrix-inspector extras, vague catalog/CAD
+  expansion and optional MCP screenshots. Consolidate solver/support and platform
+  validation tracking; retain nonlinear goals, official-example blockers and all
+  engineering/release gates. Keep completed implementation history in TODO.md.
+
 - Optional All tools/Model/Results command workspaces with focused dock visibility
   and a recoverable collapsed command strip. Preserve draft widgets, selection,
   results and zoom, retain planar view centre on resize, and avoid spatial camera

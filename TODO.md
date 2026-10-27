@@ -5,8 +5,11 @@ sections, custom global support restraints, global/member-local angled forces, d
 and named load cases/combinations. This list tracks remaining work;
 items are not promises of a particular release date.
 
-See [Secondary roadmap](TODO_SECONDARY.md) for Stabileo-inspired interface ideas
-and verified PyNite extensions. This file remains the primary implementation list.
+See the [focused UI/modelling backlog](TODO_SECONDARY.md) for the seven retained
+interface/editing tasks. This file owns engineering work, completed records and
+release gates. Scope was pruned 2026-10-27: duplicate umbrella/release/solver ticks
+and unrequested speculative extras were removed, without dropping validation
+requirements or the official-example dependency audit.
 
 ## PyNite Capability Coverage
 
@@ -207,9 +210,6 @@ Remaining 13 scripts are intentionally unchecked:
   pressure/boundary assignments, mesh preview/refinement, four unit presets,
   persistence/undo, isolated cancellable solve, contours and nodal CSV; validate
   against Navier deflection, equilibrium, support and plane/sign tests.
-- [ ] Integrate surfaces into versioned spatial projects and the Three.js editor,
-  explicitly handling mixed frame/surface connectivity, shared node ownership,
-  topology checks, editing/deletion, results, autosave and MCP contracts.
 - [x] First integration stage: version 19 spatial projects own uncoupled surface
   recipes; all generators render beside frames with face picking, tree/inspector
   edit/delete, visibility, fitting, undo/redo and save/autosave/recovery. Preserve
@@ -254,8 +254,6 @@ Remaining 13 scripts are intentionally unchecked:
 - [ ] Add annular/curved-shell boundary/load definitions, membrane behaviour,
   normal-pressure orientation, reaction/result inspection and independent shell
   benchmarks before enabling analysis for nonrectangular catalog meshes.
-- [ ] Add richer 2D geometry as independently validated capabilities; do not imply
-  arbitrary CAD or unstructured meshing beyond PyNite's supported generators.
 
 ## Modelling and Editing
 
@@ -288,10 +286,12 @@ Remaining 13 scripts are intentionally unchecked:
   Dimensioned native sketches now cover all 15 shapes using sourced actual
   dimensions, strong/weak-axis orientation and nominal/design HSS thicknesses;
   idealized outlines never recalculate solver properties.
-- [ ] Expand the section library with additional regional catalogs and sizes.
 - [x] Add configurable global DX, DY, and RZ support degrees of freedom.
 - [x] Add global bilateral DX, DY, and RZ support springs with unit-aware
   stiffness entry, reaction/deformation benchmarks, and model persistence.
+- [ ] Add imposed support settlements/rotations with explicit units, reaction
+  and equilibrium benchmarks. These are model-level imposed displacements in
+  the engine, not automatically case-specific loads. On hold with solver work.
 - [ ] Add inclined support orientation (separate constrained-coordinate feasibility work).
 
 ## Loads and Analysis
@@ -421,7 +421,6 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
   strict build/link checks and PR/build/GitHub Pages deployment workflow.
 - [ ] Owner: enable GitHub Pages with GitHub Actions as the source and push/run
   the documentation workflow; verify the public URL after deployment.
-- [ ] Continue expanding worked tutorials and screenshots alongside new features.
 - [x] Illustrate Help/About, shortcut search, finding-focused navigation, recent
   history cleanup and the three-storey slab/P-Delta walkthroughs with real app
   screenshots. Add repeatable native captures and check image links on the site.
@@ -429,7 +428,9 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
   release notes/checklist, source/wheel audits and isolated installed-wheel smoke scripts.
 - [x] Publish the GitHub 1.0.0rc1 prerelease (see README for the published release).
 - [ ] Complete platform/manual validation gates in RELEASE.md and collect
-  prerelease feedback before promoting to stable 1.0.0.
+  prerelease feedback before promoting to stable 1.0.0. This single item owns
+  reproducible macOS installation/rendering/save-open/analysis/export checks and
+  Windows installation/visible-workflow validation; record versions and evidence.
 
 - [x] Use uv-managed Python and locked project dependencies without relying on
   Conda or a system interpreter; document setup and normal uv launches.
@@ -456,9 +457,6 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
   diagnostics showing Qt 6.11.2 / Cocoa and a ready WebGL 2.0 viewport using
   ANGLE Metal on Apple M4 Max with platform defaults. macOS version,
   installation steps and individual workflows remain unrecorded.
-- [ ] Run and document a reproducible macOS installation/rendering/regression
-  check, including save/open, analysis, selection and exports.
-- [ ] Test installation and desktop rendering on Windows.
 - [ ] Package standalone desktop releases.
 - [x] Add a separate 3D spatial-frame project and offline Three.js viewport,
   keeping the established 2D editor and file format intact.
@@ -490,11 +488,11 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
   with authentication changes restricted to stopped listeners and both modes tested.
 - [x] Clarify polling/session contracts and result units; expose solved combination
   names in status, optional schema omission and zero-based operation-local errors.
-- [ ] Optionally add viewport screenshot capture after the core workflow.
-  No arbitrary Python/shell execution or file-management tools; the user opens
-  and saves projects normally. A separate REST API is not part of the first scope.
 - [x] Test missing-extra startup, lifecycle/port conflicts, permissions/auth,
   Qt-thread dispatch, atomic undo, stale revisions and analysis cancellation.
+
+No arbitrary Python/shell execution or file-management tools; the user opens
+and saves projects normally. A separate REST API is not part of the first scope.
 
 ## 3D Follow-Ups
 
@@ -572,8 +570,6 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
   preserve visibility/picking, local-axis rebuilds and context-loss disposal.
   Hardware refresh comparisons and cache/overlay/budget regressions are recorded
   in GUIDE.md; payload construction and full scene rebuilds remain separate costs.
-- [ ] Implement the pending solver milestones in **PyNite Capability Coverage**
-  above; keep plates/meshes and nonlinear methods independently benchmarked.
 
 ## Completed Foundation
 
