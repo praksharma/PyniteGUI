@@ -6,9 +6,9 @@ Desktop modeling and linear elastic analysis for **2D/3D frames and axial-only
 trusses**, using PyNite and Qt. This manual covers building models, assigning
 properties and loads, running analysis, interpreting results and using automation.
 
-!!! warning "Current development, not just the rc1 wheel"
+!!! warning "RC2 preparation, not yet published"
     The manual follows the repository checkout. **1.0.0rc1** is the published
-    prerelease; later surface-meshing and slab-placement work is available from
+    prerelease; this checkout prepares **1.0.0rc2**. Later surface-meshing and slab-placement work is available from
     source, not that wheel. Main-model rectangular Quad slabs offer **opt-in
     experimental frame coupling** with conforming mesh connections; other surface
     families remain geometry-only. The separate rectangular plate tool supports

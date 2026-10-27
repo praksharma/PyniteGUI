@@ -1,10 +1,15 @@
 # PyniteGUI Guide
 
-Release candidate **1.0.0rc1**: [release notes](CHANGELOG.md) and
+Preparing release candidate **1.0.0rc2** (not yet published): [release notes](CHANGELOG.md) and
 [artifact validation/publication checklist](RELEASE.md). Installation from a
 wheel is tested separately from this repository's editable, locked environment.
 `pynitegui --version` reports installed metadata without initializing Qt; the
 desktop application and MCP server use the same version.
+
+The stable 1.0 scope is elastic 2D/3D frames and bilateral axial-only trusses,
+with frame-only P-Delta within the documented restrictions. Surface/plate tools
+retain their experimental status; nonlinear plastic, modal and reinforced-concrete
+workflows are outside the stable scope. See **Engineering Scope** for limits.
 
 The searchable Zensical manual is built from this GUIDE and the project records.
 See **Documentation Site** below for local preview and publication instructions.

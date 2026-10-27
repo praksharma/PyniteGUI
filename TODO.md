@@ -435,6 +435,10 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
 - [x] Publish the GitHub 1.0.0rc1 prerelease (see README for the published release).
 - [x] Add CITATION.md and GitHub-readable CITATION.cff with release/commit
   identification, PyNite solver attribution and DOI archiving deferred to stable 1.0.
+- [x] Prepare 1.0.0rc2 with an elastic frame/truss and restricted P-Delta stable
+  scope, experimental surface/plate labels, full locked/installed-wheel validation,
+  base/MCP and uv-tool installation checks, installed-asset viewport QA, hashes
+  and PyPI/uv publishing guidance. Keep visible-platform gates below open.
 - [ ] Complete platform/manual validation gates in RELEASE.md and collect
   prerelease feedback before promoting to stable 1.0.0. This single item owns
   reproducible macOS installation/rendering/save-open/analysis/export checks and

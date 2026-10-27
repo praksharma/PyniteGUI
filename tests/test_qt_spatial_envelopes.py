@@ -132,7 +132,8 @@ class SpatialEnvelopeTests(unittest.TestCase):
     def test_dialog_inspection_units_clicks_envelopes_and_print_choices(self):
         dialog = SpatialDiagramDialog(None, self.project, self.result)
         try:
-            self.assertEqual(dialog.tabs.count(), 2)
+            self.assertEqual([dialog.tabs.tabText(i) for i in range(dialog.tabs.count())],
+                             ["Member Detail", "Compare Combinations", "Storey Drift", "Combination Envelopes"])
             dialog.distance.setValue(60)
             right = float(dialog.inspection_values.item(0, 1).text())
             dialog.inspection_side.setCurrentText("Left side")

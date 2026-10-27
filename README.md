@@ -4,6 +4,7 @@
 
 A desktop editor for 2D/3D frames and axial-only trusses, powered by PyNite and Qt.
 **1.0.0rc1** is available as a [GitHub prerelease](https://github.com/praksharma/PyniteGUI/releases/tag/v1.0.0rc1).
+The current checkout prepares **1.0.0rc2**; it has not been published.
 See the [release validation record](RELEASE.md).
 
 Draw and edit frames or trusses, assign custom or library materials and sections, and apply point,
@@ -40,10 +41,10 @@ meshes; other generators remain geometry-only. A separate Quad/Rect plate worksp
 is also available. Main-model surfaces support box selection and guarded MCP edits.
 See [scope and limits](GUIDE.md#experimental-surface-meshing); these are not in the rc1 wheel.
 
-For the release wheel, install the downloaded file without cloning:
+For a locally built RC2 wheel, install the file without cloning:
 
 ```sh
-uv tool install --python 3.12 ./pynitegui-1.0.0rc1-py3-none-any.whl
+uv tool install --python 3.12 ./dist/pynitegui-1.0.0rc2-py3-none-any.whl
 pynitegui
 ```
 
