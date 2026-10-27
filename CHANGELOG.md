@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add the official clamped rectangular Quad plate in the existing separate plate
+  workspace, with menu/browser discovery, current-unit inputs and preserved frame
+  drafts. Verify transverse upstream parity, equilibrium, classical reference and
+  persistence. Audit all 20 upstream scripts: seven adapted; thirteen remain
+  explicitly blocked by material, unilateral, shell, modal or plastic workflows.
+
 - Optional approximate straight deformation preview for planar/spatial members,
   joining displaced end nodes and skipping span sampling when force diagrams are
   off. Label nodal-only peak/Auto scaling, retain full force-diagram samples and

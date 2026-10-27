@@ -6,8 +6,13 @@ from PySide6.QtWidgets import (QComboBox, QDialog, QDialogButtonBox, QHBoxLayout
                                QSplitter, QTextBrowser, QVBoxLayout, QWidget)
 
 from .analysis_method import METHODS
-from .examples import EXAMPLES, EXAMPLE_GROUPS, example_project
+from .examples import EXAMPLES as FRAME_EXAMPLES, EXAMPLE_GROUPS as FRAME_GROUPS, example_project
+from .official_plate import (PLATE_EXAMPLES, PLATE_CATEGORY, PLATE_NOTES,
+                             example_definition, preview_project, loading_summary as plate_loading_summary)
 from .theme import colors
+
+EXAMPLES = {**FRAME_EXAMPLES, **PLATE_EXAMPLES}
+EXAMPLE_GROUPS = {**FRAME_GROUPS, PLATE_CATEGORY: tuple(PLATE_EXAMPLES)}
 
 
 # Reference values carry explicit units, independent of the editor's display
@@ -38,6 +43,7 @@ NOTES = {
     "gerber": ("Continuous beam and suspended span sharing an internal moment hinge.", "Service: FY at N1 = 0.15 kip, N2 = 2.25 kip, N4 = 0.6 kip. Both hinge-end moments zero."),
     "three_hinged_arch": ("Polygonal arch with pinned bases and a shared crown moment hinge.", "Service: each FY 7.5 kip; left FX +6.25 kip, right FX -6.25 kip; crown moments zero."),
 }
+NOTES.update(PLATE_NOTES)
 
 
 def loading_summary(project):
@@ -173,7 +179,7 @@ class ExampleBrowser(QDialog):
         splitter.setSizes([290, 620])
         layout.addWidget(splitter, 1)
         note = QLabel("Geometry preview only; browsing does not analyze or change your model. "
-                      "Open Example uses your current units and asks before discarding unsaved work.")
+                      "Frame examples ask before discarding unsaved work; plate examples open a separate workspace. Both use your current units.")
         note.setWordWrap(True)
         layout.addWidget(note)
         self.buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Open | QDialogButtonBox.StandardButton.Cancel)
@@ -218,10 +224,16 @@ class ExampleBrowser(QDialog):
             self.details.clear()
         else:
             key = self.selected_key
-            project = example_project(key, self.unit_system)
+            if key in PLATE_EXAMPLES:
+                definition = example_definition(key, self.unit_system)
+                project = preview_project(definition)
+                summary = plate_loading_summary(definition)
+            else:
+                project = example_project(key, self.unit_system)
+                summary = loading_summary(project)
             self.preview.project = project
             description, check = NOTES[key]
-            self.details.setPlainText(f"{EXAMPLES[key]}\n\n{description}\n\nReference checks (units as stated)\n{check}\n\n{loading_summary(project)}")
+            self.details.setPlainText(f"{EXAMPLES[key]}\n\n{description}\n\nReference checks (units as stated)\n{check}\n\n{summary}")
         self.preview.update()
 
     def accept(self):

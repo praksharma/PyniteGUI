@@ -85,7 +85,10 @@ class ExampleTests(unittest.TestCase):
         window = MainWindow()
         window.project.unit_system = "si"
         with patch.object(window, "confirm_discard", return_value=True):
-            categories = window.examples_menu.actions()
+            from pynitegui.qt.official_plate import PLATE_CATEGORY
+            self.assertEqual([a.text() for a in window.examples_menu.actions()], [*EXAMPLE_GROUPS, PLATE_CATEGORY])
+            # Plate entries open an independent document; exercised separately.
+            categories = window.examples_menu.actions()[:-1]
             self.assertEqual([action.text() for action in categories], list(EXAMPLE_GROUPS))
             actions = []
             for category in categories:

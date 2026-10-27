@@ -152,12 +152,48 @@ not change the analysis-method priorities above.
 
 **Plates, shells, walls and foundations — gate on validated surface workflows:**
 
-- [ ] [Rectangular Plate Bending - Qauds.py](https://github.com/JWock82/Pynite/blob/main/Examples/Rectangular%20Plate%20Bending%20-%20Qauds.py) (upstream filename spelling)
+- [x] [Rectangular Plate Bending - Qauds.py](https://github.com/JWock82/Pynite/blob/main/Examples/Rectangular%20Plate%20Bending%20-%20Qauds.py) (upstream filename spelling)
 - [ ] [Rectangular Wall - Linear Varying Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Rectangular%20Wall%20-%20Linear%20Varying%20Load.py)
 - [ ] [Shear Wall - Basic.py](https://github.com/JWock82/Pynite/blob/main/Examples/Shear%20Wall%20-%20Basic.py)
 - [ ] [Shear Wall - Advanced.py](https://github.com/JWock82/Pynite/blob/main/Examples/Shear%20Wall%20-%20Advanced.py)
 - [ ] [Mat Foundation.py](https://github.com/JWock82/Pynite/blob/main/Examples/Mat%20Foundation.py)
 - [ ] [Circular Bin with Conical Hopper.py](https://github.com/JWock82/Pynite/blob/main/Examples/Circular%20Bin%20with%20Conical%20Hopper.py)
+
+**Current-capability audit (2026-10-27, all 20 pinned scripts reviewed):**
+
+Seven official adaptations are now available. The rectangular Quad plate opens
+through **File > Examples > Plates (Experimental)** or Browse Examples in the
+separate editable plate workspace: original 10 × 20 ft dimensions, 1 ft thickness,
+1 ft Quad mesh, clamped edges, W pressure +250 psf and factor 1.0. Canonical unit
+conversion, 200-element/231-node topology, upstream transverse nodal/reaction/
+centre-moment parity, classical reference, persistence and native opening checks
+are covered. Existing MIT notice and pinned source revision apply. No solver
+features were added. See GUIDE for the plate-only constraint/combination-name
+adaptation and the complete dependency table.
+
+Remaining 13 scripts are intentionally unchecked:
+
+- Space Frame 1/2: independent G material definition is missing (see above).
+- Beam on Elastic Foundation: 24 **compression-only** DY springs; bilateral
+  support springs would change lift-off behaviour. Physical-member subdivision
+  alone is not the blocker.
+- Braced Frame - Spring Supported: tension-only and compression-only axial
+  spring elements, including documented gravity-only instability. Bilateral
+  nodal springs are not equivalent.
+- Braced Frame - Tension Only: tension-only braces/active-set analysis.
+- Rectangular Wall - Linear Varying Load: geometry-owned depth-varying pressure
+  and shell edge supports; the plate pilot accepts one uniform pressure only.
+- Shear Wall - Basic/Advanced: validated in-plane membrane/drilling workflow,
+  shell support/load assignment, wall result recovery; Advanced additionally
+  needs shear-wall/story/pier/coupling-beam APIs and its stiffness modifiers.
+- Mat Foundation: mat API, compression-only soil springs and point load/moment
+  assignment to the foundation mesh with openings.
+- Circular Bin with Conical Hopper: curved shell assembly/merged interfaces,
+  spatially varying pressure and shell supports/results. Its geometry generators
+  being available does not establish analysis support.
+- Modal Analysis: mass/modal solver and mode results.
+- Moment Frame - Pushover / Pushover Analysis: plastic section definitions,
+  incremental pushover controls, hinge states and results.
 
 **Additional solver workflows — on hold with the corresponding solver tasks:**
 

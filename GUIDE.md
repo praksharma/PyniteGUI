@@ -1150,6 +1150,54 @@ notice:
   Source G is not used by axial-only bars. The isotropic GUI G therefore has no
   effect on these bar responses. Automatic self-weight is off.
 
+- **Plates (Experimental) > Official PyNite - Clamped Rectangular Quad Plate**
+  adapts `Rectangular Plate Bending - Qauds.py` (upstream spelling) at the same
+  pinned source revision. It opens the existing separate plate workspace, also
+  available through Browse Examples, without discarding or changing the frame
+  editor. The undeformed preview does not solve. Inputs are editable and save to
+  `.pyniteplate`, retaining your current display units.
+  The XY plate is 10 × 20 ft, 1 ft thick, with a 1 ft mesh (200 Quads, 231 nodes),
+  nu = 0.17, E = 57000 sqrt(4000) psi and density 150 pcf. All four edges are
+  clamped. W applies +250 psf along global +Z, with self-weight off: total applied
+  load **+50 kip**, normal support reactions **-50 kip**, and peak normal
+  displacement **+0.00191955 in**. The source's thin-plate reference is
+  **+0.00171054 in**; DKMQ retains transverse shear deformation. Do not interpret
+  that difference as a failed convergence check or a cracked-concrete model.
+  The plate workspace names its single combination **Plate = 1.0W**, equivalent
+  to the source's **1.0W**. Its existing transverse-only constraints additionally
+  restrain interior membrane translations and drilling rotation. For this flat
+  uniform-pressure benchmark they leave transverse nodal displacements,
+  reactions and element-centre moments equal to the original full shell model;
+  this is not a general membrane/shell equivalence. PyNite Quad uses E/nu rather
+  than the supplied independent material G, so the source's G = 0.4E does not
+  block this adaptation. Plate contours show element-centre values rather than
+  the upstream renderer's smoothed corner extrema. Full upstream contour extrema
+  and the source's renderer are not reproduced.
+
+[![Official clamped rectangular Quad plate opened in its editable separate workspace](docs/assets/screenshots/official-quad-plate.png)](docs/assets/screenshots/official-quad-plate.png)
+
+The official plate opens as an unsolved mesh preview. Use Analyze for its
+transverse displacement and element-centre moment/shear contours, or Save plate
+for an editable copy.
+
+The official catalog audit covers all 20 scripts: seven are adapted; thirteen
+still depend on capabilities outside the current app. No substitute model is
+presented as a completed official adaptation.
+
+| Remaining official example | Required capability before adaptation |
+| --- | --- |
+| Space Frame - Nodal Loads 1 / 2 | Independent G material input; torsional response depends on GJ. |
+| Beam on Elastic Foundation | Compression-only support springs and lift-off iteration. |
+| Braced Frame - Spring Supported | Unilateral axial spring elements and their instability handling. |
+| Braced Frame - Tension Only | Tension-only braces and active-set analysis. |
+| Rectangular Wall - Linear Varying Load | Depth-varying pressure and validated shell boundary assignment; current pilot pressure is uniform. |
+| Shear Wall - Basic | Validated in-plane membrane/drilling supports, loads and wall result recovery. |
+| Shear Wall - Advanced | Shear-wall/story/pier/coupling-beam APIs and modifiers, plus validated membrane/drilling response. |
+| Mat Foundation | Mat/soil contact API, compression-only soil springs, foundation point force/moment assignment. |
+| Circular Bin with Conical Hopper | Curved-shell assembly, merged interfaces, varying pressure and shell support/results. |
+| Modal Analysis | Mass/modal solve and mode-result workflow. |
+| Moment Frame - Pushover / Pushover Analysis | Plastic section definitions, incremental pushover controls, hinge-state results. |
+
 The two official Space Frame nodal-load examples remain pending: E = 30000 ksi,
 G = 10000 ksi and nu = 0.3 cannot all be represented by the current isotropic
 material definition. Deriving G from E/nu changes their torsional response;

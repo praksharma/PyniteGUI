@@ -49,7 +49,20 @@ def capture(output):
             browser.search.setText("Gerber")
             browser.show()
             save(browser, "example-browser.png")
+            browser.search.setText("official clamped")
+            save(browser, "official-plate-browser.png")
             browser.reject()
+
+            from pynitegui.qt.official_plate import example_definition, PLATE_EXAMPLES
+            from pynitegui.qt.plate_workspace import PlateWorkspace
+            plate = PlateWorkspace(window, "imperial", example_definition())
+            plate.setWindowTitle(PLATE_EXAMPLES["official_plate_quad"] + " (Experimental)")
+            plate.show()
+            app.processEvents()
+            plate.canvas.draw()
+            save(plate, "official-quad-plate.png")
+            plate.reject()
+            plate.deleteLater()
 
             from pynitegui.qt.diagrams import DiagramDialog
             from pynitegui.qt.plot_export import export_plot

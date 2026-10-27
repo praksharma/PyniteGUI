@@ -9,8 +9,9 @@ from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QDialog, QDoubleSpinBox
 
 from pynitegui.qt.app import MainWindow
-from pynitegui.qt.example_browser import ExampleBrowser, NOTES
-from pynitegui.qt.examples import EXAMPLES, EXAMPLE_GROUPS, example_project
+from pynitegui.qt.example_browser import ExampleBrowser, NOTES, EXAMPLES
+from pynitegui.qt.official_plate import PLATE_EXAMPLES, example_definition, preview_project
+from pynitegui.qt.examples import EXAMPLE_GROUPS, example_project
 from pynitegui.qt.theme import configure_theme
 
 
@@ -45,7 +46,8 @@ class ExampleBrowserTests(unittest.TestCase):
             for row in range(self.browser.list.count()):
                 self.browser.list.setCurrentRow(row)
                 key = self.browser.selected_key
-                self.assertEqual(self.browser.preview.project.to_dict(), example_project(key, "si").to_dict())
+                expected = preview_project(example_definition(key, "si")) if key in PLATE_EXAMPLES else example_project(key, "si")
+                self.assertEqual(self.browser.preview.project.to_dict(), expected.to_dict())
                 text = self.browser.details.toPlainText()
                 self.assertIn(NOTES[key][0], text)
                 self.assertIn(NOTES[key][1], text)

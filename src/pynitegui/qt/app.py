@@ -677,6 +677,12 @@ class MainWindow(QMainWindow):
                 action = self.action(EXAMPLES[key], lambda checked=False, key=key: self.example(key))
                 action.setData(key)
                 submenu.addAction(action)
+        from .official_plate import PLATE_CATEGORY, PLATE_EXAMPLES
+        plate_menu = self.examples_menu.addMenu(PLATE_CATEGORY)
+        for key, label in PLATE_EXAMPLES.items():
+            action = self.action(label, lambda checked=False, key=key: self.example(key))
+            action.setData(key)
+            plate_menu.addAction(action)
         file_menu.addSeparator()
         file_menu.addAction(self.action("Exit", self.close, "Ctrl+Q"))
         edit_menu = self.menuBar().addMenu("&Edit")
@@ -1748,6 +1754,16 @@ class MainWindow(QMainWindow):
             self.example(key)
 
     def example(self, key="simple_beam"):
+        from .official_plate import PLATE_EXAMPLES, example_definition
+        if self.mcp_mode:
+            return
+        if key in PLATE_EXAMPLES:
+            from .plate_workspace import PlateWorkspace
+            dialog = PlateWorkspace(self, self.project.unit_system, example_definition(key, self.project.unit_system))
+            dialog.setWindowTitle(PLATE_EXAMPLES[key] + " (Experimental)")
+            dialog.exec()
+            dialog.deleteLater()
+            return
         if not self.confirm_discard():
             return
         from .examples import EXAMPLES, example_project
