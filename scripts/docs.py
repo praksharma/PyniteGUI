@@ -43,6 +43,7 @@ SECTION_PAGES = {
     "CSV and Printable Reports": ("results/reports.md", "CSV and Printable Reports"),
     "Result Snapshots": ("results/snapshots.md", "Result Snapshots"),
     "Saving and History": ("reference/saving.md", "Saving and Undo History"),
+    "Previewed Modelling Tools": ("modeling/tools.md", "Previewed Modelling Tools"),
     "Construction Connections": ("modeling/construction.md", "Construction Connections"),
     "Linked Results": ("results/linked.md", "Linked Results and Equilibrium"),
     "Units": ("reference/units.md", "Units and Conversions"),

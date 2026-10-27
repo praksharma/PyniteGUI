@@ -32,11 +32,14 @@ basis for engineering features.
   absolute-extreme thresholds with unit conversion, cached rows, member-curve
   navigation and snapshot/filter-labelled CSV. Keep plots/printing explicitly
   separate from summary filters; do not introduce new numerical extrema methods.
-- [ ] **Governing-station queries.** Build on scoped summaries to locate global
+- [x] **Governing-station queries.** Build on scoped summaries to locate global
   minimum/maximum/absolute extremes and their governing member/station across
   selected entities. Include interior critical stations and both sides of
   discontinuities, with independent location benchmarks. Retain this part of
   the original scoped-query task; summary filtering does not complete it.
+  Completed with normalized continuous-segment polynomial/rational derivative
+  roots, direct jump limits, independent location benchmarks, snapshot-labelled
+  CSV and member-curve navigation. Unsupported/singular formulas fail closed.
 
 ## Larger-Model Editing
 
@@ -47,19 +50,29 @@ basis for engineering features.
   Completed with native select/isolate/show-all controls, persisted global-Y
   elevations, optional drawing/drag snapping, 3D XZ-plane placement, unit-aware
   input, undo/redo and preserved analysis snapshots. New project formats 23/24.
-- [ ] **Previewed transforms.** Repeat, mirror, rotate or move selected geometry
+- [x] **Previewed transforms.** Repeat, mirror, rotate or move selected geometry
   about explicit points or bay/storey offsets. Preview before applying; provide
   separate load/support-copy choices and resolve collisions explicitly. Preserve
   global/local load meaning, stations, releases and IDs in one undo transaction.
-- [ ] **Planar beam/frame generators.** Generate continuous beams and multi-bay,
+  Completed in the shared native dock and existing 2D/3D canvas, with explicit
+  coincident-joint reuse and separate load/support-copy switches. Global axes
+  stay global; copied IDs are allocated uniquely; groups/surfaces are not copied.
+  Moving frame joints with surface recipes is blocked pending coordinated edits.
+- [x] **Planar beam/frame generators.** Generate continuous beams and multi-bay,
   multi-storey frames from explicit spacing lists, beam/column sections,
   materials, base supports and insertion point. Preview counts, dimensions and
   assumptions before adding ordinary validated nodes/members/loads. No automatic
-  sizing or code design.
-- [ ] **Previewed topology fixes.** Extend existing findings/select/zoom and
+  sizing or code design. Completed for planar XY continuous beams and frames
+  with nonuniform spacings, explicit properties/supports, dimensions/count preview
+  and atomic undo. No manual loads or diaphragms are generated.
+- [x] **Previewed topology fixes.** Extend existing findings/select/zoom and
   split/connect tools with reviewable fixes, starting with controlled node
   merging. Rewrite every affected reference and resolve support/load conflicts
   explicitly. Never silently remove a loaded/supported joint or connect a crossing.
+  Completed as controlled two-node merging from Edit or Model Findings: retained
+  coordinates, explicit support/load-conflict choices, rewritten groups/endpoints/
+  loads, source-preserving preview and one undo. Degenerate/duplicate members and
+  new implicit topology are rejected; surface-recipe merging remains blocked.
 
 ## Already Delivered
 

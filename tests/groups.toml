@@ -4,6 +4,8 @@
 [groups.ui]
 description = "Native appearance, presentation, window controls and editor interaction; no structural benchmark suites."
 tests = [
+  "test_station_queries.StationQueryUITests",
+  "test_geometry_tools.GeometryPanelTests",
   "test_envelope_filters.EnvelopeFilterUITests",
   "test_qt_organization",
   "test_qt_annotations",
@@ -33,6 +35,7 @@ tests = [
 [groups.model]
 description = "Geometry/editing, units, assignments, libraries, validation, persistence and native model editors."
 tests = [
+  "test_geometry_tools.GeometryPlanTests",
   "test_organization.OrganizationModelTests",
   "test_qt_angled.AngledEditorTests",
   "test_qt_axial.AxialEditorTests",
@@ -75,6 +78,8 @@ tests = [
 [groups.engineering]
 description = "Solver mechanics, analytical comparisons, equilibrium, stability and frame/truss benchmarks."
 tests = [
+  "test_station_queries.StationQueryTests",
+  "test_geometry_tools.GeometryEngineeringTests",
   "test_envelope_filters.EnvelopeFilterTests",
   "test_organization.OrganizationEngineeringTests",
   "test_qt_analysis_jobs.SparseStabilityTests",

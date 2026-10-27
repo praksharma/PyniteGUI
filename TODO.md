@@ -5,8 +5,8 @@ sections, custom global support restraints, global/member-local angled forces, d
 and named load cases/combinations. This list tracks remaining work;
 items are not promises of a particular release date.
 
-See the [focused UI/modelling backlog](TODO_SECONDARY.md) for four remaining
-interface/editing tasks and four completed canvas/organization/result-filter improvements. This file owns engineering work, completed records and
+See the [focused UI/modelling backlog](TODO_SECONDARY.md) for eight completed
+canvas, organization, result-query and previewed modelling improvements. This file owns engineering work, completed records and
 release gates. Scope was pruned 2026-10-27: duplicate umbrella/release/solver ticks
 and unrequested speculative extras were removed, without dropping validation
 requirements or the official-example dependency audit.

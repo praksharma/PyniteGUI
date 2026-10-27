@@ -111,7 +111,9 @@ def viewport_payload(window):
             min(float(v[:, index].min()) for v in samples), max(float(v[:, index].max()) for v in samples),
             diagram["unit"], diagram["label"])
     from .spatial_surfaces import surface_payloads
+    from .geometry_tools import preview_geometry
     return {"nodes": nodes, "members": members,
+            "geometryPreview": preview_geometry(project, getattr(window, "geometry_preview", None)),
             "surfaceMeshes": surface_payloads(project, result, window.load_filter.currentData() if window.view.show_loads.isChecked() else False) if window.surface_visibility_action.isChecked() and window.visible_ids is None else [],
             "loads": loads if window.view.show_loads.isChecked() else [], "grid": project.grid, "colors": colors(),
             "revision": window.revision,

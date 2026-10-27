@@ -64,6 +64,7 @@ def finding_entities(project, message):
 class ModelFindings(QWidget):
     entities_requested = Signal(object)
     focus_requested = Signal(object)
+    merge_requested = Signal(object)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -85,12 +86,23 @@ class ModelFindings(QWidget):
         layout.addWidget(self.focus_button)
         self.focus_button.clicked.connect(self.focus)
         self.select_button.clicked.connect(self.activate)
+        self.merge_button = QPushButton("Review node merge...")
+        self.merge_button.setToolTip("Choose retained/removed nodes, review supports and loads, then preview before applying.")
+        self.merge_button.setEnabled(False)
+        self.merge_button.clicked.connect(self.review_merge)
+        layout.addWidget(self.merge_button)
 
     def update_button(self, *args):
         item = self.list.currentItem()
         enabled = bool(item and item.data(Qt.ItemDataRole.UserRole))
         self.select_button.setEnabled(enabled)
         self.focus_button.setEnabled(enabled)
+        self.merge_button.setEnabled(bool(item and sum(kind == "nodes" for kind, name in (item.data(Qt.ItemDataRole.UserRole) or [])) >= 2))
+
+    def review_merge(self):
+        item = self.list.currentItem()
+        if item:
+            self.merge_requested.emit([identity for identity in item.data(Qt.ItemDataRole.UserRole) or [] if identity[0] == "nodes"])
 
     def activate(self):
         item = self.list.currentItem()

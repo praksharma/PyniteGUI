@@ -396,6 +396,7 @@ const server = http.createServer((request,response)=>{
       }
       await page.screenshot({path:path.join(output,`desktop-converted-cantilever-${name}.png`)});
     }
+    await require('./viewport_geometry_preview.cjs')(page,payload);
     if(process.env.VIEWPORT_BENCHMARK==='1')await require('./viewport3d_benchmark.cjs')(page,payload,output);
     assert.deepEqual(errors,[]);
     await page.evaluate(payload=>{window.pyniteViewer.update({...payload,mode:'select',plane:'XY',moveNodes:true});window.pyniteViewer.orient(1);window.moveEvent=null;},payload);

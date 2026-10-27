@@ -354,7 +354,7 @@ class StructureView(QGraphicsView):
 
     def fit(self):
         self.cancel()
-        rect = self.scene().itemsBoundingRect() if self.window.project.nodes else QRectF(-24, -180, 480, 360)
+        rect = self.scene().itemsBoundingRect() if self.window.project.nodes or self.window.geometry_preview is not None else QRectF(-24, -180, 480, 360)
         rect = rect.adjusted(-48, -48, 48, 48)
         self.setSceneRect(rect.adjusted(-rect.width(), -rect.height(), rect.width(), rect.height()))
         self.fitInView(rect, Qt.AspectRatioMode.KeepAspectRatio)
@@ -508,6 +508,8 @@ class StructureView(QGraphicsView):
                     previous = point
         if hasattr(self.window, "canvas_results"):
             self.window.canvas_results.draw_planar(self)
+        from .geometry_panel import draw_planar_preview
+        draw_planar_preview(self)
 
 
 class MainWindow(QMainWindow):
@@ -533,6 +535,7 @@ class MainWindow(QMainWindow):
         self.result = None
         self.revision = 0
         self.mcp_mode = False
+        self.geometry_preview = None
         self.project_session = uuid.uuid4().hex
         self.automation_revision = 0
         self.automation_server = self.automation_panel = None
@@ -714,6 +717,9 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.action("Delete Selection", self.delete_selected, "Delete", "edit-delete"))
         edit_menu.addAction(self.action("Select All", self.select_all, "Ctrl+A"))
         edit_menu.addAction(self.action("Groups and Levels...", self.manage_organization))
+        from .geometry_panel import open_geometry_tool
+        edit_menu.addAction(self.action("Transform Selection...", lambda: open_geometry_tool(self, 0)))
+        edit_menu.addAction(self.action("Merge Two Nodes...", lambda: open_geometry_tool(self, 2)))
         self.property_actions = [self.action(text, callback) for text, callback in (
             ("Model Tables...", self.manage_model_tables), ("Materials...", self.manage_materials),
             ("Sections...", self.manage_sections), ("Load Cases and Combinations...", self.manage_load_cases),
@@ -731,6 +737,7 @@ class MainWindow(QMainWindow):
         from .organization import show_all
         self.show_all_action = self.action("Show All Geometry", lambda: show_all(self))
         tools_menu = self.tools_menu = self.menuBar().addMenu("&Tools")
+        tools_menu.addAction(self.action("Beam / Frame Generator...", lambda: open_geometry_tool(self, 1)))
         tools_menu.addAction(self.action("Surface Meshing (Experimental)...", lambda: self.show_mesh_workspace()))
         tools_menu.addAction(self.action("Rectangular Plate (Experimental)...", self.show_plate_workspace))
         tools_menu.addAction(self.action("Automation Server...", self.show_automation_server))
@@ -762,7 +769,7 @@ class MainWindow(QMainWindow):
             icon_action(action, {"select":"select", "draw":"member", "pan":"pan"}[mode], f"{text} ({shortcut})")
             if mode != "draw":
                 toolbar.addAction(action)
-        self.addAction(self.action("Cancel", lambda: self.set_mode("select"), "Escape"))
+        self.addAction(self.action("Cancel", self.cancel_interaction, "Escape"))
         toolbar.addAction(self.action("Fit", lambda: self.view.fit(), "F", "zoom-fit-best"))
         toolbar = group("Edit")
         toolbar.addAction(self.mode_actions["draw"])
@@ -928,6 +935,7 @@ class MainWindow(QMainWindow):
         self.model_findings = ModelFindings(self)
         self.model_findings.entities_requested.connect(self.select_finding_entities)
         self.model_findings.focus_requested.connect(self.focus_finding_entities)
+        self.model_findings.merge_requested.connect(self.review_node_merge)
         self.findings_dock = self.dock("Model Findings", self.model_findings, Qt.DockWidgetArea.BottomDockWidgetArea)
         self.findings_dock.hide()
         self.menuBar_view.addSeparator()
@@ -990,6 +998,8 @@ class MainWindow(QMainWindow):
             self.set_units(unit_key(dialog.length.currentText(), dialog.force.currentText()))
 
     def replace_project(self, project):
+        if hasattr(self, "geometry_panel"):
+            self.geometry_panel.clear_preview()
         before, after = self.project.to_dict(), project.to_dict()
         if before != after:
             self.automation_revision += 1
@@ -1002,6 +1012,8 @@ class MainWindow(QMainWindow):
         presentation_only = before == after and self.project.to_dict() != project.to_dict()
         units_changed = self.project.unit_system != project.unit_system
         self.project = project.clone()
+        if hasattr(self, "geometry_panel"):
+            self.geometry_panel.model_changed()
         if presentation_only:
             self.refresh()
             if self.result is not None and units_changed:
@@ -1480,6 +1492,18 @@ class MainWindow(QMainWindow):
             return
         self.select_finding_entities(entities)
         self.fit_selection()
+
+    def cancel_interaction(self):
+        if hasattr(self, "geometry_panel"):
+            self.geometry_panel.clear_preview()
+        self.set_mode("select")
+
+    def review_node_merge(self, entities):
+        if self.mcp_mode:
+            return
+        self.select_finding_entities(entities)
+        from .geometry_panel import open_geometry_tool
+        open_geometry_tool(self, 2)
 
     def construct_connection(self, operation):
         from .construction import ConnectionPreview, plan_connection

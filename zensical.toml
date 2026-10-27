@@ -21,6 +21,7 @@ nav = [
     { "Materials and Sections" = "modeling/properties.md" }, { "Supports and Springs" = "modeling/supports.md" },
     { "Member End Releases" = "modeling/releases.md" }, { "Axial-Only Trusses" = "modeling/trusses.md" },
     { "Topology and Model Checks" = "modeling/topology.md" }, { "Construction Connections" = "modeling/construction.md" },
+    { "Transforms, Generators and Merging" = "modeling/tools.md" },
     { "3D Frames and Trusses" = "modeling/3d.md" }
   ] },
   { "Loads and Analysis" = [

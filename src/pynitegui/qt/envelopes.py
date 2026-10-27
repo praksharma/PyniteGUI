@@ -39,7 +39,7 @@ def bounds(values):
 
 
 def envelope_rows(project, result, combinations):
-    """Exact solver member extrema; node bounds at fixed nodes. First tie wins."""
+    """Solver-provided member extrema; node bounds at fixed nodes. First tie wins."""
     from .diagrams import member_result_rows
     results = selected_results(project, result, combinations)
     rows = []
@@ -225,6 +225,9 @@ class EnvelopeWidget(QWidget):
             inspection_side=self.side.currentData())))
         plot_layout.addWidget(self.canvas)
         self.views.addTab(plot, "Member Curves")
+        from .station_query_panel import StationQueryPanel
+        self.station_query = StationQueryPanel(self)
+        self.views.addTab(self.station_query, "Governing Stations")
         self.combinations.itemChanged.connect(self.refresh)
         self.member.currentTextChanged.connect(self.update_plot)
         self.quantity.currentIndexChanged.connect(self.update_plot)
@@ -249,6 +252,8 @@ class EnvelopeWidget(QWidget):
         self.update_plot()
 
     def refresh_summaries(self):
+        if hasattr(self, "station_query"):
+            self.station_query.invalidate()
         from .envelope_filters import filter_rows
         filtered = list(filter_rows(self._summary_rows, self.filters.specification()))
         rows = list(display_rows(self.project, filtered))

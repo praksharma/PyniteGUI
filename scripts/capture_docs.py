@@ -229,8 +229,26 @@ def capture(output):
             filtered.envelopes.views.setCurrentIndex(1)
             filtered.show()
             save(filtered, "envelope-filters.png")
+            filtered.envelopes.station_query.search()
+            filtered.envelopes.views.setCurrentWidget(filtered.envelopes.station_query)
+            save(filtered, "governing-stations.png")
             filtered.reject()
             filtered.deleteLater()
+            from pynitegui.qt.geometry_panel import open_geometry_tool
+            from pynitegui.qt.model import Project
+            window.load_project(Project())
+            window.workspaces.choose("model")
+            window.workspaces.set_commands(True)
+            window.properties_dock.hide()
+            window.structure_dock.hide()
+            window.resize(1360, 940)
+            open_geometry_tool(window, 1)
+            window.resizeDocks([window.geometry_dock], [450], Qt.Orientation.Horizontal)
+            window.geometry_panel.preview()
+            app.processEvents()
+            window.view.fit()
+            save(window, "frame-generator.png")
+            window.geometry_panel.cancel()
         finally:
             # Do not show a save prompt or retain example recovery data.
             window.saved = window.project.to_dict()

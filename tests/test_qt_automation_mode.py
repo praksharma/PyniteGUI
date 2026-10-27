@@ -52,6 +52,22 @@ class AutomationModeTests(unittest.TestCase):
         self.window.automation_panel.mode_button.click()
         self.assertTrue(self.window.mcp_mode)
 
+    def test_handover_discards_unapplied_modelling_preview(self):
+        from pynitegui.qt.geometry_panel import open_geometry_tool
+        window = self.window
+        window.select(("members", "M1"))
+        open_geometry_tool(window, 0)
+        panel = window.geometry_panel
+        before = window.project.to_dict()
+        panel.preview()
+        self.assertIsNotNone(window.geometry_preview, panel.summary.text())
+        self.enable()
+        self.assertIsNone(window.geometry_preview)
+        self.assertFalse(panel.apply_button.isEnabled())
+        panel.preview()
+        panel.apply()
+        self.assertEqual(window.project.to_dict(), before)
+
     def test_unavailable_without_running_server_and_defaults_off(self):
         self.assertFalse(self.window.mcp_mode)
         self.server.state = "Stopped"

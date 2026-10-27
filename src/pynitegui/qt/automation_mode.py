@@ -45,6 +45,8 @@ class AutomationMode(QObject):
                 self.action.setChecked(False)
                 window.statusBar().showMessage("Finish the open dialog before entering MCP mode.")
                 return
+            if hasattr(window, "geometry_panel"):
+                window.geometry_panel.clear_preview()
             window.set_mode("select")
             window.refresh()  # Explicit handover discards unapplied inspector drafts.
             window.mcp_mode = True

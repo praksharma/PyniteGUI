@@ -14,6 +14,7 @@ when comparing with the published rc1 wheel.
 | Atomic bulk edits and node/member/load tables | [Selection](modeling/drawing.md), [model tables](modeling/tables.md) |
 | Named node/member groups, isolation, saved global-Y levels and optional drawing/drag snapping (development after RC2) | [Groups and levels](modeling/drawing.md) |
 | Split, equal subdivision, explicit intersections and connectivity findings | [Topology and model checks](modeling/topology.md) |
+| Previewed move/repeat/rotate/mirror, planar beam/frame generators and controlled two-node merging (development after RC2) | [Modelling tools](modeling/tools.md) |
 | Perpendicular and midpoint construction connections | [Construction connections](modeling/construction.md) |
 | Per-member materials and sections, searchable libraries with dimensioned section sketches, defaults and provenance | [Assignments](modeling/properties.md), [materials](reference/materials.md), [sections](reference/sections.md) |
 | Free/pin/roller/fixed/custom supports and bilateral support springs | [2D supports](modeling/supports.md), [six-DOF spatial supports](modeling/3d.md) |
@@ -59,6 +60,7 @@ See [method limits and plasticity boundaries](analysis/solve.md).
 | Static storey drift from explicit node pairs, signed ratios, governing combinations and snapshot CSV | [Drift and envelopes](results/envelopes.md) |
 | CSV, snapshot metadata, printable model/results/diagrams/envelopes and PDF through print | [Exports and reports](results/reports.md) |
 | PNG/SVG native plot export with visible snapshot stamp and embedded context | [Plot image export](results/reports.md) |
+| Global signed/absolute governing-station queries with member, combination and one-sided locations (development after RC2) | [Envelopes and station queries](results/envelopes.md) |
 | Retained result windows and revision-aware snapshots | [Snapshots](results/snapshots.md) |
 
 ## Surfaces, Files and Automation

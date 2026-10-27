@@ -2,10 +2,18 @@
 
 ## Unreleased
 
+- Add a shared native Modelling Tools dock for previewed move/repeat/rotate/mirror,
+  planar continuous-beam and multi-bay/storey frame generation, and controlled
+  two-node merging. Canvas ghosts, explicit collision/support/load choices,
+  atomic undo, stale-preview guards and preserved assignments keep edits reviewable.
+- Add governing-station queries in retained envelopes using verified continuous
+  solver-segment derivative roots and both jump sides, with snapshot-labelled CSV
+  and curve navigation. Document numerical tolerances and unsupported-contract failures.
+
 - Add scope/component/value filters to existing envelope summaries with physical
   thresholds retained across units, snapshot/filter-labelled CSV, cached extrema
-  and row-to-member-curve navigation. Keep global governing-station searches
-  pending. Reconcile RC2 publication and live/legacy Pages deployment records.
+  and row-to-member-curve navigation. Reconcile RC2 publication and live/legacy
+  Pages deployment records.
 
 - Add editing-only named groups and global-Y levels with native select/isolate,
   optional drawing/node-drag snapping and 3D level work-plane placement. Preserve

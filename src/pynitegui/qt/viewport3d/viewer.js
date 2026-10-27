@@ -129,6 +129,16 @@ function update(payload,dragPreview=false) {
   dispose();if(!data.labels)labelTextures.clearUnused();grid();
   const nodes=new Map(data.nodes.map(n=>[n.name,n])), selected=(kind,name)=>data.selection.some(s=>s[0]===kind&&s[1]===name);
   if(data.showNodes!==false)drawFrame(data,r,group,picks);
+  // Candidate geometry is decorative: never add it to picking/box selection.
+  for(const points of data.geometryPreview?.lines||[]){
+    const geometry=new THREE.BufferGeometry().setFromPoints(points.map(vector));
+    const ghost=new THREE.Line(geometry,new THREE.LineDashedMaterial({color:c.accent,dashSize:span*.015,gapSize:span*.008,depthTest:false}));
+    ghost.computeLineDistances();ghost.renderOrder=8;group.add(ghost);
+  }
+  for(const point of data.geometryPreview?.nodes||[]){
+    const ghost=new THREE.Mesh(new THREE.SphereGeometry(r*1.5,8,6),new THREE.MeshBasicMaterial({color:c.accent,wireframe:true,depthTest:false}));
+    ghost.position.copy(vector(point));ghost.renderOrder=8;group.add(ghost);
+  }
   drawSurfaces(data,group);
   for (const mesh of data.surfaceMeshes || []) {
     drawSurfaces({...mesh,colors:c,surfaceName:mesh.name,surfaceSelected:selected('surfaces',mesh.name),
@@ -190,6 +200,8 @@ function fit() {
   supportTooltip.hide();
   stopMotion();
   const points=modelPoints(data);
+  for(const line of data.geometryPreview?.lines||[])points.push(...line.map(vector));
+  points.push(...(data.geometryPreview?.nodes||[]).map(vector));
   for(const symbol of supports)for(const sign of [-1,1])points.push(symbol.center.clone().addScalar(sign*span*.02));
   if(data.deformed)for(const m of data.members)if(m.points)points.push(...m.points.map((p,i)=>vector(p).addScaledVector(vector(m.displacements[i]),data.factor)));
   for(const member of data.members)points.push(...diagramPoints(member,data.diagram));
