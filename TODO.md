@@ -433,6 +433,8 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
 - [x] Prepare 1.0.0rc1 metadata, consistent desktop/MCP version reporting,
   release notes/checklist, source/wheel audits and isolated installed-wheel smoke scripts.
 - [x] Publish the GitHub 1.0.0rc1 prerelease (see README for the published release).
+- [x] Add CITATION.md and GitHub-readable CITATION.cff with release/commit
+  identification, PyNite solver attribution and DOI archiving deferred to stable 1.0.
 - [ ] Complete platform/manual validation gates in RELEASE.md and collect
   prerelease feedback before promoting to stable 1.0.0. This single item owns
   reproducible macOS installation/rendering/save-open/analysis/export checks and

@@ -71,3 +71,4 @@ Whole-frame shear-force diagram.
 - [Release notes](CHANGELOG.md) and [release validation](RELEASE.md).
 - [Secondary ideas](TODO_SECONDARY.md): interface inspiration and PyNite-compatible extensions.
 - [License](LICENSE): GNU AGPL v3.
+- [Citation guidance](CITATION.md): cite the project and the release or commit used.

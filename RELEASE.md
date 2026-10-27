@@ -46,6 +46,10 @@ to serve its assets instead of the source checkout during browser testing.
 
 ## Publication Checklist
 
+- [x] Project citation guidance and GitHub citation metadata added without a DOI.
+- For each release, review CITATION.md/CITATION.cff and preserve exact version and
+  commit links. Consider Zenodo concept/version DOI archiving for stable 1.0;
+  archive later releases as new versions of the same record.
 - [x] Current full suite passes with MCP wire tests enabled, not skipped.
 - [x] Wheel/source archive audits and base/MCP installed-wheel smoke checks pass.
 - [ ] Native Linux visible startup, 2D/3D editing, save/open, analysis, reports and MCP checked.

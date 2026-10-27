@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add project-level citation guidance and GitHub citation metadata, with exact
+  release/commit guidance, separate PyNite attribution and deferred DOI archiving.
+
 - Main-canvas 2D/3D result controls and exact member station/side inspection in
   the Results dock, synchronized with existing spatial controls and preserving
   draft Properties and retained result windows. Add signed member colour maps
