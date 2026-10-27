@@ -1607,6 +1607,38 @@ the signed moment for each; the larger absolute moment governs.
   reports, single-combination sections and envelope sections are labelled
   separately. Unit/theme changes retain the selection. Envelope choices are
   window-local, not saved in the project.
+**Plain storey drift**
+
+The **Storey Drift** tab in retained 2D/3D diagram windows starts empty. Choose a
+lower node, upper node and horizontal global direction, then **Add pair**. Repeat
+for each storey and column you want to check. Global Y defines elevation; the
+upper node must have a strictly greater Y coordinate. Pairs may be offset in
+plan and are never inferred to belong to a rigid floor. 2D supports X drift;
+3D supports X or Z. Duplicate pair/direction entries and invalid heights are
+rejected without losing existing pairs. Select any row and **Remove selected
+pair** to remove that pair across all combinations.
+
+For each pair and selected combination the table reports height h, the lower
+and upper nodal translations, their signed difference Δ = u_upper − u_lower,
+and the dimensionless signed ratio Δ/h. **Governing |ratio|** marks the largest
+absolute ratio for that pair/direction; its row retains the actual signed value
+and combination. The first analyzed combination wins ties. Select one solved
+combination or all; this selector is independent of the window's main selector.
+All values come from the same retained snapshot and method. Unit changes convert
+lengths while leaving ratios and pairs unchanged. Pair selections belong to the
+window and are not saved as model definitions or groups.
+
+This is static displacement post-processing. It applies no seismic-code
+amplification or limit, provides no pass/fail decision and adds no solver
+constraints. **Export CSV** records exactly the current table, with source
+basename, snapshot ID/time/signature, method, units and conventions. Exports are
+atomic; a failed write preserves an existing destination.
+
+[![Explicit node-pair drift for both columns of a two-storey frame](docs/assets/screenshots/storey-drift.png)](docs/assets/screenshots/storey-drift.png)
+
+Each column has its own lower/upper pairs; the table makes no rigid-diaphragm
+assumption.
+
 ### CSV and Printable Reports
 
 The **Save** icon in each native plot's pan/zoom toolbar offers **PNG** or **SVG**

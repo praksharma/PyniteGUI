@@ -92,6 +92,20 @@ def capture(output):
             save(comparison, "combination-comparison.png")
             comparison.close()
 
+            drift_project = example_project("multistorey")
+            with redirect_stdout(StringIO()):
+                drift_result = analyze(drift_project)
+            drift = DiagramDialog(window, drift_project, drift_result)
+            drift.resize(1260, 680)
+            drift.tabs.setCurrentWidget(drift.drift)
+            for lower, upper in (("N1", "N2"), ("N2", "N5"), ("N4", "N3"), ("N3", "N6")):
+                drift.drift.lower.setCurrentText(lower)
+                drift.drift.upper.setCurrentText(upper)
+                drift.drift.add.click()
+            drift.show()
+            save(drift, "storey-drift.png")
+            drift.close()
+
             window.help_menu.popup(window.mapToGlobal(window.rect().center()))
             save(window.help_menu, "help-menu.png")
             window.help_menu.close()

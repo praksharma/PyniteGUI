@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Plain static storey drift in retained planar/spatial result windows: explicit
+  lower/upper node pairs, global Y heights, X/Z translation differences, signed
+  ratios and per-pair governing combinations. Preserve pairs across display-unit
+  changes and export atomic snapshot CSV, without rigid-floor or code assumptions.
+
 - Add the official clamped rectangular Quad plate in the existing separate plate
   workspace, with menu/browser discovery, current-unit inputs and preserved frame
   drafts. Verify transverse upstream parity, equilibrium, classical reference and

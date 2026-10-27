@@ -170,14 +170,16 @@ an audit of Stabileo's engineering calculations. PRO is labelled beta.
   Balance is not design approval. Navigation from recognized failure diagnostics
   to affected geometry is also completed in the primary roadmap; extend the
   free-body inspector below.
-- [ ] **Plain storey displacement/drift table (UI).** For explicitly paired
+- [x] **Plain storey displacement/drift table (UI).** For explicitly paired
   nodes at successive levels, calculate horizontal displacement difference and
   drift ratio from PyNite nodal results. Report pairs, height, combination, and
   governing value; allow multiple columns without assuming a rigid floor.
   This is static result post-processing, not automatic seismic load generation,
   code-amplified seismic drift, or a code pass/fail check. PRO's drift tab was
   inspected but required code-generator settings; borrow the workflow, not its
-  code-dependent calculation.
+  code-dependent calculation. Completed in retained 2D/3D result windows with
+  explicit lower/upper pairs, positive Y heights, signed X/Z differences and
+  ratios, per-pair governing combinations, units and atomic snapshot CSV export.
 - [x] **Fast deformation preview for large frames (UI).** Offer sampled member
   curves versus displaced-node straight lines, clearly identifying the latter
   as an approximate display. Both use the same solved snapshot; switching must

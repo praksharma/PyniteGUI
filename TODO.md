@@ -340,6 +340,10 @@ Remaining 13 scripts are intentionally unchecked:
   member ends without span sampling when force overlays are off, explicitly label
   nodal peak/Auto scaling, preserve sampled curves, numerical results and reports.
 - [x] Add axial-force diagrams for the whole structure and Member Detail.
+- [x] Add explicit node-pair storey drift in retained 2D/3D result windows:
+  global Y heights, X/Z translation differences, signed ratios, governing
+  combinations, independent combination selection and snapshot-aware atomic CSV.
+  No rigid-floor assumption, seismic amplification or code pass/fail checks.
 - [x] Add interactive value inspection at a chosen distance along a member.
 - [x] Improve label placement for dense structures and overlapping diagrams.
   Renderer-aware, member-ID-first placement with leader lines; crowded labels

@@ -77,6 +77,9 @@ class SpatialDiagramDialog(QDialog):
         from .comparison import ComparisonWidget
         self.comparison = ComparisonWidget(self, self.project, self.result, self.source, selected)
         self.tabs.addTab(self.comparison, "Compare Combinations")
+        from .drift import DriftWidget
+        self.drift = DriftWidget(self, self.project, result, self.source)
+        self.tabs.addTab(self.drift, "Storey Drift")
         self.envelopes = EnvelopeWidget(self, self.project, self.result, self.source, selected)
         self.tabs.addTab(self.envelopes, "Combination Envelopes")
         self.member.currentTextChanged.connect(self.redraw)
@@ -97,6 +100,7 @@ class SpatialDiagramDialog(QDialog):
             self.redraw()
             self.envelopes.refresh()
             self.comparison.refresh()
+            self.drift.refresh()
 
     def update_snapshot_status(self):
         parent = self.parent()

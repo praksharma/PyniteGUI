@@ -412,6 +412,9 @@ class DiagramDialog(QDialog):
         from .comparison import ComparisonWidget
         self.comparison = ComparisonWidget(self, self.project, result, self.source, selected)
         self.tabs.addTab(self.comparison, "Compare Combinations")
+        from .drift import DriftWidget
+        self.drift = DriftWidget(self, self.project, result, self.source)
+        self.tabs.addTab(self.drift, "Storey Drift")
         self.envelopes = EnvelopeWidget(self, self.project, result, self.source, selected)
         self.tabs.addTab(self.envelopes, "Envelopes")
         self.combination.currentTextChanged.connect(self.select_combination)
@@ -459,6 +462,7 @@ class DiagramDialog(QDialog):
         self.update_results()
         self.envelopes.refresh()
         self.comparison.refresh()
+        self.drift.refresh()
 
     def select_combination(self, name):
         self.result = self.result.for_combination(name)
