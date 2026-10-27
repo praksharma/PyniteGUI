@@ -68,7 +68,7 @@ See [method limits and plasticity boundaries](analysis/solve.md).
 | Versioned save/open, migrations, undo/redo, recent-file cleanup and autosave/recovery | [History](reference/saving.md), [formats](reference/formats.md), [recovery](reference/recovery.md) |
 | Selection/finding-focused camera navigation in 2D/3D; Shift+F and full-model Fit | [Help and workspace](start/help.md), [model findings](modeling/topology.md) |
 | Help menu, website/F1, searchable shortcuts, About/version details and default-layout recovery | [Help and workspace](start/help.md) |
-| Categorized editable examples, including three official PyNite beams, three-storey coupled slabs and P-Delta; light/dark themes and scrollable properties | [Examples and preferences](start/examples.md), [beam walkthrough](start/first-model.md#try-the-official-pynite-beams) |
+| Categorized editable examples, including six official PyNite beam/frame/truss examples, three-storey coupled slabs and P-Delta; light/dark themes and scrollable properties | [Examples and preferences](start/examples.md), [official examples walkthrough](start/first-model.md#try-the-official-frame-and-truss-examples) |
 | Software-rendering recovery, observed renderer diagnostics, NVIDIA/Wayland profiles | [Graphics](start/graphics.md), [Linux NVIDIA](start/nvidia.md) |
 | Optional localhost MCP server, frame/surface/pressure batch edits, coupling opt-in, permission groups and background solve lifecycle | [MCP server](automation/mcp.md) |
 

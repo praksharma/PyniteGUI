@@ -4,6 +4,9 @@ from .spatial_model import SpatialLoad, SpatialProject
 
 
 def example_project(key, unit_system="imperial"):
+    if key == "3d_official_truss":
+        from .official_examples import example_project as official_example
+        return official_example(key, unit_system)
     if key == "3d_multistorey_slabs":
         from .mesh_model import MeshDefinition
         from .model import Material

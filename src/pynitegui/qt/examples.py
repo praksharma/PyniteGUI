@@ -22,6 +22,9 @@ EXAMPLES = {
     "official_beam_point": "Official PyNite - Beam with Point Loads",
     "official_beam_uniform": "Official PyNite - Beam with Uniform Load",
     "official_beam_envelope": "Official PyNite - Beam with Factored Envelope",
+    "official_moment_frame": "Official PyNite - Moment Frame with Lateral Load",
+    "official_p_delta": "Official PyNite - P-Delta Column",
+    "3d_official_truss": "Official PyNite - Space Truss with Nodal Load",
 }
 
 
@@ -30,11 +33,11 @@ EXAMPLES = {
 EXAMPLE_GROUPS = {
     "2D Frames": ("simple_beam", "portal", "cantilever", "continuous", "pitched",
                   "multistorey", "self_weight", "elastic", "shear_release",
-                  "official_beam_point", "official_beam_uniform", "official_beam_envelope"),
+                  "official_beam_point", "official_beam_uniform", "official_beam_envelope", "official_moment_frame"),
     "3D Frames": ("3d_cantilever", "3d_space_frame"),
-    "Trusses": ("truss", "3d_tripod"),
+    "Trusses": ("truss", "3d_tripod", "3d_official_truss"),
     "Slabs": ("3d_slab_frame", "3d_multistorey_slabs"),
-    "P-Delta": ("p_delta_column",),
+    "P-Delta": ("p_delta_column", "official_p_delta"),
 }
 
 

@@ -46,6 +46,29 @@ Read the [example reference](examples.md) for the pinned upstream revision,
 material/support assumptions and differences from the original scripts. Each
 opens as a fresh editable project; save it under your own filename.
 
+## Try the Official Frame and Truss Examples
+
+Three more **Official PyNite** entries use existing methods. Open the entry,
+analyze with **F5**, then choose the stated result combination:
+
+| Menu category and example | Combination | Result to check |
+| --- | --- | --- |
+| 2D Frames / Moment Frame with Lateral Load | 1.2D+1.0W | N2 DX = 0.48084117 in; N1 FY = -2.10031058 kip (uplift) |
+| P-Delta / P-Delta Column | Combo 1 | N6 DX approximately 40.2722 in; N1 Mz approximately 5227.21 kip-in |
+| Trusses / Space Truss with Nodal Load | Combo 1 | BC axial force = -32.65333 kN; BD = -45.23538 kN; BE = +112.05467 kN |
+
+Use inch/kip display for the first two rows and SI (m, kN) for the truss.
+Negative truss axial force means tension; positive means compression. The truss
+has very high axial stiffness, so little displacement is expected. Its unused
+free-joint rotations are n/a, not zero-valued rotational results.
+
+The first two examples already select **P-Delta elastic**. Their second-order
+force recovery can trigger the strict Equilibrium check; compare the
+[documented method limits](../analysis/solve.md) and the
+[source/adaptation notes](examples.md) before interpreting results. The column
+approaches a 40.2740-inch analytical tip displacement when refined. All materials
+remain elastic. The truss uses the existing linear, bilateral axial-only method.
+
 ## Make One Change
 
 Select the load in the structure tree and edit its signed magnitude, then Apply.

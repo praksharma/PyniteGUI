@@ -1063,6 +1063,53 @@ checking the same three combinations in Envelopes. Plot sampling/amplification
 remain GUI controls. The upstream MIT notice is distributed in
 `src/pynitegui/qt/licenses/pynite-examples.txt`; the application license is unchanged.
 
+Three further official adaptations use the same pinned source revision and MIT
+notice:
+
+- **2D Frames > Official PyNite - Moment Frame with Lateral Load** retains the
+  180 by 144 inch frame, W10x33 column and W8x24 beam properties, fixed bases,
+  prescribed member-local D weights and 10-kip global-X wind at N2. Its method is
+  **P-Delta elastic**, as in the executable upstream script. For **1.2D+1.0W**,
+  N2 DX is **0.48084117 in**; N1 FY is **-2.10031058 kip** (uplift). For
+  **0.9D+1.0W**, those values are **0.48079378 in** and **-2.27287188 kip**.
+  Self-weight is represented by the source's explicit distributed loads, so
+  automatic self-weight remains off. Original member IDs and the unsplit
+  three-member layout are retained. The beam-example planar/G adaptation above
+  also applies. A frozen reference from the pinned script and locked engine is
+  stored in `tests/fixtures/official_moment_frame.json`; it is an adapter parity
+  check, supplemented by separate load-resultant checks.
+- **P-Delta > Official PyNite - P-Delta Column** converts the source's 20-foot
+  column to 240 inches, with E = 29000 ksi, A = 10 in2, Iy/Iz = 100 in4,
+  J = 200 in4 and a fixed base. **Combo 1** applies 100 kip downward and 5 kip
+  laterally at N6. The source's six nodes become five explicit 48-inch members,
+  replacing automatic physical-member subdivision. Tip DX is approximately
+  **40.2722 in**; the analytical tangent reference is **40.2740 in**, approached
+  by refinement. The base Mz is approximately **5227.21 kip-in**. This is the
+  original elastic benchmark, distinct from the milder Slender Column example.
+  Both official second-order examples keep the existing strict force-residual
+  check: PyNite's approximate recovery can flag small residuals. An analytical
+  comparison does not override the Equilibrium tab or imply plasticity.
+- **Trusses > Official PyNite - Space Truss with Nodal Load** converts the
+  source's metre/kilonewton geometry, loads and section/material quantities to
+  canonical inches/kips. Select SI (m, kN) for comparison. The original A–E
+  joints and AB/AC/AD/BC/BD/BE member IDs are retained. Loads at A are
+  (10, 60, 20) kN in global X/Y/Z; C/D/E remain fixed. In the member axial
+  results, **BC = -32.65333 kN**, **BD = -45.23538 kN** (tension) and
+  **BE = +112.05467 kN** (compression). All six members use bilateral axial-only
+  elements, replacing the source's released frame members (including its
+  unreleased AB). This reproduces the statically determined bar forces; it is
+  not a torsional/released-frame displacement benchmark. Original EA is kept,
+  giving negligible elastic displacement; unused free-joint rotations are n/a.
+  Source G is not used by axial-only bars. The isotropic GUI G therefore has no
+  effect on these bar responses. Automatic self-weight is off.
+
+The two official Space Frame nodal-load examples remain pending: E = 30000 ksi,
+G = 10000 ksi and nu = 0.3 cannot all be represented by the current isotropic
+material definition. Deriving G from E/nu changes their torsional response;
+altering nu would also violate the current nu < 0.5 constraint. Independent-G
+material support needs its own validated task before these are offered as
+matching official examples.
+
 - View > Appearance selects Light or Dark. The preference is saved between app
   sessions, separately from project files. It updates all open editor/diagram
   windows, including the grid, engineering symbols, labels, tables, and plots,

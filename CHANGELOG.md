@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Official moment-frame, P-Delta column and space-truss examples with original
+  IDs/load assumptions, canonical unit conversion and explicit adaptation notes.
+  Retain second-order method selection and strict recovery checks; compare the
+  frame to a pinned upstream result, refine the column against the tangent
+  solution and verify truss forces by independent joint equilibrium. Add unit,
+  save/reopen and menu coverage. Record independent-G material input as the
+  dependency for the two remaining official space-frame examples.
+
 - Three official PyNite beam adaptations in File > Examples > 2D Frames:
   point loads, uniform load and factored envelope, with pinned upstream source,
   retained MIT notice, documented planar/material differences and a worked

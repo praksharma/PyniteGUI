@@ -124,11 +124,25 @@ not change the analysis-method priorities above.
   instances, all-unit persistence and native menu loading are covered. See
   [Examples and Appearance](GUIDE.md#examples-and-appearance) for expected values.
 
-- [ ] [Moment Frame - Lateral Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Moment%20Frame%20-%20Lateral%20Load.py)
+- [x] [Moment Frame - Lateral Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Moment%20Frame%20-%20Lateral%20Load.py)
 - [ ] [Space Frame - Nodal Loads 1.py](https://github.com/JWock82/Pynite/blob/main/Examples/Space%20Frame%20-%20Nodal%20Loads%201.py)
 - [ ] [Space Frame - Nodal Loads 2.py](https://github.com/JWock82/Pynite/blob/main/Examples/Space%20Frame%20-%20Nodal%20Loads%202.py)
-- [ ] [Space Truss - Nodal Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Space%20Truss%20-%20Nodal%20Load.py)
-- [ ] [P-Delta Analysis.py](https://github.com/JWock82/Pynite/blob/main/Examples/P-Delta%20Analysis.py)
+- [x] [Space Truss - Nodal Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Space%20Truss%20-%20Nodal%20Load.py)
+- [x] [P-Delta Analysis.py](https://github.com/JWock82/Pynite/blob/main/Examples/P-Delta%20Analysis.py)
+
+  Second batch completed 2026-10-27 at the same pinned revision: preserve the
+  moment frame's P-Delta method, original IDs/cases/local weights and uplift;
+  convert the official column from ft/kip with five explicit segments; convert
+  the space truss from m/kN to bilateral axial bars with original EA and IDs.
+  Document planar/G, physical-member and released-frame differences. Verify
+  pinned upstream frame parity/load resultants, analytical column response and
+  refinement, independent truss joint equilibrium, persistence and menu loading.
+
+- [ ] Add validated independent shear-modulus material input before adapting
+  the two pending official Space Frame examples. Both use E = 30000 ksi,
+  G = 10000 ksi and nu = 0.3; current G = E/[2(1+nu)] changes torsion, while
+  matching their G by changing nu would require the rejected nu = 0.5 limit.
+  Do not silently substitute the GUI-derived G and claim upstream parity.
 
 **Springs and unilateral members — audit dependencies; defer missing behaviour:**
 
