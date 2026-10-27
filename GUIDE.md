@@ -1002,9 +1002,33 @@ can stay beside the editor and reuse the same window when reopened.
 *About links directly to the repository. Copy Version Details prepares text for
 your report; it does not send anything.*
 
+The compact **Workspace** selector starts at **All tools**, preserving the full
+command layout. Choose **Model** to show editing/loading commands and the
+Structure/Properties docks, or **Results** to show result/deformation commands
+and the resizable Results dock. File, view and analysis commands remain in both
+focused layouts. The same choices are available under **View > Workspace**.
+Results can be opened before solving; its existing empty/outdated state still
+applies. Analysis may reveal Results as usual; workspace choice does not change
+the analysis lifecycle or automatically switch profiles.
+
+The adjacent checked button, also **View > Workspace > Show Command Toolbars**,
+collapses or restores the command toolbars. The workspace selector remains
+accessible. Collapse state follows workspace changes, so you can keep more room
+for the model and restore the chosen profile's commands when needed.
+
+Switching changes visibility only: it does not rebuild Properties, apply drafts,
+change the active select/member/pan tool, edit the model, alter selection/undo,
+fit the view or replace retained result windows. Planar zoom/centre are retained
+through dock resizing; the spatial renderer receives no camera/scene request.
+Existing 3D result controls and separate diagram windows remain available; the
+workspaces do not add new result types. Profiles and collapse state are per-window
+presentation choices, not saved model definitions or persistent preferences.
+
+[![Results workspace with command toolbars collapsed, model view and result table visible](docs/assets/screenshots/results-workspace.png)](docs/assets/screenshots/results-workspace.png)
+
 Use **View > Restore Default Layout** if a dock or toolbar has been hidden,
 floated or moved. It restores the Structure and Properties panels and the
-normal toolbar arrangement; Results remains accessible when a result exists,
+normal toolbar arrangement, selects All tools and shows the command rows; Results remains accessible when a result exists,
 and Model Findings when there are findings. It does not change the project,
 selection, undo history, result snapshot, display units or unapplied Properties
 values. Model-view zoom remains under your control; **Fit (F)** is separate.

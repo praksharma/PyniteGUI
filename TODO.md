@@ -337,6 +337,10 @@ Remaining 13 scripts are intentionally unchecked:
 - [x] Group compact desktop toolbar controls for file/view/edit/load/analysis/
   results, with theme-aware icons, tooltips, vertical separators instead of group
   labels, active modes and solved-result gating.
+- [x] Add optional All tools/Model/Results workspaces and command-toolbar
+  collapse, with draft-preserving dock visibility, unchanged selections/results,
+  stable planar view centre/zoom, no spatial camera requests, MCP guards and
+  consistent default-layout recovery. Keep All tools as the initial layout.
 - [x] Add auto, true-scale, and custom deformed-shape amplification with actual
   maximum sampled displacement shown in the selected project units.
 - [x] Add approximate straight deformation preview in 2D/3D: join displaced

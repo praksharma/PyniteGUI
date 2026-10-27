@@ -24,6 +24,7 @@ tests = [
   "test_qt_theme",
   "test_qt_ui",
   "test_qt_window_controls",
+  "test_qt_workspaces",
 ]
 
 [groups.model]

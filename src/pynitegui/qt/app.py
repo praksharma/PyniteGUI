@@ -174,6 +174,7 @@ class StructureView(QGraphicsView):
         self.setRenderHint(QPainter.RenderHint.Antialiasing)
         self.setMouseTracking(True)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.AnchorUnderMouse)
+        self.setResizeAnchor(QGraphicsView.ViewportAnchor.AnchorViewCenter)
         self.setBackgroundBrush(QColor(colors()["canvas"]))
         self.setSceneRect(-120, -360, 720, 600)
         self.setDragMode(QGraphicsView.DragMode.NoDrag)
@@ -542,6 +543,8 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.view_stack)
         self.build_actions()
         self.build_panels()
+        from .workspaces import Workspaces
+        self.workspaces = Workspaces(self)
         from .help_menu import build_help_menu
         build_help_menu(self)
         self.analysis_phase = QLabel()
@@ -771,11 +774,12 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.live_analysis_action)
         self.diagrams_action = icon_action(self.action("Diagrams...", self.diagrams), "diagram", "Open solved force diagrams and Member Detail")
         self.diagrams_action.setEnabled(False)
-        group("Results").addAction(self.diagrams_action)
+        results_toolbar = group("Results")
+        results_toolbar.addAction(self.diagrams_action)
         self.animation_action = self.action("Animate Static Deformation…", self.animate_deformation, icon="media-seek-forward")
         self.animation_action.setToolTip("Animate a retained static displacement field (display only; no dynamics)")
         self.animation_action.setEnabled(False)
-        group("Results").addAction(self.animation_action)
+        results_toolbar.addAction(self.animation_action)
         self.tools_menu.addAction(self.animation_action)
         self.addToolBarBreak()
         deformation_toolbar = self.addToolBar("Deformation")
@@ -914,6 +918,7 @@ class MainWindow(QMainWindow):
         if self.mcp_mode:
             return
         self.restoreState(self.default_layout_state)
+        self.workspaces.reset()
         if self.result is not None:
             self.results_dock.show()
         if self.model_findings.list.count():

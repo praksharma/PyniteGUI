@@ -125,11 +125,15 @@ an audit of Stabileo's engineering calculations. PRO is labelled beta.
 
 ### Priority: Repeated Geometry and Model Organization
 
-- [ ] **Model/Results workspaces (UI).** Adapt PRO's command tabs to our scope:
+- [x] **Model/Results workspaces (UI).** Adapt PRO's command tabs to our scope:
   modelling tools in one workspace, results and exports in another, with the
   command strip collapsible. Preserve selection, view framing, and unsaved
   input when switching. Extend the grouped-toolbar/in-canvas-result tasks
   above; do not add an empty Design tab or imply code verification.
+  Completed with All tools/Model/Results command profiles, focused dock visibility,
+  a recoverable collapsed command strip, preserved draft widgets/selection/zoom,
+  no 3D camera calls, MCP guards and default-layout reset. The separate in-canvas
+  result-selector task above remains pending.
 - [ ] **Named groups and levels (UI).** Save node/member selection sets for a
   frame, storey, or zone; reselect and isolate them quickly. Define explicit
   elevation levels in our XY plane, with optional snapping. Groups are editing

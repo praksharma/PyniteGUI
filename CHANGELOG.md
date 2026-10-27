@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Optional All tools/Model/Results command workspaces with focused dock visibility
+  and a recoverable collapsed command strip. Preserve draft widgets, selection,
+  results and zoom, retain planar view centre on resize, and avoid spatial camera
+  requests. Respect MCP locking and reset controls with Restore Default Layout.
+
 - Native static deformation playback for retained 2D/3D member curves and solved
   surface wireframes. Cache paths per combination, update existing artists,
   preserve a dashed reference and fixed limits, and provide pause/reset/fraction,

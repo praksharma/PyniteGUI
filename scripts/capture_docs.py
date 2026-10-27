@@ -185,6 +185,12 @@ def capture(output):
             app.processEvents()
             window.view.fit()
             save(window, "straight-deformation-preview.png")
+
+            window.workspaces.choose("results")
+            window.workspaces.commands.trigger()
+            app.processEvents()
+            window.view.fit()
+            save(window, "results-workspace.png")
         finally:
             # Do not show a save prompt or retain example recovery data.
             window.saved = window.project.to_dict()
