@@ -342,6 +342,10 @@ Remaining 13 scripts are intentionally unchecked:
 - [x] Add approximate straight deformation preview in 2D/3D: join displaced
   member ends without span sampling when force overlays are off, explicitly label
   nodal peak/Auto scaling, preserve sampled curves, numerical results and reports.
+- [x] Add retained static deformation animation for 2D/3D member curves and
+  solved surface wireframes: cached geometry, fixed undeformed reference,
+  display-only loop timing, play/pause/reset/fraction controls, amplification,
+  combination/unit/theme changes and provenance PNG/SVG frame export.
 - [x] Add axial-force diagrams for the whole structure and Member Detail.
 - [x] Add explicit node-pair storey drift in retained 2D/3D result windows:
   global Y heights, X/Z translation differences, signed ratios, governing

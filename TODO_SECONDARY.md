@@ -94,9 +94,12 @@ silently changing saved engineering definitions.
   multipliers against a baseline using cloned projects and PyNite solves.
   Provide reset and explicit apply-as-one-edit. Shared definitions must not
   accidentally change unselected members. Invalid variants stay visibly failed.
-- [ ] **Deformation animation (UI).** Animate the scale of the existing static
+- [x] **Deformation animation (UI).** Animate the scale of the existing static
   displacement field with pause/reset and a fixed reference outline. Label it
-  as static deformation animation, not a dynamic response calculation.
+  as static deformation animation, not a dynamic response calculation. Completed
+  in a retained native 2D/3D snapshot window with cached member paths and nodal
+  surface wireframes, playback/pause/reset/scrubbing, Auto/true/custom scaling,
+  fixed reference/limits, display-only timing and snapshot PNG/SVG frame export.
 - [x] **Example browser (UI).** File > Browse Examples provides category/search
   filters, native geometry previews, loading summaries in current units and
   explicit-unit expected checks for every example. Browsing never analyzes or

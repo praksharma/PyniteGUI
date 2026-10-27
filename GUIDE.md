@@ -1557,6 +1557,40 @@ ID/end-value/sampled-extrema choices. The 3D view retains its context Labels mas
 *End values is off here; Sampled extrema remains on, so an endpoint that is also
 a plotted extremum can still have a numerical label.*
 
+**Static deformation animation**
+
+After solving, choose **Tools > Animate Static Deformation…** or the animation
+button in the Results toolbar group. The separate native window retains that
+analysis snapshot and method, even if the editor is changed or reanalyzed.
+The combination selector switches only among that snapshot's solved states.
+Member paths are sampled once per combination with the existing recovery rules;
+solved surfaces use nodal wireframes. No solver calls are made during playback.
+
+Use **Play/Pause**, **Reset**, or set **Displacement fraction** from 0 to 1 to
+inspect a frame. A smooth loop cycles from the reference to the fully amplified
+shape and back. **Loop (display seconds)** is a display duration, not physical
+response time. This is not a dynamic/modal result, and it does not depict
+cross-section twisting. Dashed reference geometry stays fixed. Axis limits
+include the full displayed excursion and remain fixed during playback; standard
+plot pan/zoom and 3D rotation remain available. Auto scales peak motion to 15%
+of the largest model extent; True scale uses 1x and Custom uses the entered
+factor. The reported sampled/nodal peak is unamplified.
+
+Changing combination or amplification pauses and resets the fraction. Changing
+duration pauses; pause/resume retains phase. Unit/theme changes preserve the
+fraction and cached canonical data. Hiding or closing the window, or changing
+MCP control mode, pauses playback. Model/result edits never change the retained
+field; the main animation action is disabled when current results are invalid.
+
+The plot Save button pauses playback before opening the file dialog, freezing
+the frame and its metadata together. It exports the current PNG/SVG frame with snapshot identity,
+method, units, combination, amplification and fraction metadata. The visible
+plot title records the fraction and amplification; its footer identifies the
+analysis. This exports a still frame, not a movie. Playback and export do not
+edit model definitions or numerical results.
+
+[![Native static deformation animation with fixed reference and amplified displacement field](docs/assets/screenshots/static-deformation-animation.png)](docs/assets/screenshots/static-deformation-animation.png)
+
 ### Combination Envelopes
 
 **Compare Combinations** in the 2D and 3D diagram windows overlays two solved

@@ -5,6 +5,7 @@
 description = "Native appearance, presentation, window controls and editor interaction; no structural benchmark suites."
 tests = [
   "test_qt_annotations",
+  "test_qt_animation.AnimationTests",
   "test_qt_nonlinear.AnalysisMethodUITests",
   "test_qt_deformation",
   "test_qt_diagrams",
@@ -106,6 +107,7 @@ tests = [
   "test_qt_coupled_surfaces",
   "test_qt_mesh_workspace",
   "test_qt_plate_workspace",
+  "test_qt_animation.SurfaceAnimationTests",
   "test_official_plate.OfficialPlateTests",
   "test_qt_spatial_surfaces",
   "test_qt_surface_placement",

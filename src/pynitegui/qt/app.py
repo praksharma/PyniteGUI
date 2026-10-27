@@ -595,6 +595,7 @@ class MainWindow(QMainWindow):
                 "zoom-fit-best": QStyle.StandardPixmap.SP_TitleBarMaxButton,
                 "media-playback-start": QStyle.StandardPixmap.SP_MediaPlay,
                 "media-playback-stop": QStyle.StandardPixmap.SP_MediaStop,
+                "media-seek-forward": QStyle.StandardPixmap.SP_MediaSeekForward,
             }
             action.setProperty("standard_pixmap", fallback[icon].value)
             action.setIcon(self.standard_icon(fallback[icon]))
@@ -771,6 +772,11 @@ class MainWindow(QMainWindow):
         self.diagrams_action = icon_action(self.action("Diagrams...", self.diagrams), "diagram", "Open solved force diagrams and Member Detail")
         self.diagrams_action.setEnabled(False)
         group("Results").addAction(self.diagrams_action)
+        self.animation_action = self.action("Animate Static Deformation…", self.animate_deformation, icon="media-seek-forward")
+        self.animation_action.setToolTip("Animate a retained static displacement field (display only; no dynamics)")
+        self.animation_action.setEnabled(False)
+        group("Results").addAction(self.animation_action)
+        self.tools_menu.addAction(self.animation_action)
         self.addToolBarBreak()
         deformation_toolbar = self.addToolBar("Deformation")
         deformation_toolbar.setObjectName("toolbar_deformation")
@@ -976,6 +982,7 @@ class MainWindow(QMainWindow):
         self.results_dock.setWindowTitle("Results - Outdated")
         self.deformed_action.setEnabled(False)
         self.diagrams_action.setEnabled(False)
+        self.animation_action.setEnabled(False)
         self.deformed_action.setChecked(False)
         self.refresh()
         state = "Results require analysis"
@@ -1026,6 +1033,9 @@ class MainWindow(QMainWindow):
         for dialog in self.findChildren(SpatialDiagramDialog):
             dialog.set_unit_system(self.project.unit_system)
             dialog.update_snapshot_status()
+        from .deformation_animation import StaticDeformationDialog
+        for dialog in self.findChildren(StaticDeformationDialog):
+            dialog.set_unit_system(self.project.unit_system)
         self.tree.blockSignals(True)
         self.tree.clear()
         collections = [("nodes", "Nodes"), ("members", "Members"), ("loads", "Loads")]
@@ -1934,6 +1944,7 @@ class MainWindow(QMainWindow):
         self.results_dock.show()
         self.deformed_action.setEnabled(True)
         self.diagrams_action.setEnabled(True)
+        self.animation_action.setEnabled(True)
         from .diagrams import DiagramDialog
         for dialog in self.findChildren(DiagramDialog):
             dialog.update_snapshot_status()
@@ -1962,6 +1973,14 @@ class MainWindow(QMainWindow):
                 if dialog.tabs.tabText(index) == "Member Detail":
                     dialog.tabs.setCurrentIndex(index)
                     break
+
+    def animate_deformation(self):
+        if self.result is None or self.mcp_mode:
+            return
+        from .deformation_animation import StaticDeformationDialog
+        dialog = StaticDeformationDialog(self, self.project, self.result)
+        dialog.show()
+        return dialog
 
     def diagrams(self):
         if self.result is None:

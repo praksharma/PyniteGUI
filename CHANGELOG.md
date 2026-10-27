@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Native static deformation playback for retained 2D/3D member curves and solved
+  surface wireframes. Cache paths per combination, update existing artists,
+  preserve a dashed reference and fixed limits, and provide pause/reset/fraction,
+  display-only timing and amplification controls. Stop hidden/MCP-mode playback
+  and export still frames with snapshot/fraction/amplification metadata.
+
 - Dimensioned section chooser sketches for all 15 offline AISC shapes, with
   strong/weak-axis orientation, actual published depth/width/thickness, separate
   HSS nominal/design walls, unit conversion and theme-aware empty states. Keep

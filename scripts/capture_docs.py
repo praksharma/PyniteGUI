@@ -114,6 +114,14 @@ def capture(output):
             save(drift, "storey-drift.png")
             drift.close()
 
+            from pynitegui.qt.deformation_animation import StaticDeformationDialog
+            animation = StaticDeformationDialog(window, drift_project, drift_result)
+            animation.fraction.setValue(1.)
+            animation.show()
+            animation.canvas.draw()
+            save(animation, "static-deformation-animation.png")
+            animation.close()
+
             window.help_menu.popup(window.mapToGlobal(window.rect().center()))
             save(window.help_menu, "help-menu.png")
             window.help_menu.close()
