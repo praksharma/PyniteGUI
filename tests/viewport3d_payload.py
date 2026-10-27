@@ -36,6 +36,16 @@ if __name__ == "__main__":
         diagram = viewport_payload(window)
         diagram.update(plane="XY", offset=0, labels=True, localAxes=True, deformed=False)
         payload["qaDiagrams"][kind] = diagram
+    window.view.diagram.setCurrentIndex(window.view.diagram.findData("moment_z"))
+    window.canvas_results.style.setCurrentIndex(1)
+    window.select(("members", "M1"))
+    member = window.project.members["M1"]
+    point = [(a+b)/2 for a,b in zip(window.project.nodes[member.start].coords, window.project.nodes[member.end].coords)]
+    window.canvas_results.inspect_at("M1", point)
+    payload["qaColour"] = viewport_payload(window)
+    payload["qaColour"].update(plane="XY", offset=0, labels=True, localAxes=False)
+    window.canvas_results.style.setCurrentIndex(0)
+    window.select(None)
     # Unsolved mixed supports exercise rendering independently of solver stability.
     window.result = None
     window.view.diagram.setCurrentIndex(0)

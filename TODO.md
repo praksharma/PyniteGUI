@@ -5,8 +5,8 @@ sections, custom global support restraints, global/member-local angled forces, d
 and named load cases/combinations. This list tracks remaining work;
 items are not promises of a particular release date.
 
-See the [focused UI/modelling backlog](TODO_SECONDARY.md) for the seven retained
-interface/editing tasks. This file owns engineering work, completed records and
+See the [focused UI/modelling backlog](TODO_SECONDARY.md) for five remaining
+interface/editing tasks and the two completed canvas-result improvements. This file owns engineering work, completed records and
 release gates. Scope was pruned 2026-10-27: duplicate umbrella/release/solver ticks
 and unrequested speculative extras were removed, without dropping validation
 requirements or the official-example dependency audit.
@@ -350,6 +350,12 @@ Remaining 13 scripts are intentionally unchecked:
   solved surface wireframes: cached geometry, fixed undeformed reference,
   display-only loop timing, play/pause/reset/fraction controls, amplification,
   combination/unit/theme changes and provenance PNG/SVG frame export.
+- [x] Add main-canvas 2D/3D model/deformation/member-force views in the resizable
+  Results dock, with synchronized combination/scale controls, exact station/side
+  probes, canvas click inspection and preserved retained Member Detail snapshots.
+- [x] Add signed member colour maps with shared symmetric scales across solved
+  combinations, numerical unit/sign legends, dashed negative/solid positive/
+  dotted zero strokes, theme support and bounded 3D instanced rendering.
 - [x] Add axial-force diagrams for the whole structure and Member Detail.
 - [x] Add explicit node-pair storey drift in retained 2D/3D result windows:
   global Y heights, X/Z translation differences, signed ratios, governing

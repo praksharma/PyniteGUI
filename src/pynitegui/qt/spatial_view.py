@@ -19,6 +19,7 @@ from .theme import colors
 
 def viewport_payload(window):
     project, result = window.project, window.result
+    window.canvas_results.sync()
     units = project.units
     def support_details(node):
         rows = []
@@ -98,6 +99,15 @@ def viewport_payload(window):
         diagram["endValues"] = window.view.diagram_values.isChecked()
         diagram["extrema"] = window.view.diagram_extrema.isChecked()
         diagram["ids"] = window.view.diagram_ids.isChecked()
+        if window.canvas_results.style.currentData() == "colour":
+            from .canvas_results import signed_palette
+            diagram["style"] = "colour"
+            diagram["colourBound"] = window.canvas_results.colour_bound()
+            diagram["signedColors"] = list(signed_palette())
+        index = QUANTITIES.index(kind)
+        window.canvas_results.set_legend(
+            min(float(v[:, index].min()) for v in samples), max(float(v[:, index].max()) for v in samples),
+            diagram["unit"], diagram["label"])
     from .spatial_surfaces import surface_payloads
     return {"nodes": nodes, "members": members,
             "surfaceMeshes": surface_payloads(project, result, window.load_filter.currentData() if window.view.show_loads.isChecked() else False) if window.surface_visibility_action.isChecked() else [],
@@ -106,6 +116,7 @@ def viewport_payload(window):
             "diagram": diagram,
             "selection": [list(s) for s in window.selections], "mode": window.mode,
             "deformed": visible, "factor": factor,
+            "probe": window.canvas_results.probe,
             "supports": window.view.show_supports.isChecked(),
             "ids": window.view.diagram_ids.isChecked(),
             "unit": project.units.length, "displayFactor": project.units.to_display(1, "length")}
@@ -152,6 +163,21 @@ class Bridge(QObject):
                                else [*window.selections, selection])
         else:
             window.select(selection)
+
+    @Slot(str, str)
+    def inspect(self, name, data):
+        window = self.view.window
+        if window.view is not self.view or window.mcp_mode or window.mode != "select":
+            return
+        try:
+            request = json.loads(data)
+            point = request["position"]
+            if type(request["revision"]) is not int or request["revision"] != window.revision or len(point) != 3 or any(
+                    isinstance(v, bool) or not isinstance(v, (int, float)) or not math.isfinite(v) for v in point):
+                return
+        except (ValueError, TypeError, KeyError):
+            return
+        window.canvas_results.inspect_at(name, point)
 
     @Slot(str, bool)
     def select_many(self, data, extend):

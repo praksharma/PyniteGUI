@@ -13,14 +13,19 @@ basis for engineering features.
 
 ## Result Reading
 
-- [ ] **In-canvas results.** Switch the main model view between model,
+- [x] **In-canvas results.** Switch the main model view between model,
   deformation, axial, shear and moment without opening another window. Reuse
   the results dock for combination, scale and station inspection. Preserve
-  retained Member Detail windows and their snapshot identity.
-- [ ] **Signed result colour maps.** Offer a colour-map alternative to offset
+  retained Member Detail windows and their snapshot identity. Completed in the
+  resizable Results dock for 2D/3D, with synchronized existing 3D controls,
+  exact left/right probes, click-to-station inspection and current analysis status.
+- [x] **Signed result colour maps.** Offer a colour-map alternative to offset
   diagrams using existing member samples. Include numerical units, a legend,
   zero/sign distinction and consistent comparison scales; colour alone must
-  not communicate sign.
+  not communicate sign. Completed for member forces/moments using a symmetric
+  scale shared across all combinations in the same snapshot, numerical legends,
+  negative dashed/positive solid/zero dotted strokes and theme-aware colours.
+  Surface stress maps remain outside this member-result task.
 - [ ] **Scoped result queries.** Filter by member ID, current selection or all
   members (and named groups once available), then minimum, maximum, absolute
   extreme or a unit-aware threshold. Include interior extrema/discontinuities,

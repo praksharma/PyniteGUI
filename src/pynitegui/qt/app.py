@@ -258,6 +258,8 @@ class StructureView(QGraphicsView):
             hit = self.hit(point)
             additive = bool(event.modifiers() & (Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.ShiftModifier))
             if hit:
+                if hit[0] == "members" and not additive and self.window.result is not None:
+                    self.window.canvas_results.inspect_at(hit[1], (point.x(), -point.y()), redraw=False)
                 if additive:
                     selections = list(self.window.selections)
                     if hit in selections:
@@ -494,6 +496,8 @@ class StructureView(QGraphicsView):
                     if previous is not None:
                         scene.addLine(previous.x(), previous.y(), point.x(), point.y(), pen)
                     previous = point
+        if hasattr(self.window, "canvas_results"):
+            self.window.canvas_results.draw_planar(self)
 
 
 class MainWindow(QMainWindow):
@@ -900,6 +904,9 @@ class MainWindow(QMainWindow):
         self.result_combination.setEnabled(False)
         self.result_combination.currentTextChanged.connect(self.select_result_combination)
         results_layout.addWidget(self.result_combination)
+        from .canvas_results import CanvasResults
+        self.canvas_results = CanvasResults(self)
+        results_layout.addWidget(self.canvas_results)
         results_layout.addWidget(self.results_panel)
         self.results_dock = self.dock("Results", results_panel, Qt.DockWidgetArea.BottomDockWidgetArea)
         self.results_dock.hide()

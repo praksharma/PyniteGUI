@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Main-canvas 2D/3D result controls and exact member station/side inspection in
+  the Results dock, synchronized with existing spatial controls and preserving
+  draft Properties and retained result windows. Add signed member colour maps
+  with shared combination scales, numerical legends, non-colour sign patterns,
+  guarded click probes and bounded instanced 3D strokes. Surface stress contours
+  and printable map reports remain outside this member-display change.
+
 - Prune the roadmap to seven focused UI/modelling tasks. Remove unrequested
   what-if/spreadsheet/template/tapered/matrix-inspector extras, vague catalog/CAD
   expansion and optional MCP screenshots. Consolidate solver/support and platform

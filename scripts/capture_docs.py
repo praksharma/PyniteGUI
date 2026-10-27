@@ -191,6 +191,22 @@ def capture(output):
             app.processEvents()
             window.view.fit()
             save(window, "results-workspace.png")
+
+            canvas_project = example_project("simple_beam")
+            canvas_project.set_combination("Double", {"Case 1": 2.})
+            window.load_project(canvas_project)
+            with redirect_stdout(StringIO()):
+                result = analyze(window.project)
+            window.analysis_revision = window.revision
+            window.analysis_finished(result, "")
+            window.canvas_results.mode.setCurrentIndex(window.canvas_results.mode.findData("shear"))
+            window.canvas_results.style.setCurrentIndex(1)
+            window.canvas_results.member.setCurrentIndex(window.canvas_results.member.findData("M1"))
+            window.canvas_results.distance.setValue(210.)
+            window.resizeDocks([window.results_dock], [340], Qt.Orientation.Vertical)
+            app.processEvents()
+            window.view.fit()
+            save(window, "canvas-colour-results.png")
         finally:
             # Do not show a save prompt or retain example recovery data.
             window.saved = window.project.to_dict()

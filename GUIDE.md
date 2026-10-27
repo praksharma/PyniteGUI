@@ -1581,6 +1581,55 @@ ID/end-value/sampled-extrema choices. The 3D view retains its context Labels mas
 *End values is off here; Sampled extrema remains on, so an endpoint that is also
 a plotted extremum can still have a numerical label.*
 
+**Main-canvas member results**
+
+After analysis, the resizable **Results** dock provides a compact **Canvas**
+selector: Model, Deformation, Axial N, Shear Fy and Moment Mz in 2D; spatial
+frames offer N, Vy, Vz, T, My and Mz. Use the existing combination selector above
+it. These controls change the main view without opening a diagram window or
+rebuilding unapplied Properties inputs. Separate Member Detail/diagram windows
+retain their own analyzed snapshot and selections. Model hides force overlays;
+Deformation uses the existing amplification/shape toolbar. The legacy Deformed
+control can still add a deformed reference beside a force overlay.
+
+**Offset diagrams** use local solver signs and the indicated positive local
+axis for placement, with one automatic geometric scale across members; Diagram
+scale multiplies that display amplitude. N is positive in compression. This
+local-axis convention is independent of Whole Structure's canonical placement
+and optional sign reversal in the separate 2D diagram window.
+
+**Signed colour map** colours the undeformed member spans instead of offsetting
+them. Negative values are blue/dashed, positive values orange/solid and zero
+values grey/dotted. The numerical legend shows units, the current sampled range
+and a symmetric negative/zero/positive colour scale. That scale uses the largest
+absolute member sample over **all analyzed combinations in the same snapshot**;
+changing combination therefore preserves colour meaning. Diagram amplitude is
+disabled for colour maps. Sign crossings split at zero and coincident one-sided
+samples at load jumps do not create a false connecting span. The range describes
+samples, not a replacement for solver-extrema tables. Unit/theme changes retain
+the selection and canonical scale. These are member-force/moment maps, not slab
+stress contours. The existing 3D PNG export includes the rendered map/legend;
+printed reports retain their existing diagram options.
+
+Select a member or click its undeformed reference geometry to inspect it. The
+**From start** field sets a precise distance along that member; **Left side** and
+**Right side** choose the one-sided solver value at load/segment boundaries.
+The dock lists signed local force/moment/displacement values with units, and a
+probe marks the undeformed station in 2D/3D. Spatial clicks project the picked
+reference point onto the member axis. Additive selection preserves the current
+probe; the member selector can choose a different inspected member. Probe
+stations remain at the same physical distance through combination/unit changes.
+
+The existing analysis-status label identifies current, outdated and retained
+results. Engineering edits invalidate the main-canvas results and probe as
+usual; no stale field is presented as current. Canvas controls never analyze,
+change model definitions or replace the numerical result snapshot. Surface-only
+stress inspection remains a separate engineering milestone.
+
+[![Main-canvas signed shear map and exact member station inspection in the Results dock](docs/assets/screenshots/canvas-colour-results.png)](docs/assets/screenshots/canvas-colour-results.png)
+
+[![Spatial member colour map with shared numerical scale and station probe](docs/assets/screenshots/spatial-colour-results.png)](docs/assets/screenshots/spatial-colour-results.png)
+
 **Static deformation animation**
 
 After solving, choose **Tools > Animate Static Deformation…** or the animation

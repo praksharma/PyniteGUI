@@ -5,6 +5,7 @@
 description = "Native appearance, presentation, window controls and editor interaction; no structural benchmark suites."
 tests = [
   "test_qt_annotations",
+  "test_qt_canvas_results",
   "test_qt_animation.AnimationTests",
   "test_qt_nonlinear.AnalysisMethodUITests",
   "test_qt_deformation",

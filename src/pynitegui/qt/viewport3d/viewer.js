@@ -154,8 +154,13 @@ function update(payload,dragPreview=false) {
     const a=vector(nodes.get(member.start).position),b=vector(nodes.get(member.end).position);
     if(data.ids!==false)label(member.name+(member.kind==='truss'?' [truss]':''),a.clone().lerp(b,.5).add(new THREE.Vector3(0,span*.023,0)),c.label);
     if(data.deformed&&member.points)line(member.points.map((p,i)=>vector(p).addScaledVector(vector(member.displacements[i]),data.factor)),c.load);
-    drawDiagram(member,data.diagram,group,line,label,c);
+    drawDiagram(member,data.diagram,group,line,label,c,r*1.05);
     if(data.localAxes&&selected('members',member.name))member.axes.forEach((axis,i)=>{const origin=a.clone().lerp(b,.5);group.add(new THREE.ArrowHelper(vector(axis),origin,span*.12,axisColors[i],span*.02,span*.01));label(['x','y','z'][i],origin.addScaledVector(vector(axis),span*.14),c.label);});
+  }
+  if(data.probe){
+    const position=vector(data.probe.position),marker=new THREE.Mesh(new THREE.SphereGeometry(span*.007,10,8),new THREE.MeshBasicMaterial({color:c.accent,depthTest:false}));
+    marker.position.copy(position);marker.renderOrder=6;group.add(marker);
+    label(data.probe.label,position.clone().add(new THREE.Vector3(0,span*.025,0)),c.accent,undefined,true);
   }
   for(const node of data.nodes) {
     const p=vector(node.position);if(data.ids!==false)label(node.name,p.clone().add(new THREE.Vector3(span*.02,span*.025,0)),c.label);
@@ -228,7 +233,9 @@ function workPoint(event) {
 let down=null;
 function selectAt(event){
   ray(event);const hit=raycaster.intersectObjects(picks)[0],identity=hitIdentity(hit)||['',''];
-  window.pyniteBridge?.select(...identity,event.ctrlKey||event.metaKey||event.shiftKey);window.dispatchEvent(new CustomEvent('modelSelected',{detail:identity}));
+  window.pyniteBridge?.select(...identity,event.ctrlKey||event.metaKey||event.shiftKey);
+  if(identity[0]==='members' && !(event.ctrlKey||event.metaKey||event.shiftKey))window.pyniteBridge?.inspect?.(identity[1],JSON.stringify({position:hit.point.toArray(),revision:data.revision}));
+  window.dispatchEvent(new CustomEvent('modelSelected',{detail:identity}));
 }
 renderer.domElement.addEventListener('nodeDragClicked',event=>{
   const identity=['nodes',event.detail];window.pyniteBridge?.select(...identity,false);
