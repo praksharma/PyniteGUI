@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Fix README image and repository-document URLs for PyPI's standalone description
+  rendering; document the now-available PyPI installs with uv and pip.
+
 - Add Prakhar Sharma's name and ORCID to citation metadata, with a separate
   acknowledgement of substantial OpenAI Codex assistance in development.
 

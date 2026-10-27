@@ -20,6 +20,10 @@ uv run --locked python -B scripts/check_dist.py dist/pynitegui-1.0.0rc2-py3-none
 The distribution checker audits versions, metadata, bundled runtime assets,
 licenses and source contents and writes `dist/SHA256SUMS` for these two artifacts.
 The wheel must contain the offline viewport/vendor assets and both libraries.
+The README is also the PyPI long description: use absolute HTTPS image and
+document URLs and check them in the built metadata, not just GitHub's renderer.
+Updating the repository README does not update an already uploaded PyPI
+description; publish a new version for such changes rather than replacing files.
 The source archive also includes the lockfile, guide, release documents, tests,
 scripts and README screenshots. Do not attach old-version artifacts.
 

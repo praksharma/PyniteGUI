@@ -1,16 +1,16 @@
 # PyniteGUI
 
-<img src="assets/PyniteGUI%20Structural%20Frame%20Logo.png" alt="PyniteGUI structural frame logo" width="420">
+<img src="https://raw.githubusercontent.com/praksharma/PyniteGUI/master/assets/PyniteGUI%20Structural%20Frame%20Logo.png" alt="PyniteGUI structural frame logo" width="420">
 
 A desktop application for modeling and analyzing **2D/3D frames and axial-only
 trusses**, built with Qt and the PyNite solver.
 
 [Documentation](https://praksharma.github.io/PyniteGUI/) ·
 [Releases](https://github.com/praksharma/PyniteGUI/releases) ·
-[Examples](GUIDE.md#examples-and-appearance) ·
+[Examples](https://github.com/praksharma/PyniteGUI/blob/master/GUIDE.md#examples-and-appearance) ·
 [Report an issue](https://github.com/praksharma/PyniteGUI/issues)
 
-**Current release candidate: 1.0.0rc2.** See [validation and platform status](RELEASE.md)
+**Current release candidate: 1.0.0rc2.** See [validation and platform status](https://github.com/praksharma/PyniteGUI/blob/master/RELEASE.md)
 for the tested configurations and remaining checks before stable 1.0.
 
 ## What You Can Do
@@ -29,24 +29,26 @@ for the tested configurations and remaining checks before stable 1.0.
 Surface meshing, rectangular plate analysis and coupled rectangular Quad slabs
 are **experimental**. P-Delta keeps materials elastic and has model restrictions;
 plastic, modal and reinforced-concrete nonlinear workflows are not implemented.
-Read the [engineering scope](GUIDE.md#engineering-scope) before relying on results.
+Read the [engineering scope](https://github.com/praksharma/PyniteGUI/blob/master/GUIDE.md#engineering-scope) before relying on results.
 
 ## Install and Run
 
 Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) and Python
 3.12+. uv can manage Python and the application's isolated environment.
 
-**From a release wheel:** download the wheel from [Releases](https://github.com/praksharma/PyniteGUI/releases),
-then install it from the download directory. For RC2:
+**From [PyPI](https://pypi.org/project/pynitegui/):** install the release candidate in
+an isolated tool environment:
 
 ```sh
-uv tool install --python 3.12 ./pynitegui-1.0.0rc2-py3-none-any.whl
+uv tool install --python 3.12 "pynitegui==1.0.0rc2"
 pynitegui
 ```
 
 If the command is not found, run `uv tool update-shell` and reopen your terminal.
-The wheel is a Python package, not a standalone desktop installer. PyPI
-publication is planned; the commands above install a downloaded file.
+With pip, use `python -m pip install "pynitegui==1.0.0rc2"` inside a Python
+3.12+ virtual environment, then run `pynitegui`. The explicit version selects the
+prerelease. Release wheels are also available on GitHub; standalone desktop
+installers are not provided.
 
 **From this repository:**
 
@@ -61,23 +63,23 @@ Open **File > Examples** to browse ready-to-analyze models, or choose
 `pynitegui --software-rendering` (or `uv run pynitegui --software-rendering`).
 
 **Optional MCP:** use `uv run --extra mcp pynitegui` from the checkout, or install
-`"./pynitegui-1.0.0rc2-py3-none-any.whl[mcp]"` with `uv tool install --python 3.12`.
+`"pynitegui[mcp]==1.0.0rc2"` with `uv tool install --python 3.12`.
 Configure permissions, exclusive MCP mode and authentication in
-**Tools > Automation Server**. See the [MCP guide](GUIDE.md#optional-mcp-automation).
+**Tools > Automation Server**. See the [MCP guide](https://github.com/praksharma/PyniteGUI/blob/master/GUIDE.md#optional-mcp-automation).
 
 ## Screenshots
 
 Main-canvas results with a signed shear map, exact station inspection and linked tables.
 
-![Native results workspace showing a signed shear map and exact member values](docs/assets/screenshots/canvas-colour-results.png)
+![Native results workspace showing a signed shear map and exact member values](https://raw.githubusercontent.com/praksharma/PyniteGUI/master/docs/assets/screenshots/canvas-colour-results.png)
 
 Spatial moment results with signed colours, units and member inspection.
 
-![3D frame moment results in the offline viewport](docs/assets/screenshots/spatial-colour-results.png)
+![3D frame moment results in the offline viewport](https://raw.githubusercontent.com/praksharma/PyniteGUI/master/docs/assets/screenshots/spatial-colour-results.png)
 
 ## Project Links
 
-- [User and developer guide](GUIDE.md): workflows, limits, testing and documentation preview.
-- [Changelog](CHANGELOG.md), [release checks](RELEASE.md) and [roadmap](TODO.md).
-- [Citation and AI-use acknowledgement](CITATION.md): author/ORCID, development tools and release/commit citation.
-- [License](LICENSE): GNU AGPL v3. PyNite is a separate upstream solver.
+- [User and developer guide](https://github.com/praksharma/PyniteGUI/blob/master/GUIDE.md): workflows, limits, testing and documentation preview.
+- [Changelog](https://github.com/praksharma/PyniteGUI/blob/master/CHANGELOG.md), [release checks](https://github.com/praksharma/PyniteGUI/blob/master/RELEASE.md) and [roadmap](https://github.com/praksharma/PyniteGUI/blob/master/TODO.md).
+- [Citation and AI-use acknowledgement](https://github.com/praksharma/PyniteGUI/blob/master/CITATION.md): author/ORCID, development tools and release/commit citation.
+- [License](https://github.com/praksharma/PyniteGUI/blob/master/LICENSE): GNU AGPL v3. PyNite is a separate upstream solver.

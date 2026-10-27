@@ -442,6 +442,9 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
   base/MCP and uv-tool installation checks, installed-asset viewport QA, hashes
   and PyPI/uv publishing guidance. Refresh the README with current screenshots,
   installation and scope. Keep visible-platform gates below open.
+- [x] Fix README screenshots/logo and repository-document links for PyPI using
+  absolute HTTPS URLs; add uv/pip registry installation commands and record the
+  need to check built long-description metadata before future uploads.
 - [x] Add a manual GitHub Actions PyPI Trusted Publishing workflow that verifies
   published release assets/hashes against the source tag, then uploads the same
   files through a separate pypi environment job. Owner setup and dispatch remain
