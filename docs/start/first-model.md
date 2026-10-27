@@ -118,6 +118,12 @@ use the signed-axis gizmo, and inspect the load cases and combinations.
 The [3D workflow](../modeling/3d.md) explains work planes, XYZ nodes, member roll,
 six-direction supports, spatial loads and result components.
 
+After analysis, choose a **Result** component in the 3D viewport. Use
+**Node/member IDs**, **End values** and **Sampled extrema** to reduce labels;
+the combination/unit/local-axis legend stays visible. Supports and Loads have
+separate controls. Print Results offers corresponding label checkboxes for
+its orthographic projections, without changing the viewport or result tables.
+
 To add a rectangular surface in a source checkout, open **Tools > Surface Meshing**.
 The rectangle defaults to the highest detected complete frame level. Check the
 reference frame in the preview and choose **Apply to 3D Model**.

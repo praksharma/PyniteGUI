@@ -6,6 +6,17 @@ export function diagramPoints(member, diagram) {
   return member.points.map((point,i)=>new THREE.Vector3(...point).addScaledVector(direction,member.diagramValues[i]*diagram.factor));
 }
 
+export function diagramLabelIndices(values, diagram) {
+  const indices=new Set();
+  if(diagram.endValues??Boolean(diagram.values)){indices.add(0);indices.add(values.length-1);}
+  if(diagram.extrema??Boolean(diagram.values)){
+    let low=0,high=0;
+    values.forEach((value,i)=>{if(value<values[low])low=i;if(value>values[high])high=i;});
+    indices.add(low);indices.add(high);
+  }
+  return [...indices].sort((a,b)=>a-b);
+}
+
 export function drawDiagram(member, diagram, group, line, label, colors) {
   const points=diagramPoints(member,diagram);
   if(!points.length)return;
@@ -29,14 +40,9 @@ export function drawDiagram(member, diagram, group, line, label, colors) {
   line(points,color);
   line([new THREE.Vector3(...member.points[0]),points[0]],color);
   line([new THREE.Vector3(...member.points.at(-1)),points.at(-1)],color);
-  if(diagram.values){
-    const values=member.diagramValues;
-    let low=0,high=0;
-    values.forEach((value,i)=>{if(value<values[low])low=i;if(value>values[high])high=i;});
-    for(const i of new Set([0,values.length-1,low,high])){
-      const value=values[i]*diagram.displayFactor;
-      label(`${member.name} ${diagram.label} ${value.toPrecision(4)} ${diagram.unit}`,points[i],color,undefined,true);
-    }
+  for(const i of diagramLabelIndices(member.diagramValues,diagram)){
+    const value=member.diagramValues[i]*diagram.displayFactor;
+    label(`${diagram.ids===false?'':member.name+' '}${diagram.label} ${value.toPrecision(4)} ${diagram.unit}`,points[i],color,undefined,true);
   }
 }
 

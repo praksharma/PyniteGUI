@@ -152,13 +152,13 @@ function update(payload,dragPreview=false) {
   }
   for(const member of data.members) {
     const a=vector(nodes.get(member.start).position),b=vector(nodes.get(member.end).position);
-    label(member.name+(member.kind==='truss'?' [truss]':''),a.clone().lerp(b,.5).add(new THREE.Vector3(0,span*.023,0)),c.label);
+    if(data.ids!==false)label(member.name+(member.kind==='truss'?' [truss]':''),a.clone().lerp(b,.5).add(new THREE.Vector3(0,span*.023,0)),c.label);
     if(data.deformed&&member.points)line(member.points.map((p,i)=>vector(p).addScaledVector(vector(member.displacements[i]),data.factor)),c.load);
     drawDiagram(member,data.diagram,group,line,label,c);
     if(data.localAxes&&selected('members',member.name))member.axes.forEach((axis,i)=>{const origin=a.clone().lerp(b,.5);group.add(new THREE.ArrowHelper(vector(axis),origin,span*.12,axisColors[i],span*.02,span*.01));label(['x','y','z'][i],origin.addScaledVector(vector(axis),span*.14),c.label);});
   }
   for(const node of data.nodes) {
-    const p=vector(node.position);label(node.name,p.clone().add(new THREE.Vector3(span*.02,span*.025,0)),c.label);
+    const p=vector(node.position);if(data.ids!==false)label(node.name,p.clone().add(new THREE.Vector3(span*.02,span*.025,0)),c.label);
     if(data.supports!==false)supports.push(...drawSupports(node,span,c,group,picks));
   }
   for(const load of data.loads) {

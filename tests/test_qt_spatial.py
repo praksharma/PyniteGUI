@@ -668,6 +668,40 @@ class SpatialWidgetTests(unittest.TestCase):
         self.assertFalse(payload["diagram"]["values"])
         self.assertEqual(self.window.project.to_dict(), before)
 
+    def test_diagram_readability_is_independent_and_survives_units_and_combinations(self):
+        self.window.project.loads["L1"] = SpatialLoad("L1", "N2", "FY", -2.)
+        self.window.project.set_combination("Double", {"Case 1": 2.})
+        self.result()
+        view = self.window.view
+        view.diagram.setCurrentIndex(view.diagram.findData("moment_z"))
+        original = viewport_payload(self.window)
+        before = self.window.project.to_dict()
+        snapshot = self.window.result.snapshot_id
+        view.diagram_ids.setChecked(False)
+        view.diagram_values.setChecked(False)
+        changed = viewport_payload(self.window)
+        self.assertFalse(changed["ids"])
+        self.assertFalse(changed["diagram"]["ids"])
+        self.assertFalse(changed["diagram"]["endValues"])
+        self.assertTrue(changed["diagram"]["extrema"])
+        self.assertEqual(changed["members"], original["members"])
+        self.assertEqual(changed["loads"], original["loads"])
+        self.assertEqual(changed["diagram"]["factor"], original["diagram"]["factor"])
+        self.assertEqual(self.window.project.to_dict(), before)
+        view.diagram_extrema.setChecked(False)
+        self.window.select_result_combination("Double")
+        self.window.set_units("si")
+        self.window.set_theme("dark")
+        current = viewport_payload(self.window)
+        self.assertEqual(current["diagram"]["unit"], "kN-m")
+        self.assertFalse(current["diagram"]["extrema"])
+        self.assertFalse(current["diagram"]["endValues"])
+        self.assertFalse(current["ids"])
+        self.assertEqual(self.window.result.snapshot_id, snapshot)
+        self.window.edit("Move", lambda p: setattr(p.nodes["N2"], "x", 144.))
+        self.assertFalse(view.diagram_extrema.isEnabled())
+        self.assertFalse(view.diagram_values.isEnabled())
+
     def test_spatial_png_save_and_failure(self):
         with tempfile.TemporaryDirectory() as directory:
             original = Path(directory)/"original.png"

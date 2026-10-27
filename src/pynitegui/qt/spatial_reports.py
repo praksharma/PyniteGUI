@@ -95,15 +95,20 @@ def draw_report(ax, project, result, rows, kind, view, options):
         ax.plot(*curve.T, color=color, linewidth=1.1)
         for station in (0, -1):
             ax.plot(*np.array((baseline[station], curve[station])).T, color=color, linewidth=.7)
-        add_diagram_label(ax, name + (" [truss]" if project.members[name].kind == "truss" else ""),
-                          baseline[len(baseline) // 2], LIGHT["member"], "white", member=True)
-        for station in sorted({0, len(values) - 1, int(values.argmin()), int(values.argmax())}):
-            add_diagram_label(ax, f"{name} {LABELS[index]} {show(values[station] * options.sign, UNITS[index]):.4g}",
+        if options.ids:
+            add_diagram_label(ax, name + (" [truss]" if project.members[name].kind == "truss" else ""),
+                              baseline[len(baseline) // 2], LIGHT["member"], "white", member=True)
+        stations = {0, len(values)-1} if options.end_values else set()
+        if options.extrema:
+            stations.update((int(values.argmin()), int(values.argmax())))
+        for station in sorted(stations):
+            add_diagram_label(ax, f"{name+' ' if options.ids else ''}{LABELS[index]} {show(values[station] * options.sign, UNITS[index]):.4g}",
                               curve[station], color, "white")
     for node in project.nodes.values():
         point = project_points(node.coords)
         ax.plot(*point, marker=".", color=LIGHT["member"], markersize=5, zorder=4)
-        add_diagram_label(ax, node.name, point, LIGHT["label"], "white", member=True)
+        if options.ids:
+            add_diagram_label(ax, node.name, point, LIGHT["label"], "white", member=True)
         if options.supports and (any(node.restraints) or any(node.springs)):
             if any(node.restraints):
                 ax.plot(*point, marker="^", markerfacecolor="white", markeredgecolor=LIGHT["support"], markersize=8, zorder=4)
@@ -112,7 +117,7 @@ def draw_report(ax, project, result, rows, kind, view, options):
             fixed = "/".join(dof for dof, value in zip(DOFS, node.restraints) if value)
             spring = "/".join(dof for dof, value in zip(DOFS, node.springs) if value)
             context = (f"fixed {fixed}" if fixed else "") + (f"; spring {spring}" if spring else "")
-            add_diagram_label(ax, f"{node.name}: {context.lstrip('; ')}", point, LIGHT["support"], "white")
+            add_diagram_label(ax, f"{node.name+': ' if options.ids else ''}{context.lstrip('; ')}", point, LIGHT["support"], "white")
     if options.loads:
         for load in combination_loads(project, result):
             if load.target in project.nodes:

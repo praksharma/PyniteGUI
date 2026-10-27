@@ -31,9 +31,13 @@ class ReportOptions:
     supports: bool = True
     loads: bool = True
     views: tuple[str, ...] = ("isometric",)
+    ids: bool = True
+    end_values: bool = True
+    extrema: bool = True
 
     def validate(self):
-        if any(type(value) is not bool for value in (self.model, self.nodes, self.members, self.supports, self.loads)):
+        if any(type(value) is not bool for value in (self.model, self.nodes, self.members, self.supports, self.loads,
+                                                     self.ids, self.end_values, self.extrema)):
             raise ValueError("Report section choices must be boolean values.")
         if not isinstance(self.diagrams, tuple) or any(key not in ("axial", "shear", "moment", "shear_y", "shear_z", "torque", "moment_y", "moment_z") for key in self.diagrams):
             raise ValueError("Unknown report diagram selection.")
@@ -136,7 +140,21 @@ class ReportOptionsDialog(QDialog):
         self.loads = QCheckBox("Diagram factored loads")
         for key, source in (("supports", "show_supports"), ("loads", "show_loads")):
             widget = getattr(self, key)
-            widget.setChecked(getattr(parent, source).isChecked() if hasattr(parent, source) else True)
+            control = getattr(parent, source, getattr(getattr(parent, "view", None), source, None))
+            widget.setChecked(control.isChecked() if control is not None else True)
+            form.addRow(widget)
+        self.ids = QCheckBox("Diagram node/member IDs")
+        self.end_values = QCheckBox("Diagram end values")
+        self.extrema = QCheckBox("Diagram sampled extrema")
+        for key, source, spatial_source in (("ids", "show_ids", "diagram_ids"),
+                ("end_values", "show_end_values", "diagram_values"), ("extrema", "show_extrema", "diagram_extrema")):
+            control = getattr(parent, source, getattr(getattr(parent, "view", None), spatial_source, None))
+            widget = getattr(self, key)
+            checked = control.isChecked() if control is not None else True
+            view = getattr(parent, "view", None)
+            if key == "ids" and self.spatial and hasattr(view, "labels"):
+                checked = checked and view.labels.isChecked()
+            widget.setChecked(checked)
             form.addRow(widget)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.button(QDialogButtonBox.StandardButton.Ok).setText("Preview")
@@ -155,6 +173,7 @@ class ReportOptionsDialog(QDialog):
                                 side=self.side.currentData(), sign=-1 if self.sign.isChecked() else 1,
                                 amplitude=self.amplitude.value(),
                                 supports=self.supports.isChecked(), loads=self.loads.isChecked(),
+                                ids=self.ids.isChecked(), end_values=self.end_values.isChecked(), extrema=self.extrema.isChecked(),
                                 views=tuple(self.views.item(index).data(Qt.ItemDataRole.UserRole) for index in range(self.views.count())
                                             if self.views.item(index).checkState() == Qt.CheckState.Checked) if self.spatial else ("isometric",),
                                 envelope_combinations=combinations if self.include_envelopes.isChecked() else ())
@@ -246,7 +265,8 @@ def report_images(project, result, options):
         figure = Figure(figsize=(9, 4.8), layout="constrained")
         FigureCanvasAgg(figure)
         draw_structure(figure.add_subplot(111), project, result, quantity, options.amplitude,
-                       options.side, options.sign, palette=LIGHT, supports=options.supports, loads=options.loads)
+                       options.side, options.sign, palette=LIGHT, supports=options.supports, loads=options.loads,
+                       ids=options.ids, end_values=options.end_values, extrema=options.extrema)
         stream = io.BytesIO()
         figure.savefig(stream, format="png", dpi=160)
         images[quantity] = stream.getvalue()
@@ -389,6 +409,9 @@ def report_html(project, result, source="Untitled", options=None, *, image_urls=
                         f'Placement: {side} side | Diagram display signs: {sign} | Amplitude: {options.amplitude:g}%<br>'
                         f'Supports/springs: {"shown" if options.supports else "hidden"} | '
                         f'Factored combination loads: {"shown" if options.loads else "hidden"}<br>'
+                        f'Node/member IDs: {"shown" if options.ids else "hidden"} | '
+                        f'End values: {"shown" if options.end_values else "hidden"} | '
+                        f'Sampled extrema: {"shown" if options.extrema else "hidden"}<br>'
                         'Member tables and CSV keep the local solver signs.</p>'
                         f'<img src="{escape(image_urls[quantity], quote=True)}" width="{width}" height="{height}">')
     return f'''<html><head><style>

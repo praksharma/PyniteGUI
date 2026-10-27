@@ -304,6 +304,10 @@ not change the analysis-method priorities above.
 - [x] Add independent 2D Whole Structure controls for node/member IDs, end-value
   labels and sampled extrema alongside existing load/support visibility. Retain
   numerical data, labels at shared end/extreme locations, themes and unit changes.
+- [x] Add matching 3D overlay and orthographic-report ID/end-value/sampled-extrema
+  choices, retaining rolled local axes, unchanged ribbons/legend/camera and
+  independent load/support visibility. Add boolean-validated print choices for
+  2D/3D, initialize from the visible controls and record them per report page.
 - [x] Add snapshot-aware PNG/SVG plot saving to native 2D whole/member, spatial
   member and envelope plot toolbars. Include visible analysis identity and embedded
   method/combination/units/context, use only the source basename, preserve live

@@ -769,9 +769,15 @@ again. Closing the source window does not close the copy.
   entire undeformed frame for the currently selected result combination. **Scale**
   multiplies automatic diagram height: 1x maps the largest absolute sampled value
   to 15% of the largest model coordinate extent (at least one grid spacing).
-  This is a display scale, not a change to forces or stiffness. **Values** toggles
-  member endpoint and sampled-extrema labels; **Loads** independently hides or
-  shows load arrows. Fit includes diagram extents, and deformed shape can be
+  This is a display scale, not a change to forces or stiffness. **End values**
+  and **Sampled extrema** independently control ordinate labels. An extremum can
+  be at a member end; turn off both to hide all ordinate labels. **Node/member
+  IDs** controls names on the model and ordinate labels. The existing **Labels**
+  switch remains the master for context text (including model IDs, load descriptions
+  and local-axis labels); numerical diagram labels use their own controls.
+  **Loads** and **Supports** independently control their geometry. Hiding IDs
+  does not remove load descriptions or the quantity/unit/sign legend. Fit includes
+  diagram extents, and deformed shape can be
   displayed alongside them. Changing geometry clears stale result overlays.
 - Diagram ordinates follow PyNite's local solver signs, with N positive in
   compression. Positive values offset toward local y for N, Vy, T and Mz, or
@@ -790,6 +796,14 @@ again. Closing the source window does not close the copy.
   Preview offers native printing/save-to-PDF. These are deterministic orthographic
   diagrams from the analyzed snapshot, not captures of the live orbit camera;
   they work without WebGL and always use a light, print-friendly palette.
+  Report options also offer **Diagram node/member IDs**, **Diagram end values**
+  and **Diagram sampled extrema**, alongside supports and factored loads. When
+  printing from the main 3D view, these initialize from the visible choices;
+  changing report checkboxes does not change the viewport. Direct report calls
+  default to all labels on. Each report page records which label groups are shown.
+  These choices affect annotations only; sampled ranges, shared scale, rolled
+  local axes and numerical result tables stay intact.
+
   Diagram amplitude maps the largest absolute sampled ordinate across the whole
   model to the chosen percent of model extent (at least one grid spacing).
   Side/sign controls change only printed geometry and display labels, not solver
@@ -800,6 +814,11 @@ again. Closing the source window does not close the copy.
   viewer or cross away. Projected members and offsets can overlap or be edge-on;
   choose additional views. Dense labels are omitted instead of overlapped; use
   numerical model/results tables for exact definitions and solver extrema.
+
+[![3D moment diagram with IDs and end-value labels hidden while sampled extrema remain visible](docs/assets/screenshots/spatial-diagram-readability.png)](docs/assets/screenshots/spatial-diagram-readability.png)
+
+*The offline viewport retains the local-axis, combination and unit legend when
+labels are reduced. Its curves and force values are unchanged.*
 
 Current spatial scope includes linear elastic frames/trusses and opt-in
 experimental rectangular Quad slabs, plus P-Delta elastic analysis of frame-only
@@ -1460,11 +1479,11 @@ ordinates at member endpoints. Sampled extrema shows the minimum/maximum among
 plotted samples, which can occur at endpoints too. Turn off both numerical
 controls for a curve-only drawing. Coincident labels are deduplicated and dense
 labels still use collision handling. These are display settings: Member Detail,
-tables, CSV, solver results and printed report defaults remain unchanged. Controls
+tables, CSV and solver results remain unchanged. Controls
 survive combination/unit/theme changes. Use result tables for solver extrema;
 sampled labels are not an independent exact-extremum search. Whole-structure 3D
-overlays retain their current separate visibility controls; these new toggles
-apply to the 2D diagram window.
+overlays and orthographic print projections now have matching independent
+ID/end-value/sampled-extrema choices. The 3D view retains its context Labels master.
 
 [![2D diagram window with independent ID, end-value and sampled-extrema controls](docs/assets/screenshots/diagram-controls.png)](docs/assets/screenshots/diagram-controls.png)
 
@@ -1526,6 +1545,11 @@ extension, such as .pdf); these receive the visible stamp, while embedded analys
 metadata is provided for PNG/SVG.
 The offline 3D viewport's separate PNG capture remains a viewport screenshot,
 not this native Matplotlib plot-export workflow.
+
+Print options include independent diagram IDs, end values and sampled extrema
+for both 2D and spatial projections. Native diagram/view choices initialize the
+report checkboxes when available; changes in the report dialog stay local to
+that report. Default programmatic reports still show all three label groups.
 
 - File > Export Results saves node reactions/displacements or member end/extrema
   values as CSV in the selected units and combination. Files include source,
@@ -2127,6 +2151,9 @@ then copy `/tmp/pynite-mesh-qa/multistorey.png` to
 `docs/assets/screenshots/three-storey-slabs.png`. See the mesh viewport QA setup
 above. Capturing images requires the desktop/viewport dependencies; building
 the manual still requires only the docs dependency group.
+The 3D readability screenshot comes from `node tests/viewport3d.spec.cjs`:
+copy `/tmp/pynite-3d-qa/desktop-diagram-readability.png` to
+`docs/assets/screenshots/spatial-diagram-readability.png` after inspecting it.
 
 `.github/workflows/docs.yml` builds/checks pull requests, uploads the generated
 site and deploys only trusted pushes to `master` or manual runs on that branch.

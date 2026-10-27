@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Matching 3D overlay readability controls for node/member IDs, end values and
+  sampled extrema, preserving local rolled axes, ribbons, sampled legends and
+  camera/selection behaviour. Add independent boolean-validated 2D/3D print
+  label choices initialized from the view and recorded per page. Preserve legacy
+  viewport value payloads; add native, projection and real-renderer regressions.
+
 - Independent 2D whole-structure node/member-ID, end-value and sampled-extrema
   visibility, retaining existing load/support controls and numerical results.
   Native plot toolbar PNG/SVG saving adds a visible analysis stamp and embedded

@@ -55,9 +55,12 @@ These are the strongest ideas to adapt to a desktop engineering workflow.
   supports, loads, end values and sampled-extrema labels on Whole Structure.
   Retain collision handling, explicit display-sign/placement controls and local
   Member Detail/probe conventions. Visibility never changes analytical results.
-- [ ] **Spatial readability parity (UI).** Add independent IDs, end-value and
-  extrema controls to whole-structure 3D overlays/projections; preserve local
-  rolled axes, snapshot identity and existing support/load display controls.
+- [x] **Spatial readability parity (UI).** Independent node/member IDs, end-value
+  and sampled-extrema controls in whole-structure 3D overlays and orthographic
+  report projections; preserve local rolled axes, sampled ranges, snapshot
+  identity, existing context Labels master and support/load display controls.
+  Copy visible choices into independent report options; verify actual rendered
+  labels, unchanged ribbons/camera/picking, legacy payloads and bounded resources.
 - [x] **Combination envelopes (UI).** Implemented for 2D/3D solved combinations:
   numerical bounds, sampled member curves, governing combinations, one-sided
   station inspection and snapshot-aware exports/reports. Primary completion

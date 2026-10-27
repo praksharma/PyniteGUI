@@ -83,6 +83,9 @@ def viewport_payload(window):
     diagram = diagram_metadata(project, result, kind, window.view.diagram_scale.value(), samples)
     if diagram:
         diagram["values"] = window.view.diagram_values.isChecked()
+        diagram["endValues"] = window.view.diagram_values.isChecked()
+        diagram["extrema"] = window.view.diagram_extrema.isChecked()
+        diagram["ids"] = window.view.diagram_ids.isChecked()
     from .spatial_surfaces import surface_payloads
     return {"nodes": nodes, "members": members,
             "surfaceMeshes": surface_payloads(project, result, window.load_filter.currentData() if window.view.show_loads.isChecked() else False) if window.surface_visibility_action.isChecked() else [],
@@ -92,6 +95,7 @@ def viewport_payload(window):
             "selection": [list(s) for s in window.selections], "mode": window.mode,
             "deformed": visible, "factor": factor,
             "supports": window.view.show_supports.isChecked(),
+            "ids": window.view.diagram_ids.isChecked(),
             "unit": project.units.length, "displayFactor": project.units.to_display(1, "length")}
 
 
@@ -251,6 +255,7 @@ class SpatialView(QWidget):
         self.orientation.setToolTip("Camera orientation")
         self.labels = QCheckBox("Labels")
         self.labels.setChecked(True)
+        self.labels.setToolTip("Context labels, including names, loads and local axes. Numerical diagram labels have separate controls.")
         self.axes = QCheckBox("Local axes")
         toolbar.addWidget(QLabel("Plane"))
         toolbar.addWidget(self.plane)
@@ -284,9 +289,15 @@ class SpatialView(QWidget):
         self.diagram_scale.setToolTip("Diagram height relative to automatic scaling")
         results.addWidget(QLabel("Scale"))
         results.addWidget(self.diagram_scale)
-        self.diagram_values = QCheckBox("Values")
+        self.diagram_values = QCheckBox("End values")
         self.diagram_values.setChecked(True)
-        results.addWidget(self.diagram_values)
+        self.diagram_values.setToolTip("Diagram ordinates at member ends, independent of sampled-extrema labels.")
+        self.diagram_extrema = QCheckBox("Sampled extrema")
+        self.diagram_extrema.setChecked(True)
+        self.diagram_extrema.setToolTip("Minimum/maximum of the plotted samples; an extremum can also be at an end.")
+        self.diagram_ids = QCheckBox("Node/member IDs")
+        self.diagram_ids.setChecked(True)
+        self.diagram_ids.setToolTip("Node/member names when Labels is enabled; also names on diagram ordinates. Load descriptions follow Loads/Labels.")
         self.show_loads = QCheckBox("Loads")
         self.show_loads.setChecked(True)
         results.addWidget(self.show_loads)
@@ -311,14 +322,23 @@ class SpatialView(QWidget):
         self.export_button.clicked.connect(self.export_image)
         results.addWidget(self.export_button)
         layout.addLayout(results)
+        labels = QHBoxLayout()
+        labels.setContentsMargins(6, 0, 6, 4)
+        for control in (self.diagram_ids, self.diagram_values, self.diagram_extrema):
+            labels.addWidget(control)
+        labels.addStretch()
+        layout.addLayout(labels)
         self.diagram.currentIndexChanged.connect(self.redraw)
         self.diagram_scale.valueChanged.connect(self.redraw)
         self.diagram_values.toggled.connect(self.redraw)
+        self.diagram_extrema.toggled.connect(self.redraw)
+        self.diagram_ids.toggled.connect(self.redraw)
         self.show_loads.toggled.connect(self.redraw)
         self.show_supports.toggled.connect(self.redraw)
         self.diagram.setEnabled(False)
         self.diagram_scale.setEnabled(False)
         self.diagram_values.setEnabled(False)
+        self.diagram_extrema.setEnabled(False)
         self.export_button.setEnabled(False)
         self.web = None
         self.failure_panel = QWidget()
@@ -381,6 +401,7 @@ class SpatialView(QWidget):
         self.diagram.setEnabled(self.window.result is not None)
         self.diagram_scale.setEnabled(payload["diagram"] is not None)
         self.diagram_values.setEnabled(payload["diagram"] is not None)
+        self.diagram_extrema.setEnabled(payload["diagram"] is not None)
         self.export_button.setEnabled(self.ready and self.web is not None)
         self.box_select.setEnabled(self.window.mode == "select")
         self.move_nodes.setEnabled(self.window.mode == "select")

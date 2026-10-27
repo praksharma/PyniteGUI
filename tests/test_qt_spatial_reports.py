@@ -152,6 +152,9 @@ class SpatialReportTests(unittest.TestCase):
         figure.clear()
 
     def test_invalid_views_components_and_dimension_choices(self):
+        for field in ("ids", "end_values", "extrema"):
+            with self.assertRaisesRegex(ValueError, "boolean"):
+                ReportOptions(**{field: 1}).validate()
         for views in ((), ("front", "front"), ("orbit",), ["front"], (None,)):
             with self.assertRaises(ValueError):
                 ReportOptions(diagrams=("axial",), views=views).validate()
@@ -160,6 +163,64 @@ class SpatialReportTests(unittest.TestCase):
         planar = example_project("cantilever")
         with self.assertRaisesRegex(ValueError, "3D project"):
             report_images(planar, solve(planar), ReportOptions(diagrams=("moment_z",)))
+
+    def test_projection_label_choices_leave_geometry_and_sampled_bounds_unchanged(self):
+        from pynitegui.qt.diagram_labels import DiagramLabel
+        rows = samples(self.project, self.result)
+        name, points, values, axes = rows[0]
+        points = np.array([points[0]+(points[-1]-points[0])*t for t in (0., 1/3, 2/3, 1.)])
+        values = np.zeros((4, values.shape[1]))
+        values[:, 5] = [1., -2., 3., 0.]
+        rows = [(name, points, values, axes)]
+        curves = []
+        for ends, extrema, expected in ((True, False, ("Mz 1", "Mz 0")),
+                (False, True, ("Mz -2", "Mz 3")), (False, False, ())):
+            figure = Figure()
+            FigureCanvasAgg(figure)
+            ax = figure.add_subplot()
+            options = ReportOptions(ids=False, end_values=ends, extrema=extrema, supports=False, loads=False)
+            draw_report(ax, self.project, self.result, rows, "moment_z", "front", options)
+            labels = [a.get_text() for a in ax.get_children() if isinstance(a, DiagramLabel)]
+            self.assertEqual(set(labels), set(expected))
+            curves.append(ax.lines[1].get_xydata().copy())
+            self.assertIn("Sampled range", " ".join(text.get_text() for text in ax.texts))
+            figure.clear()
+        for curve in curves[1:]:
+            np.testing.assert_array_equal(curve, curves[0])
+
+    def test_report_choices_inherit_spatial_display_then_remain_independent(self):
+        window = MainWindow()
+        try:
+            window.load_project(self.project)
+            window.result = self.result
+            view = window.view
+            view.diagram.setCurrentIndex(view.diagram.findData("moment_z"))
+            view.diagram_ids.setChecked(False)
+            view.diagram_values.setChecked(False)
+            view.show_loads.setChecked(False)
+            dialog = ReportOptionsDialog(window)
+            self.assertFalse(dialog.ids.isChecked())
+            self.assertFalse(dialog.end_values.isChecked())
+            self.assertTrue(dialog.extrema.isChecked())
+            self.assertFalse(dialog.loads.isChecked())
+            dialog.extrema.setChecked(False)
+            dialog.accept()
+            self.assertFalse(dialog.definition.extrema)
+            self.assertTrue(view.diagram_extrema.isChecked())
+            text = report_html(self.project, self.result, options=dialog.definition)
+            self.assertIn("Node/member IDs: hidden", text)
+            self.assertIn("Sampled extrema: hidden", text)
+            dialog.deleteLater()
+            view.diagram_ids.setChecked(True)
+            view.labels.setChecked(False)
+            context_hidden = ReportOptionsDialog(window)
+            self.assertFalse(context_hidden.ids.isChecked())
+            context_hidden.deleteLater()
+        finally:
+            window.saved = window.project.to_dict()
+            window.close()
+            window.deleteLater()
+            self.app.processEvents()
 
     def test_editor_options_and_cancelled_empty_view_selection(self):
         window = MainWindow()

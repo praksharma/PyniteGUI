@@ -306,6 +306,7 @@ const server = http.createServer((request,response)=>{
       projected.forEach(([x,y])=>assert(x>5&&x<1275&&y>5&&y<715,`${kind} diagram clipped after fit`));
       if(kind==='moment_z')await page.screenshot({path:path.join(output,'desktop-moment-z.png')});
     }
+    await require('./viewport_readability.cjs')(page,payload.qaDiagrams.moment_z,path.join(output,'desktop-diagram-readability.png'));
     const png=await page.evaluate(()=>window.pyniteViewer.exportImage());
     assert(png.startsWith('data:image/png;base64,'),'PNG export failed');
     const pngBytes=Buffer.from(png.split(',')[1],'base64');
