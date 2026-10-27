@@ -207,6 +207,16 @@ def capture(output):
             app.processEvents()
             window.view.fit()
             save(window, "canvas-colour-results.png")
+            from pynitegui.qt.organization import set_group
+            from pynitegui.qt.organization_dialog import OrganizationDialog
+            window.edit("Save example group", lambda p: set_group(p, "Main beam", [("members", "M1")]))
+            window.edit("Save example levels", lambda p: p.levels.update({"Base": 0., "First floor": 144.}))
+            organization = OrganizationDialog(window)
+            organization.groups.setCurrentRow(0)
+            organization.show()
+            save(organization, "groups-levels.png")
+            organization.reject()
+            organization.deleteLater()
         finally:
             # Do not show a save prompt or retain example recovery data.
             window.saved = window.project.to_dict()

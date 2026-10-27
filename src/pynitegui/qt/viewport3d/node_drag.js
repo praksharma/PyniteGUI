@@ -2,13 +2,18 @@ import * as THREE from 'three';
 
 export function planeAxis(plane){return {XY:2,XZ:1,YZ:0}[plane];}
 
-export function snappedMove(ray,plane,start,grab,grid){
+export function snapLevel(value,levels,grid){
+  const nearest=[...(levels||[])].sort((a,b)=>Math.abs(a-value)-Math.abs(b-value)||a-b)[0];
+  return nearest!==undefined && Math.abs(nearest-value)<=grid*.2?nearest:Math.round(value/grid)*grid;
+}
+
+export function snappedMove(ray,plane,start,grab,grid,levels=[]){
   const axis=planeAxis(plane),normal=new THREE.Vector3().setComponent(axis,1);
   if(Math.abs(ray.direction.dot(normal))<1e-6)return null;
   const point=ray.intersectPlane(new THREE.Plane(normal,-start[axis]),new THREE.Vector3());
   if(!point)return null;
   point.sub(grab).add(new THREE.Vector3(...start));
-  for(let i=0;i<3;i++)point.setComponent(i,i===axis?start[i]:Math.round(point.getComponent(i)/grid)*grid);
+  for(let i=0;i<3;i++)point.setComponent(i,i===axis?start[i]:i===1?snapLevel(point.y,levels,grid):Math.round(point.getComponent(i)/grid)*grid);
   return point.toArray();
 }
 
@@ -46,7 +51,7 @@ export function attachNodeDrag(canvas,camera,controls,getData,pickNode,ray,stopM
     if(!drag||event.pointerId!==drag.pointer)return;
     event.stopImmediatePropagation();
     if(Math.hypot(event.clientX-drag.from[0],event.clientY-drag.from[1])<5&&!drag.moved)return;
-    const target=snappedMove(ray(event),drag.plane,drag.start,drag.grab,drag.snapshot.grid);
+    const target=snappedMove(ray(event),drag.plane,drag.start,drag.grab,drag.snapshot.grid,drag.snapshot.levels);
     if(!target)return;
     drag.target=target;drag.moved=true;preview(drag.node,target,drag.snapshot);
   },true);

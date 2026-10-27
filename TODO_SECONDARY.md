@@ -34,10 +34,13 @@ basis for engineering features.
 
 ## Larger-Model Editing
 
-- [ ] **Named groups and levels.** Save node/member selection sets for frames,
+- [x] **Named groups and levels.** Save node/member selection sets for frames,
   storeys or zones; reselect/isolate them and define explicit Y-elevation levels
   with optional snapping. These are editing metadata, not diaphragms or solver
   constraints. Keep references valid after splitting or deleting entities.
+  Completed with native select/isolate/show-all controls, persisted global-Y
+  elevations, optional drawing/drag snapping, 3D XZ-plane placement, unit-aware
+  input, undo/redo and preserved analysis snapshots. New project formats 23/24.
 - [ ] **Previewed transforms.** Repeat, mirror, rotate or move selected geometry
   about explicit points or bay/storey offsets. Preview before applying; provide
   separate load/support-copy choices and resolve collisions explicitly. Preserve

@@ -281,6 +281,8 @@ class CanvasResults(QWidget):
             colour = self.style.currentData() == "colour"
             bound = self.colour_bound() if colour else 0.
             for name, (points, values) in rows.items():
+                if not self.window.entity_visible("members", name):
+                    continue
                 if colour:
                     for a, b, value in signed_spans(points, values):
                         pen = QPen(signed_color(value, bound), 5)
@@ -305,7 +307,7 @@ class CanvasResults(QWidget):
                     item.setToolTip(f"{name}: +local y offset; sampled {self.kind}")
             all_values = np.concatenate([v for _, v in rows.values()]) if rows else np.array([0.])
             self.set_legend(float(all_values.min()), float(all_values.max()), p.units.moment if self.kind == "moment" else p.units.force, dict((key, label) for label, key in PLANAR)[self.kind])
-        if self.probe is not None:
+        if self.probe is not None and self.window.entity_visible("members", self.inspected):
             x, y = self.probe["position"]
             item = view.scene().addEllipse(-5, -5, 10, 10, QPen(QColor(colors()["accent"]), 2), QColor(colors()["canvas"]))
             item.setFlag(item.GraphicsItemFlag.ItemIgnoresTransformations)

@@ -5,8 +5,8 @@ sections, custom global support restraints, global/member-local angled forces, d
 and named load cases/combinations. This list tracks remaining work;
 items are not promises of a particular release date.
 
-See the [focused UI/modelling backlog](TODO_SECONDARY.md) for five remaining
-interface/editing tasks and the two completed canvas-result improvements. This file owns engineering work, completed records and
+See the [focused UI/modelling backlog](TODO_SECONDARY.md) for four remaining
+interface/editing tasks and three completed canvas/organization improvements. This file owns engineering work, completed records and
 release gates. Scope was pruned 2026-10-27: duplicate umbrella/release/solver ticks
 and unrequested speculative extras were removed, without dropping validation
 requirements or the official-example dependency audit.
@@ -256,6 +256,11 @@ Remaining 13 scripts are intentionally unchecked:
   benchmarks before enabling analysis for nonrectangular catalog meshes.
 
 ## Modelling and Editing
+
+- [x] Add named node/member groups and global-Y levels as editing metadata:
+  native capture/rename/delete/select/isolate/show-all, optional level snapping,
+  XZ-plane placement, canonical persistence (23/24), migration, split/delete
+  reference maintenance, undo/redo and retained solver/result identity.
 
 - [x] Add 2D node dragging with snapping and undo/redo.
 - [x] Add tree/canvas multiple selection, geometry box selection, and atomic

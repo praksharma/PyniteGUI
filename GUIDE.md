@@ -1,6 +1,6 @@
 # PyniteGUI Guide
 
-Preparing release candidate **1.0.0rc2** (not yet published): [release notes](CHANGELOG.md) and
+This guide follows the development checkout: [release notes](CHANGELOG.md) and
 [artifact validation/publication checklist](RELEASE.md). Installation from a
 wheel is tested separately from this repository's editable, locked environment.
 `pynitegui --version` reports installed metadata without initializing Qt; the
@@ -1294,6 +1294,42 @@ reactions and tip displacement to check after analysis.
   do. Single-node dragging and single-entity commands still require one target.
   Hiding a load case removes its loads from the selection without clearing
   selected geometry. Opening another project clears the selection.
+**Named groups and levels (development after RC2)**
+
+Open **Edit > Groups and Levels**. On Groups, select nodes/members in the model,
+enter a name, then **Save current selection**. Saving an existing name replaces
+its contents; Rename and Delete are undoable. Groups store explicit node/member
+IDs. Splitting/subdividing a grouped member replaces its membership with all
+segments. Geometry deletion removes obsolete references, leaving an empty group
+available for reuse. Creating a 3D copy preserves groups and levels.
+
+**Select** restores the saved selection. **Isolate** shows its members and nodes,
+including member endpoints as visible context, and hides other geometry/loads
+in the canvas and tree. The window title identifies isolation; use **View > Show
+All Geometry** or the dialog's **Show all** to restore visibility. Entering drawing
+mode also clears isolation so new geometry cannot be created invisibly. Surface
+meshes are hidden during frame-group isolation. Isolation does not remove any
+entities from analysis or from numerical result tables, exports or retained
+result windows. Hidden members connected to a moved joint still move with it.
+
+On Levels, save named **global Y** elevations in the current display units.
+**Select at level** selects coincident nodes and members whose two ends are at
+that elevation, without selecting vertical columns that merely cross it.
+In 3D, **Use as XZ plane** sets the drawing plane/offset to that level.
+Optional **Snap drawing and node drags to named levels** chooses the nearest
+elevation within 20% of grid spacing before grid snapping; ties choose the lower
+level. Existing-node snaps take precedence, and the fixed coordinate of a 3D
+work plane remains fixed. Typed coordinates are explicit and are not snapped.
+Changing a level does not move existing nodes. Snapping is off by default.
+
+Groups, elevations and the snap flag save with the project, survive undo/redo
+and display-unit changes, and preserve a valid analysis snapshot. They are
+editing metadata: they add no diaphragm, rigid-floor assumption, restraint,
+load or solver constraint. MCP reads expose this metadata but do not edit it;
+MCP geometry deletions prune group references atomically.
+
+![Native groups and levels editor](docs/assets/screenshots/groups-levels.png)
+
 ### Model Tables
 
 - Edit > Model Tables opens draft Nodes, Members, and Loads tables. Enter signed
@@ -2132,7 +2168,7 @@ Versions 1 through 4 migrate existing loads into Case 1 with the original
 Service combination. Version 3 point loads and version 4 distributed loads
 remain supported. Versions 1 through 5 migrate to rigid member ends.
 Versions 1 through 6 open in Imperial, preserving their original inch-kip values.
-New 2D saves use version 21 and retain material/section definitions, member
+New 2D saves use version 23 and retain material/section definitions, member
 assignments, load cases, combination factors, the default load case, and each
 member end moment release, plus the selected unit system, point-load angle,
 and custom support restraints. Version 10 adds local force directions and
@@ -2154,8 +2190,8 @@ Malformed files are rejected before replacing the active project. Missing fields
 incorrect collection/entity shapes, unknown entity fields, invalid references,
 boolean/string/nonfinite numerical values, and duplicate JSON keys produce
 readable errors. JSON syntax errors include their line and column. Supported
-planar versions 1 through 15 and 21 are supported; legacy files are migrated without modifying the input; spatial
-versions 16/17/18/19/20/22 require an explicit `dimension: "3D"` marker and are validated separately.
+planar versions 1 through 15, 21 and 23 are supported; legacy files are migrated without modifying the input; spatial
+versions 16/17/18/19/20/22/24 require an explicit `dimension: "3D"` marker and are validated separately.
 Spatial version 17 adds global angular forces with azimuth (`angle`) and
 `elevation`; version 16 axis-based loads migrate without changing their physics.
 Unsupported future versions and angular fields in version 16 are rejected.
@@ -2171,7 +2207,12 @@ Older spatial files migrate with coupled analysis disabled and empty pressures.
 Surface rename/delete and load-case rename/delete preserve or guard these references.
 Planar version 21 and spatial version 22 add required `analysis_method`
 (`linear` or `p_delta`). Earlier files default to linear elastic and cannot silently
-contain a second-order setting. New saves use these versions, including linear models.
+contain a second-order setting.
+Planar version 23 and spatial version 24 add required editing-only `groups`
+(name to `nodes`/`members` ID lists), `levels` (name to canonical inch global-Y
+elevation) and `snap_levels` (boolean). Older files open with empty maps and
+snapping off. Nonempty metadata in older formats is rejected rather than dropped.
+New saves use 23/24; RC2 and older applications do not read these new formats.
 Spatial files retain XYZ, all six restraints/springs, and roll. Unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be
 distinct so load targets are unambiguous.

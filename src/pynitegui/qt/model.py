@@ -210,6 +210,9 @@ class Project:
     self_weight_case: str | None = None
     self_weight_factor: float = 1.0
     analysis_method: str = "linear"
+    groups: dict = field(default_factory=dict)
+    levels: dict = field(default_factory=dict)
+    snap_levels: bool = False
 
     @property
     def units(self):
@@ -381,7 +384,7 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 21, "units": "in-kip", **asdict(self)}
+        return {"version": 23, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
@@ -393,7 +396,7 @@ class Project:
         if "dimension" in data:
             raise ValueError("Unsupported project dimension.")
         version = data.get("version")
-        if type(version) is not int or version not in (*range(1, 16), 21) or data.get("units") != "in-kip":
+        if type(version) is not int or version not in (*range(1, 16), 21, 23) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         required = {"grid", "nodes", "members", "loads"}
         required.update({"E", "nu", "rho"} if version == 1 else {"materials", "default_material"})
@@ -404,11 +407,15 @@ class Project:
             required.add("unit_system")
         if version >= 11:
             required.update({"self_weight_case", "self_weight_factor"})
-        if version == 21:
+        if version >= 21:
             required.add("analysis_method")
         elif data.get("analysis_method", "linear") != "linear":
             raise ValueError("Analysis method settings require project version 21 or spatial version 22.")
         missing = required - data.keys()
+        if version >= 23:
+            missing |= {"groups", "levels", "snap_levels"} - data.keys()
+        elif data.get("groups", {}) or data.get("levels", {}) or data.get("snap_levels", False) is not False:
+            raise ValueError("Groups and levels require planar version 23 or spatial version 24.")
         if missing:
             raise ValueError("Missing project fields: " + ", ".join(sorted(missing)) + ".")
 
@@ -426,6 +433,9 @@ class Project:
             return result
 
         result = cls(grid=data["grid"], analysis_method=data.get("analysis_method", "linear"))
+        from copy import deepcopy
+        for key in ("groups", "levels", "snap_levels"):
+            setattr(result, key, deepcopy(data.get(key, getattr(result, key))))
         if version >= 11:
             result.self_weight_case = data["self_weight_case"]
             result.self_weight_factor = data["self_weight_factor"]
@@ -468,6 +478,8 @@ class Project:
         return self.from_dict(self.to_dict())
 
     def validate(self):
+        from .organization import validate_organization
+        validate_organization(self)
         from .analysis_method import METHODS
         if not isinstance(self.analysis_method, str) or self.analysis_method not in METHODS:
             raise ValueError("Analysis method must be linear or p_delta.")
@@ -684,7 +696,7 @@ class Project:
             if len(segments[name]) != count:
                 raise ValueError(f"Member {name}: could not create all equal segments.")
         candidate.validate()
-        self.nodes, self.members, self.loads = candidate.nodes, candidate.members, candidate.loads
+        self.nodes, self.members, self.loads, self.groups = candidate.nodes, candidate.members, candidate.loads, candidate.groups
         return segments
 
     def _split_member(self, name, fractions):
@@ -757,6 +769,10 @@ class Project:
                 index = next(i for i, right in enumerate(cuts[1:]) if position <= right)
                 load.target = segments[index]
                 load.position = (position - cuts[index]) / (cuts[index + 1] - cuts[index])
+        for group in self.groups.values():
+            if name in group["members"]:
+                group["members"] = list(dict.fromkeys(segment for item in group["members"]
+                                                     for segment in (segments if item == name else [item])))
         return segments
 
     def connect_intersections(self):
@@ -846,6 +862,8 @@ class Project:
         if kind in ("nodes", "members"):
             self.loads = {key: load for key, load in self.loads.items() if load.target != name}
         getattr(self, kind).pop(name, None)
+        from .organization import prune_groups
+        prune_groups(self)
 
     def save(self, path):
         self.validate()

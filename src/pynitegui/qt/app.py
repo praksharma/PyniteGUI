@@ -200,13 +200,15 @@ class StructureView(QGraphicsView):
     def hit(self, point):
         tolerance = 10 / max(abs(self.transform().m11()), 1e-6)
         project = self.window.project
-        nodes = [(math.hypot(n.x - point.x(), -n.y - point.y()), name) for name, n in project.nodes.items()]
+        nodes = [(math.hypot(n.x - point.x(), -n.y - point.y()), name) for name, n in project.nodes.items() if self.window.entity_visible("nodes", name)]
         if nodes:
             distance, name = min(nodes)
             if distance < tolerance:
                 return "nodes", name
         best = (tolerance, None)
         for name, member in project.members.items():
+            if not self.window.entity_visible("members", name):
+                continue
             a, b = project.nodes[member.start], project.nodes[member.end]
             dx, dy = b.x - a.x, b.y - a.y
             t = max(0, min(1, ((point.x() - a.x) * dx + (-point.y() - a.y) * dy) / (dx * dx + dy * dy)))
@@ -221,7 +223,8 @@ class StructureView(QGraphicsView):
             node = self.window.project.nodes[hit[1]]
             return node.x, node.y
         grid = self.window.project.grid
-        return round(point.x() / grid) * grid, round(-point.y() / grid) * grid
+        from .organization import snap_elevation
+        return round(point.x() / grid) * grid, snap_elevation(self.window.project, -point.y())
 
     def cancel(self):
         self.box_origin = None
@@ -296,7 +299,7 @@ class StructureView(QGraphicsView):
             self.drag_items.clear()
             pen = QPen(QColor(colors()["accent"]), 0, Qt.PenStyle.DashLine)
             for member in self.window.project.members.values():
-                if self.drag_node in (member.start, member.end):
+                if self.drag_node in (member.start, member.end) and self.window.entity_visible("members", member.name):
                     other = self.window.project.nodes[member.end if member.start == self.drag_node else member.start]
                     self.drag_items.append(self.scene().addLine(other.x, -other.y, x, -y, pen))
             dot = self.scene().addEllipse(-4, -4, 8, 8, QPen(QColor(colors()["accent"])), QColor(colors()["canvas"]))
@@ -329,10 +332,12 @@ class StructureView(QGraphicsView):
     def in_rectangle(self, area):
         project = self.window.project
         selections = [("nodes", name) for name, node in project.nodes.items()
-                      if area.contains(QPointF(node.x, -node.y))]
+                      if self.window.entity_visible("nodes", name) and area.contains(QPointF(node.x, -node.y))]
         boundary = QPainterPath()
         boundary.addRect(area)
         for name, member in project.members.items():
+            if not self.window.entity_visible("members", name):
+                continue
             a, b = project.nodes[member.start], project.nodes[member.end]
             start, end = QPointF(a.x, -a.y), QPointF(b.x, -b.y)
             segment = QPainterPath(start)
@@ -382,6 +387,8 @@ class StructureView(QGraphicsView):
         scene.clear()
         selected = set(self.window.selections)
         for name, member in project.members.items():
+            if not self.window.entity_visible("members", name):
+                continue
             a, b = project.nodes[member.start], project.nodes[member.end]
             pen = QPen(QColor(c["accent"] if ("members", name) in selected else c["member"]), 3)
             pen.setCosmetic(True)
@@ -404,6 +411,8 @@ class StructureView(QGraphicsView):
                     symbol.setPos(node.x, -node.y)
             self.label(name, (a.x + b.x) / 2, (a.y + b.y) / 2, offset=(4, 8))
         for name, node in project.nodes.items():
+            if not self.window.entity_visible("nodes", name):
+                continue
             color = QColor(c["accent"] if ("nodes", name) in selected else c["member"])
             dot = scene.addEllipse(-4, -4, 8, 8, QPen(QColor(c["base"])), color)
             dot.setFlag(dot.GraphicsItemFlag.ItemIgnoresTransformations)
@@ -475,6 +484,7 @@ class StructureView(QGraphicsView):
         if visible:
             straight = self.window.deformation_shape.currentData() == "straight"
             paths = deformation_paths(project, self.window.result, straight)
+            paths = [path for name, path in zip(project.members, paths) if self.window.entity_visible("members", name)]
             peak = max((math.hypot(ux, uy) for path in paths for _, _, ux, uy in path), default=0)
             mode = self.window.deformation_mode.currentData()
             scale = self.window.deformation_scale.value()
@@ -703,6 +713,7 @@ class MainWindow(QMainWindow):
         edit_menu.addActions([undo, redo])
         edit_menu.addAction(self.action("Delete Selection", self.delete_selected, "Delete", "edit-delete"))
         edit_menu.addAction(self.action("Select All", self.select_all, "Ctrl+A"))
+        edit_menu.addAction(self.action("Groups and Levels...", self.manage_organization))
         self.property_actions = [self.action(text, callback) for text, callback in (
             ("Model Tables...", self.manage_model_tables), ("Materials...", self.manage_materials),
             ("Sections...", self.manage_sections), ("Load Cases and Combinations...", self.manage_load_cases),
@@ -717,6 +728,8 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.action("Connect Member Midpoints...", lambda: self.construct_connection("midpoints")))
         edit_menu.addAction(self.action("Connect Intersections", self.connect_intersections))
         edit_menu.addAction(self.action("Check Model", self.check_model))
+        from .organization import show_all
+        self.show_all_action = self.action("Show All Geometry", lambda: show_all(self))
         tools_menu = self.tools_menu = self.menuBar().addMenu("&Tools")
         tools_menu.addAction(self.action("Surface Meshing (Experimental)...", lambda: self.show_mesh_workspace()))
         tools_menu.addAction(self.action("Rectangular Plate (Experimental)...", self.show_plate_workspace))
@@ -828,6 +841,7 @@ class MainWindow(QMainWindow):
     def build_panels(self):
         self.menuBar_view = QMenu("&View", self)
         self.menuBar().insertMenu(self.tools_menu.menuAction(), self.menuBar_view)
+        self.menuBar_view.addAction(self.show_all_action)
         appearance = self.menuBar_view.addMenu("Appearance")
         self.theme_group = QActionGroup(self)
         self.theme_actions = {}
@@ -934,9 +948,13 @@ class MainWindow(QMainWindow):
 
     def update_title(self):
         dirty = self.project.to_dict() != self.saved
-        self.setWindowTitle(f"{'* ' if dirty else ''}{self.path.name if self.path else 'Untitled'} | PyniteGUI")
+        isolation = f" | Isolated: {self.isolated_group}" if getattr(self, "isolated_group", None) else ""
+        self.setWindowTitle(f"{'* ' if dirty else ''}{self.path.name if self.path else 'Untitled'} | PyniteGUI{isolation}")
 
     def set_mode(self, mode):
+        if mode == "draw" and getattr(self, "isolated_group", None) is not None:
+            from .organization import show_all
+            show_all(self)
         self.view.cancel()
         self.mode = mode
         self.mode_actions[mode].setChecked(True)
@@ -952,6 +970,8 @@ class MainWindow(QMainWindow):
         after = self.project.clone()
         try:
             mutate(after)
+            from .organization import prune_groups
+            prune_groups(after)
             after.validate()
         except Exception as error:
             QMessageBox.warning(self, title, str(error))
@@ -975,14 +995,19 @@ class MainWindow(QMainWindow):
             self.automation_revision += 1
         before.pop("unit_system")
         after.pop("unit_system")
-        units_only = before == after and self.project.unit_system != project.unit_system
+        from .organization import FIELDS
+        for key in FIELDS:
+            before.pop(key, None)
+            after.pop(key, None)
+        presentation_only = before == after and self.project.to_dict() != project.to_dict()
+        units_changed = self.project.unit_system != project.unit_system
         self.project = project.clone()
-        if units_only:
+        if presentation_only:
             self.refresh()
-            if self.result is not None:
+            if self.result is not None and units_changed:
                 self.select_result_combination(self.result.combination)
             else:
-                self.statusBar().showMessage(f"Units updated | {self.project.units.summary}")
+                self.statusBar().showMessage(f"Display/editing metadata updated | {self.project.units.summary}")
             return
         self.revision += 1
         self.model_findings.clear()
@@ -1005,6 +1030,12 @@ class MainWindow(QMainWindow):
         self.live_analysis.schedule()
 
     def refresh(self):
+        from .organization import visible_ids
+        if getattr(self, "isolated_group", None) not in self.project.groups:
+            self.isolated_group = None
+        self.visible_ids = visible_ids(self)
+        self.show_all_action.setEnabled(self.visible_ids is not None)
+        self.show_all_action.setText(f"Show All Geometry (isolated: {self.isolated_group})" if self.visible_ids is not None else "Show All Geometry")
         from .analysis_method import METHODS
         self.analyze_action.setToolTip(f"Analyze (F5) | {METHODS[self.project.analysis_method]}; change in Edit > Analysis Method")
         spatial = getattr(self.project, "dimension", "2D") == "3D"
@@ -1017,7 +1048,7 @@ class MainWindow(QMainWindow):
         self.view = self.spatial_view if spatial else self.planar_view
         self.view_stack.setCurrentWidget(self.view)
         self.selections = [selection for selection in self.selections
-                           if selection[1] in getattr(self.project, selection[0])]
+                           if selection[1] in getattr(self.project, selection[0]) and self.entity_visible(*selection)]
         units = self.project.units
         visible_case = self.load_filter.currentData()
         self.load_filter.blockSignals(True)
@@ -1060,6 +1091,8 @@ class MainWindow(QMainWindow):
                 parent.setToolTip(1, "Surface nodes are independent from frame joints; mixed analysis is not enabled.")
             parent.setFlags(parent.flags() & ~Qt.ItemFlag.ItemIsSelectable)
             for name, entity in getattr(self.project, kind).items():
+                if not self.entity_visible(kind, name):
+                    continue
                 if kind == "loads" and not self.load_visible(entity):
                     continue
                 if kind == "nodes":
@@ -1118,7 +1151,19 @@ class MainWindow(QMainWindow):
 
     def load_visible(self, load):
         case = self.load_filter.currentData()
-        return case is None or (case is not False and load.case == case)
+        kind = "nodes" if load.target in self.project.nodes else "members"
+        return self.entity_visible(kind, load.target) and (case is None or (case is not False and load.case == case))
+
+    def entity_visible(self, kind, name):
+        from .organization import entity_visible
+        return entity_visible(self, kind, name)
+
+    def manage_organization(self):
+        if not self.mcp_mode:
+            from .organization_dialog import OrganizationDialog
+            dialog = OrganizationDialog(self)
+            dialog.exec()
+            dialog.deleteLater()
 
     def filter_loads(self):
         self.selections = [selection for selection in self.selections if selection[0] != "loads"
@@ -1148,6 +1193,7 @@ class MainWindow(QMainWindow):
     def select_many(self, selections, sync_tree=True):
         self.selections = list(dict.fromkeys(tuple(selection) for selection in selections if selection
                                            and selection[1] in getattr(self.project, selection[0])
+                                           and self.entity_visible(*selection)
                                            and (selection[0] != "loads" or self.load_visible(self.project.loads[selection[1]]))))
         if sync_tree:
             selected = set(self.selections)
@@ -1404,6 +1450,9 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(f"Subdivided {len(names)} members into {len(self.selections)} segments | Results require analysis")
 
     def select_finding_entities(self, entities):
+        if any(not self.entity_visible(kind, name) for kind, name in entities):
+            from .organization import show_all
+            show_all(self)
         if any(kind == "loads" for kind, name in entities):
             self.load_filter.setCurrentText("All load cases")
         self.set_mode("select")
@@ -1668,6 +1717,7 @@ class MainWindow(QMainWindow):
         return answer == QMessageBox.StandardButton.Discard
 
     def load_project(self, project, path=None):
+        self.isolated_group = None
         self.project_session = uuid.uuid4().hex
         self.automation_revision = 0
         self.selected = None

@@ -31,12 +31,14 @@ def viewport_payload(window):
         return rows
     nodes = [{"name": n.name, "position": list(n.coords), "restraints": list(n.restraints), "springs": list(n.springs),
               "supportDetails": support_details(n)}
-             for n in project.nodes.values()]
+             for n in project.nodes.values() if window.entity_visible("nodes", n.name)]
     members, peak, samples = [], 0., []
     straight = window.deformation_shape.currentData() == "straight"
     kind = window.view.diagram.currentData()
     axes = {}
     for member in project.members.values():
+        if not window.entity_visible("members", member.name):
+            continue
         axes[member.name] = member_axes(project, member.name, result)
         definition = {"name": member.name, "start": member.start, "end": member.end, "kind": member.kind, "axes": axes[member.name].tolist()}
         if result is not None:
@@ -110,13 +112,14 @@ def viewport_payload(window):
             diagram["unit"], diagram["label"])
     from .spatial_surfaces import surface_payloads
     return {"nodes": nodes, "members": members,
-            "surfaceMeshes": surface_payloads(project, result, window.load_filter.currentData() if window.view.show_loads.isChecked() else False) if window.surface_visibility_action.isChecked() else [],
+            "surfaceMeshes": surface_payloads(project, result, window.load_filter.currentData() if window.view.show_loads.isChecked() else False) if window.surface_visibility_action.isChecked() and window.visible_ids is None else [],
             "loads": loads if window.view.show_loads.isChecked() else [], "grid": project.grid, "colors": colors(),
             "revision": window.revision,
             "diagram": diagram,
             "selection": [list(s) for s in window.selections], "mode": window.mode,
             "deformed": visible, "factor": factor,
-            "probe": window.canvas_results.probe,
+            "probe": window.canvas_results.probe if window.entity_visible("members", window.canvas_results.inspected) else None,
+            "levels": sorted(set(project.levels.values())) if project.snap_levels else [],
             "supports": window.view.show_supports.isChecked(),
             "ids": window.view.diagram_ids.isChecked(),
             "unit": project.units.length, "displayFactor": project.units.to_display(1, "length")}
@@ -221,7 +224,8 @@ class Bridge(QObject):
                     or not isinstance(request, dict) or set(request) != {"node", "start", "target", "plane", "revision"}
                     or type(request["revision"]) is not int or request["revision"] != window.revision
                     or request["plane"] not in ("XY", "XZ", "YZ") or request["plane"] != self.view.plane.currentText()
-                    or not isinstance(request["node"], str) or request["node"] not in window.project.nodes):
+                    or not isinstance(request["node"], str) or request["node"] not in window.project.nodes
+                    or not window.entity_visible("nodes", request["node"])):
                 return
             start, target = request["start"], request["target"]
             if any(not isinstance(point, list) or len(point) != 3 or any(isinstance(value, bool)
@@ -232,6 +236,7 @@ class Bridge(QObject):
             if (any(abs(value - current) > 1e-8 for value, current in zip(start, original))
                     or target[axis] != original[axis]
                     or any(abs(value - round(value / window.project.grid) * window.project.grid) > 1e-8
+                           and not (index == 1 and window.project.snap_levels and any(abs(value-y) <= 1e-8 for y in window.project.levels.values()))
                            for index, value in enumerate(target) if index != axis)):
                 return
             def mutate(project):

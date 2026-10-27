@@ -30,6 +30,16 @@ const server = http.createServer((request,response)=>{
     page.on('pageerror',error=>errors.push(error.message));
     await page.goto(`http://127.0.0.1:${server.address().port}/`);
     await page.waitForFunction(()=>window.pyniteViewer);
+    const levelSnaps=await page.evaluate(async()=>{
+      const THREE=await import('three');
+      const {snapLevel,snappedMove}=await import('./node_drag.js');
+      return {near:snapLevel(151,[150.5],12),far:snapLevel(140,[150.5],12),
+        free:snappedMove(new THREE.Ray(new THREE.Vector3(24,151,100),new THREE.Vector3(0,0,-1)),
+          'XY',[24,144,0],new THREE.Vector3(24,144,0),12,[150.5]),
+        fixed:snappedMove(new THREE.Ray(new THREE.Vector3(24,200,0),new THREE.Vector3(0,-1,0)),
+          'XZ',[24,151,0],new THREE.Vector3(24,151,0),12,[150.5])};
+    });
+    assert.deepEqual(levelSnaps,{near:150.5,far:144,free:[24,150.5,0],fixed:[24,151,0]});
     const driver=await page.evaluate(()=>window.pyniteViewer.diagnostics());
     assert(driver.renderer&&driver.vendor&&driver.version.includes('WebGL'),'Missing observed WebGL driver information');
     assert.equal(driver.lost,false);

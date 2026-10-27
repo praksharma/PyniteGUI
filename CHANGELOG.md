@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add editing-only named groups and global-Y levels with native select/isolate,
+  optional drawing/node-drag snapping and 3D level work-plane placement. Preserve
+  analysis snapshots and keep split/deleted references valid. New saves use
+  planar 23/spatial 24 with legacy migration; older applications reject them.
+
 - Fix README image and repository-document URLs for PyPI's standalone description
   rendering; document the now-available PyPI installs with uv and pip.
 

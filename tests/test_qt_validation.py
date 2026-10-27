@@ -110,7 +110,7 @@ class ValidationTests(unittest.TestCase):
             before = copy.deepcopy(data)
             with self.subTest(version=version):
                 project = Project.from_dict(data)
-                self.assertEqual(project.to_dict()["version"], 21)
+                self.assertEqual(project.to_dict()["version"], 23)
                 self.assertEqual(project.nodes["N2"].x, 120)
                 self.assertEqual(data, before)
 

@@ -151,6 +151,11 @@ def batch_candidate(project, operations):
         except (ValueError, TypeError, KeyError, OverflowError) as error:
             raise AutomationError("invalid_batch", str(error), index) from error
     try:
+        # Selection groups are editing metadata: geometry deletion prunes their
+        # references, while engineering dependencies still require explicit edits.
+        for group in data["groups"].values():
+            for kind in ("nodes", "members"):
+                group[kind] = [key for key in group[kind] if key in data[kind]]
         candidate = Project.from_dict(data)
         if spatial:
             from .surface_solver import validate_coupled_topology

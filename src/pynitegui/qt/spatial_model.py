@@ -71,12 +71,12 @@ class SpatialProject(Project):
     surface_pressures: dict = field(default_factory=dict)
 
     def to_dict(self):
-        return {"version": 22, "units": "in-kip", **asdict(self),
+        return {"version": 24, "units": "in-kip", **asdict(self),
                 "surfaces": {name: mesh.to_dict() for name, mesh in self.surfaces.items()}}
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
+        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22, 24) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
             raise ValueError("Unsupported spatial project version, dimension, or units.")
         if (data["version"] < 19 and "surfaces" in data) or (data["version"] >= 19 and not isinstance(data.get("surfaces"), dict)):
             raise ValueError("Surface geometry requires the version 19 spatial schema.")
@@ -84,7 +84,7 @@ class SpatialProject(Project):
             raise ValueError("Coupled surface analysis requires spatial version 20.")
         if data["version"] >= 20 and not {"surface_analysis_enabled", "surface_pressures"} <= data.keys():
             raise ValueError("Missing coupled surface analysis fields.")
-        if data["version"] == 22 and "analysis_method" not in data:
+        if data["version"] >= 22 and "analysis_method" not in data:
             raise ValueError("Missing analysis_method setting.")
         if data["version"] < 22 and data.get("analysis_method", "linear") != "linear":
             raise ValueError("Analysis method settings require spatial version 22.")
@@ -92,13 +92,20 @@ class SpatialProject(Project):
         if unknown:
             raise ValueError("Unknown spatial project fields: " + ", ".join(sorted(unknown)) + ".")
         # Reuse the established metadata migrations/validation, without projecting geometry.
-        metadata = {**data, "version": 21, "analysis_method": data.get("analysis_method", "linear"), "nodes": {}, "members": {}, "loads": {}}
+        if data["version"] < 24 and (data.get("groups", {}) or data.get("levels", {}) or data.get("snap_levels", False) is not False):
+            raise ValueError("Groups and levels require spatial version 24.")
+        if data["version"] == 24 and not {"groups", "levels", "snap_levels"} <= data.keys():
+            raise ValueError("Missing groups or levels metadata.")
+        metadata = {**data, "version": 23, "analysis_method": data.get("analysis_method", "linear"), "nodes": {}, "members": {}, "loads": {},
+                    "groups": {}, "levels": data.get("levels", {}), "snap_levels": data.get("snap_levels", False)}
         metadata.pop("dimension")
         metadata.pop("surfaces", None)
         metadata.pop("surface_analysis_enabled", None)
         metadata.pop("surface_pressures", None)
         shared = Project.from_dict(metadata)
         result = cls(**{f.name: getattr(shared, f.name) for f in fields(Project)})
+        from copy import deepcopy
+        result.groups = deepcopy(data.get("groups", {}))
         for key, constructor in (("nodes", SpatialNode), ("members", SpatialMember), ("loads", SpatialLoad)):
             if not isinstance(data.get(key), dict):
                 raise ValueError(f"Spatial project {key} must be an object keyed by identifiers.")
@@ -124,7 +131,9 @@ class SpatialProject(Project):
 
     def validate(self):
         Project(**{f.name: getattr(self, f.name) for f in fields(Project)
-                   if f.name not in ("nodes", "members", "loads")}).validate()
+                   if f.name not in ("nodes", "members", "loads", "groups")}).validate()
+        from .organization import validate_organization
+        validate_organization(self)
         if self.dimension != "3D":
             raise ValueError("Spatial project dimension must be 3D.")
         if any(not isinstance(getattr(self, key), dict) for key in ("nodes", "members", "loads")):
@@ -302,7 +311,7 @@ class SpatialProject(Project):
             raise ValueError("Unknown spatial member.")
         segments = candidate._split_member(name, [fraction])
         candidate.validate()
-        self.nodes, self.members, self.loads = candidate.nodes, candidate.members, candidate.loads
+        self.nodes, self.members, self.loads, self.groups = candidate.nodes, candidate.members, candidate.loads, candidate.groups
         return segments
 
     def connect_intersections(self):
@@ -310,7 +319,7 @@ class SpatialProject(Project):
         candidate.validate()
         Project.connect_intersections(candidate)
         candidate.validate()
-        self.nodes, self.members, self.loads = candidate.nodes, candidate.members, candidate.loads
+        self.nodes, self.members, self.loads, self.groups = candidate.nodes, candidate.members, candidate.loads, candidate.groups
 
     def analysis_topology_issues(self):
         issues = []

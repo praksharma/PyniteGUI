@@ -82,6 +82,7 @@ def model_reference(dimension="2D"):
                        "load_cases": "put/delete with key and no value.",
                        "settings": "op='set',collection='settings',value=partial settings; no key."},
         "settings": settings,
+        "editing_metadata": "groups (named node/member ID lists), levels (named global-Y inch elevations) and snap_levels are editing-only metadata in read_model. They do not change analysis. This API does not edit these fields. Geometry deletion prunes group references automatically.",
         "validation": ["All operations validate together and create one undo step; errors make no changes.",
                        "Material E and section A/Iy/Iz/J must be positive; rho nonnegative; nu between -1 and 0.5 (exclusive).",
                        "Distributed loads require a frame member, force direction and 0 <= position < end_position <= 1; end_magnitude is the intensity at the end, so set both magnitudes equal for a uniform load.",

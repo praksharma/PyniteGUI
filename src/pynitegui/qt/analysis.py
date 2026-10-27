@@ -18,6 +18,8 @@ from .released_member import recover_released_translations
 def model_signature(project):
     data = project.to_dict()
     data.pop("unit_system")
+    for key in ("groups", "levels", "snap_levels"):
+        data.pop(key, None)
     return hashlib.sha256(json.dumps(data, sort_keys=True, allow_nan=False).encode("utf-8")).hexdigest()
 
 

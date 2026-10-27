@@ -12,6 +12,7 @@ when comparing with the published rc1 wheel.
 | 2D drawing, grid/node snapping, select/pan/fit, multiple and box selection | [Drawing and selection](modeling/drawing.md) |
 | Dragging nodes, previews, cancel and undo | [Moving nodes](modeling/moving.md), [3D dragging](modeling/3d.md) |
 | Atomic bulk edits and node/member/load tables | [Selection](modeling/drawing.md), [model tables](modeling/tables.md) |
+| Named node/member groups, isolation, saved global-Y levels and optional drawing/drag snapping (development after RC2) | [Groups and levels](modeling/drawing.md) |
 | Split, equal subdivision, explicit intersections and connectivity findings | [Topology and model checks](modeling/topology.md) |
 | Perpendicular and midpoint construction connections | [Construction connections](modeling/construction.md) |
 | Per-member materials and sections, searchable libraries with dimensioned section sketches, defaults and provenance | [Assignments](modeling/properties.md), [materials](reference/materials.md), [sections](reference/sections.md) |

@@ -4,7 +4,7 @@ import {OrientationGizmo} from './gizmo.js';
 import {diagramPoints, drawDiagram, legendLines} from './diagrams.js';
 import {attachBoxSelection} from './selection.js';
 import {drawSupports, SupportTooltip} from './supports.js';
-import {attachNodeDrag,planeAxis} from './node_drag.js';
+import {attachNodeDrag,planeAxis,snapLevel} from './node_drag.js';
 import {drawFrame,hitIdentity,recolorFrame} from './frame_meshes.js';
 import {LabelTextures} from './label_textures.js';
 import {drawSurfaces} from './surfaces.js';
@@ -228,7 +228,7 @@ function workPoint(event) {
   const axis=(data.plane||'XY')==='XY'?2:data.plane==='XZ'?1:0;
   const normal=new THREE.Vector3().setComponent(axis,1),p=new THREE.Vector3();
   if(!raycaster.ray.intersectPlane(new THREE.Plane(normal,-(data.offset||0)),p))return null;
-  [0,1,2].filter(i=>i!==axis).forEach(i=>p.setComponent(i,Math.round(p.getComponent(i)/data.grid)*data.grid));return p.toArray();
+  [0,1,2].filter(i=>i!==axis).forEach(i=>p.setComponent(i,i===1?snapLevel(p.y,data.levels,data.grid):Math.round(p.getComponent(i)/data.grid)*data.grid));return p.toArray();
 }
 let down=null;
 function selectAt(event){
