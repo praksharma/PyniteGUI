@@ -1,0 +1,96 @@
+name: Publish to PyPI
+run-name: Publish ${{ inputs.tag }} to PyPI
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published GitHub release tag (for example v1.0.0rc2)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pypi-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.13.6"
+          python-version: "3.12"
+      - name: Match the tag to package metadata
+        run: |
+          python3 - <<'PY'
+          import os, re, tomllib
+          from pathlib import Path
+          project = tomllib.loads(Path('pyproject.toml').read_text())['project']
+          version = project['version']
+          assert project['name'] == 'pynitegui'
+          assert re.fullmatch(r'\d+\.\d+\.\d+(?:(?:a|b|rc)\d+)?', version), version
+          assert os.environ['RELEASE_TAG'] == f'v{version}', 'Tag/version mismatch'
+          with open(os.environ['GITHUB_ENV'], 'a') as stream:
+              stream.write(f'WHEEL=pynitegui-{version}-py3-none-any.whl\n')
+              stream.write(f'SDIST=pynitegui-{version}.tar.gz\n')
+          PY
+      - name: Download the published release assets
+        run: |
+          test "$(gh release view "$RELEASE_TAG" --json isDraft --jq .isDraft)" = false
+          gh release download "$RELEASE_TAG" --dir dist \
+            --pattern "$WHEEL" --pattern "$SDIST" --pattern SHA256SUMS
+      - name: Verify checksums and audit distributions against the tag
+        run: |
+          python3 - <<'PY'
+          import hashlib, os
+          from pathlib import Path
+          directory = Path('dist')
+          expected = {os.environ['WHEEL'], os.environ['SDIST']}
+          lines = (directory/'SHA256SUMS').read_text().splitlines()
+          assert len(lines) == 2, 'Expected exactly two checksums'
+          entries = dict(line.split()[::-1] for line in lines)
+          assert set(entries) == expected, 'Unexpected or missing checksum entries'
+          for name, digest in entries.items():
+              assert hashlib.sha256((directory/name).read_bytes()).hexdigest() == digest, name
+          PY
+          uv run --no-project --with packaging python -B scripts/check_dist.py "dist/$WHEEL" "dist/$SDIST"
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: pypi-distributions
+          path: |
+            dist/${{ env.WHEEL }}
+            dist/${{ env.SDIST }}
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/pynitegui/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: pypi-distributions
+          path: dist
+      - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.13.6"
+      - name: Publish the verified files through PyPI Trusted Publishing
+        run: uv publish --trusted-publishing always dist/*.whl dist/*.tar.gz

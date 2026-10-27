@@ -440,6 +440,10 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
   base/MCP and uv-tool installation checks, installed-asset viewport QA, hashes
   and PyPI/uv publishing guidance. Refresh the README with current screenshots,
   installation and scope. Keep visible-platform gates below open.
+- [x] Add a manual GitHub Actions PyPI Trusted Publishing workflow that verifies
+  published release assets/hashes against the source tag, then uploads the same
+  files through a separate pypi environment job. Owner setup and dispatch remain
+  separate from implementation; this does not publish RC2 or certify stable 1.0.
 - [ ] Complete platform/manual validation gates in RELEASE.md and collect
   prerelease feedback before promoting to stable 1.0.0. This single item owns
   reproducible macOS installation/rendering/save-open/analysis/export checks and

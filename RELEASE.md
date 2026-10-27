@@ -101,6 +101,41 @@ Publishing. Upload only the reviewed wheel and source archive, with explicit
 paths, after final approval. TestPyPI can be used as a separate dry run; it is
 not a substitute for testing the artifacts locally. Never commit API tokens.
 
+**One-time Trusted Publishing setup:** sign into PyPI, enable account 2FA if
+needed, and open [Publishing](https://pypi.org/manage/account/publishing/). Add a
+pending GitHub publisher with these exact values:
+
+| Field | Value |
+| --- | --- |
+| PyPI project name | `pynitegui` |
+| Owner | `praksharma` |
+| Repository name | `PyniteGUI` |
+| Workflow name | `publish.yml` |
+| Environment name | `pypi` |
+
+A pending publisher creates the project on its first successful upload; it
+does not reserve the name. If you already own the project, add this publisher
+under that project's Publishing settings instead.
+
+In GitHub repository Settings > Environments, create **pypi**, add yourself as
+a required reviewer, allow your own review if you will dispatch the workflow,
+and restrict deployment branches to **master**. No PyPI API-token secret is
+needed. These account/environment changes are owner setup, not performed by
+adding the workflow.
+
+**Publish an approved release:** first publish the GitHub draft with its wheel,
+source archive and SHA256SUMS attached. Then open Actions > **Publish to PyPI** >
+Run workflow, choose **master**, and enter its tag (for example `v1.0.0rc2`).
+Review and approve the **pypi** environment job. This uploads to real PyPI;
+it is not a dry run. RC2 remains a prerelease and does not imply stable 1.0.
+
+The workflow is manual only. Its read-only verification job checks out the
+requested tag, rejects a version mismatch or draft release, downloads the exact
+GitHub assets, checks both hashes, and audits them against the tagged source.
+The separate environment-gated publication job has OIDC permission and uploads
+those verified files without rebuilding. It does not run on pushes or tags.
+Do not move existing release tags or replace reviewed release assets to retry.
+
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 

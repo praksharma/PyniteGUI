@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add a manual PyPI Trusted Publishing workflow and owner setup instructions.
+  Verify the published GitHub release's exact wheel/source assets and checksums
+  against its tag; publish from a separate OIDC/environment job without rebuilding.
+
 Preparing **1.0.0rc2**, incorporating the changes below since the published rc1.
 See GitHub Releases for publication status; a source tag or unpublished draft
 does not imply PyPI availability.
