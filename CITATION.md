@@ -6,8 +6,11 @@ project continues to evolve; no DOI has been assigned by this citation file.
 
 Suggested project citation:
 
-> PyniteGUI project. PyniteGUI [Computer software].
+> Sharma, P. PyniteGUI [Computer software].
 > https://github.com/praksharma/PyniteGUI
+
+Author: **[Prakhar Sharma](https://orcid.org/0000-0002-7635-1857)**.
+ORCID: **0000-0002-7635-1857**.
 
 For a released version, add its version and release date and link to its GitHub
 release. For unreleased development code, add the full commit hash, a link to
@@ -26,6 +29,28 @@ PyniteGUI is a desktop interface built on the separate
 analysis, also acknowledge and cite PyNite following its own citation guidance.
 Record both software versions, the model file, units, load combinations,
 analysis settings and any experimental features used alongside the results.
+
+## AI-assisted development acknowledgement
+
+PyniteGUI was developed with substantial assistance from **OpenAI Codex**, the
+AI coding assistant used for this project. Codex was used to
+generate and revise source code, tests and documentation, and to assist with
+debugging, verification workflows and release preparation. Prakhar Sharma
+directs the project and retains responsibility for accepting changes,
+validation decisions and releases.
+
+Codex is acknowledged as a development tool and is not listed as a
+bibliographic author in CITATION.cff. Git commit co-author trailers mentioning
+Codex record development provenance; they do not change the software citation's
+authorship. This acknowledgement does not replace attribution to PyNite or
+other upstream software.
+
+For a paper describing this software, disclose AI assistance according to the
+venue's rules, stating the tool/provider and the tasks it performed. Record
+model versions and dates where known rather than inferring them from the
+product name. Research-publishing guidance such as
+[COPE's position on authorship and AI tools](https://doi.org/10.24318/cCVRZBms)
+distinguishes AI-use disclosure from human authorship and accountability.
 
 ## Future archival DOI
 

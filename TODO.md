@@ -435,6 +435,8 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
 - [x] Publish the GitHub 1.0.0rc1 prerelease (see README for the published release).
 - [x] Add CITATION.md and GitHub-readable CITATION.cff with release/commit
   identification, PyNite solver attribution and DOI archiving deferred to stable 1.0.
+  Add Prakhar Sharma's name/ORCID and disclose Codex assistance separately from
+  bibliographic authorship.
 - [x] Prepare 1.0.0rc2 with an elastic frame/truss and restricted P-Delta stable
   scope, experimental surface/plate labels, full locked/installed-wheel validation,
   base/MCP and uv-tool installation checks, installed-asset viewport QA, hashes

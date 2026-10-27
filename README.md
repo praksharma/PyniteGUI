@@ -79,5 +79,5 @@ Spatial moment results with signed colours, units and member inspection.
 
 - [User and developer guide](GUIDE.md): workflows, limits, testing and documentation preview.
 - [Changelog](CHANGELOG.md), [release checks](RELEASE.md) and [roadmap](TODO.md).
-- [Citation guidance](CITATION.md): cite the project and the release or commit used.
+- [Citation and AI-use acknowledgement](CITATION.md): author/ORCID, development tools and release/commit citation.
 - [License](LICENSE): GNU AGPL v3. PyNite is a separate upstream solver.

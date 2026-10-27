@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add Prakhar Sharma's name and ORCID to citation metadata, with a separate
+  acknowledgement of substantial OpenAI Codex assistance in development.
+
 - Add a manual PyPI Trusted Publishing workflow and owner setup instructions.
   Verify the published GitHub release's exact wheel/source assets and checksums
   against its tag; publish from a separate OIDC/environment job without rebuilding.
