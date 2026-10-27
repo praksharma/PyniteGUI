@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Three official PyNite beam adaptations in File > Examples > 2D Frames:
+  point loads, uniform load and factored envelope, with pinned upstream source,
+  retained MIT notice, documented planar/material differences and a worked
+  tutorial. Preserve executable load signs and original section/case/factor
+  data; add closed-form response, envelope provenance, save/reopen/unit and
+  native menu checks. No new solver method is introduced.
+
 - Illustrated Help, shortcuts, model findings, recent history and slab/P-Delta
   walkthroughs with real desktop/viewport screenshots. Adds a disposable-example
   native capture script and repository-to-site image-link rebasing with docs checks.

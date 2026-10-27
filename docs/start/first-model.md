@@ -20,6 +20,32 @@ building your own structure.
 8. Save under a new project filename. Examples start as unsaved models and do
    not overwrite an example file.
 
+## Try the Official PyNite Beams
+
+Under **File > Examples > 2D Frames**, choose one of the three **Official PyNite**
+beam entries. These use a 168-inch span and custom section properties from the
+upstream scripts, rather than the 420-inch starter beam above. Analyze with **F5**.
+
+| Example | Combination | Vertical reaction at each end | Midspan dy |
+| --- | --- | --- | --- |
+| Beam with Point Loads | 1.2D+1.6L | 9.4 kip | -0.42692855 in |
+| Beam with Uniform Load | Combo 1 | 1.4 kip | -0.03974069 in |
+
+Select the named combination in Results. The support-node displacements are zero;
+open **Diagrams > Member Detail** for M1 and inspect distance **84 in** to check
+midspan deflection. A negative dy is downward. The model is unchanged when you
+switch display units; use the inch/kip preset to compare these numbers directly.
+
+For **Beam with Factored Envelope**, open **Diagrams > Envelopes**, select all
+three combinations and inspect the Members summary for M1. Local Mz runs from
+**-222.17142857 kip-in** (**1.2D+1.6L**) to **+596.57142857 kip-in**
+(**1.2D+1.6S**). These extrema occur in different load combinations. D and S act
+upward in the official script; the example preserves those executable load signs.
+
+Read the [example reference](examples.md) for the pinned upstream revision,
+material/support assumptions and differences from the original scripts. Each
+opens as a fresh editable project; save it under your own filename.
+
 ## Make One Change
 
 Select the load in the structure tree and edit its signed magnitude, then Apply.

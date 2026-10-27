@@ -1028,6 +1028,41 @@ appears in the searchable Help reference.
   amplification without material yielding. Gravity alone has zero lateral sway.
   See Analysis and Force Diagrams for the second-order force-recovery/equilibrium
   limits; the strict force-residual check is not relaxed for this example.
+- **2D Frames > Official PyNite - Beam with Point Loads / Uniform Load /
+  Factored Envelope** adapts the three corresponding
+  [official beam scripts](https://github.com/JWock82/Pynite/tree/e3a0bbd912b6cf13140f01ca0ed3a2ee55069f45/Examples)
+  from source revision `e3a0bbd912b6cf13140f01ca0ed3a2ee55069f45`.
+  Each has a 168-inch span, custom Steel material (E = 29000 ksi, nu = 0.3,
+  density = 0.0002836 kip/in3) and MySection (A = 20 in2, Iy = 100 in4,
+  Iz = 150 in4, J = 250 in4). Both ends restrain X/Y with free in-plane
+  rotations, matching the source's in-plane supports; automatic self-weight is off.
+  The original 420-inch Simply Supported Beam remains a separate starter model.
+- **Official point loads:** D = -5 kip and L = -8 kip at midspan. Choose
+  **1.2D+1.6L** after analysis: both vertical reactions are **9.4 kip**, midspan
+  local Mz is **-789.6 kip-in** and midspan dy is **-0.42692855 in**.
+  **1.4D** gives 3.5 kip reactions and -0.15896276 in midspan dy.
+- **Official uniform load:** -200 lb/ft over the whole beam, retained as
+  -0.01666667 kip/in. **Combo 1** gives **1.4 kip** at each support, midspan
+  Mz **-58.8 kip-in** and dy **-0.03974069 in**.
+- **Official factored envelope:** preserve the executable source's positive
+  D = +5 kip at 48 in and S = +8 kip at 108 in, plus L = -8 kip at 144 in.
+  These signs intentionally follow the code rather than its misleading downward
+  load comment. Analyze, open **Diagrams > Envelopes** and keep all three
+  combinations checked. The Members summary gives minimum Mz
+  **-222.17142857 kip-in** governed by **1.2D+1.6L**, and maximum Mz
+  **+596.57142857 kip-in** governed by **1.2D+1.6S**.
+
+The official beam adaptations use the existing planar, linear-elastic workflow.
+The source scripts call the general iterative solver, but these bilateral elastic
+models need no active-set iteration. Out-of-plane/torsional DOFs and renderer/PDF
+calls are replaced by the GUI's existing planar editor, diagrams and print tools.
+The GUI derives G = E/[2(1+nu)] (11153.846 ksi), whereas the scripts also specify
+G = 11200 ksi; this does not affect their in-plane Euler-Bernoulli bending/axial
+responses. Upstream `strength` combination tags are represented by explicitly
+checking the same three combinations in Envelopes. Plot sampling/amplification
+remain GUI controls. The upstream MIT notice is distributed in
+`src/pynitegui/qt/licenses/pynite-examples.txt`; the application license is unchanged.
+
 - View > Appearance selects Light or Dark. The preference is saved between app
   sessions, separately from project files. It updates all open editor/diagram
   windows, including the grid, engineering symbols, labels, tables, and plots,

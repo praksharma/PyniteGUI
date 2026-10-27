@@ -68,8 +68,9 @@ class ExampleTests(unittest.TestCase):
 
     def test_new_examples_are_fresh_and_round_trip_in_all_unit_presets(self):
         from pynitegui.qt.model import Project
+        from pynitegui.qt.official_examples import SOURCES
         from pynitegui.qt.units import UNIT_SYSTEMS
-        for key in ("p_delta_column", "3d_multistorey_slabs"):
+        for key in ("p_delta_column", "3d_multistorey_slabs", *SOURCES):
             for units in UNIT_SYSTEMS:
                 project = example_project(key, units)
                 before = project.to_dict()

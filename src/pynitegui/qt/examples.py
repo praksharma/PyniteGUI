@@ -19,6 +19,9 @@ EXAMPLES = {
     "3d_tripod": "3D Truss Tripod - Joint Load",
     "3d_multistorey_slabs": "Three-Storey Frame and Slabs (Experimental)",
     "p_delta_column": "Slender Column - Gravity and Lateral Load",
+    "official_beam_point": "Official PyNite - Beam with Point Loads",
+    "official_beam_uniform": "Official PyNite - Beam with Uniform Load",
+    "official_beam_envelope": "Official PyNite - Beam with Factored Envelope",
 }
 
 
@@ -26,7 +29,8 @@ EXAMPLES = {
 # The native menu uses this ordered grouping; each example belongs exactly once.
 EXAMPLE_GROUPS = {
     "2D Frames": ("simple_beam", "portal", "cantilever", "continuous", "pitched",
-                  "multistorey", "self_weight", "elastic", "shear_release"),
+                  "multistorey", "self_weight", "elastic", "shear_release",
+                  "official_beam_point", "official_beam_uniform", "official_beam_envelope"),
     "3D Frames": ("3d_cantilever", "3d_space_frame"),
     "Trusses": ("truss", "3d_tripod"),
     "Slabs": ("3d_slab_frame", "3d_multistorey_slabs"),
@@ -37,6 +41,9 @@ EXAMPLE_GROUPS = {
 def example_project(key, unit_system="imperial"):
     if key not in EXAMPLES:
         raise ValueError(f"Unknown example: {key}")
+    if key.startswith("official_"):
+        from .official_examples import example_project as official_example
+        return official_example(key, unit_system)
     if key.startswith("3d_"):
         from .spatial_examples import example_project as spatial_example
         return spatial_example(key, unit_system)

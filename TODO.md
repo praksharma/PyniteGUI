@@ -99,7 +99,7 @@ below and the secondary interface wishlist retain their more specific scope.
 
 Requested 2026-10-26. Track the 20 scripts currently listed in the
 [official PyNite Examples directory](https://github.com/JWock82/Pynite/tree/main/Examples).
-These are pending adaptations, including cases where a similar GUI example
+Unchecked items are pending adaptations, including cases where a similar GUI example
 already exists. Audit each script against the locked engine and current GUI
 before implementation; an upstream example does not establish GUI support.
 
@@ -113,9 +113,17 @@ not change the analysis-method priorities above.
 
 **Frames and existing analysis methods — first adaptation candidates:**
 
-- [ ] [Simple Beam - Point Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Simple%20Beam%20-%20Point%20Load.py)
-- [ ] [Simple Beam - Uniform Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Simple%20Beam%20-%20Uniform%20Load.py)
-- [ ] [Simple Beam - Factored Envelope.py](https://github.com/JWock82/Pynite/blob/main/Examples/Simple%20Beam%20-%20Factored%20Envelope.py)
+- [x] [Simple Beam - Point Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Simple%20Beam%20-%20Point%20Load.py)
+- [x] [Simple Beam - Uniform Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Simple%20Beam%20-%20Uniform%20Load.py)
+- [x] [Simple Beam - Factored Envelope.py](https://github.com/JWock82/Pynite/blob/main/Examples/Simple%20Beam%20-%20Factored%20Envelope.py)
+
+  First batch completed 2026-10-27 from upstream revision
+  `e3a0bbd912b6cf13140f01ca0ed3a2ee55069f45`: three editable 2D Frames menu
+  entries, original span/properties/cases/factors/load signs, planar adaptation
+  notes and MIT notice. Closed-form beam responses, governing envelopes, fresh
+  instances, all-unit persistence and native menu loading are covered. See
+  [Examples and Appearance](GUIDE.md#examples-and-appearance) for expected values.
+
 - [ ] [Moment Frame - Lateral Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Moment%20Frame%20-%20Lateral%20Load.py)
 - [ ] [Space Frame - Nodal Loads 1.py](https://github.com/JWock82/Pynite/blob/main/Examples/Space%20Frame%20-%20Nodal%20Loads%201.py)
 - [ ] [Space Frame - Nodal Loads 2.py](https://github.com/JWock82/Pynite/blob/main/Examples/Space%20Frame%20-%20Nodal%20Loads%202.py)
