@@ -74,6 +74,9 @@ class SpatialDiagramDialog(QDialog):
             inspection_distance=self.distance.value(), inspection_side=self.inspection_side.currentData())))
         detail_layout.addWidget(self.canvas)
         from .envelopes import EnvelopeWidget
+        from .comparison import ComparisonWidget
+        self.comparison = ComparisonWidget(self, self.project, self.result, self.source, selected)
+        self.tabs.addTab(self.comparison, "Compare Combinations")
         self.envelopes = EnvelopeWidget(self, self.project, self.result, self.source, selected)
         self.tabs.addTab(self.envelopes, "Combination Envelopes")
         self.member.currentTextChanged.connect(self.redraw)
@@ -93,6 +96,7 @@ class SpatialDiagramDialog(QDialog):
             self.project.unit_system = key
             self.redraw()
             self.envelopes.refresh()
+            self.comparison.refresh()
 
     def update_snapshot_status(self):
         parent = self.parent()
@@ -158,3 +162,4 @@ class SpatialDiagramDialog(QDialog):
     def apply_theme(self):
         self.redraw()
         self.envelopes.apply_theme()
+        self.comparison.apply_theme()

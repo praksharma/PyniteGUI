@@ -66,6 +66,19 @@ def capture(output):
                         diagrams.structure_canvas.toolbar.metadata())
             diagrams.close()
 
+            comparison_project = example_project("official_beam_point")
+            with redirect_stdout(StringIO()):
+                comparison_result = analyze(comparison_project)
+            comparison = DiagramDialog(window, comparison_project, comparison_result)
+            comparison.tabs.setCurrentWidget(comparison.comparison)
+            comparison.comparison.quantity.setCurrentIndex(2)
+            comparison.comparison.distance.setValue(84)
+            comparison.show()
+            app.processEvents()
+            comparison.comparison.canvas.draw()
+            save(comparison, "combination-comparison.png")
+            comparison.close()
+
             window.help_menu.popup(window.mapToGlobal(window.rect().center()))
             save(window.help_menu, "help-menu.png")
             window.help_menu.close()

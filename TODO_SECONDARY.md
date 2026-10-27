@@ -39,9 +39,11 @@ These are the strongest ideas to adapt to a desktop engineering workflow.
   axial, shear, and moment views without opening a window each time. Keep a
   resizable results dock with combination, scale, and inspection controls.
   Preserve Member Detail windows and their snapshot identity.
-- [ ] **Combination comparison (UI).** Overlay two solved combinations with
+- [x] **Combination comparison (UI).** Overlay two solved combinations with
   distinct styles, a shared scale, and governing values at the probe station.
   Never combine results from different model revisions or analysis methods.
+  Completed in retained 2D/3D result windows with signed exact one-sided probes,
+  absolute-value governing selection (A wins ties), units and snapshot image export.
 - [ ] **Signed result colour maps (UI).** Offer a colour-map alternative to
   offset diagrams, using PyNite span samples. Include a numerical legend,
   zero/sign distinction, explicit units, and a shared scale for comparisons.

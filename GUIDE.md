@@ -1492,6 +1492,28 @@ a plotted extremum can still have a numerical label.*
 
 ### Combination Envelopes
 
+**Compare Combinations** in the 2D and 3D diagram windows overlays two solved
+combinations for a chosen member and local result component. A is solid and B
+is dashed; both use the same numerical axes and scale. Choose a distance or
+click the plot, then select Left side or Right side at a concentrated load.
+The probe shows both signed values and the governing combination by largest
+absolute value; A wins ties. This is a station comparison, not a solver-extrema
+search. Selecting the same combination twice is allowed as an identity check.
+
+Both selectors belong to the retained analysis snapshot and method. They are
+independent of the window's single-combination selector, and changing the editor
+or solving again cannot replace either curve. The snapshot status above the tabs
+indicates when the retained result differs from the editor. Unit and theme
+changes retain the comparison and physical probe distance. The plot toolbar
+saves PNG/SVG with both combination names, snapshot identity, units and probe
+context. The comparison does not rerun analysis or edit the model.
+
+[![Two factored beam combinations on a shared moment scale, with exact midspan probe values](docs/assets/screenshots/combination-comparison.png)](docs/assets/screenshots/combination-comparison.png)
+
+The official point-loaded beam compares 1.4D with 1.2D + 1.6L. The probe reports
+the signed moment for each; the larger absolute moment governs.
+
+
 - Diagrams > Envelopes compares checked combinations from that analyzed
   snapshot without another solve. The main combination selector does not change
   the envelope selection. Nodes lists displacement/reaction bounds; Members

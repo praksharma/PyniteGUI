@@ -409,6 +409,9 @@ class DiagramDialog(QDialog):
         self.member_results.setAlternatingRowColors(True)
         self.tabs.addTab(self.member_results, "Member Results")
         from .envelopes import EnvelopeWidget
+        from .comparison import ComparisonWidget
+        self.comparison = ComparisonWidget(self, self.project, result, self.source, selected)
+        self.tabs.addTab(self.comparison, "Compare Combinations")
         self.envelopes = EnvelopeWidget(self, self.project, result, self.source, selected)
         self.tabs.addTab(self.envelopes, "Envelopes")
         self.combination.currentTextChanged.connect(self.select_combination)
@@ -455,6 +458,7 @@ class DiagramDialog(QDialog):
         self.update_member()
         self.update_results()
         self.envelopes.refresh()
+        self.comparison.refresh()
 
     def select_combination(self, name):
         self.result = self.result.for_combination(name)
@@ -531,6 +535,7 @@ class DiagramDialog(QDialog):
         self.structure_canvas.draw_idle()
         self.member_canvas.draw_idle()
         self.envelopes.apply_theme()
+        self.comparison.apply_theme()
 
     def inspect_distance(self):
         self.inspection_x = self.project.units.from_display(self.distance.value(), "length")

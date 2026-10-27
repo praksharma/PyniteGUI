@@ -51,7 +51,7 @@ See [method limits and plasticity boundaries](analysis/solve.md).
 | Member Detail, station inspection and one-sided values at jumps | [Inspection](analysis/solve.md) |
 | Sign/side/amplitude controls and annotation collision handling | [Diagrams](analysis/solve.md), [conventions](results/conventions.md) |
 | Independent diagram IDs, end values and sampled extrema in 2D, 3D overlays and printed projections; separate support/load visibility | [2D readability](analysis/solve.md), [3D visibility](modeling/3d.md), [report options](results/reports.md) |
-| Exact summary and sampled-curve combination envelopes, governing combinations | [Envelopes](results/envelopes.md), [spatial envelopes](modeling/3d.md) |
+| Two-combination member overlays with shared axes and exact signed governing probes; summary and sampled-curve envelopes | [Envelopes](results/envelopes.md), [spatial envelopes](modeling/3d.md) |
 | CSV, snapshot metadata, printable model/results/diagrams/envelopes and PDF through print | [Exports and reports](results/reports.md) |
 | PNG/SVG native plot export with visible snapshot stamp and embedded context | [Plot image export](results/reports.md) |
 | Retained result windows and revision-aware snapshots | [Snapshots](results/snapshots.md) |

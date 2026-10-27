@@ -265,6 +265,10 @@ not change the analysis-method priorities above.
   and distribution-preserving member splitting.
 - [x] Add load cases and combinations, including results and diagram selectors.
 - [x] Add an editing load-case visibility filter and hide/show controls.
+- [x] Add retained 2D/3D **Compare Combinations** member curves: solid/dashed
+  overlays on shared axes, exact left/right station values and signed governing
+  value by absolute magnitude (A wins ties). Both selections use one snapshot
+  and method; units, themes and PNG/SVG provenance follow the retained window.
 - [x] Add result envelopes across selected combinations: node bounds, exact
   solver member extrema, governing combinations, sampled member curves,
   one-sided station inspection, and snapshot-aware CSV export.

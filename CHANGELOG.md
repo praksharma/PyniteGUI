@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Retained 2D/3D combination comparison: solid/dashed member curves on shared
+  axes, exact left/right probes, signed governing value by absolute magnitude,
+  deterministic ties and snapshot-aware PNG/SVG export. Preserve selections and
+  physical probe distance across units/themes without editing or re-solving.
+
 - Matching 3D overlay readability controls for node/member IDs, end values and
   sampled extrema, preserving local rolled axes, ribbons, sampled legends and
   camera/selection behaviour. Add independent boolean-validated 2D/3D print
