@@ -178,11 +178,14 @@ an audit of Stabileo's engineering calculations. PRO is labelled beta.
   code-amplified seismic drift, or a code pass/fail check. PRO's drift tab was
   inspected but required code-generator settings; borrow the workflow, not its
   code-dependent calculation.
-- [ ] **Fast deformation preview for large frames (UI).** Offer sampled member
+- [x] **Fast deformation preview for large frames (UI).** Offer sampled member
   curves versus displaced-node straight lines, clearly identifying the latter
   as an approximate display. Both use the same solved snapshot; switching must
   not change numerical probes, extrema, exported result tables, or the solver.
   Coordinate with existing deformation scale/animation controls.
+  Completed for 2D/3D member overlays with nodal-only peak/Auto scale labels;
+  retain full diagram samples when force/moment overlays are active. Surface
+  meshes keep their existing nodal display; static animation remains pending.
 
 ### Later: Approximate Geometry, Not a New Element Formulation
 

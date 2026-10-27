@@ -3,6 +3,7 @@ import contextlib
 import io
 import os
 import unittest
+from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -64,6 +65,46 @@ class DeformationTests(unittest.TestCase):
         self.assertEqual(self.window.project.to_dict(), project)
         self.assertEqual(self.window.revision, revision)
         self.assertIs(self.window.result.solver, solver)
+
+    def test_straight_preview_omits_interior_bending_without_sampling_or_editing(self):
+        window = self.window
+        before, revision = window.project.to_dict(), window.revision
+        result = window.result
+        curves = deformation_paths(window.project, result)
+        self.assertGreater(max(abs(point[3]) for path in curves for point in path), 0)
+        solver_member = result.solver.members["M1"]
+        with patch.object(solver_member, "deflection", side_effect=AssertionError("Preview must use nodal values")):
+            window.deformation_shape.setCurrentIndex(1)
+            paths = deformation_paths(window.project, result, straight=True)
+            self.assertTrue(all(len(path) == 2 for path in paths))
+            self.assertEqual(len(self.lines()), len(window.project.members))
+            self.assertAlmostEqual(self.peak(), 0)
+            self.assertIn("Nodal max (approx.)", window.deformation_peak.text())
+        self.assertEqual(window.project.to_dict(), before)
+        self.assertEqual(window.revision, revision)
+        self.assertIs(window.result, result)
+        window.set_units("si")
+        self.assertEqual(window.deformation_shape.currentData(), "straight")
+        window.deformation_shape.setCurrentIndex(0)
+        self.assertGreater(self.peak(), 0)
+        self.assertEqual(deformation_paths(window.project, result), curves)
+
+    def test_straight_endpoints_follow_global_nodal_motion_and_controls_invalidate(self):
+        from pynitegui.qt.examples import example_project
+        window = self.window
+        window.load_project(example_project("portal"))
+        self.solve()
+        window.deformed_action.trigger()
+        window.deformation_shape.setCurrentIndex(1)
+        for path, member in zip(deformation_paths(window.project, window.result, straight=True), window.project.members.values()):
+            for point, name in zip(path, (member.start, member.end)):
+                self.assertEqual(point[2:], window.result.displacements[name][:2])
+        window.deformed_action.trigger()
+        self.assertFalse(window.deformation_shape.isEnabled())
+        window.deformed_action.trigger()
+        self.assertTrue(window.deformation_shape.isEnabled())
+        window.edit("Move", lambda p: setattr(p.nodes["N2"], "x", p.nodes["N2"].x + 1))
+        self.assertFalse(window.deformation_shape.isEnabled())
 
     def test_auto_handles_zero_load(self):
         self.window.edit("Remove loads", lambda p: p.loads.clear())

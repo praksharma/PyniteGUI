@@ -32,15 +32,25 @@ def viewport_payload(window):
               "supportDetails": support_details(n)}
              for n in project.nodes.values()]
     members, peak, samples = [], 0., []
+    straight = window.deformation_shape.currentData() == "straight"
     kind = window.view.diagram.currentData()
     axes = {}
     for member in project.members.values():
         axes[member.name] = member_axes(project, member.name, result)
         definition = {"name": member.name, "start": member.start, "end": member.end, "kind": member.kind, "axes": axes[member.name].tolist()}
         if result is not None:
-            positions, values, displacement = sampled_member(project, result, member.name)
             a, b = np.array(project.nodes[member.start].coords), np.array(project.nodes[member.end].coords)
-            points = a + positions[:, None] / math.dist(a, b) * (b - a)
+            length = math.dist(a, b)
+            if not straight or kind in QUANTITIES[:6]:
+                positions, values, displacement = sampled_member(project, result, member.name)
+            else:
+                positions = np.array([0., length])
+            fractions = positions[:, None] / length
+            points = a + fractions * (b - a)
+            if straight:
+                start = np.array(result.displacements[member.start][:3])
+                end = np.array(result.displacements[member.end][:3])
+                displacement = start + fractions * (end - start)
             definition["points"] = points.tolist()
             definition["displacements"] = displacement.tolist()
             if kind in QUANTITIES[:6]:
@@ -54,12 +64,14 @@ def viewport_payload(window):
         peak = max(peak, *(math.sqrt(sum(value*value for value in values[:3])) for values in result.displacements.values()))
     mode = window.deformation_mode.currentData()
     visible = result is not None and window.deformed_action.isChecked()
+    window.deformation_shape.setEnabled(visible)
     window.deformation_mode.setEnabled(visible)
     window.deformation_scale.setEnabled(visible and mode == "custom")
     window.deformation_peak.setVisible(visible)
     factor = 0.15 * max(extent, project.grid) / peak if mode == "auto" and peak else 1 if mode != "custom" else window.deformation_scale.value()
     window.deformation_scale_action.setVisible(mode == "custom")
-    window.deformation_peak.setText(f"Peak {project.units.to_display(peak, 'length'):.4g} {project.units.length} | {factor:.4g}x" if result else "")
+    peak_label = "Nodal peak (approx.)" if straight else "Peak"
+    window.deformation_peak.setText(f"{peak_label} {project.units.to_display(peak, 'length'):.4g} {project.units.length} | {factor:.4g}x" if result else "")
     loads = []
     definitions = combination_loads(project, result) if result else (*project.loads.values(), *project.self_weight_loads())
     for load in definitions:

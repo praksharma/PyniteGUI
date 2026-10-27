@@ -744,6 +744,12 @@ again. Closing the source window does not close the copy.
   translational displacement magnitude, not an exact optimization or twist angle.
   Fit includes displayed deformed paths. Torsional rotation is reported numerically;
   this line-member viewport does not render cross-section twisting.
+  **Straight preview (approx.)** joins globally displaced member ends and omits
+  interior bending. Its peak and Auto factor use nodal translations only. It
+  avoids member span sampling when no force/moment overlay is active; an active
+  diagram retains its full sampled numerical ordinates. Surface meshes retain
+  their existing nodal deformation display. Return to **Sampled curves** for
+  member bending shapes; probes, tables, reports and exports retain solver results.
 - Diagrams opens a retained member snapshot with N, Vy, Vz, T, My, Mz, dy and dz.
   Curves use local solver signs, with N positive in compression, and sample both
   sides of point-load boundaries. Combination and member selectors are independent
@@ -1439,6 +1445,19 @@ supply these capabilities.
   (1x), and Custom amplification. The current factor and actual maximum sampled
   displacement are shown separately; scaling never changes analysis results.
   The maximum is sampled at 41 positions per member, not an exact extremum search.
+  **Straight preview (approx.)** instead joins displaced member ends without
+  sampling interior bending, reducing display work for large frames. Its labelled
+  nodal maximum and Auto factor describe only those end translations. A loaded
+  beam whose end positions stay fixed can therefore look undeformed in this
+  approximate mode. **Sampled curves** restores the existing bending shape.
+  Switching changes no model definitions, solved values, numerical probes or
+  reports. The choice survives combination, unit and theme changes and is disabled
+  while deformation/results are unavailable.
+
+  [![Cantilever straight deformation preview with undeformed reference and nodal-only maximum](docs/assets/screenshots/straight-deformation-preview.png)](docs/assets/screenshots/straight-deformation-preview.png)
+
+  The straight red preview connects displaced ends; the original member remains
+  visible as a reference. Switch back to Sampled curves to inspect bending.
   Fit (F) includes the visible deformed shape. Diagrams opens whole-structure axial, shear, and bending moment
   diagrams with one common amplitude scale for every member.
   Whole Structure also offers Default/Opposite side and Reverse display signs.

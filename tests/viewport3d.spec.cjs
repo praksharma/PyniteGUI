@@ -36,6 +36,23 @@ const server = http.createServer((request,response)=>{
     assert(['Unmasked WebGL driver','Masked WebGL information'].includes(driver.source));
     await require('./viewport3d_cache.cjs')(page,payload);
     await require('./viewport_focus.cjs')(page,payload,[payload.nodes[0].position],path.join(output,'focused-node.png'));
+    for(const member of payload.qaStraight.members){
+      assert.equal(member.points.length,2,'Fast preview retained span samples');
+      assert.equal(member.displacements.length,2);
+    }
+    const beforePreview=await page.evaluate(()=>window.pyniteViewer.state());
+    await page.evaluate(data=>{window.pyniteViewer.update(data);window.pyniteViewer.exportImage();},payload.qaStraight);
+    const fastPreview=await page.evaluate(()=>window.pyniteViewer.state());
+    assert.deepEqual(fastPreview.camera,beforePreview.camera,'Preview switch moved camera');
+    assert(fastPreview.drawCalls>0,'Fast preview failed to render');
+    await page.screenshot({path:path.join(output,'straight-deformation-preview.png')});
+    for(let i=0;i<4;i++){
+      await page.evaluate(data=>{window.pyniteViewer.update(data);window.pyniteViewer.exportImage();},payload);
+      await page.evaluate(data=>{window.pyniteViewer.update(data);window.pyniteViewer.exportImage();},payload.qaStraight);
+    }
+    const repeatedPreview=await page.evaluate(()=>window.pyniteViewer.state());
+    assert(repeatedPreview.resources.geometries<=fastPreview.resources.geometries+2,'Preview switching leaked geometry');
+    await page.evaluate(data=>window.pyniteViewer.update(data),payload);
     const batches=await page.evaluate(async()=>{
       const THREE=await import('three'),{drawFrame,hitIdentity}=await import('./frame_meshes.js');
       const group=new THREE.Group(),picks=[];

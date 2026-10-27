@@ -26,6 +26,10 @@ if __name__ == "__main__":
     window.deformed_action.setChecked(True)
     payload = viewport_payload(window)
     payload.update(plane="XY", offset=0, labels=True, localAxes=True)
+    window.deformation_shape.setCurrentIndex(1)
+    payload["qaStraight"] = viewport_payload(window)
+    payload["qaStraight"].update(plane="XY", offset=0, labels=True, localAxes=True)
+    window.deformation_shape.setCurrentIndex(0)
     payload["qaDiagrams"] = {}
     for kind in ("axial", "shear_y", "shear_z", "torque", "moment_y", "moment_z"):
         window.view.diagram.setCurrentIndex(window.view.diagram.findData(kind))

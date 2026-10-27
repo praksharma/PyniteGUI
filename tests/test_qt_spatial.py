@@ -601,6 +601,39 @@ class SpatialWidgetTests(unittest.TestCase):
         self.assertEqual(viewport_payload(self.window)["factor"],25)
         self.assertTrue(self.window.deformation_scale.isEnabled())
 
+    def test_straight_preview_uses_nodes_and_preserves_sampled_force_diagrams(self):
+        from unittest.mock import patch
+        self.window.project.loads["L1"] = SpatialLoad("L1", "N2", "FZ", 2)
+        self.result()
+        window = self.window
+        before, revision, result = window.project.to_dict(), window.revision, window.result
+        window.deformed_action.setChecked(True)
+        sampled = viewport_payload(window)
+        with patch("pynitegui.qt.spatial_view.sampled_member", side_effect=AssertionError("No span sampling in fast preview")):
+            window.deformation_shape.setCurrentIndex(1)
+            fast = viewport_payload(window)
+        self.assertTrue(window.deformation_shape.isEnabled())
+        for definition in fast["members"]:
+            member = window.project.members[definition["name"]]
+            self.assertEqual(len(definition["points"]), 2)
+            for index, node in enumerate((member.start, member.end)):
+                np.testing.assert_allclose(definition["displacements"][index], result.displacements[node][:3])
+        self.assertIn("Nodal peak (approx.)", window.deformation_peak.text())
+        window.view.diagram.setCurrentIndex(window.view.diagram.findData("moment_y"))
+        fast_diagram = viewport_payload(window)
+        window.deformation_shape.setCurrentIndex(0)
+        full_diagram = viewport_payload(window)
+        self.assertEqual(fast_diagram["diagram"], full_diagram["diagram"])
+        for fast_member, full_member in zip(fast_diagram["members"], full_diagram["members"]):
+            self.assertEqual(fast_member["diagramValues"], full_member["diagramValues"])
+            self.assertEqual(fast_member["points"], full_member["points"])
+        window.view.diagram.setCurrentIndex(0)
+        restored = viewport_payload(window)
+        self.assertEqual(restored["members"], sampled["members"])
+        self.assertIs(window.result, result)
+        self.assertEqual(window.revision, revision)
+        self.assertEqual(window.project.to_dict(), before)
+
     def test_all_six_overlay_components_and_units(self):
         for i, direction in enumerate(("FX", "FY", "FZ", "MX", "MY", "MZ")):
             self.window.project.loads[f"L{i+1}"] = SpatialLoad(f"L{i+1}", "N2", direction, i+1)

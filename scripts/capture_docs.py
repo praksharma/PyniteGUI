@@ -131,6 +131,17 @@ def capture(output):
             window.view.fit()
             window.view.scale(.85, .85)
             save(window, "p-delta-column.png")
+
+            window.load_project(example_project("cantilever"))
+            with redirect_stdout(StringIO()):
+                result = analyze(window.project)
+            window.analysis_revision = window.revision
+            window.analysis_finished(result, "")
+            window.deformed_action.setChecked(True)
+            window.deformation_shape.setCurrentIndex(1)
+            app.processEvents()
+            window.view.fit()
+            save(window, "straight-deformation-preview.png")
         finally:
             # Do not show a save prompt or retain example recovery data.
             window.saved = window.project.to_dict()

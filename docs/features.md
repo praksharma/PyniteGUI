@@ -46,7 +46,7 @@ See [method limits and plasticity boundaries](analysis/solve.md).
 | --- | --- |
 | Unit-aware displacements/reactions, member end values/extrema and linked selections | [Linked results](results/linked.md) |
 | Equilibrium summary and independent reaction/load balance | [Equilibrium](results/linked.md) |
-| Auto/true/custom deformed shape amplification and sampled peak displacement | [Deformation](analysis/solve.md), [3D deformation](modeling/3d.md) |
+| Auto/true/custom deformation scaling, sampled curves and optional approximate straight preview | [Deformation](analysis/solve.md), [3D deformation](modeling/3d.md) |
 | Whole-structure axial/shear/bending diagrams; spatial biaxial bending and torsion | [Diagrams](analysis/solve.md), [3D results](modeling/3d.md) |
 | Member Detail, station inspection and one-sided values at jumps | [Inspection](analysis/solve.md) |
 | Sign/side/amplitude controls and annotation collision handling | [Diagrams](analysis/solve.md), [conventions](results/conventions.md) |

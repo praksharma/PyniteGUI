@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Optional approximate straight deformation preview for planar/spatial members,
+  joining displaced end nodes and skipping span sampling when force diagrams are
+  off. Label nodal-only peak/Auto scaling, retain full force-diagram samples and
+  preserve numerical results, probes and reports. Keep sampled curves as default.
+
 - Retained 2D/3D combination comparison: solid/dashed member curves on shared
   axes, exact left/right probes, signed governing value by absolute magnitude,
   deterministic ties and snapshot-aware PNG/SVG export. Preserve selections and

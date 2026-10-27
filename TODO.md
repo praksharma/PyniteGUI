@@ -300,6 +300,9 @@ not change the analysis-method priorities above.
   labels, active modes and solved-result gating.
 - [x] Add auto, true-scale, and custom deformed-shape amplification with actual
   maximum sampled displacement shown in the selected project units.
+- [x] Add approximate straight deformation preview in 2D/3D: join displaced
+  member ends without span sampling when force overlays are off, explicitly label
+  nodal peak/Auto scaling, preserve sampled curves, numerical results and reports.
 - [x] Add axial-force diagrams for the whole structure and Member Detail.
 - [x] Add interactive value inspection at a chosen distance along a member.
 - [x] Improve label placement for dense structures and overlapping diagrams.

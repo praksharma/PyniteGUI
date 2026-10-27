@@ -71,10 +71,14 @@ def load_symbol(project, load, magnitude):
     return load.direction, magnitude
 
 
-def deformation_paths(project, result):
+def deformation_paths(project, result, straight=False):
     paths = []
     for member in project.members.values():
         a, b = project.nodes[member.start], project.nodes[member.end]
+        if straight:
+            paths.append([(a.x, a.y, *result.displacements[member.start][:2]),
+                          (b.x, b.y, *result.displacements[member.end][:2])])
+            continue
         length = math.hypot(b.x - a.x, b.y - a.y)
         solver_member = result.solver.members[member.name]
         axes = solver_member.T()[:3, :3]
@@ -460,12 +464,14 @@ class StructureView(QGraphicsView):
             symbol.setPos(x, -y)
             load_label(annotation_load_label(project, load), x, y, highlighted)
         visible = bool(self.window.result and self.window.deformed_action.isChecked())
+        self.window.deformation_shape.setEnabled(visible)
         self.window.deformation_mode.setEnabled(visible)
         self.window.deformation_scale.setEnabled(visible and self.window.deformation_mode.currentData() == "custom")
         self.window.deformation_scale_action.setVisible(self.window.deformation_mode.currentData() == "custom")
         self.window.deformation_peak.setVisible(visible)
         if visible:
-            paths = deformation_paths(project, self.window.result)
+            straight = self.window.deformation_shape.currentData() == "straight"
+            paths = deformation_paths(project, self.window.result, straight)
             peak = max((math.hypot(ux, uy) for path in paths for _, _, ux, uy in path), default=0)
             mode = self.window.deformation_mode.currentData()
             scale = self.window.deformation_scale.value()
@@ -476,7 +482,8 @@ class StructureView(QGraphicsView):
                 scale = 0.15 * span / peak if peak > 1e-12 else 1.0
             elif mode == "true":
                 scale = 1.0
-            self.window.deformation_peak.setText(f"Factor {scale:.6g}x | Max {units.to_display(peak, 'length'):.6g} {units.length}")
+            label = "Nodal max (approx.)" if straight else "Max"
+            self.window.deformation_peak.setText(f"Factor {scale:.6g}x | {label} {units.to_display(peak, 'length'):.6g} {units.length}")
             pen = QPen(QColor(c["load"]), 2)
             pen.setCosmetic(True)
             for path in paths:
@@ -766,6 +773,12 @@ class MainWindow(QMainWindow):
         self.deformed_action.setCheckable(True)
         self.deformed_action.setEnabled(False)
         deformation_toolbar.addAction(self.deformed_action)
+        self.deformation_shape = QComboBox()
+        self.deformation_shape.addItem("Sampled curves", "sampled")
+        self.deformation_shape.addItem("Straight preview (approx.)", "straight")
+        self.deformation_shape.setToolTip("Straight preview joins displaced member ends; it omits bending between nodes. Numerical results and reports retain full solver values.")
+        self.deformation_shape.currentIndexChanged.connect(lambda: self.view.redraw())
+        deformation_toolbar.addWidget(self.deformation_shape)
         self.deformation_mode = QComboBox()
         for label, key in (("Auto", "auto"), ("True Scale", "true"), ("Custom", "custom")):
             self.deformation_mode.addItem(label, key)
@@ -780,7 +793,7 @@ class MainWindow(QMainWindow):
         self.deformation_scale_action = deformation_toolbar.addWidget(self.deformation_scale)
         self.deformation_peak = QLabel()
         self.deformation_peak.setMargin(6)
-        self.deformation_peak.setToolTip("Actual maximum displacement magnitude sampled at 41 positions per member; not amplified")
+        self.deformation_peak.setToolTip("Unamplified displacement magnitude: sampled along members in curve mode; nodal maximum only in approximate straight preview")
         deformation_toolbar.addWidget(self.deformation_peak)
 
     def dock(self, title, widget, area):
