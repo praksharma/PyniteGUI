@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add scope/component/value filters to existing envelope summaries with physical
+  thresholds retained across units, snapshot/filter-labelled CSV, cached extrema
+  and row-to-member-curve navigation. Keep global governing-station searches
+  pending. Reconcile RC2 publication and live/legacy Pages deployment records.
+
 - Add editing-only named groups and global-Y levels with native select/isolate,
   optional drawing/node-drag snapping and 3D level work-plane placement. Preserve
   analysis snapshots and keep split/deleted references valid. New saves use

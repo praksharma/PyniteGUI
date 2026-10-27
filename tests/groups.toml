@@ -4,6 +4,7 @@
 [groups.ui]
 description = "Native appearance, presentation, window controls and editor interaction; no structural benchmark suites."
 tests = [
+  "test_envelope_filters.EnvelopeFilterUITests",
   "test_qt_organization",
   "test_qt_annotations",
   "test_qt_canvas_results",
@@ -74,6 +75,7 @@ tests = [
 [groups.engineering]
 description = "Solver mechanics, analytical comparisons, equilibrium, stability and frame/truss benchmarks."
 tests = [
+  "test_envelope_filters.EnvelopeFilterTests",
   "test_organization.OrganizationEngineeringTests",
   "test_qt_analysis_jobs.SparseStabilityTests",
   "test_qt_angled.AngledModelTests",

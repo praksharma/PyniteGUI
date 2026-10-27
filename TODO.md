@@ -6,7 +6,7 @@ and named load cases/combinations. This list tracks remaining work;
 items are not promises of a particular release date.
 
 See the [focused UI/modelling backlog](TODO_SECONDARY.md) for four remaining
-interface/editing tasks and three completed canvas/organization improvements. This file owns engineering work, completed records and
+interface/editing tasks and four completed canvas/organization/result-filter improvements. This file owns engineering work, completed records and
 release gates. Scope was pruned 2026-10-27: duplicate umbrella/release/solver ticks
 and unrequested speculative extras were removed, without dropping validation
 requirements or the official-example dependency audit.
@@ -430,8 +430,10 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
   first-model tutorial, feature index, logo/screenshots and light/dark appearance.
   Generate detailed pages from the GUIDE/project records to avoid drift; add
   strict build/link checks and PR/build/GitHub Pages deployment workflow.
-- [ ] Owner: enable GitHub Pages with GitHub Actions as the source and push/run
-  the documentation workflow; verify the public URL after deployment.
+- [ ] Owner: switch the existing live GitHub Pages site from legacy deployment
+  to GitHub Actions, then run/verify the generated manual. Public URL returns
+  HTTP 200 (2026-10-27), but the Pages API still reports build_type=legacy;
+  website availability alone does not certify the Actions deployment.
 - [x] Illustrate Help/About, shortcut search, finding-focused navigation, recent
   history cleanup and the three-storey slab/P-Delta walkthroughs with real app
   screenshots. Add repeatable native captures and check image links on the site.
@@ -447,6 +449,9 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
   base/MCP and uv-tool installation checks, installed-asset viewport QA, hashes
   and PyPI/uv publishing guidance. Refresh the README with current screenshots,
   installation and scope. Keep visible-platform gates below open.
+- [x] Publish RC2 to GitHub and PyPI through the configured Trusted Publisher;
+  confirmed both public release endpoints on 2026-10-27. Later development
+  changes remain outside the immutable RC2 artifacts.
 - [x] Fix README screenshots/logo and repository-document links for PyPI using
   absolute HTTPS URLs; add uv/pip registry installation commands and record the
   need to check built long-description metadata before future uploads.

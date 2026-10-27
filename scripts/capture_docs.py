@@ -217,6 +217,20 @@ def capture(output):
             save(organization, "groups-levels.png")
             organization.reject()
             organization.deleteLater()
+            from pynitegui.qt.diagrams import DiagramDialog
+            filtered = DiagramDialog(window, window.project, window.result)
+            filtered.resize(1120, 720)
+            filtered.tabs.setCurrentWidget(filtered.envelopes)
+            filters = filtered.envelopes.filters
+            filters.scope.setCurrentIndex(filters.scope.findData("group:Main beam"))
+            filters.component.setCurrentIndex(filters.component.findData("Member:Mz"))
+            filters.mode.setCurrentIndex(filters.mode.findData("absolute"))
+            filters.threshold.setValue(1500.)
+            filtered.envelopes.views.setCurrentIndex(1)
+            filtered.show()
+            save(filtered, "envelope-filters.png")
+            filtered.reject()
+            filtered.deleteLater()
         finally:
             # Do not show a save prompt or retain example recovery data.
             window.saved = window.project.to_dict()

@@ -26,11 +26,17 @@ basis for engineering features.
   scale shared across all combinations in the same snapshot, numerical legends,
   negative dashed/positive solid/zero dotted strokes and theme-aware colours.
   Surface stress maps remain outside this member-result task.
-- [ ] **Scoped result queries.** Filter by member ID, current selection or all
-  members (and named groups once available), then minimum, maximum, absolute
-  extreme or a unit-aware threshold. Include interior extrema/discontinuities,
-  locate the governing member/station and export snapshot-labelled results.
-  Extend the linked tables/envelopes rather than adding another parallel system.
+- [x] **Scoped envelope summaries.** Filter existing node/member envelope rows
+  by explicit member ID, selection captured when the retained window opens, all
+  entities or saved group. Add component-specific signed minimum/maximum and
+  absolute-extreme thresholds with unit conversion, cached rows, member-curve
+  navigation and snapshot/filter-labelled CSV. Keep plots/printing explicitly
+  separate from summary filters; do not introduce new numerical extrema methods.
+- [ ] **Governing-station queries.** Build on scoped summaries to locate global
+  minimum/maximum/absolute extremes and their governing member/station across
+  selected entities. Include interior critical stations and both sides of
+  discontinuities, with independent location benchmarks. Retain this part of
+  the original scoped-query task; summary filtering does not complete it.
 
 ## Larger-Model Editing
 

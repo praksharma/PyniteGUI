@@ -1732,7 +1732,7 @@ the signed moment for each; the larger absolute moment governs.
 - Diagrams > Envelopes compares checked combinations from that analyzed
   snapshot without another solve. The main combination selector does not change
   the envelope selection. Nodes lists displacement/reaction bounds; Members
-  lists exact solver extrema for N, Fy, Mz, and dy over entire members. Each
+  lists solver-provided extrema for N, Fy, Mz, and dy over entire members. Each
   minimum and maximum identifies its governing combination. Ties use the first
   checked combination in list order; undefined truss-joint rotations remain n/a.
   These are independent bounds, not a simultaneous force/displacement state.
@@ -1742,19 +1742,49 @@ the signed moment for each; the larger absolute moment governs.
   one-sided station bounds and their governing combinations. Left/Right side
   chooses the side at point-load jumps. Axial N remains positive compression;
   Whole Structure placement/sign controls do not change envelopes.
-  The envelope export icon saves both summary tables as CSV with units, source,
-  snapshot identity, selected combinations/factors, and self-weight metadata.
-  Its export menu also offers Print envelopes, opening report choices with an
+  The envelope export icon saves the visible summary rows as CSV with units, source,
+  snapshot identity, selected combinations/factors, self-weight metadata and the
+  active scope/component/threshold specification.
+  Its export menu also offers Print all envelope summaries, opening report choices with an
   envelope-only selection and the currently checked combinations. General Print
   Results can include envelopes alongside model definitions, single-combination
   results, and force diagrams. Report combination checkboxes are independent
   copies: changing them does not change the diagram window's selection.
-  Printed envelopes contain exact node/member summary bounds and governing
+  Printed envelopes contain node/member summary bounds and governing
   combinations, not sampled curves. Selected factors, units, conventions, and
   analysis identity are included; undefined rotations remain n/a. In mixed
   reports, single-combination sections and envelope sections are labelled
   separately. Unit/theme changes retain the selection. Envelope choices are
   window-local, not saved in the project.
+
+**Scoped envelope summaries (development after RC2)**
+
+Use **Summary scope** for all entities, an explicit member ID, the editor's
+node/member selection captured when the retained diagram window opens, or a
+saved group captured at that time. The group and selection scopes remain fixed
+if the editor later changes. Group scopes use explicit saved IDs, not the extra
+end nodes shown as isolation context. **Component** distinguishes global node
+results from local member results and displays the correct units.
+
+Choose **Minimum ≤**, **Maximum ≥**, or **Absolute extreme ≥** and enter a
+threshold for one component. Equality is included; the absolute filter considers
+both signed bounds, without discarding their signs or governing combinations.
+Switching display units preserves the physical threshold. Choosing All components
+resets the value filter so unlike units cannot be compared. The count shows how
+many summary rows remain, and CSV export is disabled for an empty filtered set.
+Double-click a member row to open that member's existing envelope curves and
+station probe. Filtering does not change plot zoom, checked combinations,
+numerical results or the retained snapshot. Curves and printed summaries retain
+their full scope; the CSV explicitly follows the visible summary filters.
+
+These filters reuse the existing envelope extrema; they do not find a new global
+critical station or return all threshold-crossing positions. In particular,
+the locked PyNite deflection-extrema API samples the span, so deflection bounds
+inherit that approximation. Automatic governing-station searches and their
+independent benchmarks remain a separate roadmap item.
+
+![Envelope summary filters with a signed moment threshold](docs/assets/screenshots/envelope-filters.png)
+
 **Plain storey drift**
 
 The **Storey Drift** tab in retained 2D/3D diagram windows starts empty. Choose a

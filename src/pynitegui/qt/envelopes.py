@@ -105,10 +105,13 @@ def display_rows(project, rows):
 HEADERS = ("Entity", "ID", "Result", "Minimum", "Minimum combination", "Maximum", "Maximum combination")
 
 
-def export_envelope_csv(path, project, result, combinations, source="Untitled"):
+def export_envelope_csv(path, project, result, combinations, source="Untitled", *, summary_filter=None):
     from .reports import csv_text
     combinations = tuple(combinations)
     rows = envelope_rows(project, result, combinations)
+    if summary_filter is not None:
+        from .envelope_filters import filter_rows
+        rows = list(filter_rows(rows, summary_filter))
     metadata = (source, result.snapshot_id, result.analyzed_at, result.model_signature,
                 json.dumps(list(combinations), ensure_ascii=True), project.units.label,
                 json.dumps({name: result.solver.load_combos[name].factors for name in combinations}, ensure_ascii=True),
@@ -120,9 +123,11 @@ def export_envelope_csv(path, project, result, combinations, source="Untitled"):
                                          prefix=f".{path.name}.", suffix=".tmp", delete=False) as stream:
             temporary = Path(stream.name)
             writer = csv.writer(stream)
+            filter_header = ("Summary filter",) if summary_filter is not None else ()
+            filter_data = (json.dumps(summary_filter, ensure_ascii=True),) if summary_filter is not None else ()
             writer.writerow(("Source", "Analysis ID", "Analyzed (UTC)", "Model signature", "Selected combinations",
-                             "Unit system", "Combination factors", "Self-weight case", "Self-weight factor", "Convention", "Analysis method", *HEADERS))
-            writer.writerows([csv_text(value) for value in (*metadata, *row)] for row in display_rows(project, rows))
+                             "Unit system", "Combination factors", "Self-weight case", "Self-weight factor", "Convention", "Analysis method", *filter_header, *HEADERS))
+            writer.writerows([csv_text(value) for value in (*metadata, *filter_data, *row)] for row in display_rows(project, rows))
             stream.flush()
             os.fsync(stream.fileno())
         temporary.replace(path)
@@ -136,6 +141,8 @@ class EnvelopeWidget(QWidget):
         super().__init__(parent)
         self.project, self.result, self.source = project, result, source
         self.spatial = getattr(project, "dimension", "2D") == "3D"
+        self._summary_key = (result.snapshot_id, model_signature(project), tuple(result.solver.load_combos))
+        self._summary_rows = envelope_rows(project, result, tuple(result.solver.load_combos))
         layout = QVBoxLayout(self)
         controls = QHBoxLayout()
         controls.addWidget(QLabel("Combinations"))
@@ -152,11 +159,17 @@ class EnvelopeWidget(QWidget):
         self.export_button.setToolTip("Export or print envelope summaries")
         self.export_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         menu = QMenu(self.export_button)
-        menu.addAction("Envelope summaries (CSV)...", self.export)
-        menu.addAction("Print envelopes...", self.print_report)
+        self.filtered_export = menu.addAction("Visible summaries (CSV)...", self.export)
+        menu.addAction("Print all envelope summaries...", self.print_report)
         self.export_button.setMenu(menu)
         controls.addWidget(self.export_button)
         layout.addLayout(controls)
+        from .envelope_filters import EnvelopeFilters
+        host = parent.parent() if parent is not None else None
+        selections = list(getattr(host, "selections", [("members", selected)] if selected else []))
+        self.filters = EnvelopeFilters(project, self._summary_rows, selections)
+        layout.addWidget(self.filters)
+        self.filters.changed.connect(self.refresh_summaries)
         self.views = QTabWidget()
         layout.addWidget(self.views)
         self.tables = {}
@@ -167,6 +180,7 @@ class EnvelopeWidget(QWidget):
             table.setAlternatingRowColors(True)
             self.tables[kind] = table
             self.views.addTab(table, label)
+            table.cellDoubleClicked.connect(lambda row, col, table=table: self.open_summary_member(table, row))
         plot = QWidget()
         plot_layout = QVBoxLayout(plot)
         plot_controls = QHBoxLayout()
@@ -226,17 +240,43 @@ class EnvelopeWidget(QWidget):
     def refresh(self):
         names = self.selected_combinations()
         self.export_button.setEnabled(bool(names))
-        rows = list(display_rows(self.project, envelope_rows(self.project, self.result, names))) if names else []
+        key = (self.result.snapshot_id, model_signature(self.project), names)
+        if key != self._summary_key:
+            self._summary_rows = envelope_rows(self.project, self.result, names) if names else []
+            self._summary_key = key
+        self.filters.refresh_units()
+        self.refresh_summaries()
+        self.update_plot()
+
+    def refresh_summaries(self):
+        from .envelope_filters import filter_rows
+        filtered = list(filter_rows(self._summary_rows, self.filters.specification()))
+        rows = list(display_rows(self.project, filtered))
+        self.filters.count.setText(f"{len(rows)} of {len(self._summary_rows)} summary rows | independent extrema")
+        self.filtered_export.setEnabled(bool(rows))
         for kind, table in self.tables.items():
-            subset = [row for row in rows if row[0] == kind]
+            subset = [(row, raw) for row, raw in zip(rows, filtered) if row[0] == kind]
             table.setRowCount(len(subset))
-            for i, row in enumerate(subset):
+            for i, (row, raw) in enumerate(subset):
                 for j, value in enumerate(row):
                     item = QTableWidgetItem(value if isinstance(value, str) else f"{value:.6g}")
+                    item.setData(Qt.ItemDataRole.UserRole, raw[:4])
                     item.setToolTip("Independent extrema, not one simultaneous load state. Local member axes; N positive compression. First checked combination wins ties.")
                     table.setItem(i, j, item)
             table.resizeColumnsToContents()
-        self.update_plot()
+
+    def open_summary_member(self, table, row):
+        item = table.item(row, 0)
+        identity = item.data(Qt.ItemDataRole.UserRole) if item else None
+        if identity and identity[0] == "Member":
+            if self.spatial:
+                from .spatial_results import LABELS, QUANTITIES
+                quantities = dict(zip(LABELS, QUANTITIES))
+            else:
+                quantities = {"N": "axial", "Fy": "shear", "Mz": "moment", "dy": "deflection"}
+            self.member.setCurrentText(identity[1])
+            self.quantity.setCurrentIndex(self.quantity.findData(quantities[identity[2]]))
+            self.views.setCurrentIndex(2)
 
     def update_plot(self):
         from .diagrams import member_breaks, member_values
@@ -314,7 +354,8 @@ class EnvelopeWidget(QWidget):
         filename, _ = QFileDialog.getSaveFileName(self, "Export Envelope", f"envelope-{self.result.snapshot_id}.csv", "CSV (*.csv)")
         if filename:
             try:
-                export_envelope_csv(filename, self.project, self.result, self.selected_combinations(), self.source)
+                export_envelope_csv(filename, self.project, self.result, self.selected_combinations(), self.source,
+                                    summary_filter=self.filters.specification())
             except (OSError, ValueError) as exc:
                 QMessageBox.warning(self, "Export failed", str(exc))
 

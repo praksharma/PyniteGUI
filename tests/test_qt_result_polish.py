@@ -185,7 +185,7 @@ class ResultPolishTests(unittest.TestCase):
     def test_envelope_print_action_uses_snapshot_menu_and_cancel_is_safe(self):
         parent = DiagramDialog(None, self.project, self.result)
         widget = parent.envelopes
-        self.assertTrue(any("Print envelopes" in action.text() for action in widget.export_button.menu().actions()))
+        self.assertTrue(any(action.text() == "Print all envelope summaries..." for action in widget.export_button.menu().actions()))
         with patch("pynitegui.qt.reports.ReportOptionsDialog") as choices, \
                 patch("pynitegui.qt.reports.QPrintPreviewDialog") as preview:
             choices.return_value.exec.return_value = 0

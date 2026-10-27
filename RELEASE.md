@@ -6,6 +6,12 @@ assets; source tags and unpublished drafts do not imply a public binary release.
 Stable 1.0 promotion follows a feature freeze and verification of the actual
 release artifacts. Standalone installers remain a later step.
 
+**Publication status (2026-10-27):** RC2 is published as a
+[GitHub prerelease](https://github.com/praksharma/PyniteGUI/releases/tag/v1.0.0rc2)
+and on [PyPI](https://pypi.org/project/pynitegui/1.0.0rc2/). Later development
+changes are not retroactively included in those artifacts. Stable 1.0 platform
+and prerelease-feedback gates below remain open.
+
 ## Build and Verify
 
 From the repository root, with uv installed:
@@ -72,12 +78,13 @@ block this scope.
 - [ ] Windows installation and visible workflows checked, or explicitly labelled unverified.
 - [x] RC2 release notes and limitations reviewed; artifact hashes generated in SHA256SUMS.
 - [x] User approves tagging/pushing and creating an unpublished draft with assets.
-- [ ] Owner reviews and publishes the GitHub prerelease.
+- [x] Owner reviews and publishes the GitHub RC2 prerelease.
+- [x] RC2 PyPI publication through Trusted Publishing completes.
 
 Upload the wheel, source distribution and SHA256SUMS to the approved GitHub
 prerelease, using CHANGELOG.md for notes. Tag the verified commit, not a moving
-branch. GitHub also provides source archives for the tag. No PyPI upload is
-performed here. For stable 1.0.0, update version/lockfile/notes, rebuild and repeat
+branch. GitHub also provides source archives for the tag. Preparation scripts
+do not upload to PyPI; use the manual publishing workflow below. For stable 1.0.0, update version/lockfile/notes, rebuild and repeat
 validation rather than renaming RC artifacts.
 
 ## uv Tools and PyPI
