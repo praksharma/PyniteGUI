@@ -1,7 +1,8 @@
 # Release Preparation
 
-Target: **1.0.0rc2**, proposed GitHub prerelease **v1.0.0rc2**. RC2 has not
-been tagged, uploaded or published. The published rc1 remains available.
+Target: **1.0.0rc2**, GitHub tag **v1.0.0rc2**. Check
+[GitHub Releases](https://github.com/praksharma/PyniteGUI/releases) for published
+assets; source tags and unpublished drafts do not imply a public binary release.
 Stable 1.0 promotion follows a feature freeze and verification of the actual
 release artifacts. Standalone installers remain a later step.
 
@@ -66,7 +67,8 @@ block this scope.
 - [ ] Repeat installation and visible workflows on macOS; record OS/Python/Qt/renderer versions.
 - [ ] Windows installation and visible workflows checked, or explicitly labelled unverified.
 - [x] RC2 release notes and limitations reviewed; artifact hashes generated in SHA256SUMS.
-- [ ] User approves tagging/pushing and creating the GitHub prerelease.
+- [x] User approves tagging/pushing and creating an unpublished draft with assets.
+- [ ] Owner reviews and publishes the GitHub prerelease.
 
 Upload the wheel, source distribution and SHA256SUMS to the approved GitHub
 prerelease, using CHANGELOG.md for notes. Tag the verified commit, not a moving
@@ -137,7 +139,8 @@ Visible macOS inspection was attempted, but the UI automation attachment to the
 installed Python window timed out. No visible-workflow gate is marked complete.
 Visible installed-app checks on the claimed platforms and independent prerelease
 feedback remain required before stable 1.0. Windows is currently unverified.
-No RC2 tag, push, GitHub release, PyPI upload or DOI deposit was made.
+The automated validation above performed no tag/push, release publication,
+PyPI upload or DOI deposit. Publication is a separate step from these checks.
 
 ## Historical RC1 Validation Record
 

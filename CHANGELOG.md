@@ -3,10 +3,14 @@
 ## Unreleased
 
 Preparing **1.0.0rc2**, incorporating the changes below since the published rc1.
-RC2 is not yet tagged, uploaded to PyPI or published as a GitHub release.
+See GitHub Releases for publication status; a source tag or unpublished draft
+does not imply PyPI availability.
 Stable 1.0 targets the documented elastic frame/truss and restricted frame-only
 P-Delta workflows. Surface/plate tools remain experimental; nonlinear/plastic,
 modal and reinforced-concrete workflows remain deferred.
+
+- Refresh the README with current result workflows, RC2 installation guidance,
+  documentation links, scope limits and current native/3D screenshots.
 
 - Add project-level citation guidance and GitHub citation metadata, with exact
   release/commit guidance, separate PyNite attribution and deferred DOI archiving.

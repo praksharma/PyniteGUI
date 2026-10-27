@@ -438,7 +438,8 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
 - [x] Prepare 1.0.0rc2 with an elastic frame/truss and restricted P-Delta stable
   scope, experimental surface/plate labels, full locked/installed-wheel validation,
   base/MCP and uv-tool installation checks, installed-asset viewport QA, hashes
-  and PyPI/uv publishing guidance. Keep visible-platform gates below open.
+  and PyPI/uv publishing guidance. Refresh the README with current screenshots,
+  installation and scope. Keep visible-platform gates below open.
 - [ ] Complete platform/manual validation gates in RELEASE.md and collect
   prerelease feedback before promoting to stable 1.0.0. This single item owns
   reproducible macOS installation/rendering/save-open/analysis/export checks and
