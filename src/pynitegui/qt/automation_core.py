@@ -96,7 +96,7 @@ def batch_candidate(project, operations):
                         material = value["material"]
                         values["material"] = {**previous["material"], **material}
                         if "preset" not in material and any(field in material and material[field] != previous["material"].get(field)
-                                                            for field in ("E", "nu", "rho")):
+                                                            for field in ("E", "nu", "rho", "shear_modulus")):
                             values["material"]["preset"] = None
                     entities[key] = values
                 elif action == "delete" and value is None and key in entities:
@@ -118,7 +118,7 @@ def batch_candidate(project, operations):
                         raise AutomationError("invalid_batch", "Unsupported entity field or inconsistent name.")
                     values = {**entities.get(key, {}), **value, "name": key}
                     if collection == "materials" and "preset" not in value and any(
-                            field in value and value[field] != entities.get(key, {}).get(field) for field in ("E", "nu", "rho")):
+                            field in value and value[field] != entities.get(key, {}).get(field) for field in ("E", "nu", "rho", "shear_modulus")):
                         values["preset"] = None
                     if collection == "sections" and "catalog" not in value and any(
                             field in value and value[field] != entities.get(key, {}).get(field) for field in ("A", "Iy", "Iz", "J")):

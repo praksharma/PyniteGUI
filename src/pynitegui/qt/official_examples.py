@@ -14,6 +14,8 @@ SOURCES = {
     "official_moment_frame": "Moment Frame - Lateral Load.py",
     "official_p_delta": "P-Delta Analysis.py",
     "3d_official_truss": "Space Truss - Nodal Load.py",
+    "3d_official_space_frame_1": "Space Frame - Nodal Loads 1.py",
+    "3d_official_space_frame_2": "Space Frame - Nodal Loads 2.py",
 }
 BEAM_KEYS = ("official_beam_point", "official_beam_uniform", "official_beam_envelope")
 
@@ -25,6 +27,8 @@ def example_project(key, unit_system="imperial"):
         return moment_frame(unit_system)
     if key == "official_p_delta":
         return p_delta_column(unit_system)
+    if key.startswith("3d_official_space_frame_"):
+        return space_frame(int(key[-1]), unit_system)
     if key == "3d_official_truss":
         return space_truss(unit_system)
     uniform = key == "official_beam_uniform"
@@ -114,5 +118,30 @@ def space_truss(unit_system):
                        for name in ("AB", "AC", "AD", "BC", "BD", "BE")}
     project.loads = {f"L{i}": SpatialLoad(f"L{i}", "A", direction, magnitude/force)
                      for i, (direction, magnitude) in enumerate((("FX", 10.), ("FY", 60.), ("FZ", 20.)), 1)}
+    project.validate()
+    return project
+
+
+def space_frame(number, unit_system="imperial"):
+    """Preserve the pinned scripts' IDs, XYZ geometry, E/G/nu and nodal loads."""
+    from .spatial_model import SpatialLoad, SpatialMember, SpatialNode, SpatialProject
+    first = number == 1
+    project = SpatialProject(unit_system=unit_system,
+        materials={"Steel": Material("Steel", E=30000., nu=.3, rho=2.836e-4, shear_modulus=10000.)},
+        default_material="Steel",
+        sections={"MySection": Section("MySection", A=10. if first else 100.,
+                    Iy=100. if first else 200., Iz=100. if first else 1000., J=50. if first else 100.)},
+        default_section="MySection", combinations={"Combo 1": {"Case 1": 1.}})
+    positions = (("N1", 0., 0., 0.), ("N2", -100., 0., 0.), ("N3", 0., 0., -100.), ("N4", 0., -100., 0.)) if first else (
+        ("N1", 0., 0., 0.), ("N2", 120., 0., 0.), ("N3", 120., 0., -120.), ("N4", 120., -240., -120.))
+    fixed = ("N2", "N3", "N4") if first else ("N1", "N4")
+    project.nodes = {name: SpatialNode(name, x, y, z=z, support="fixed" if name in fixed else "free")
+                     for name, x, y, z in positions}
+    members = (("M1", "N2", "N1"), ("M2", "N3", "N1"), ("M3", "N4", "N1")) if first else (
+        ("M12", "N1", "N2"), ("M23", "N2", "N3"), ("M34", "N3", "N4"))
+    project.members = {name: SpatialMember(name, start, end, "Steel", "MySection") for name, start, end in members}
+    loads = (("N1", "FY", -50.), ("N1", "MX", -1000.)) if first else (("N2", "FY", -5.), ("N2", "MX", -1200.), ("N3", "FZ", 40.))
+    project.loads = {f"L{i}": SpatialLoad(f"L{i}", target, direction, value)
+                     for i, (target, direction, value) in enumerate(loads, 1)}
     project.validate()
     return project

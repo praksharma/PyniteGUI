@@ -71,12 +71,12 @@ class SpatialProject(Project):
     surface_pressures: dict = field(default_factory=dict)
 
     def to_dict(self):
-        return {"version": 24, "units": "in-kip", **asdict(self),
+        return {"version": 26, "units": "in-kip", **asdict(self),
                 "surfaces": {name: mesh.to_dict() for name, mesh in self.surfaces.items()}}
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22, 24) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
+        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22, 24, 26) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
             raise ValueError("Unsupported spatial project version, dimension, or units.")
         if (data["version"] < 19 and "surfaces" in data) or (data["version"] >= 19 and not isinstance(data.get("surfaces"), dict)):
             raise ValueError("Surface geometry requires the version 19 spatial schema.")
@@ -94,9 +94,9 @@ class SpatialProject(Project):
         # Reuse the established metadata migrations/validation, without projecting geometry.
         if data["version"] < 24 and (data.get("groups", {}) or data.get("levels", {}) or data.get("snap_levels", False) is not False):
             raise ValueError("Groups and levels require spatial version 24.")
-        if data["version"] == 24 and not {"groups", "levels", "snap_levels"} <= data.keys():
+        if data["version"] >= 24 and not {"groups", "levels", "snap_levels"} <= data.keys():
             raise ValueError("Missing groups or levels metadata.")
-        metadata = {**data, "version": 23, "analysis_method": data.get("analysis_method", "linear"), "nodes": {}, "members": {}, "loads": {},
+        metadata = {**data, "version": 25 if data["version"] >= 26 else 23, "analysis_method": data.get("analysis_method", "linear"), "nodes": {}, "members": {}, "loads": {},
                     "groups": {}, "levels": data.get("levels", {}), "snap_levels": data.get("snap_levels", False)}
         metadata.pop("dimension")
         metadata.pop("surfaces", None)

@@ -249,6 +249,23 @@ def capture(output):
             window.view.fit()
             save(window, "frame-generator.png")
             window.geometry_panel.cancel()
+            window.load_project(example_project("3d_official_space_frame_2"))
+            from pynitegui.qt.materials import MaterialEditor
+            editor = MaterialEditor(window, window.project, window.project.materials["Steel"], "Steel")
+            editor.resize(640, 400)
+            editor.show()
+            save(editor, "independent-g.png")
+            editor.reject()
+            editor.deleteLater()
+            from pynitegui.qt.example_browser import ExampleBrowser
+            official = ExampleBrowser(window)
+            official.resize(1100, 760)
+            official.search.setText("official space frame")
+            official.list.setCurrentRow(1)
+            official.show()
+            save(official, "official-space-frame.png")
+            official.reject()
+            official.deleteLater()
         finally:
             # Do not show a save prompt or retain example recovery data.
             window.saved = window.project.to_dict()

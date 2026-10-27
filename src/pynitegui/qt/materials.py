@@ -1,7 +1,7 @@
 """Reusable material definitions and member assignment management."""
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QAbstractItemView, QDialog, QDialogButtonBox, QFormLayout, QHBoxLayout,
+    QAbstractItemView, QCheckBox, QDialog, QDialogButtonBox, QFormLayout, QHBoxLayout,
     QLabel, QLineEdit, QMessageBox, QPushButton, QTableWidget, QTableWidgetItem,
     QVBoxLayout,
 )
@@ -124,11 +124,23 @@ class MaterialEditor(QDialog):
         self.original = material
         self.initial_values = (self.E.value(), self.nu.value(), self.rho.value())
         self.G = QLabel()
+        self.independent_G = QCheckBox("Specify independent G (frame/truss materials)")
+        self.independent_G.setChecked(material.shear_modulus is not None)
+        self.G_input = unit_number(material.G, project.units, "stress", 0.000001, 1e12, 6)
+        self.G_input.setEnabled(self.independent_G.isChecked())
         self.source = QLabel(material.source_label)
         self.source.setWordWrap(True)
         for label, widget in (("Name", self.name), (f"E ({project.units.stress})", self.E), ("Poisson ratio", self.nu), (f"Weight density ({project.units.density})", self.rho), (f"G ({project.units.stress})", self.G)):
             form.addRow(label, widget)
+        form.addRow(self.independent_G)
+        form.addRow(f"Independent G ({project.units.stress})", self.G_input)
+        note = QLabel("Default: G = E / [2(1+nu)]. Independent G supplies frame torsion stiffness directly; it does not define general anisotropic elasticity. Plate/surface recipes use derived G.")
+        note.setWordWrap(True)
+        form.addRow(note)
         form.addRow("Source", self.source)
+        self.independent_G.toggled.connect(self.G_input.setEnabled)
+        self.independent_G.toggled.connect(self.update_G)
+        self.G_input.valueChanged.connect(self.update_G)
         self.E.valueChanged.connect(self.update_G)
         self.nu.valueChanged.connect(self.update_G)
         self.rho.valueChanged.connect(self.update_G)
@@ -139,8 +151,10 @@ class MaterialEditor(QDialog):
         form.addRow(buttons)
 
     def update_G(self):
-        self.G.setText(f"{self.E.value() / (2 * (1 + self.nu.value())):.6g}")
-        modified = (self.E.value(), self.nu.value(), self.rho.value()) != self.initial_values
+        value = self.G_input.value() if self.independent_G.isChecked() else self.E.value() / (2 * (1 + self.nu.value()))
+        self.G.setText(f"{value:.6g} | {'Independent' if self.independent_G.isChecked() else 'Derived'}")
+        modulus = unit_value(self.G_input, self.project.units) if self.independent_G.isChecked() else None
+        modified = (self.E.value(), self.nu.value(), self.rho.value()) != self.initial_values or modulus != self.original.shear_modulus
         self.source.setText("Custom" if modified else self.original.source_label)
 
     def accept(self):
@@ -148,8 +162,9 @@ class MaterialEditor(QDialog):
                        for widget, initial, original in zip(
                            (self.E, self.nu, self.rho), self.initial_values,
                            (self.original.E, self.original.nu, self.original.rho)))
-        material = Material(self.name.text().strip(), unit_value(self.E, self.project.units), values[1], unit_value(self.rho, self.project.units))
-        if all(getattr(material, key) == getattr(self.original, key) for key in ("E", "nu", "rho")):
+        material = Material(self.name.text().strip(), unit_value(self.E, self.project.units), values[1], unit_value(self.rho, self.project.units),
+                            shear_modulus=unit_value(self.G_input, self.project.units) if self.independent_G.isChecked() else None)
+        if all(getattr(material, key) == getattr(self.original, key) for key in ("E", "nu", "rho", "shear_modulus")):
             material.preset = self.original.preset
         try:
             material.validate()
@@ -169,7 +184,7 @@ class MaterialDialog(QDialog):
         self.setWindowTitle("Materials")
         self.resize(900, 400)
         layout = QVBoxLayout(self)
-        self.table = QTableWidget(0, 7)
+        self.table = QTableWidget(0, 9)
 
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
@@ -205,14 +220,14 @@ class MaterialDialog(QDialog):
         selected = selected or self.selected_name() or self.window.project.default_material
         project = self.window.project
         units = project.units
-        self.table.setHorizontalHeaderLabels(["Material", f"E ({units.stress})", "Poisson ratio", f"Weight density ({units.density})", "Members", "Default", "Source"])
+        self.table.setHorizontalHeaderLabels(["Material", f"E ({units.stress})", "Poisson ratio", f"Weight density ({units.density})", "Members", "Default", "Source", f"G ({units.stress})", "G input"])
         if selected not in project.materials:
             selected = project.default_material
         self.table.blockSignals(True)
         self.table.setRowCount(len(project.materials))
         for row, material in enumerate(project.materials.values()):
             count = sum(member.material == material.name for member in project.members.values())
-            values = (material.name, f"{units.to_display(material.E, 'stress'):g}", f"{material.nu:g}", f"{units.to_display(material.rho, 'density'):.8g}", str(count), "Yes" if material.name == project.default_material else "", "Library" if material.preset else "Custom")
+            values = (material.name, f"{units.to_display(material.E, 'stress'):g}", f"{material.nu:g}", f"{units.to_display(material.rho, 'density'):.8g}", str(count), "Yes" if material.name == project.default_material else "", "Library" if material.preset else "Custom", f"{units.to_display(material.G, 'stress'):.8g}", "Derived" if material.shear_modulus is None else "Independent")
             for column, value in enumerate(values):
                 self.table.setItem(row, column, QTableWidgetItem(value))
             self.table.item(row, 6).setToolTip(material.source_label)

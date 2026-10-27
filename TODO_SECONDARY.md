@@ -49,7 +49,8 @@ basis for engineering features.
   constraints. Keep references valid after splitting or deleting entities.
   Completed with native select/isolate/show-all controls, persisted global-Y
   elevations, optional drawing/drag snapping, 3D XZ-plane placement, unit-aware
-  input, undo/redo and preserved analysis snapshots. New project formats 23/24.
+  input, undo/redo and preserved analysis snapshots. Introduced project formats 23/24; current
+  formats 25/26 retain this metadata.
 - [x] **Previewed transforms.** Repeat, mirror, rotate or move selected geometry
   about explicit points or bay/storey offsets. Preview before applying; provide
   separate load/support-copy choices and resolve collisions explicitly. Preserve

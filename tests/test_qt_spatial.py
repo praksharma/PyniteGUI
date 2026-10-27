@@ -96,7 +96,7 @@ class SpatialModelTests(unittest.TestCase):
         restored = Project.from_dict(project.to_dict())
         self.assertIsInstance(restored, SpatialProject)
         self.assertEqual(restored.to_dict(), project.to_dict())
-        self.assertEqual(Project().to_dict()["version"], 23)
+        self.assertEqual(Project().to_dict()["version"], 25)
 
     def test_schema_rejects_future_missing_and_unknown_fields(self):
         for key, value in (("version", 21), ("version", True), ("dimension", "4D"), ("units", "m-kN"), ("extra", 1)):

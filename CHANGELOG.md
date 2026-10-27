@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add optional independent frame/truss shear modulus with derived-G defaults,
+  unit-aware native editing, provenance/validation, reports and MCP schema support.
+  New project formats 25/26 preserve it; plate/surface recipes remain derived-G only.
+- Add both official Space Frame - Nodal Loads examples with their original E/G/nu,
+  geometry, IDs and loads. Verify pinned-source parity and an independent stiffness
+  assembly; nine of twenty official examples are now available.
+
 - Add a shared native Modelling Tools dock for previewed move/repeat/rotate/mirror,
   planar continuous-beam and multi-bay/storey frame generation, and controlled
   two-node merging. Canvas ghosts, explicit collision/support/load choices,

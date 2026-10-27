@@ -396,6 +396,13 @@ const server = http.createServer((request,response)=>{
       }
       await page.screenshot({path:path.join(output,`desktop-converted-cantilever-${name}.png`)});
     }
+    for(const [number,example] of Object.entries(payload.qaOfficialSpaceFrames)){
+      assert.equal(example.nodes.length,4);assert.equal(example.members.length,3);
+      assert(example.members.every(member=>member.points.length>2&&member.displacements.length===member.points.length));
+      await page.evaluate(data=>{window.pyniteViewer.update(data);window.pyniteViewer.orient(0);window.pyniteViewer.exportImage();},example);
+      assert((await page.evaluate(()=>window.pyniteViewer.state())).drawCalls>10,'Official space frame did not render');
+      await page.screenshot({path:path.join(output,`official-space-frame-${number}.png`)});
+    }
     await require('./viewport_geometry_preview.cjs')(page,payload);
     if(process.env.VIEWPORT_BENCHMARK==='1')await require('./viewport3d_benchmark.cjs')(page,payload,output);
     assert.deepEqual(errors,[]);

@@ -1132,7 +1132,7 @@ The official beam adaptations use the existing planar, linear-elastic workflow.
 The source scripts call the general iterative solver, but these bilateral elastic
 models need no active-set iteration. Out-of-plane/torsional DOFs and renderer/PDF
 calls are replaced by the GUI's existing planar editor, diagrams and print tools.
-The GUI derives G = E/[2(1+nu)] (11153.846 ksi), whereas the scripts also specify
+These earlier planar adaptations retain derived G = E/[2(1+nu)] (11153.846 ksi), whereas the scripts also specify
 G = 11200 ksi; this does not affect their in-plane Euler-Bernoulli bending/axial
 responses. Upstream `strength` combination tags are represented by explicitly
 checking the same three combinations in Envelopes. Plot sampling/amplification
@@ -1209,13 +1209,12 @@ The official plate opens as an unsolved mesh preview. Use Analyze for its
 transverse displacement and element-centre moment/shear contours, or Save plate
 for an editable copy.
 
-The official catalog audit covers all 20 scripts: seven are adapted; thirteen
+The official catalog audit covers all 20 scripts: nine are adapted; eleven
 still depend on capabilities outside the current app. No substitute model is
 presented as a completed official adaptation.
 
 | Remaining official example | Required capability before adaptation |
 | --- | --- |
-| Space Frame - Nodal Loads 1 / 2 | Independent G material input; torsional response depends on GJ. |
 | Beam on Elastic Foundation | Compression-only support springs and lift-off iteration. |
 | Braced Frame - Spring Supported | Unilateral axial spring elements and their instability handling. |
 | Braced Frame - Tension Only | Tension-only braces and active-set analysis. |
@@ -1227,12 +1226,34 @@ presented as a completed official adaptation.
 | Modal Analysis | Mass/modal solve and mode-result workflow. |
 | Moment Frame - Pushover / Pushover Analysis | Plastic section definitions, incremental pushover controls, hinge-state results. |
 
-The two official Space Frame nodal-load examples remain pending: E = 30000 ksi,
-G = 10000 ksi and nu = 0.3 cannot all be represented by the current isotropic
-material definition. Deriving G from E/nu changes their torsional response;
-altering nu would also violate the current nu < 0.5 constraint. Independent-G
-material support needs its own validated task before these are offered as
-matching official examples.
+**3D Frames > Official PyNite - Space Frame with Nodal Loads 1 / 2** now
+preserves both original models at the same pinned revision, including independent
+G = 10000 ksi with E = 30000 ksi and nu = 0.3. Both use the existing linear-elastic
+spatial workflow with **Combo 1**, unchanged member directions/zero roll, nodal
+forces/moments and automatic self-weight off. They open as editable, unsolved
+projects from the menu or Browse Examples.
+
+- [Space Frame 1](https://github.com/JWock82/Pynite/blob/e3a0bbd912b6cf13140f01ca0ed3a2ee55069f45/Examples/Space%20Frame%20-%20Nodal%20Loads%201.py)
+  retains three 100-inch orthogonal arms, fixed nodes N2/N3/N4, A = 10 in2,
+  Iy = Iz = 100 in4, J = 50 in4 and N1 FY = -50 kip / MX = -1000 kip-in.
+  N1 translations are (+0.00007098258, -0.01399513491, -0.00235188934) in;
+  rotations are (-0.00399609044, +0.00001780069, -0.00010334290) rad.
+- [Space Frame 2](https://github.com/JWock82/Pynite/blob/e3a0bbd912b6cf13140f01ca0ed3a2ee55069f45/Examples/Space%20Frame%20-%20Nodal%20Loads%202.py)
+  retains the 120/120/240-inch spatial bent frame, fixed N1/N4, A = 100 in2,
+  Iy = 200 in4, Iz = 1000 in4, J = 100 in4 and N2 FY = -5 kip,
+  N2 MX = -1200 kip-in, N3 FZ = +40 kip. Computed N2 DY is -0.06223193794 in
+  and N3 DZ is +1.82176235817 in. The script's printed textbook targets
+  (-0.063, +1.825) differ slightly from its executable model; they are not exact
+  acceptance values for the current engine.
+
+Regression checks compare all nodal translations/rotations/reactions and member
+end forces against both hash-checked upstream-source results and a separately
+assembled Euler-Bernoulli stiffness calculation. Reference capture is repeatable
+with `scripts/capture_official_space_frames.py`; the committed fixture includes
+source revision, SHA256 and engine version, and tests run offline. This adds
+material input and examples, without adding a solver method.
+
+![Official spatial-frame example in the native example browser](docs/assets/screenshots/official-space-frame.png)
 
 - View > Appearance selects Light or Dark. The preference is saved between app
   sessions, separately from project files. It updates all open editor/diagram
@@ -1473,7 +1494,10 @@ Intersections** to make the joint explicit, then check again before analysis.*
 ### Materials and Sections
 
 - Edit > Materials opens reusable material definitions. Add or edit a name, E,
-  Poisson ratio, and density; G is calculated for an isotropic material. Select
+  Poisson ratio, and density. G defaults to E/[2(1+nu)]; enable **Specify independent G**
+  to enter a positive finite frame/truss shear modulus in the displayed stress units.
+  The effective value and Derived/Independent mode are shown in material tables
+  and reports. Disable the checkbox to restore derived G. Select
   a member, choose Material in its inspector, and press Apply to assign it.
   Set Default controls newly drawn members without changing existing assignments.
   Renaming a definition updates its references; assigned/default materials cannot
@@ -2233,9 +2257,21 @@ Sparse factorization can still consume substantial memory for large models.
 Each member references a reusable material definition. Editing that definition
 updates every member assigned to it and invalidates results. Split member
 segments inherit the original material. The default definition is Steel_A992;
-E/G and weight density use the selected units. Materials are isotropic
-and linear elastic; yield strength and nonlinear constitutive models are not
-currently represented.
+E/G and weight density use the selected units. Materials remain linear elastic;
+yield strength and nonlinear constitutive models are not represented. By default,
+G is derived from E and nu for isotropic elasticity. The optional independent
+`shear_modulus` supplies the frame/truss adapter's G directly, notably for GJ
+in spatial torsion, while retaining E and nu. Axial-only trusses use EA, so
+changing G does not alter their axial stiffness. This does not define general
+anisotropic elasticity. Numerical edits, including independent G, clear library
+provenance; a preset cannot claim unchanged library properties with an override.
+MCP materials use canonical ksi: `shear_modulus: null` derives G, and a positive
+finite number supplies it. This field is included in model/snapshot identity.
+Plate and surface-recipe materials require derived G because the locked shell
+formulations recompute it from E and nu; explicit overrides are rejected before
+preview/analysis. Their existing recipe formats remain unchanged.
+
+![Optional independent shear modulus in the native material editor](docs/assets/screenshots/independent-g.png)
 
 Material-library presets are reference starting points, not certified grades.
 US steel uses the [PyNite Quickstart](https://pynite.readthedocs.io/en/latest/quickstart.html)
@@ -2308,7 +2344,7 @@ Versions 1 through 4 migrate existing loads into Case 1 with the original
 Service combination. Version 3 point loads and version 4 distributed loads
 remain supported. Versions 1 through 5 migrate to rigid member ends.
 Versions 1 through 6 open in Imperial, preserving their original inch-kip values.
-New 2D saves use version 23 and retain material/section definitions, member
+New 2D saves use version 25 and retain material/section definitions, member
 assignments, load cases, combination factors, the default load case, and each
 member end moment release, plus the selected unit system, point-load angle,
 and custom support restraints. Version 10 adds local force directions and
@@ -2330,8 +2366,8 @@ Malformed files are rejected before replacing the active project. Missing fields
 incorrect collection/entity shapes, unknown entity fields, invalid references,
 boolean/string/nonfinite numerical values, and duplicate JSON keys produce
 readable errors. JSON syntax errors include their line and column. Supported
-planar versions 1 through 15, 21 and 23 are supported; legacy files are migrated without modifying the input; spatial
-versions 16/17/18/19/20/22/24 require an explicit `dimension: "3D"` marker and are validated separately.
+planar versions 1 through 15, 21, 23 and 25 are supported; legacy files are migrated without modifying the input; spatial
+versions 16/17/18/19/20/22/24/26 require an explicit `dimension: "3D"` marker and are validated separately.
 Spatial version 17 adds global angular forces with azimuth (`angle`) and
 `elevation`; version 16 axis-based loads migrate without changing their physics.
 Unsupported future versions and angular fields in version 16 are rejected.
@@ -2352,7 +2388,11 @@ Planar version 23 and spatial version 24 add required editing-only `groups`
 (name to `nodes`/`members` ID lists), `levels` (name to canonical inch global-Y
 elevation) and `snap_levels` (boolean). Older files open with empty maps and
 snapping off. Nonempty metadata in older formats is rejected rather than dropped.
-New saves use 23/24; RC2 and older applications do not read these new formats.
+Planar version 25 and spatial version 26 add optional material `shear_modulus`
+(null for derived G, positive finite canonical ksi for an independent value).
+Older files migrate with derived G and cannot contain an independent override.
+New saves use 25/26; older applications reject these versions rather than lose
+the input. Standalone plate/mesh recipe formats remain unchanged and derived-G only.
 Spatial files retain XYZ, all six restraints/springs, and roll. Unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be
 distinct so load targets are unambiguous.

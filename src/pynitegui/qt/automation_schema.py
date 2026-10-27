@@ -32,6 +32,8 @@ def model_reference(dimension="2D"):
         entities[collection] = {"type": "object", "additionalProperties": False,
                                 "properties": properties, "required_on_create": required,
                                 "update": "Existing put merges fields; omit unchanged fields. Required-on-create fields need not be repeated for updates."}
+    entities["materials"]["properties"]["shear_modulus"].update(type=["number", "null"], exclusiveMinimum=0,
+        description="Optional independent frame/truss G in ksi. null (default) derives E/[2(1+nu)]. Positive finite numbers only; independent G requires custom provenance.")
     nodes = entities["nodes"]["properties"]
     nodes["support"]["enum"] = ["free", "pin", "roller", "fixed", "custom"]
     nodes["support"]["description"] = "Supports are node fields, not a supports collection/object. restraint_* flags are used only when support='custom'."
@@ -66,7 +68,7 @@ def model_reference(dimension="2D"):
             "description": "Collection key is an existing surface ID. put replaces its entire case -> signed pressure map (kip/in2); delete removes the map. Cases must exist. Remove assignments explicitly when deleting a surface/case."}
         settings["surface_analysis_enabled"] = {"type": "boolean", "default": False,
             "description": "Experimental coupled analysis opt-in. When true, the complete candidate must contain only conforming, connected rectangular Quad surfaces. No solve occurs during editing."}
-        surface_info = "Spatial v22 (legacy v20 coupling): surfaces and surface_pressures are editable via put/delete; surface_analysis_enabled via settings/set. Recipes use canonical inches/kip, pressure kip/in2. Geometry-only surfaces block analysis. Coupled candidate topology is checked once after all operations; stability and independent equilibrium remain analysis gates."
+        surface_info = "Spatial v26 (legacy v20 coupling): surfaces and surface_pressures are editable via put/delete; surface_analysis_enabled via settings/set. Recipes use canonical inches/kip, pressure kip/in2. Geometry-only surfaces block analysis. Coupled candidate topology is checked once after all operations; stability and independent equilibrium remain analysis gates."
     return {
         "dimension": dimension, "input_units": "Canonical inch-kip regardless of display units; angles in degrees, rotations in radians.",
         "entities": entities,
@@ -84,7 +86,7 @@ def model_reference(dimension="2D"):
         "settings": settings,
         "editing_metadata": "groups (named node/member ID lists), levels (named global-Y inch elevations) and snap_levels are editing-only metadata in read_model. They do not change analysis. This API does not edit these fields. Geometry deletion prunes group references automatically.",
         "validation": ["All operations validate together and create one undo step; errors make no changes.",
-                       "Material E and section A/Iy/Iz/J must be positive; rho nonnegative; nu between -1 and 0.5 (exclusive).",
+                       "Material E, optional independent shear_modulus and section A/Iy/Iz/J must be positive; rho nonnegative; nu between -1 and 0.5 (exclusive).",
                        "Distributed loads require a frame member, force direction and 0 <= position < end_position <= 1; end_magnitude is the intensity at the end, so set both magnitudes equal for a uniform load.",
                        "Names must be nonempty identifiers; node/member names must be distinct; no zero-length or duplicate members.",
                        "Use read_model for the current session/revision and existing material, section and case identifiers. Do not guess fields from another PyNite API."]}
@@ -124,6 +126,8 @@ def surface_reference(material_schema):
     material["properties"]["name"]["description"] = "Recipe-local material name; independent of the surface ID and project material library."
     material["update"] = "Nested material fields merge during a surface put."
     material["description"] = "Recipe-local material object, not a project-material ID. put merges its fields; numeric changes clear preset provenance unless explicitly supplied."
+    material["properties"]["shear_modulus"] = {"type":"null", "default":None,
+        "description":"Surface/plate formulations derive G from E and nu; independent G is not supported in recipes."}
     properties["material"].update(material)
     properties["name"]["description"] = "Omit to use the operation key, or supply the identical name."
     for name, values in (("generator",list(GENERATORS)), ("plane",["XY","XZ","YZ"]), ("axis",["X","Y","Z"]), ("element_type",["Quad","Rect"]), ("unit_system",list(UNIT_SYSTEMS))):

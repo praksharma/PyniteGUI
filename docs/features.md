@@ -16,7 +16,7 @@ when comparing with the published rc1 wheel.
 | Split, equal subdivision, explicit intersections and connectivity findings | [Topology and model checks](modeling/topology.md) |
 | Previewed move/repeat/rotate/mirror, planar beam/frame generators and controlled two-node merging (development after RC2) | [Modelling tools](modeling/tools.md) |
 | Perpendicular and midpoint construction connections | [Construction connections](modeling/construction.md) |
-| Per-member materials and sections, searchable libraries with dimensioned section sketches, defaults and provenance | [Assignments](modeling/properties.md), [materials](reference/materials.md), [sections](reference/sections.md) |
+| Per-member materials with optional independent frame/truss G, and sections, searchable libraries with dimensioned section sketches, defaults and provenance | [Assignments](modeling/properties.md), [materials](reference/materials.md), [sections](reference/sections.md) |
 | Free/pin/roller/fixed/custom supports and bilateral support springs | [2D supports](modeling/supports.md), [six-DOF spatial supports](modeling/3d.md) |
 | Planar axial/shear/moment end releases | [Release editing](modeling/releases.md), [formulation and limits](reference/releases.md) |
 | Bilateral axial-only trusses and mixed frame/truss models | [Trusses](modeling/trusses.md), [3D models](modeling/3d.md) |
@@ -78,8 +78,8 @@ See [method limits and plasticity boundaries](analysis/solve.md).
 | Selection/finding-focused camera navigation in 2D/3D; Shift+F and full-model Fit | [Help and workspace](start/help.md), [model findings](modeling/topology.md) |
 | Optional Model/Results workspaces and collapsible command toolbars, preserving draft inputs and view framing | [Workspaces](start/help.md) |
 | Help menu, website/F1, searchable shortcuts, About/version details and default-layout recovery | [Help and workspace](start/help.md) |
-| Searchable native example browser with geometry/loading/check previews; categorized menus, Gerber/three-hinged arch, seven official examples, coupled slabs and P-Delta | [Examples and preferences](start/examples.md), [hinge walkthrough](start/first-model.md#try-an-internal-hinge-or-three-hinged-arch) |
-| Official clamped rectangular Quad plate in separate editable workspace; seven of twenty upstream examples adapted | [Examples and limits](start/examples.md), [plate workspace](surfaces/plates.md) |
+| Searchable native example browser with geometry/loading/check previews; categorized menus, Gerber/three-hinged arch, nine official examples, coupled slabs and P-Delta | [Examples and preferences](start/examples.md), [hinge walkthrough](start/first-model.md#try-an-internal-hinge-or-three-hinged-arch) |
+| Official clamped rectangular Quad plate in separate editable workspace; nine of twenty upstream examples adapted | [Examples and limits](start/examples.md), [plate workspace](surfaces/plates.md) |
 | Light/dark themes and scrollable properties | [Examples and preferences](start/examples.md) |
 | Software-rendering recovery, observed renderer diagnostics, NVIDIA/Wayland profiles | [Graphics](start/graphics.md), [Linux NVIDIA](start/nvidia.md) |
 | Optional localhost MCP server, frame/surface/pressure batch edits, coupling opt-in, permission groups and background solve lifecycle | [MCP server](automation/mcp.md) |

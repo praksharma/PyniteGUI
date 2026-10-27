@@ -35,6 +35,7 @@ class Material:
     nu: float = 0.3
     rho: float = 0.49 / 12**3
     preset: str | None = None
+    shear_modulus: float | None = None
 
     @property
     def source_label(self):
@@ -46,7 +47,7 @@ class Material:
 
     @property
     def G(self):
-        return self.E / (2 * (1 + self.nu))
+        return self.shear_modulus if self.shear_modulus is not None else self.E / (2 * (1 + self.nu))
 
     def validate(self):
         if not isinstance(self.name, str) or not self.name.strip() or self.name != self.name.strip():
@@ -55,13 +56,17 @@ class Material:
             raise ValueError(f"Material {self.name}: E must be a positive finite number.")
         if not finite_number(self.nu) or not -1 < self.nu < 0.5:
             raise ValueError(f"Material {self.name}: Poisson ratio must be between -1 and 0.5.")
+        if self.shear_modulus is not None and (not finite_number(self.shear_modulus) or self.shear_modulus <= 0):
+            raise ValueError(f"Material {self.name}: independent G must be a positive finite number or null for derived G.")
+        if not finite_number(self.G) or self.G <= 0:
+            raise ValueError(f"Material {self.name}: effective G must be positive and finite.")
         if not finite_number(self.rho) or self.rho < 0:
             raise ValueError(f"Material {self.name}: density must be finite and nonnegative.")
         if self.preset is not None:
             from .material_library import BY_KEY
             if not isinstance(self.preset, str) or self.preset not in BY_KEY:
                 raise ValueError(f"Material {self.name}: unknown library preset.")
-            if any(getattr(self, key) != value for key, value in BY_KEY[self.preset].properties().items()):
+            if self.shear_modulus is not None or any(getattr(self, key) != value for key, value in BY_KEY[self.preset].properties().items()):
                 raise ValueError(f"Material {self.name}: library properties differ; save as a custom material.")
 
 
@@ -384,7 +389,7 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 23, "units": "in-kip", **asdict(self)}
+        return {"version": 25, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
@@ -396,7 +401,7 @@ class Project:
         if "dimension" in data:
             raise ValueError("Unsupported project dimension.")
         version = data.get("version")
-        if type(version) is not int or version not in (*range(1, 16), 21, 23) or data.get("units") != "in-kip":
+        if type(version) is not int or version not in (*range(1, 16), 21, 23, 25) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         required = {"grid", "nodes", "members", "loads"}
         required.update({"E", "nu", "rho"} if version == 1 else {"materials", "default_material"})
@@ -426,6 +431,8 @@ class Project:
             for name, value in data[key].items():
                 if not identifier(name) or not isinstance(value, dict):
                     raise ValueError(f"Invalid {key} entry: {name!r}. Expected an identifier and an object.")
+                if key == "materials" and version < 25 and value.get("shear_modulus") is not None:
+                    raise ValueError("Independent G requires planar version 25 or spatial version 26.")
                 try:
                     result[name] = kind(**value)
                 except TypeError as error:

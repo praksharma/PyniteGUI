@@ -88,6 +88,16 @@ if __name__ == "__main__":
     window.view.diagram.setCurrentIndex(window.view.diagram.findData("moment_z"))
     payload["qaConversion"] = viewport_payload(window)
     payload["qaConversion"].update(plane="XY", offset=24, labels=True)
+    payload["qaOfficialSpaceFrames"] = {}
+    for number in (1, 2):
+        window.load_project(example_project(f"3d_official_space_frame_{number}"))
+        with contextlib.redirect_stdout(io.StringIO()):
+            window.result = analyze(window.project)
+        window.deformed_action.setChecked(True)
+        window.view.diagram.setCurrentIndex(window.view.diagram.findData("torque"))
+        candidate = viewport_payload(window)
+        candidate.update(plane="XY", offset=0, labels=True)
+        payload["qaOfficialSpaceFrames"][str(number)] = candidate
     print(json.dumps(payload, allow_nan=False))
     window.saved = window.project.to_dict()
     window.close()

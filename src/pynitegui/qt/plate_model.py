@@ -79,7 +79,9 @@ class PlateDefinition:
 
     def to_dict(self):
         self.validate()
-        return {"format": "pynitegui-rectangular-plate", "version": 2, "units": "in-kip", **asdict(self)}
+        data = {"format": "pynitegui-rectangular-plate", "version": 2, "units": "in-kip", **asdict(self)}
+        data["material"].pop("shear_modulus")  # Plate formulation derives G.
+        return data
 
     @classmethod
     def from_dict(cls, data):

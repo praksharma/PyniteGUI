@@ -128,8 +128,8 @@ not change the analysis-method priorities above.
   [Examples and Appearance](GUIDE.md#examples-and-appearance) for expected values.
 
 - [x] [Moment Frame - Lateral Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Moment%20Frame%20-%20Lateral%20Load.py)
-- [ ] [Space Frame - Nodal Loads 1.py](https://github.com/JWock82/Pynite/blob/main/Examples/Space%20Frame%20-%20Nodal%20Loads%201.py)
-- [ ] [Space Frame - Nodal Loads 2.py](https://github.com/JWock82/Pynite/blob/main/Examples/Space%20Frame%20-%20Nodal%20Loads%202.py)
+- [x] [Space Frame - Nodal Loads 1.py](https://github.com/JWock82/Pynite/blob/main/Examples/Space%20Frame%20-%20Nodal%20Loads%201.py)
+- [x] [Space Frame - Nodal Loads 2.py](https://github.com/JWock82/Pynite/blob/main/Examples/Space%20Frame%20-%20Nodal%20Loads%202.py)
 - [x] [Space Truss - Nodal Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Space%20Truss%20-%20Nodal%20Load.py)
 - [x] [P-Delta Analysis.py](https://github.com/JWock82/Pynite/blob/main/Examples/P-Delta%20Analysis.py)
 
@@ -141,11 +141,14 @@ not change the analysis-method priorities above.
   pinned upstream frame parity/load resultants, analytical column response and
   refinement, independent truss joint equilibrium, persistence and menu loading.
 
-- [ ] Add validated independent shear-modulus material input before adapting
-  the two pending official Space Frame examples. Both use E = 30000 ksi,
-  G = 10000 ksi and nu = 0.3; current G = E/[2(1+nu)] changes torsion, while
-  matching their G by changing nu would require the rejected nu = 0.5 limit.
-  Do not silently substitute the GUI-derived G and claim upstream parity.
+- [x] Add optional independent shear-modulus material input and the two official
+  Space Frame examples. Preserve E = 30000 ksi, G = 10000 ksi and nu = 0.3,
+  original IDs/geometry/sections/supports/loads and Combo 1. Default materials
+  still derive G; explicit positive finite values are custom frame/truss inputs.
+  Include native editing, units/reports/MCP, legacy migration, formats 25/26,
+  pinned-source result fixtures, independent 3D stiffness benchmarks, torsion
+  sensitivity, save/reopen and categorized native opening. Surface/plate recipe
+  materials reject independent G because their formulations derive it internally.
 
 **Springs and unilateral members — audit dependencies; defer missing behaviour:**
 
@@ -164,7 +167,7 @@ not change the analysis-method priorities above.
 
 **Current-capability audit (2026-10-27, all 20 pinned scripts reviewed):**
 
-Seven official adaptations are now available. The rectangular Quad plate opens
+Nine official adaptations are now available. The rectangular Quad plate opens
 through **File > Examples > Plates (Experimental)** or Browse Examples in the
 separate editable plate workspace: original 10 × 20 ft dimensions, 1 ft thickness,
 1 ft Quad mesh, clamped edges, W pressure +250 psf and factor 1.0. Canonical unit
@@ -174,9 +177,8 @@ are covered. Existing MIT notice and pinned source revision apply. No solver
 features were added. See GUIDE for the plate-only constraint/combination-name
 adaptation and the complete dependency table.
 
-Remaining 13 scripts are intentionally unchecked:
+Remaining 11 scripts are intentionally unchecked:
 
-- Space Frame 1/2: independent G material definition is missing (see above).
 - Beam on Elastic Foundation: 24 **compression-only** DY springs; bilateral
   support springs would change lift-off behaviour. Physical-member subdivision
   alone is not the blocker.

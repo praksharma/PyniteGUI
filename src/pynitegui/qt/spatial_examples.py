@@ -4,7 +4,7 @@ from .spatial_model import SpatialLoad, SpatialProject
 
 
 def example_project(key, unit_system="imperial"):
-    if key == "3d_official_truss":
+    if key == "3d_official_truss" or key.startswith("3d_official_space_frame_"):
         from .official_examples import example_project as official_example
         return official_example(key, unit_system)
     if key == "3d_multistorey_slabs":

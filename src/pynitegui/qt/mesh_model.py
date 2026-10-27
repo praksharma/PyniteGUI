@@ -134,6 +134,8 @@ class MeshDefinition:
         if not isinstance(self.material, Material):
             raise ValueError("Invalid mesh material.")
         self.material.validate()
+        if self.material.shear_modulus is not None:
+            raise ValueError("Surface/plate materials require G derived from E and nu; the shell formulation does not use independent G.")
         for key in ("mesh_size", "thickness", "kx_mod", "ky_mod"):
             if not finite_number(getattr(self, key)) or not 1e-6 <= getattr(self, key) <= 1e6:
                 raise ValueError(f"{key} must be finite and between 1e-6 and 1e6.")
@@ -176,7 +178,9 @@ class MeshDefinition:
 
     def to_dict(self):
         self.validate()
-        return {"format": "pynitegui-mesh", "version": 1, "units": "in-kip", **asdict(self)}
+        data = {"format": "pynitegui-mesh", "version": 1, "units": "in-kip", **asdict(self)}
+        data["material"].pop("shear_modulus")  # Always derived for surface recipes.
+        return data
 
     @classmethod
     def from_dict(cls, data):

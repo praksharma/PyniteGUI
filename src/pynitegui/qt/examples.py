@@ -25,6 +25,8 @@ EXAMPLES = {
     "official_moment_frame": "Official PyNite - Moment Frame with Lateral Load",
     "official_p_delta": "Official PyNite - P-Delta Column",
     "3d_official_truss": "Official PyNite - Space Truss with Nodal Load",
+    "3d_official_space_frame_1": "Official PyNite - Space Frame with Nodal Loads 1",
+    "3d_official_space_frame_2": "Official PyNite - Space Frame with Nodal Loads 2",
     "gerber": "Gerber Beam - Internal Hinge",
     "three_hinged_arch": "Three-Hinged Polygonal Arch",
 }
@@ -37,7 +39,7 @@ EXAMPLE_GROUPS = {
                   "multistorey", "self_weight", "elastic", "shear_release",
                   "official_beam_point", "official_beam_uniform", "official_beam_envelope", "official_moment_frame",
                   "gerber", "three_hinged_arch"),
-    "3D Frames": ("3d_cantilever", "3d_space_frame"),
+    "3D Frames": ("3d_cantilever", "3d_space_frame", "3d_official_space_frame_1", "3d_official_space_frame_2"),
     "Trusses": ("truss", "3d_tripod", "3d_official_truss"),
     "Slabs": ("3d_slab_frame", "3d_multistorey_slabs"),
     "P-Delta": ("p_delta_column", "official_p_delta"),

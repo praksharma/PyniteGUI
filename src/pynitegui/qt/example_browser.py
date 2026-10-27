@@ -39,6 +39,8 @@ NOTES = {
     "official_beam_envelope": ("Official PyNite adaptation: signed D/S/L point loads and factored envelopes.", "Mz envelope: -222.17143 kip-in (1.2D+1.6L) to +596.57143 kip-in (1.2D+1.6S)."),
     "official_moment_frame": ("Official PyNite adaptation: moment frame with explicit weights, wind and P-Delta.", "1.2D+1.0W: N2 DX 0.48084117 in; N1 FY -2.10031058 kip (uplift). Recovery can flag force residuals."),
     "official_p_delta": ("Official PyNite adaptation: six-node, 20-foot elastic column benchmark.", "Combo 1: tip DX about 40.2722 in; tangent reference 40.2740 in. Recovery can flag force residuals."),
+    "3d_official_space_frame_1": ("Official PyNite adaptation: three orthogonal cantilever arms joined at a loaded node, preserving independent G.", "Combo 1: N1 DY -0.01399513 in; RX -0.00399609 rad. E 30000 ksi, G 10000 ksi, nu 0.3."),
+    "3d_official_space_frame_2": ("Official PyNite adaptation: spatial bent frame with biaxial loading and torsion, preserving independent G.", "Combo 1: N2 DY -0.06223194 in; N3 DZ 1.82176236 in. Check the guide for precise benchmarks."),
     "3d_official_truss": ("Official PyNite adaptation: metre/kN space truss, converted to axial bars.", "Combo 1: BC -32.65333 kN and BD -45.23538 kN (tension); BE +112.05467 kN (compression)."),
     "gerber": ("Continuous beam and suspended span sharing an internal moment hinge.", "Service: FY at N1 = 0.15 kip, N2 = 2.25 kip, N4 = 0.6 kip. Both hinge-end moments zero."),
     "three_hinged_arch": ("Polygonal arch with pinned bases and a shared crown moment hinge.", "Service: each FY 7.5 kip; left FX +6.25 kip, right FX -6.25 kip; crown moments zero."),
