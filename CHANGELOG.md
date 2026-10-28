@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 1.0.0rc3 — 2026-10-28 (unpublished checkpoint)
+
+- Avoid a native desktop freeze when analysis finishes before deferred worker
+  cleanup has joined. Keep frame/plate controls busy until thread teardown
+  completes, without blocking the GUI; cover delayed cleanup in both workspaces.
+- Add a repeatable visible installed-wheel desktop smoke script, recording
+  native renderer diagnostics, screenshots and workflow checks separately from
+  human file-picker, keyboard and printing verification.
+- Deploy the generated documentation through GitHub Actions and verify live
+  modelling, examples and project-format pages.
+
 - Add optional independent frame/truss shear modulus with derived-G defaults,
   unit-aware native editing, provenance/validation, reports and MCP schema support.
   New project formats 25/26 preserve it; plate/surface recipes remain derived-G only.
@@ -37,9 +48,9 @@
   Verify the published GitHub release's exact wheel/source assets and checksums
   against its tag; publish from a separate OIDC/environment job without rebuilding.
 
-Preparing **1.0.0rc2**, incorporating the changes below since the published rc1.
-See GitHub Releases for publication status; a source tag or unpublished draft
-does not imply PyPI availability.
+## 1.0.0rc2 — 2026-10-27
+
+Published on GitHub and PyPI; incorporates the changes below since rc1.
 Stable 1.0 targets the documented elastic frame/truss and restricted frame-only
 P-Delta workflows. Surface/plate tools remain experimental; nonlinear/plastic,
 modal and reinforced-concrete workflows remain deferred.

@@ -10,7 +10,7 @@ trusses**, built with Qt and the PyNite solver.
 [Examples](https://github.com/praksharma/PyniteGUI/blob/master/GUIDE.md#examples-and-appearance) ·
 [Report an issue](https://github.com/praksharma/PyniteGUI/issues)
 
-**Current release candidate: 1.0.0rc2.** See [validation and platform status](https://github.com/praksharma/PyniteGUI/blob/master/RELEASE.md)
+**Published release candidate: 1.0.0rc2. Development checkpoint: 1.0.0rc3 (unpublished).** See [validation and platform status](https://github.com/praksharma/PyniteGUI/blob/master/RELEASE.md)
 for the tested configurations and remaining checks before stable 1.0.
 
 ## What You Can Do

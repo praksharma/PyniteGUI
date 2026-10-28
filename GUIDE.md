@@ -2568,6 +2568,27 @@ roll/inertia changes, oblique local/global transformations, uniform/varying load
 springs, missing out-of-plane restraints, self-weight, spatial combinations,
 version dispatch, units, editing history, snapshots and reports. Widget tests use
 `PYNITEGUI_NO_WEBENGINE=1` to avoid initializing Chromium; this is a test-only switch.
+Visible installed-wheel checks are separate. Install the MCP wheel into a fresh
+environment outside the checkout, use its Python in an active desktop session,
+and leave `QT_QPA_PLATFORM` and `PYNITEGUI_NO_WEBENGINE` unset:
+
+```sh
+cd /tmp
+/tmp/pynitegui-rc-mcp/bin/python /absolute/path/to/PyniteGUI/scripts/smoke_desktop.py --output /tmp/pynitegui-desktop-qa --hold
+```
+
+The script rejects editable imports and offscreen mode. It uses disposable
+settings/projects, QtTest clicks and application commands for generators,
+arrays, undo/redo, save/reopen, background analysis, governing stations, CSV/PDF,
+both official space frames, actual WebEngine rendering and MCP lock/unlock on
+an ephemeral local port. It records screenshots, dependency/renderer diagnostics
+and a check list in the output directory; a timeout trace helps diagnose stalls.
+The `--hold` option leaves the verified window open for human checks. File paths
+are supplied programmatically, so real OS file pickers, keyboard shortcuts and
+the interactive print dialog still require human verification. It does not
+certify physical printing or any platform on which it was not run. See
+[RELEASE.md](RELEASE.md) for exact observed versions and outstanding gates.
+
 For real viewport checks, install Playwright in a separate developer environment
 with its Chromium browser, then run `node tests/viewport3d.spec.cjs` with Playwright
 available to Node (or set `PLAYWRIGHT_MODULE` to its installed package directory).

@@ -38,7 +38,7 @@ def check(wheel, source):
         names = {item.name for item in archive.getmembers()}
         required = ["pyproject.toml", "README.md", "LICENSE", "CITATION.md", "CITATION.cff", "uv.lock", "GUIDE.md", "TODO.md",
                     "TODO_SECONDARY.md", "CHANGELOG.md", "RELEASE.md", "scripts/check_dist.py",
-                    "scripts/smoke_installed.py", "tests/test_qt_automation_server.py",
+                    "scripts/smoke_installed.py", "scripts/smoke_desktop.py", "tests/test_qt_automation_server.py",
                     "assets/structure.png", "assets/SFD.png", "assets/PyniteGUI Structural Frame Logo.png",
                     "zensical.toml", "scripts/docs.py", "docs/index.md", "docs/features.md",
                     "docs/start/first-model.md", "docs/stylesheets/extra.css", "tests/test_docs.py"]

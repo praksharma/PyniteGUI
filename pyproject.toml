@@ -1,6 +1,6 @@
 [project]
 name = "pynitegui"
-version = "1.0.0rc2"
+version = "1.0.0rc3"
 description = "A Qt desktop editor for 2D and 3D frame analysis with PyNite."
 readme = "README.md"
 license = "AGPL-3.0-only"

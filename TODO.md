@@ -432,10 +432,10 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
   first-model tutorial, feature index, logo/screenshots and light/dark appearance.
   Generate detailed pages from the GUIDE/project records to avoid drift; add
   strict build/link checks and PR/build/GitHub Pages deployment workflow.
-- [ ] Owner: switch the existing live GitHub Pages site from legacy deployment
-  to GitHub Actions, then run/verify the generated manual. Public URL returns
-  HTTP 200 (2026-10-27), but the Pages API still reports build_type=legacy;
-  website availability alone does not certify the Actions deployment.
+- [x] Switch the live GitHub Pages site from legacy deployment to GitHub Actions
+  and verify the generated manual. Run 40602180800 deployed commit 953dc9a;
+  Pages reports workflow/built, and live modelling tools, examples and format-25
+  documentation returned HTTP 200 with the expected content (2026-10-27).
 - [x] Illustrate Help/About, shortcut search, finding-focused navigation, recent
   history cleanup and the three-storey slab/P-Delta walkthroughs with real app
   screenshots. Add repeatable native captures and check image links on the site.
@@ -454,6 +454,11 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
 - [x] Publish RC2 to GitHub and PyPI through the configured Trusted Publisher;
   confirmed both public release endpoints on 2026-10-27. Later development
   changes remain outside the immutable RC2 artifacts.
+- [x] Prepare an unpublished RC3 consolidation checkpoint: fresh base/MCP and
+  uv-tool installs, full locked/installed suites, installed viewport assets,
+  reproducible visible macOS checks, source/wheel audits and a draft with hashes.
+  Fix the analysis-thread cleanup freeze found during native validation. Human
+  file-picker/shortcut/print checks and other platform gates remain in RELEASE.md.
 - [x] Fix README screenshots/logo and repository-document links for PyPI using
   absolute HTTPS URLs; add uv/pip registry installation commands and record the
   need to check built long-description metadata before future uploads.

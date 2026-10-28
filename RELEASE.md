@@ -1,12 +1,12 @@
 # Release Preparation
 
-Target: **1.0.0rc2**, GitHub tag **v1.0.0rc2**. Check
+Target: **1.0.0rc3**, GitHub tag **v1.0.0rc3** (unpublished checkpoint). Check
 [GitHub Releases](https://github.com/praksharma/PyniteGUI/releases) for published
 assets; source tags and unpublished drafts do not imply a public binary release.
 Stable 1.0 promotion follows a feature freeze and verification of the actual
 release artifacts. Standalone installers remain a later step.
 
-**Publication status (2026-10-27):** RC2 is published as a
+**Publication status (2026-10-28):** RC2 is published as a
 [GitHub prerelease](https://github.com/praksharma/PyniteGUI/releases/tag/v1.0.0rc2)
 and on [PyPI](https://pypi.org/project/pynitegui/1.0.0rc2/). Later development
 changes are not retroactively included in those artifacts. Stable 1.0 platform
@@ -20,7 +20,7 @@ From the repository root, with uv installed:
 uv sync --locked --extra mcp
 QT_QPA_PLATFORM=offscreen PYNITEGUI_NO_WEBENGINE=1 uv run --locked --extra mcp python -B -m unittest discover -s tests -q
 uv build --no-sources
-uv run --locked python -B scripts/check_dist.py dist/pynitegui-1.0.0rc2-py3-none-any.whl dist/pynitegui-1.0.0rc2.tar.gz
+uv run --locked python -B scripts/check_dist.py dist/pynitegui-1.0.0rc3-py3-none-any.whl dist/pynitegui-1.0.0rc3.tar.gz
 ```
 
 The distribution checker audits versions, metadata, bundled runtime assets,
@@ -40,9 +40,9 @@ Example POSIX commands; use the corresponding `Scripts/python.exe` on Windows:
 
 ```sh
 uv venv --python 3.12 /tmp/pynitegui-rc-base
-uv pip install --python /tmp/pynitegui-rc-base/bin/python ./dist/pynitegui-1.0.0rc2-py3-none-any.whl
+uv pip install --python /tmp/pynitegui-rc-base/bin/python ./dist/pynitegui-1.0.0rc3-py3-none-any.whl
 cd /tmp
-/tmp/pynitegui-rc-base/bin/python /absolute/path/to/PyniteGUI/scripts/smoke_installed.py --version 1.0.0rc2
+/tmp/pynitegui-rc-base/bin/python /absolute/path/to/PyniteGUI/scripts/smoke_installed.py --version 1.0.0rc3
 ```
 
 Repeat in another fresh environment, installing the same wheel with `[mcp]`
@@ -50,6 +50,22 @@ and adding `--mcp` to the smoke command. The script checks that imports are not
 editable, bundled assets are present, all examples save/open/analyze, exports
 work and native windows initialize; the MCP variant also exercises a real local
 SDK client and server lifecycle. It is not a visible desktop/WebGL smoke test.
+
+For repeatable visible checks, use that MCP environment's Python in a desktop
+session with WebEngine enabled:
+
+```sh
+cd /tmp
+/tmp/pynitegui-rc-mcp/bin/python /absolute/path/to/PyniteGUI/scripts/smoke_desktop.py --output /tmp/pynitegui-desktop-qa --hold
+```
+
+Use a new output directory for each run. This script uses disposable settings,
+real native widgets and the actual renderer, with QtTest/application commands
+and supplied file paths. Its screenshots and JSON diagnostics are evidence of
+those automated workflows, not human mouse/keyboard or OS file-picker checks.
+With `--hold`, complete the remaining manual checks in the open test window:
+Save As and reopen through the real pickers, F5 analysis, and File > Export
+Results > Print Results. Record the outcome before ticking the macOS manual gate.
 
 Run `tests/viewport3d.spec.cjs` with a separately installed Playwright/Chromium
 as described in GUIDE.md. These browser tests supplement, not replace, native
@@ -71,15 +87,16 @@ block this scope.
 - For each release, review CITATION.md/CITATION.cff and preserve exact version and
   commit links. Consider Zenodo concept/version DOI archiving for stable 1.0;
   archive later releases as new versions of the same record.
-- [x] RC2 full suite passes with MCP wire tests enabled, not skipped.
-- [x] RC2 wheel/source archive audits and base/MCP installed-wheel smoke checks pass.
+- [x] RC3 full suite passes with MCP wire tests enabled, not skipped.
+- [x] RC3 wheel/source archive audits and base/MCP installed-wheel smoke checks pass.
 - [ ] Native Linux visible startup, 2D/3D editing, save/open, analysis, reports and MCP checked.
-- [ ] Repeat installation and visible workflows on macOS; record OS/Python/Qt/renderer versions.
+- [x] Repeat installation and automated visible workflows on macOS; record OS/Python/Qt/renderer versions.
+- [ ] Human macOS file-picker, F5 shortcut and interactive print-dialog checks confirmed.
 - [ ] Windows installation and visible workflows checked, or explicitly labelled unverified.
-- [x] RC2 release notes and limitations reviewed; artifact hashes generated in SHA256SUMS.
-- [x] User approves tagging/pushing and creating an unpublished draft with assets.
-- [x] Owner reviews and publishes the GitHub RC2 prerelease.
-- [x] RC2 PyPI publication through Trusted Publishing completes.
+- [x] RC3 release notes and limitations reviewed; artifact hashes generated in SHA256SUMS.
+- [x] User approves the consolidation checkpoint: push changes and prepare an unpublished RC3 draft with assets.
+- [ ] Owner separately approves publishing the GitHub RC3 prerelease and uploading RC3 to PyPI.
+- [x] Historical RC2 GitHub/PyPI publication completes; its artifacts and tag remain unchanged.
 
 Upload the wheel, source distribution and SHA256SUMS to the approved GitHub
 prerelease, using CHANGELOG.md for notes. Tag the verified commit, not a moving
@@ -149,6 +166,58 @@ Do not move existing release tags or replace reviewed release assets to retry.
 
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
+
+## RC3 Validation Record
+
+RC3 adds named groups/levels, scoped envelope summaries,
+continuous-segment governing-location queries, previewed transforms/generators/
+node merging, and independent material G with two official spatial frames.
+New project saves use formats 25/26; older files migrate without changing their
+physics, and older applications reject new formats. Surface/plate recipes remain
+derived-G only. Stable 1.0 platform/feedback gates remain separate.
+
+Verified on macOS 27.2 arm64 / Python 3.12.13, 2026-10-27–28:
+
+- Locked environment: **879 tests passed**, no skips (192.827 seconds), including
+  real MCP wire checks. Qt 6.11.2, PyNiteFEA 3.0.0, Matplotlib 3.11.1,
+  NumPy 2.5.3, SciPy 1.18.1, MCP 2.3.0.
+- Fresh non-editable MCP wheel: **879 tests passed**, no skips (192.374 seconds),
+  with Qt 6.12.0,
+  PyNiteFEA 3.2.0, Matplotlib 3.11.2, NumPy 2.5.4, SciPy 1.18.1 and MCP 2.3.0.
+  These are observed dependency versions, not a guarantee for future releases.
+- Separate base/MCP profiles passed all **26 examples** through save/open,
+  analysis and CSV/report export. MCP also passed authenticated SDK discovery,
+  atomic edit, undo and server shutdown. Final artifacts are audited against
+  the tagged source, including the repeatable desktop smoke script.
+- An isolated local-wheel `uv tool install` passed; the generated entry point
+  reports **1.0.0rc3**. User tools and PATH were not changed.
+- Both offline viewport suites passed against installed-wheel assets, covering
+  frame results/probes and all seven mesh families, mixed scenes, picking,
+  context recovery and resource limits. Chromium used SwiftShader; this is
+  separate from the native hardware check below.
+- The visible installed-wheel Cocoa check passed generator/array previews and
+  apply, undo/redo, save/reopen with supplied paths, worker analysis, governing
+  stations, CSV/PDF and native report preview, both official spatial frames,
+  deformation/torsion and MCP lock/unlock/shutdown on an ephemeral port.
+  Diagnostics report WebGL 2.0, ANGLE Metal, **Apple M4 Max**, context not lost.
+  `scripts/smoke_desktop.py` records screenshots, versions and renderer details.
+- Native validation found an analysis teardown race: the finished signal can
+  precede deferred Python worker cleanup; deleting its QThread then blocked the
+  GUI while that cleanup waited for the GIL. Frame and plate windows now poll a
+  nonblocking join before deletion/control handover. A delayed-cleanup regression
+  covers both workspaces; the complete native workflow passes with the fix.
+- Strict documentation build and local-link/image/anchor checks passed across
+  **55 HTML pages**; documentation/tooling/release checks also pass. Pages was
+  switched to Actions: [run 40602180800](https://github.com/praksharma/PyniteGUI/actions/runs/40602180800)
+  successfully deployed commit 953dc9a, with live content verified for modelling
+  tools, examples and current formats.
+
+The native check used visible QtTest/application commands and supplied file paths.
+The desktop-control attachment timed out; human file-picker, keyboard shortcut
+and interactive print-dialog verification remains open. Linux and Windows visible
+installed-RC3 workflows are unverified. These and independent prerelease feedback
+remain stable-1.0 gates. The consolidation prepares an **unpublished draft** with
+wheel, source archive and SHA256SUMS; it does not publish RC3 to GitHub or PyPI.
 
 ## RC2 Validation Record
 

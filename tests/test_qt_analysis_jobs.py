@@ -14,6 +14,7 @@ import numpy as np
 from scipy.sparse import csr_matrix, eye
 from scipy.sparse.linalg import ArpackNoConvergence
 from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QThread, Qt
 
 from pynitegui.qt.analysis import analyze, stiffness_issue
 from pynitegui.qt.analysis_jobs import AnalysisCancelled, analysis_child, execute_analysis
@@ -164,6 +165,51 @@ class AnalysisJobTests(unittest.TestCase):
         self.assertEqual(phases[0], "Checking model and supports")
         self.assertEqual(phases[-1], "Collecting result snapshot")
         self.assertEqual(self.project.to_dict(), before)
+
+    def test_finished_thread_keeps_controls_busy_until_deferred_cleanup_joins(self):
+        from pynitegui.qt.plate_workspace import PlateWorkspace
+        plate = PlateWorkspace()
+        try:
+            for window in (self.window, plate):
+                with self.subTest(workspace=type(window).__name__):
+                    cleanup, release = Event(), Event()
+                    thread = QThread(window)
+                    def finish():
+                        cleanup.set()
+                        release.wait(10)
+                    thread.started.connect(thread.quit, Qt.ConnectionType.DirectConnection)
+                    thread.finished.connect(finish, Qt.ConnectionType.DirectConnection)
+                    window.thread = thread
+                    worker = SimpleNamespace(cancel=release.set)
+                    window.worker = worker
+                    if window is self.window:
+                        window.analyze_action.setEnabled(False)
+                    else:
+                        window.controls.setEnabled(False)
+                    thread.start()
+                    try:
+                        self.assertTrue(cleanup.wait(5))
+                        # Qt says finished, but native thread teardown is still running.
+                        self.assertTrue(thread.isFinished())
+                        self.assertFalse(thread.wait(0))
+                        started = time.monotonic()
+                        window.analysis_stopped()
+                        self.assertLess(time.monotonic()-started, .5)
+                        self.assertIs(window.thread, thread)
+                        self.assertIs(window.worker, worker)
+                        control = window.analyze_action if window is self.window else window.controls
+                        self.assertFalse(control.isEnabled())
+                    finally:
+                        release.set()
+                        self.assertTrue(thread.wait(5000))
+                    self.wait_until(lambda: window.thread is None)
+                    self.assertTrue(control.isEnabled())
+                    self.assertIsNone(window.worker)
+        finally:
+            plate.pending = False
+            plate.saved = plate.definition.to_dict()
+            plate.reject()
+            plate.deleteLater()
 
     def test_cancel_before_launch_starts_no_process(self):
         event = Event()

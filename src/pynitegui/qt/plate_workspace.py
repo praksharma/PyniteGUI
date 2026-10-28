@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.collections import PolyCollection
 from matplotlib.figure import Figure
-from PySide6.QtCore import QSaveFile, QIODevice, QThread
+from PySide6.QtCore import QSaveFile, QIODevice, QThread, QTimer
 from PySide6.QtGui import QUndoCommand, QUndoStack
 from PySide6.QtWidgets import (QComboBox, QDialog, QFileDialog, QFormLayout, QHBoxLayout,
                               QLabel, QLineEdit, QMessageBox, QPushButton, QSplitter,
@@ -328,6 +328,10 @@ class PlateWorkspace(QDialog):
             self.draw()
 
     def analysis_stopped(self):
+        # finished precedes deferred worker cleanup; avoid a blocking destructor.
+        if not self.thread.wait(0):
+            QTimer.singleShot(10, self.analysis_stopped)
+            return
         self.thread.deleteLater()
         self.thread, self.worker = None, None
         self.controls.setEnabled(True)

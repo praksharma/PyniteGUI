@@ -1975,6 +1975,11 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("Cancelling analysis...")
 
     def analysis_stopped(self):
+        # finished can precede deferred worker destruction, which needs the GIL.
+        # Never let QThread's destructor join that cleanup on the GUI thread.
+        if not self.thread.wait(0):
+            QTimer.singleShot(10, self.analysis_stopped)
+            return
         self.thread.deleteLater()
         self.thread = None
         self.worker = None
