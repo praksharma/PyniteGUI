@@ -1,11 +1,11 @@
-name: Publish to PyPI
-run-name: Publish ${{ inputs.tag }} to PyPI
+name: Publish Brecon to PyPI
+run-name: Publish Brecon ${{ inputs.tag }} to PyPI
 
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Published GitHub release tag (for example v1.0.0rc2)
+        description: Published Brecon release tag (for example v1.0.0rc4; pre-rename tags are rejected)
         required: true
         type: string
 
@@ -43,8 +43,7 @@ jobs:
           from pathlib import Path
           project = tomllib.loads(Path('pyproject.toml').read_text())['project']
           version = project['version']
-          # Preserve publication of immutable pre-rename tags as well.
-          assert project['name'] in ('brecon', 'pynitegui')
+          assert project['name'] == 'brecon', 'This workflow publishes Brecon only; select a post-rename release tag.'
           distribution = project['name']
           assert re.fullmatch(r'\d+\.\d+\.\d+(?:(?:a|b|rc)\d+)?', version), version
           assert os.environ['RELEASE_TAG'] == f'v{version}', 'Tag/version mismatch'

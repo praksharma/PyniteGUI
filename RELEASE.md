@@ -144,8 +144,9 @@ pending GitHub publisher with these exact values:
 | Environment name | `pypi` |
 
 Brecon needs a **new pending publisher**, separate from the existing `pynitegui`
-project. Its package name is not reserved by this rename. Keep the existing
-publisher for historical releases. See the
+project. The owner confirmed configuring it on **2026-10-28**; the first upload
+has not yet been performed. Keep the old project/releases for existing users.
+Its package name is not reserved until the first successful publish. See the
 [PyPI pending-publisher guide](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/).
 
 A pending publisher creates the project on its first successful upload; it
@@ -159,11 +160,12 @@ needed. These account/environment changes are owner setup, not performed by
 adding the workflow.
 
 **Publish an approved release:** first publish the GitHub draft with its wheel,
-source archive and SHA256SUMS attached. Then open Actions > **Publish to PyPI** >
+source archive and SHA256SUMS attached. Then open Actions > **Publish Brecon to PyPI** >
 Run workflow, choose **master**, and enter its tag (for example `v1.0.0rc4`, once prepared).
 Review and approve the **pypi** environment job. This uploads to real PyPI;
 it is not a dry run. The workflow derives the distribution name from the tag
-metadata and supports both Brecon and immutable PyniteGUI tags. This rename
+metadata and accepts **Brecon only**. Old PyniteGUI RC2/RC3 tags are rejected
+before assets are downloaded; deleting old releases is unnecessary. This rename
 performs no publishing, new release tag or replacement of RC3 assets.
 
 The workflow is manual only. Its read-only verification job checks out the
@@ -203,8 +205,9 @@ new published release. Existing RC1/RC2/RC3 tags and assets remain unchanged.
   search assertion now checks the current page title and experimental scope.
 - Wheel/source audit checks both Python namespaces, both console commands,
   metadata, runtime assets, sources, citations and the new wordmark, with hashes.
-  The publishing workflow's metadata step was exercised for both `brecon` and
-  historical `pynitegui` tag identities; no remote publishing was performed.
+  The initial rename validated both tag identities; the later Brecon-only
+  publishing gate accepts `brecon` and rejects old `pynitegui` and mismatched
+  tags in executable regression tests. No remote publishing was performed.
 
 ## RC3 Validation Record
 

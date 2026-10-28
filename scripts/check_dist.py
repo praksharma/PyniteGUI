@@ -42,7 +42,7 @@ def check(wheel, source):
                     "TODO_SECONDARY.md", "CHANGELOG.md", "RELEASE.md", "scripts/check_dist.py",
                     "scripts/smoke_installed.py", "scripts/smoke_desktop.py", "tests/test_qt_automation_server.py",
                     "assets/structure.png", "assets/SFD.png", "assets/brecon.svg",
-                    "zensical.toml", "scripts/docs.py", "docs/index.md", "docs/features.md",
+                    "zensical.toml", "scripts/docs.py", ".github/workflows/publish.yml", "docs/index.md", "docs/features.md",
                     "docs/start/first-model.md", "docs/stylesheets/extra.css", "tests/test_docs.py"]
         for name in required:
             assert prefix + name in names, f"Missing source file: {name}"

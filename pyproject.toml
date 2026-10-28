@@ -55,4 +55,5 @@ docs = [
 [tool.uv.build-backend]
 module-name = ["brecon", "pynitegui"]
 source-include = ["GUIDE.md", "TODO.md", "TODO_SECONDARY.md", "RELEASE.md", "CHANGELOG.md", "CITATION.md", "CITATION.cff",
-                  "uv.lock", "assets/**", "tests/**", "scripts/**", "docs/**", "zensical.toml"]
+                  "uv.lock", "assets/**", "tests/**", "scripts/**", "docs/**", "zensical.toml",
+                  ".github/workflows/publish.yml"]

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Restrict PyPI publishing to Brecon release metadata; reject old PyniteGUI tags
+  and mismatched versions before downloading assets. Preserve old releases and
+  add executable workflow-gate regressions.
+
 - Rename PyniteGUI to **Brecon**, named after a place visited by the author.
   Distribution/command: `brecon`; app, Help/About, reports, MCP, citation and
   documentation use Brecon. Keep `pynitegui` command/imports, existing file formats,

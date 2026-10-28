@@ -5,9 +5,13 @@
   and unchanged project, preferences and recovery identifiers. Preserve existing
   release tags/assets and repository URLs. Brecon publishing needs its own PyPI
   project/publisher setup; the previous-name distribution is not renamed in place.
-- [ ] Owner: configure Brecon's pending PyPI publisher before its first release
+- [x] Owner: configure Brecon's pending PyPI publisher before its first release
   (`brecon`, `praksharma/PyniteGUI`, `publish.yml`, environment `pypi`). Preserve
-  the existing PyniteGUI publisher; this task does not publish a renamed package.
+  the existing PyniteGUI publisher; owner confirmed setup on 2026-10-28. This
+  does not publish a renamed package.
+- [x] Restrict the publishing workflow to Brecon metadata and reject pre-rename
+  RC2/RC3 tags before downloading/uploading distributions. Exercise the real
+  metadata gate against accepted Brecon and rejected old/mismatched tags.
 
 Current scope: a 2D/3D frame and bilateral axial-only truss editor with SI/imperial input and display, per-member materials and
 sections, custom global support restraints, global/member-local angled forces, distributed loads,
