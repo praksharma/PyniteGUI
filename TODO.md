@@ -457,8 +457,9 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
 - [x] Prepare an unpublished RC3 consolidation checkpoint: fresh base/MCP and
   uv-tool installs, full locked/installed suites, installed viewport assets,
   reproducible visible macOS checks, source/wheel audits and a draft with hashes.
-  Fix the analysis-thread cleanup freeze found during native validation. Human
-  file-picker/shortcut/print checks and other platform gates remain in RELEASE.md.
+  Fix the analysis-thread cleanup freeze found during native validation. The owner
+  confirmed real macOS file pickers, F5 and Print Results on 2026-10-28; other
+  platform/feedback gates remain in RELEASE.md.
 - [x] Fix README screenshots/logo and repository-document links for PyPI using
   absolute HTTPS URLs; add uv/pip registry installation commands and record the
   need to check built long-description metadata before future uploads.

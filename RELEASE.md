@@ -91,7 +91,7 @@ block this scope.
 - [x] RC3 wheel/source archive audits and base/MCP installed-wheel smoke checks pass.
 - [ ] Native Linux visible startup, 2D/3D editing, save/open, analysis, reports and MCP checked.
 - [x] Repeat installation and automated visible workflows on macOS; record OS/Python/Qt/renderer versions.
-- [ ] Human macOS file-picker, F5 shortcut and interactive print-dialog checks confirmed.
+- [x] Human macOS file-picker, F5 shortcut and interactive print-dialog checks confirmed.
 - [ ] Windows installation and visible workflows checked, or explicitly labelled unverified.
 - [x] RC3 release notes and limitations reviewed; artifact hashes generated in SHA256SUMS.
 - [x] User approves the consolidation checkpoint: push changes and prepare an unpublished RC3 draft with assets.
@@ -212,12 +212,16 @@ Verified on macOS 27.2 arm64 / Python 3.12.13, 2026-10-27–28:
   successfully deployed commit 953dc9a, with live content verified for modelling
   tools, examples and current formats.
 
-The native check used visible QtTest/application commands and supplied file paths.
-The desktop-control attachment timed out; human file-picker, keyboard shortcut
-and interactive print-dialog verification remains open. Linux and Windows visible
-installed-RC3 workflows are unverified. These and independent prerelease feedback
-remain stable-1.0 gates. The consolidation prepares an **unpublished draft** with
-wheel, source archive and SHA256SUMS; it does not publish RC3 to GitHub or PyPI.
+The native automated check used visible QtTest/application commands and supplied
+file paths. After the desktop-control attachment timed out, the owner completed
+the remaining human checks in that installed RC3 window on **2026-10-28**:
+Save As/Open through the real pickers, F5 analysis and the interactive Print
+Results dialog **all worked**. This confirmation arrived after the RC3 tag was
+created and is recorded separately without moving the tag or replacing assets.
+Linux and Windows visible installed-RC3 workflows are unverified. Those and
+independent prerelease feedback remain stable-1.0 gates. The consolidation creates
+an **unpublished draft** with wheel, source archive and SHA256SUMS; it does not
+publish RC3 to GitHub or PyPI.
 
 ## RC2 Validation Record
 
