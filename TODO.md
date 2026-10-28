@@ -382,6 +382,9 @@ Remaining 11 scripts are intentionally unchecked:
   collapse, with draft-preserving dock visibility, unchanged selections/results,
   stable planar view centre/zoom, no spatial camera requests, MCP guards and
   consistent default-layout recovery. Keep All tools as the initial layout.
+- [x] Preserve Results dock visibility after solving in All tools/Model, so
+  analysis does not cover the modelling canvas. Keep explicit View > Results
+  access and automatic result display in the Results workspace; cover 2D/3D.
 - [x] Add auto, true-scale, and custom deformed-shape amplification with actual
   maximum sampled displacement shown in the selected project units.
 - [x] Add approximate straight deformation preview in 2D/3D: join displaced

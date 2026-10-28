@@ -116,6 +116,35 @@ class WorkspaceTests(unittest.TestCase):
         self.assertIs(w.inspector.findChild(QDoubleSpinBox), field)
         self.assertEqual(field.value(), 19.)
 
+    def test_solve_preserves_results_visibility_in_modelling_workspaces(self):
+        w, c = self.window, self.window.workspaces
+        for example in ("portal", "3d_cantilever"):
+            with self.subTest(example=example):
+                w.load_project(example_project(example))
+                with contextlib.redirect_stdout(io.StringIO()):
+                    result = analyze(w.project)
+                w.analysis_revision = w.revision
+                for key in ("all", "model"):
+                    c.choose(key)
+                    w.results_dock.hide()
+                    w.analysis_finished(result, "")
+                    self.assertTrue(w.results_dock.isHidden())
+                    self.assertEqual(w.result.snapshot_id, result.snapshot_id)
+                    self.assertGreater(w.results_table.rowCount(), 0)
+                    self.assertTrue(w.export_menu.isEnabled())
+                    self.assertEqual(c.current, key)
+                    # Opening the dock explicitly remains possible; another
+                    # successful solve must not close it or change workspaces.
+                    w.results_dock.toggleViewAction().trigger()
+                    self.assertFalse(w.results_dock.isHidden())
+                    w.analysis_finished(result, "")
+                    self.assertFalse(w.results_dock.isHidden())
+                c.choose("results")
+                w.results_dock.hide()
+                w.analysis_finished(result, "")
+                self.assertFalse(w.results_dock.isHidden())
+                self.assertEqual(c.current, "results")
+
     def test_spatial_switch_never_calls_renderer_or_changes_view_controls(self):
         w, c = self.window, self.window.workspaces
         w.load_project(example_project("3d_space_frame"))

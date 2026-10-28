@@ -2034,7 +2034,8 @@ class MainWindow(QMainWindow):
         self.result_combination.blockSignals(False)
         self.result_combination.setEnabled(True)
         self.select_result_combination(result.combination)
-        self.results_dock.show()
+        if self.workspaces.current == "results":
+            self.results_dock.show()
         self.deformed_action.setEnabled(True)
         self.diagrams_action.setEnabled(True)
         self.animation_action.setEnabled(True)

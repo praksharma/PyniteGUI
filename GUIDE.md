@@ -1136,8 +1136,11 @@ Structure/Properties docks, or **Results** to show result/deformation commands
 and the resizable Results dock. File, view and analysis commands remain in both
 focused layouts. The same choices are available under **View > Workspace**.
 Results can be opened before solving; its existing empty/outdated state still
-applies. Analysis may reveal Results as usual; workspace choice does not change
-the analysis lifecycle or automatically switch profiles.
+applies. Solving in **All tools** or **Model** preserves the Results dock's
+current visibility: a hidden dock stays hidden, while an open dock updates in
+place. Open it explicitly through **View > Results**, or choose the **Results**
+workspace. Solving in that workspace shows Results. Workspace choice does not
+change the analysis lifecycle or automatically switch profiles.
 
 The adjacent checked button, also **View > Workspace > Show Command Toolbars**,
 collapses or restores the command toolbars. The workspace selector remains

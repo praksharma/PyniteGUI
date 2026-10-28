@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Preserve Results dock visibility after solving in All tools/Model; hidden
+  results stay hidden and open results update in place. The Results workspace
+  continues to show them on completion, and View > Results remains available.
+
 - Add a Slabs tab to the main Results dock: local Quad moment/membrane-stress
   centre contours, natural-coordinate probes, axes, unit/combination/snapshot
   identity, CSV and paginated MCP surface-element results. Keep the current
