@@ -66,9 +66,13 @@ def model_reference(dimension="2D"):
         entities["surfaces"] = surface_reference(entities["materials"])
         entities["surface_pressures"] = {"type": "object", "additionalProperties": {"type": "number", "minimum": -1e6, "maximum": 1e6},
             "description": "Collection key is an existing surface ID. put replaces its entire case -> signed pressure map (kip/in2); delete removes the map. Cases must exist. Remove assignments explicitly when deleting a surface/case."}
+        entities["surface_supports"] = {"type": "object", "additionalProperties": False,
+            "properties": {edge: {"type": "array", "minItems": 1, "uniqueItems": True,
+                "items": {"enum": ["DX", "DY", "DZ", "RX", "RY", "RZ"]}} for edge in ("left", "right", "bottom", "top")},
+            "description": "Key is a rectangular Quad surface ID. put replaces its entire outer-edge -> global rigid DOF list map. Omit free edges. Geometry-owned, reapplied on remesh. Shared joints use the union of restraints; spring conflicts are rejected. Remove explicitly when deleting a surface. Opening rims are excluded."}
         settings["surface_analysis_enabled"] = {"type": "boolean", "default": False,
             "description": "Experimental coupled analysis opt-in. When true, the complete candidate must contain only conforming, connected rectangular Quad surfaces. No solve occurs during editing."}
-        surface_info = "Spatial v26 (legacy v20 coupling): surfaces and surface_pressures are editable via put/delete; surface_analysis_enabled via settings/set. Recipes use canonical inches/kip, pressure kip/in2. Geometry-only surfaces block analysis. Coupled candidate topology is checked once after all operations; stability and independent equilibrium remain analysis gates."
+        surface_info = "Spatial v28: surfaces, surface_pressures and surface_supports are editable via put/delete; surface_analysis_enabled via settings/set. Recipes use canonical inches/kip, pressure kip/in2. Geometry-only surfaces block analysis. Coupled candidate topology is checked once after all operations; stability and independent equilibrium remain analysis gates."
     return {
         "dimension": dimension, "input_units": "Canonical inch-kip regardless of display units; angles in degrees, rotations in radians.",
         "entities": entities,

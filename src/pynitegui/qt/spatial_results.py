@@ -254,6 +254,8 @@ def definition_tables(project):
                        "" if key.startswith("num_") else units.length) for key, value in mesh.parameters.items())
         details.extend([name, *row] for row in values)
     surface_tables = [("Surface Meshes and Normal Pressures", *surfaces),
+                      ("Surface Edge Supports (Global DOFs)", ["Surface", "Outer edge", "Rigid restraints"],
+                       [[name, edge, ", ".join(dofs)] for name, edges in project.surface_supports.items() for edge, dofs in edges.items()]),
                       ("Surface Geometry and Material", ["Surface", "Property", "Value", "Units"], details)] if project.surfaces else []
     return [("Nodes and Supports (3D)", *nodes), ("Members and Assignments (3D)", *members), *shared[2:4],
             *surface_tables,

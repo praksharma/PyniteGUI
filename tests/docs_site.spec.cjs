@@ -47,6 +47,9 @@ const server = http.createServer((request,response)=>{
     await page.locator('article h1').filter({hasText:'Slab Placement and Main-Model Surfaces'}).waitFor();
     assert(page.url().includes('/PyniteGUI/surfaces/main-model/'),'Search lost the GitHub Pages base path');
     assert((await page.locator('article').innerText()).includes('Coupled rectangular slabs (experimental)'));
+    const slabFigures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));
+    assert(slabFigures.some(image=>image.src.endsWith('coupled-slab-results.png'))&&
+      slabFigures.some(image=>image.src.endsWith('slab-edge-supports.png'))&&slabFigures.every(image=>image.ok),'Missing slab inspection/support screenshots');
     await page.locator('label[for="__palette_1"]').click();
     await page.waitForFunction(()=>document.body.dataset.mdColorScheme==='slate');
     await page.screenshot({path:path.join(output,'surfaces-dark.png')});

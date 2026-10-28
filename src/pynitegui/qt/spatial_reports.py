@@ -83,6 +83,18 @@ def draw_report(ax, project, result, rows, kind, view, options):
             _, _, points, cells = surface_geometry(definition)
             polygons.extend(project_points(np.asarray(points)[list(cell)]) for cell in cells)
         ax.add_collection(PolyCollection(polygons, facecolors=LIGHT["accent"], edgecolors=LIGHT["member"], linewidths=.3, alpha=.18))
+        if options.supports:
+            from .surface_supports import support_segments
+            for name in project.surfaces:
+                for support in support_segments(project, name):
+                    for segment in support["segments"]:
+                        line = project_points(np.asarray(segment))
+                        ax.plot(*line.T, color=LIGHT["support"], linewidth=2, zorder=5)
+                    if support["segments"]:
+                        segment = support["segments"][len(support["segments"])//2]
+                        centre = project_points(np.mean(segment, axis=0))
+                        add_diagram_label(ax, f"{name} {support['edge']}: {', '.join(support['dofs'])}", centre,
+                                          LIGHT["support"], "white")
     index = QUANTITIES.index(kind)
     color = LIGHT["axial" if index in (0, 3) else "shear" if index in (1, 2) else "moment"]
     geometry, bounds = diagram_geometry(rows, kind, options.amplitude, span, options.side, options.sign)

@@ -31,6 +31,7 @@ class ResultsPanel(QWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.owner = parent
         self.project = self.result = None
         self.selections = []
         self.syncing = False
@@ -78,6 +79,10 @@ class ResultsPanel(QWidget):
         self.equilibrium_table.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
         equilibrium_layout.addWidget(self.equilibrium_table)
         self.tabs.addTab(equilibrium_page, "Equilibrium")
+        from .surface_results_panel import SurfaceResultsPanel
+        self.surfaces = SurfaceResultsPanel(self)
+        self.surface_tab = self.tabs.addTab(self.surfaces, "Slabs")
+        self.tabs.setTabVisible(self.surface_tab, False)
         self.tabs.currentChanged.connect(self.tab_changed)
         self.tabs.setEnabled(False)
         layout.addWidget(self.tabs)
@@ -114,6 +119,8 @@ class ResultsPanel(QWidget):
         self.equilibrium_summary.setText("Run analysis to check global equilibrium.")
         self.set_analysis_state("Outdated", "Model changed; run analysis to show current results.")
         self.tabs.setEnabled(False)
+        self.surfaces.set_snapshot(project, None)
+        self.tabs.setTabVisible(self.surface_tab, False)
 
     def update_results(self, project, result):
         from .reports import result_table
@@ -121,6 +128,9 @@ class ResultsPanel(QWidget):
         if self.result is None or self.result.snapshot_id != result.snapshot_id:
             self.analysis_state, self.state_detail = "Current", ""
         self.project, self.result = project, result
+        has_surfaces = bool(getattr(result.solver, "_pynitegui_surfaces", {}))
+        self.tabs.setTabVisible(self.surface_tab, has_surfaces)
+        self.surfaces.set_snapshot(project, result if has_surfaces else None)
         self.members_loaded = False
         self.set_headers(project)
         self.fill("nodes", headers, rows, "nodes")
@@ -197,6 +207,14 @@ class ResultsPanel(QWidget):
             elif reveal and kinds == {"nodes"} and self.tabs.currentWidget() not in (
                     self.tables["nodes"], self.tables["displacements"], self.tables["reactions"]):
                 self.tabs.setCurrentWidget(self.tables["nodes"])
+            elif reveal and kinds == {"surfaces"} and self.tabs.isTabVisible(self.surface_tab):
+                name = next(iter(selected))[1]
+                self.surfaces.surface.blockSignals(True)
+                self.surfaces.surface.setCurrentText(name)
+                self.surfaces.surface.blockSignals(False)
+                self.surfaces.dirty = True
+                self.tabs.setCurrentWidget(self.surfaces)
+                self.surfaces.ensure_loaded()
             for table in self.tables.values():
                 if table is self.source_table:
                     continue
@@ -221,6 +239,10 @@ class ResultsPanel(QWidget):
             self.syncing = False
 
     def tab_changed(self, _):
+        if hasattr(self.owner, "canvas_results"):
+            self.owner.canvas_results.setVisible(self.tabs.currentWidget() is not self.surfaces)
+        if self.tabs.currentWidget() is self.surfaces:
+            self.surfaces.ensure_loaded()
         if self.tabs.currentWidget() is self.tables["members"]:
             self.load_members()
         self.sync_selection(self.selections, reveal=False)

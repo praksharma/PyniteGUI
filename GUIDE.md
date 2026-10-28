@@ -224,9 +224,23 @@ and disconnected components block the solve. There is no automatic remeshing or
 node-to-face constraint. Refit/remesh after moving the frame, then analyze again.
 
 Slab supports come from existing shared model joints and their six-DOF restraints
-or springs, not hidden plate-pilot in-plane constraints. Quad membrane/bending
-stiffness and the engine's drilling approximation are retained; the adapter adds
-no surface restraints. The weak drilling approximation can produce global moment
+or springs, plus explicit **Edge Supports…** in the selected slab's Properties.
+The editor previews four outer edges with global DX/DY/DZ/RX/RY/RZ checkboxes and
+Free, Normal roller, Bending clamp, Translations fixed and Fixed presets.
+Left/right follow the rectangle's width direction, bottom/top its height direction;
+the preview names the global axes. Normal roller restrains only the transverse
+translation; Bending clamp additionally fixes the two tangential rotations.
+In-plane stability must be provided explicitly. Opening rims are not selected.
+At corners and coincident frame/adjacent-slab nodes, restraints are the union of
+all owners. A spring on a fixed DOF causes analysis to fail rather than disappearing.
+Assignments belong to geometry, so moving/resizing/remeshing reapplies them to the
+current outer material boundary. Renaming transfers them, deletion removes them,
+and Accept creates one undoable edit; Cancel leaves the model unchanged.
+Supported outer segments are marked in the 3D viewport and frame reports when
+Supports is enabled, and listed in report definitions. These assignments are
+inactive while the project is geometry-only; such projects cannot be analyzed.
+There are no hidden plate-pilot constraints. Quad membrane/bending stiffness and
+the engine's drilling approximation are retained. The weak drilling approximation can produce global moment
 imbalance under lateral/membrane loading. **Every combination must pass independent
 force/moment equilibrium before any coupled snapshot is accepted.** Tolerances
 are not relaxed to accommodate drilling imbalance; failing models return an error,
@@ -240,9 +254,53 @@ support reactions in the tables/CSV, member forces, independently integrated
 force/moment equilibrium, and amplified slab mesh deformation. Generated
 `__S...` nodes are result-only, not editable project joints. The inspector shows
 the selected surface's peak nodal translation magnitude. Reports include surface
-pressure definitions and mesh outlines. Slab moment/stress contours, local
-element-force inspection, surface-specific edge-support editors, shear connectors,
-eccentric/composite beam-slab offsets and design checks remain pending.
+pressure/edge-support definitions and mesh outlines. Select a solved slab and use
+**Inspect Slab Results**, or open **Results > Slabs** in the existing Results dock.
+Choose the slab, Mx/My/Mxy bending moment per unit width, or Sx/Sy/Txy membrane
+stress (tension positive). Local x runs i→j, local y runs i→n, and z=x×y;
+each probe prints the three global unit vectors. Moment labels use moment/length
+(for example kN-m/m), while membrane stress follows material stress units (MPa).
+Colours use a symmetric signed scale for the **selected combination**, with one
+unsmoothed value per element centre. Opening holes remain blank; no nodal averaging
+or artificial smoothing crosses a material boundary.
+
+Click a face to probe its natural coordinates, choose an element from the table,
+or enter xi/eta in [-1,1]; zero is its centre and ±1 its edges. At an interface,
+choose the element explicitly to inspect either side. The plot is a centre-value
+contour even when the numerical probe is elsewhere. The existing combination
+selector and unit controls refresh the view without changing the snapshot.
+Engineering edits clear the tab and data. Export Slab CSV writes all element
+centres with units, local axes, surface, combination, snapshot/time and model
+signature; the plot toolbar saves the contour with its snapshot title.
+MCP `read_results(kind="surface_elements", surface_id="Floor", ...)` exposes the
+same centre table, with ordinary pagination, combination and snapshot guards.
+
+**Quad transverse shear is unavailable:** raw PyNite 3.0/3.2 Qx/Qy recovery fails
+an independent simply supported thin-plate Navier check under refinement. Neither
+this tab nor its CSV/MCP output presents those numbers. Quad plate-pilot shear
+plots are disabled and `analyze_plate` returns `shears=None` for Quad; corrected
+Rect shear remains separate. A validated recovery method is still pending.
+
+Constant-strain/constant-curvature manufactured recovery checks cover all three
+planes, origins and natural-coordinate probes. A coupled edge-supported 120-inch
+square plate with a negligible-stiffness perimeter beam uses 30/15/7.5-inch meshes
+against an independent Navier series: fine interior Mx/My/Mxy relative L2 errors
+are below 0.6%, and peak deflection error is below 0.5%; support forces balance.
+The beam stiffness is retained, not subtracted. These checks do not validate
+general membrane/drilling response or sharp corner peaks. Every combination still
+must pass global equilibrium, including after changing edge restraints; even a
+pressure-loaded asymmetrically clamped frame/slab can be rejected for drilling
+moment imbalance. Shear connectors, eccentric/composite offsets, combined face
+stresses and design checks remain pending. Reproduce this bounded comparison,
+including diagnostic raw-shear errors (not production result data), with:
+
+```sh
+uv run python -B scripts/benchmark_coupled_surfaces.py --output /tmp/coupled-plate.json
+```
+
+![Slab moment contours and local probes in the existing Results dock](docs/assets/screenshots/coupled-slab-results.png)
+
+![Staged slab outer-edge restraints with global DOF presets and preview](docs/assets/screenshots/slab-edge-supports.png)
 
 Manual, live, MCP and direct solver analysis use the same opt-in and element-family
 guards. With analysis disabled, any surface (even hidden) blocks a frame-only
@@ -318,7 +376,8 @@ cases, mesh regeneration, persistence, units, undo, stale results and cancellati
 **Rect recovery correction after RC4:** the published RC4 wheel uses PyNite's raw
 Rect resultants. Checks against independent mechanics found opposite bending
 signs and excessive twisting coefficients in PyNite 3.0/3.2 recovery. Do not rely
-on RC4 Rect moment/shear contours; use Quad for that release. Development
+on RC4 Rect moment/shear contours. Quad moments are preferable in that release,
+but Quad transverse shear also remains unverified and must not be relied on. Development
 1.0.0rc5.dev0 reconstructs the Rect displacement polynomial from its solved local
 nodal translations/rotations and differentiates it with isotropic plate laws.
 This postprocessing correction does not alter stiffness, pressure loads, nodal
@@ -511,7 +570,10 @@ are also available in `read_model.model.combinations`. Only one active result
 snapshot is retained; there is no historical snapshot store or enumeration.
 
 Batch inputs use canonical inch-kip units, degrees for angles and member fractions
-for load positions. Supports are fields on nodes. `put` merges existing entity
+for load positions. Ordinary supports are fields on nodes. Spatial `surface_supports` is a separate
+geometry-owned outer-edge map; `put` replaces the whole map for that surface,
+and surface deletion requires removing its dependent support/pressure maps in
+the same batch. `put` merges existing entity
 fields or creates an entity using its normal defaults; `delete` requires explicit
 dependent-reference updates in the same batch. Numeric material/section edits clear
 preset/catalog provenance unless explicitly supplied. Project validation runs once
@@ -2428,7 +2490,7 @@ incorrect collection/entity shapes, unknown entity fields, invalid references,
 boolean/string/nonfinite numerical values, and duplicate JSON keys produce
 readable errors. JSON syntax errors include their line and column. Supported
 planar versions 1 through 15, 21, 23 and 25 are supported; legacy files are migrated without modifying the input; spatial
-versions 16/17/18/19/20/22/24/26 require an explicit `dimension: "3D"` marker and are validated separately.
+versions 16/17/18/19/20/22/24/26/28 require an explicit `dimension: "3D"` marker and are validated separately.
 Spatial version 17 adds global angular forces with azimuth (`angle`) and
 `elevation`; version 16 axis-based loads migrate without changing their physics.
 Unsupported future versions and angular fields in version 16 are rejected.
@@ -2454,6 +2516,12 @@ Planar version 25 and spatial version 26 add optional material `shear_modulus`
 Older files migrate with derived G and cannot contain an independent override.
 New saves use 25/26; older applications reject these versions rather than lose
 the input. Standalone plate/mesh recipe formats remain unchanged and derived-G only.
+Spatial version 28 adds required `surface_supports`: surface identifier to outer
+edge (`left`/`right`/`bottom`/`top`) to a nonempty list of unique global rigid DOFs.
+Omit free edges. Legacy spatial versions migrate to an empty map; nonempty edge
+assignments in older versions and a missing field in version 28 are rejected.
+Assignments require rectangular Quad geometry and follow its current mesh.
+
 Spatial files retain XYZ, all six restraints/springs, and roll. Unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be
 distinct so load targets are unambiguous.

@@ -22,6 +22,26 @@ def rigid_body_issue(project):
             if not fixed and (not direction.startswith("R") or node.name in frame_nodes) and (node.name, direction) not in inactive:
                 motions.append(row)
                 labels.append(f"{node.name} {direction}")
+    if project.surfaces and project.surface_analysis_enabled:
+        from .spatial_surfaces import surface_geometry
+        from .surface_supports import resolved_supports, PLANE_AXES
+        for name, definition in project.surfaces.items():
+            supports = resolved_supports(project, name)
+            normal = PLANE_AXES[definition.plane][2]
+            for index, point in enumerate(surface_geometry(definition)[2]):
+                x, y, z = (np.asarray(point) - origin) / span
+                rows = ((1, 0, 0, 0, z, -y), (0, 1, 0, -z, 0, x), (0, 0, 1, y, -x, 0),
+                        (0, 0, 0, 1, 0, 0), (0, 0, 0, 0, 1, 0), (0, 0, 0, 0, 0, 1))
+                for offset, (dof, row) in enumerate(zip(DOFS, rows)):
+                    # Shell-normal drilling stiffness must not stabilize a rigid
+                    # rotation. Tangential rotations are physical bending DOFs.
+                    if offset == normal + 3:
+                        continue
+                    if dof in supports.get(index, ()):
+                        constraints.append(row)
+                    else:
+                        motions.append(row)
+                        labels.append(f"{name} node {index+1} {dof}")
     _, singular, modes = np.linalg.svd(np.array(constraints).reshape(-1, 6), full_matrices=True)
     rank = int(np.count_nonzero(singular > 1e-10))
     if rank < 6:
@@ -80,6 +100,10 @@ def analyze_spatial(project, progress=None):
         for node in project.nodes.values():
             model.def_support(node.name, **{"support_" + dof: fixed or (node.name, dof) in inactive
                                            for dof, fixed in zip(DOFS, node.restraints)})
+        # The inactive-rotation update above preserves explicit node restraints;
+        # reapply shared edge restraints so it cannot overwrite their union.
+        from .surface_supports import apply_supports
+        apply_supports(project, model, maps)
     for load in (*project.loads.values(), *project.self_weight_loads()):
         ends = dict(load.components(project, load.end_magnitude))
         for direction, magnitude in load.components(project):

@@ -190,8 +190,10 @@ def analyze_plate(definition, progress=None):
         shears = np.array([shear for moment, shear in recovered])
     else:
         moments = np.array([element.moment(*station, combo_name="Plate").ravel() for element, station in zip(elements, stations)])
-        shears = np.array([element.shear(*station, combo_name="Plate").ravel() for element, station in zip(elements, stations)])
-    if any(not np.isfinite(values).all() for values in (displacement, reactions, moments, shears)):
+        # The raw DKMQ shear recovery does not converge to the independent
+        # thin-plate Navier reference. Do not return apparently valid numbers.
+        shears = None
+    if any(not np.isfinite(values).all() for values in (displacement, reactions, moments, shears) if values is not None):
         raise ValueError("Plate analysis returned nonfinite results.")
     net_area = definition.width*definition.height - sum(opening["width"]*opening["height"] for opening in definition.openings)
     applied = definition.pressure * definition.load_factor * net_area

@@ -95,6 +95,38 @@ class SurfaceAutomationTests(unittest.TestCase):
         self.window.undo.redo()
         self.assertEqual(self.window.project.to_dict(), after)
 
+    def test_edge_assignments_and_surface_result_discovery_are_atomic(self):
+        self.window.load_project(two_storey_slabs())
+        schema = model_reference("3D")["entities"]["surface_supports"]
+        self.assertIn("bottom", schema["properties"])
+        before = self.window.project.to_dict()
+        response = self.edit([{"op": "put", "collection": "surface_supports", "key": "Floor1",
+                               "value": {"left": ["DY"]}}])
+        self.assertTrue(response["ok"], response)
+        self.window.undo.undo()
+        self.assertEqual(self.window.project.to_dict(), before)
+        for value in ({"opening": ["DY"]}, {"left": ["fixY"]}):
+            response = self.edit([{"op": "put", "collection": "surface_supports", "key": "Floor1", "value": value}])
+            self.assertFalse(response["ok"])
+            self.assertEqual(self.window.project.to_dict(), before)
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = analyze(self.window.project)
+        self.window.analysis_revision = self.window.revision
+        self.window.analysis_finished(result, "")
+        response = self.invoke("read_results", session_id=self.window.project_session,
+                               kind="surface_elements", surface_id="Floor2", combination="Factored", offset=2, limit=3)
+        self.assertTrue(response["ok"], response)
+        data = response["data"]
+        self.assertEqual(data["surface_id"], "Floor2")
+        self.assertEqual(data["snapshot_id"], result.snapshot_id)
+        self.assertEqual(data["total_rows"], 12)
+        self.assertEqual(len(data["rows"]), 3)
+        self.assertEqual(data["local_axes"][2], [0., -1., 0.])
+        self.assertIn("Mx (kip-in/in)", data["headers"])
+        self.assertIn("unavailable", data["convention"])
+        response = self.invoke("read_results", session_id=self.window.project_session, kind="surface_elements")
+        self.assertFalse(response["ok"])
+
     def test_interface_and_assignment_errors_leave_model_revision_and_undo_unchanged(self):
         self.window.load_project(two_storey_slabs())
         before, revision, count = self.window.project.to_dict(), self.window.automation_revision, self.window.undo.count()

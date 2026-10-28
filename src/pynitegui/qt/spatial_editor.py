@@ -163,11 +163,30 @@ def populate_inspector(window):
                 control.setEnabled(supported)
                 control.setToolTip("Signed uniform local-normal pressure by load case; zero removes it." if supported else "Main-model analysis supports rectangular Quad meshes only.")
             form.addRow(apply)
+            from .surface_support_dialog import edit_surface_supports
+            supports = QPushButton("Edge Supports…")
+            supports.setObjectName("surface_supports_edit")
+            supports.setEnabled(supported)
+            supports.clicked.connect(lambda: edit_surface_supports(window, name))
+            form.addRow(supports)
+            summary = "; ".join(f"{edge}: {', '.join(dofs)}" for edge, dofs in project.surface_supports.get(name, {}).items())
+            if summary:
+                label = QLabel(summary)
+                label.setWordWrap(True)
+                form.addRow("Edge restraints", label)
             if window.result is not None:
                 mapping = getattr(window.result.solver, "_pynitegui_surfaces", {}).get(name)
                 if mapping:
                     peak = max(math.sqrt(sum(v*v for v in window.result.displacements[n][:3])) for n in mapping["nodes"])
                     form.addRow("Peak displacement", QLabel(f"{project.units.to_display(peak, 'length'):.6g} {project.units.length}"))
+                    inspect = QPushButton("Inspect Slab Results")
+                    inspect.setObjectName("surface_results_show")
+                    def show_results():
+                        window.results_dock.show()
+                        window.results_panel.tabs.setCurrentWidget(window.results_panel.surfaces)
+                        window.results_panel.surfaces.ensure_loaded()
+                    inspect.clicked.connect(show_results)
+                    form.addRow(inspect)
         else:
             form.addRow("Selected", QLabel(str(len(window.selections))))
         delete = QPushButton("Delete Selected")

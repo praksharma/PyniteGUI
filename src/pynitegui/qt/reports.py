@@ -357,7 +357,7 @@ def report_html(project, result, source="Untitled", options=None, *, image_urls=
         combination_metadata = f"<b>{label}:</b> {escape(result.combination)} | <b>Factors:</b> {escape(factors)}"
     sections = []
     if spatial and project.surfaces:
-        sections.append("<p><b>Experimental coupled rectangular Quad slabs:</b> shared solver nodes transfer loads to physical frame members. Generated __S nodes are result-only. Connections use coincident centrelines/mid-surfaces, without eccentric offsets or composite connectors. Slab stress/moment contours and design checks are not included.</p>")
+        sections.append("<p><b>Experimental coupled rectangular Quad slabs:</b> shared solver nodes transfer loads to physical frame members. Generated __S nodes are result-only. Connections use coincident centrelines/mid-surfaces, without eccentric offsets or composite connectors. Local slab contours/probes and CSV are available in Results → Slabs; these frame reports do not include slab field tables. Surface edge restraints use global DOFs and are additional to node supports. Design checks are not included.</p>")
     if options.model:
         direction_note = "Uppercase force/moment directions use global XYZ; mixed-case directions use rolled member xyz axes. Y is vertical; self-weight acts in -Y." if spatial else "Global angles are counterclockwise from +X; local angles are from member +x."
         sections.append("<h2>Model Definitions</h2><p>Loads below are unfactored; results use the selected combination. Member positions are start-to-end fractions. " + direction_note + "</p>")

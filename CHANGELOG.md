@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Add a Slabs tab to the main Results dock: local Quad moment/membrane-stress
+  centre contours, natural-coordinate probes, axes, unit/combination/snapshot
+  identity, CSV and paginated MCP surface-element results. Keep the current
+  experimental rectangular coupling and all-combination equilibrium gate.
+- Add geometry-owned outer-edge global rigid supports with staged preview,
+  presets/custom DOFs, remesh/rename/delete lifecycle, undo, spring-conflict
+  rejection, viewport/report display and atomic MCP editing. Spatial files
+  advance to version 28; older spatial files migrate with no edge assignments.
+- Withhold Quad transverse shear after an independent Navier refinement check
+  found PyNite 3.0/3.2 recovery inaccurate. Disable plate-pilot Quad Qx/Qy plots
+  and return `shears=None` for that formulation; corrected Rect shear remains.
+
 - Independently benchmark thin plates with a free centred opening using a
   converged Rayleigh–Ritz energy reference, deflection probes, material-patch
   moments and mesh refinement. Add Navier signed moment/shear, manufactured

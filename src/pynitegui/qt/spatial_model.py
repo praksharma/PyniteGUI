@@ -69,15 +69,20 @@ class SpatialProject(Project):
     surfaces: dict = field(default_factory=dict)
     surface_analysis_enabled: bool = False
     surface_pressures: dict = field(default_factory=dict)
+    surface_supports: dict = field(default_factory=dict)
 
     def to_dict(self):
-        return {"version": 26, "units": "in-kip", **asdict(self),
+        return {"version": 28, "units": "in-kip", **asdict(self),
                 "surfaces": {name: mesh.to_dict() for name, mesh in self.surfaces.items()}}
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22, 24, 26) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
+        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22, 24, 26, 28) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
             raise ValueError("Unsupported spatial project version, dimension, or units.")
+        if data["version"] < 28 and data.get("surface_supports", {}):
+            raise ValueError("Surface edge supports require spatial version 28.")
+        if data["version"] >= 28 and "surface_supports" not in data:
+            raise ValueError("Missing surface_supports field.")
         if (data["version"] < 19 and "surfaces" in data) or (data["version"] >= 19 and not isinstance(data.get("surfaces"), dict)):
             raise ValueError("Surface geometry requires the version 19 spatial schema.")
         if data["version"] < 20 and (data.get("surface_analysis_enabled", False) is not False or data.get("surface_pressures", {})):
@@ -102,6 +107,7 @@ class SpatialProject(Project):
         metadata.pop("surfaces", None)
         metadata.pop("surface_analysis_enabled", None)
         metadata.pop("surface_pressures", None)
+        metadata.pop("surface_supports", None)
         shared = Project.from_dict(metadata)
         result = cls(**{f.name: getattr(shared, f.name) for f in fields(Project)})
         from copy import deepcopy
@@ -126,6 +132,7 @@ class SpatialProject(Project):
         result.surfaces = {name: MeshDefinition.from_dict(value) for name, value in data.get("surfaces", {}).items()}
         result.surface_analysis_enabled = data.get("surface_analysis_enabled", False)
         result.surface_pressures = data.get("surface_pressures", {})
+        result.surface_supports = data.get("surface_supports", {})
         result.validate()
         return result
 
@@ -365,6 +372,7 @@ class SpatialProject(Project):
         super().delete(kind, name)
         if kind == "surfaces":
             self.surface_pressures.pop(name, None)
+            self.surface_supports.pop(name, None)
 
     def set_load_case(self, name, previous=None):
         super().set_load_case(name, previous)

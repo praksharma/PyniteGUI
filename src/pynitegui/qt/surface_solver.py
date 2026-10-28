@@ -25,7 +25,8 @@ def attach_surfaces(project, model):
     """Add bounded, conforming rectangular shells to an existing frame solver.
 
     Returns stable solver-node maps for deformation/results. Project geometry
-    is never changed, and no restraints are added to surface nodes.
+    is never changed. Only explicitly assigned geometry-owned edge restraints
+    are added to surface nodes.
     """
     if any(mesh.generator != "rectangle" or mesh.element_type != "Quad" for mesh in project.surfaces.values()):
         raise ValueError("Coupled analysis supports rectangular Quad meshes only.")
@@ -164,6 +165,8 @@ def attach_surfaces(project, model):
     if len(visited) != len(adjacency):
         raise ValueError("Disconnected frame/surface components. Align mesh vertices with frame joints; proximity is not a connection.")
     model._pynitegui_surfaces = maps
+    from .surface_supports import apply_supports
+    apply_supports(project, model, maps)
     return maps
 
 
@@ -184,4 +187,8 @@ def validate_coupled_topology(project):
     model = FEModel3D()
     for name, node in project.nodes.items():
         model.add_node(name, *node.coords)
+        from .spatial_model import DOFS
+        for dof, stiffness in zip(DOFS, node.springs):
+            if stiffness:
+                model.def_support_spring(name, dof, stiffness)
     attach_surfaces(project, model)

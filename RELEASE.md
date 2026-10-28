@@ -10,8 +10,9 @@ release artifacts. Standalone installers remain a later step.
 
 **Known RC4 plate limitation:** independent post-release checks found raw Rect
 moment/shear recovery inconsistent with verified plate laws in PyNite 3.0/3.2.
-Use Quad for RC4 plate moment/shear results. The correction and independent
-opening/Rect benchmarks are in **1.0.0rc5.dev0** source development; RC4 assets
+Quad moments are preferable for RC4; Quad transverse shear is also unverified
+and must not be relied on. Development disables Quad shear plots/data. The
+Rect correction and independent opening/Rect benchmarks are in **1.0.0rc5.dev0** source development; RC4 assets
 are unchanged. Non-unit Rect bending modifiers are rejected in development
 because the supported engine ignores them in bending stiffness. See the
 [plate guide](GUIDE.md#experimental-rectangular-plates) for scope and benchmarks.
@@ -194,6 +195,41 @@ Do not move existing release tags or replace reviewed release assets to retry.
 
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
+
+## Post-RC4 Coupled Slab Inspection Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-10-28; no RC5 tag or PyPI upload is
+created by this checkpoint. The RC4 assets remain unchanged.
+
+- The existing Results dock now has local rectangular Quad moment/membrane-stress
+  contours, element/natural-coordinate probes, axes, combination/unit/snapshot
+  labels, provenance CSV and paginated MCP surface-element reads.
+- Geometry-owned outer-edge global rigid restraints have presets/custom DOFs,
+  staged preview, shared-joint unions, spring-conflict rejection, remesh/lifecycle
+  handling, undo, viewport/report display and MCP editing. Spatial version 28
+  migrates old files with empty edge assignments; frame/slab coupling remains opt-in.
+- Manufactured constant-strain/curvature recovery checks cover all three planes.
+  An independently referenced thin square plate has fine interior moment errors
+  below 0.6% and peak-deflection error below 0.01%; all meshes pass equilibrium.
+  This bounded check does not validate general membrane/drilling response or
+  corner peaks. The existing all-combination equilibrium gate remains strict.
+- Raw Quad Qx/Qy has about 59% relative L2 error on the fine Navier check in both
+  PyNite 3.0 and 3.2. Do not publish those numbers: coupled outputs omit them,
+  plate-pilot Quad shear choices are disabled, and its `shears` payload is None.
+  Rect shear recovery is separate. Reproduce with
+  `scripts/benchmark_coupled_surfaces.py --output /tmp/coupled-plate.json`.
+- Full locked Python suite: **902 tests**, no skips, **219.723 s**.
+  Installed development wheel with PyNite 3.2 / Qt 6.12: **902 tests**, no skips,
+  **245.163 s**. Final UI checks: 184 tests; focused recovery-error clearing and
+  export re-enabling: 5 tests. Test ownership: 141 classes in 9 groups.
+- Native macOS checks verified the slab tab, table/contour/probe, global edge
+  presets and staged preview in the real desktop window. Light/dark result plots
+  and the new documentation screenshots were visually inspected. Offline surface
+  viewport QA includes support visibility/pixels, mesh families, picking/box
+  selection and bounded resources. Strict docs: 55 HTML pages; browser QA passed
+  screenshots, search, navigation, GitHub Pages subpath and dark mode.
+- Wheel/source contents and metadata are audited. Platform/manual prerelease
+  feedback gates remain open; this is not a stable 1.0 certification.
 
 ## Post-RC4 Plate Recovery Validation
 

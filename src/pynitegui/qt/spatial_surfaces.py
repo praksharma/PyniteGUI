@@ -64,6 +64,8 @@ def validate_surfaces(project):
         raise ValueError(f"Combined surface meshes exceed {MAX_PROJECT_SURFACE_ELEMENTS} elements.")
     for definition in project.surfaces.values():
         surface_geometry(definition)
+    from .surface_supports import validate_supports
+    validate_supports(project)
 
 
 def put_surface(project, definition, previous=None):
@@ -76,6 +78,8 @@ def put_surface(project, definition, previous=None):
         del project.surfaces[previous]
         if previous in project.surface_pressures:
             project.surface_pressures[definition.name] = project.surface_pressures.pop(previous)
+        if previous in project.surface_supports:
+            project.surface_supports[definition.name] = project.surface_supports.pop(previous)
     project.surfaces[definition.name] = definition
 
 
@@ -96,7 +100,9 @@ def surface_payloads(project, result=None, case_filter=None):
         gravity = (-definition.material.rho*definition.thickness*project.self_weight_factor*factors.get(weight_case, 0.)
                    if project.surface_analysis_enabled and weight_case is not None and case_filter is not False
                    and (case_filter is None or case_filter == weight_case) else 0.)
+        from .surface_supports import support_segments
         payloads.append({"name": name, "nodes": nodes, "pressures": pressures,
+                         "supportEdges": support_segments(project, name),
                          "gravity": gravity, "weightCase": weight_case,
                          "pressureUnit": project.units.pressure, "pressureFactor": project.units.factor("pressure"),
                          "surfaces": [list(cell) for cell in cells]})

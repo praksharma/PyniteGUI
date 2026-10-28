@@ -666,6 +666,8 @@ class MainWindow(QMainWindow):
         self.view.setBackgroundBrush(QColor(colors()["canvas"]))
         self.view.redraw()
         self.view.viewport().update()
+        if hasattr(self, "results_panel"):
+            self.results_panel.surfaces.apply_theme()
 
     def build_actions(self):
         file_menu = self.menuBar().addMenu("&File")

@@ -36,6 +36,9 @@ if __name__ == "__main__":
     window.load_project(project)
     window.surface_visibility_action.setChecked(True)
     payloads["surface_only"] = {**viewport_payload(window), "labels": False, "plane": "XZ"}
+    project.surface_supports = {"Floor": {"left": ["DY"], "bottom": ["DZ", "RX"]}}
+    window.load_project(project)
+    payloads["surface_supported"] = {**viewport_payload(window), "labels": False, "plane": "XZ"}
     import contextlib
     import io
     from pynitegui.qt.analysis import analyze

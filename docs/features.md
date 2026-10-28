@@ -70,7 +70,8 @@ See [method limits and plasticity boundaries](analysis/solve.md).
 | Seven PyNite generators, Quad/Rect where supported, sizing, origins, modifiers and numbering | [Experimental mesh catalog](surfaces/meshing.md) |
 | Rectangle control lines/openings, recipe files, undo and connectivity export | [Mesh options](surfaces/meshing.md) |
 | Main-model surfaces, face and enclosed/crossing box selection, edit/delete, saved recipes and frame placement | [Surface geometry](surfaces/main-model.md) |
-| Opt-in rectangular Quad/frame coupling, normal pressure cases, self-weight and deformed mesh | [Experimental coupled slabs](surfaces/main-model.md) |
+| Opt-in rectangular Quad/frame coupling, pressure cases, self-weight, deformed mesh and geometry-owned global edge supports | [Experimental coupled slabs](surfaces/main-model.md) |
+| Snapshot-bound local moment/membrane-stress contours, natural-coordinate probes, CSV and MCP; Quad shear withheld pending validation | [Slab results](surfaces/main-model.md) |
 | Rectangle fitting to selected corners/perimeters or complete frame levels | [Slab placement](surfaces/main-model.md) |
 | Separate rectangular Quad/Rect bending tool, pressure/edge supports, contours and nodal CSV | [Experimental plate-only analysis](surfaces/plates.md) |
 | Independent centred-opening/Rect recovery benchmarks; corrected Rect resultants in post-RC4 development, with explicit limits | [Plate verification and RC4 limitation](surfaces/plates.md) |

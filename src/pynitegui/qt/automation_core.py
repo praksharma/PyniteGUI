@@ -12,7 +12,7 @@ TOOLS = {
     "read_model": ("Model reads", "Read the current model, project/session revisions and exact entity schema, including empty collections. include_schema defaults true; set false after learning the schema to reduce response size. No session_id is needed for this discovery call. Read this before edits; do not guess node/support/load fields."),
     "read_schema": ("Model reads", "Read the exact 2D/3D entity fields, types, defaults, support presets/custom restraints, units, validation rules and valid batch examples for the current project. Call before constructing edits, especially for an empty model."),
     "read_units": ("Model reads", "Read display units and canonical conversion factors."),
-    "read_results": ("Result reads", "Read paginated snapshot-labelled results: kind=nodes|members. Output units follow the display units in headers. Use analysis_status.available_combinations for solved names; omit combination to use the snapshot default. Only the active snapshot is retained."),
+    "read_results": ("Result reads", "Read paginated snapshot-labelled results: kind=nodes|members|surface_elements. surface_elements requires surface_id from read_model.model.surfaces and returns unsmoothed local Quad element-centre Mx,My,Mxy (moment/length), Sx,Sy,Txy (membrane stresses, tension positive). Quad transverse shear is unavailable pending independent validation. Output units follow headers. Use analysis_status.available_combinations for solved names; omit combination to use the snapshot default. Only the active snapshot is retained."),
     "apply_batch": ("Model edits", "Apply a validated model batch as one undoable edit."),
     "run_analysis": ("Analysis", "Start background analysis using settings.analysis_method (linear|p_delta) and return a job_id immediately. Poll analysis_status with that job_id until running=false, then check state/error before read_results. phase is human-readable progress text, not a fixed enum."),
     "analysis_status": ("Analysis", "Read job progress, failures, the active snapshot and available_combinations (solved names). Poll after run_analysis until running=false; check state/error. Only one active result snapshot is retained; job_id rejects replaced jobs."),
@@ -103,13 +103,13 @@ def batch_candidate(project, operations):
                     del entities[key]
                 else:
                     raise AutomationError("invalid_batch", "Invalid surface operation.")
-            elif spatial and collection == "surface_pressures":
+            elif spatial and collection in ("surface_pressures", "surface_supports"):
                 if action == "put" and isinstance(value, dict):
                     data[collection][key] = value
                 elif action == "delete" and value is None and key in data[collection]:
                     del data[collection][key]
                 else:
-                    raise AutomationError("invalid_batch", "Use put with a complete case-pressure map, or delete an existing map.")
+                    raise AutomationError("invalid_batch", "Use put with a complete surface assignment map, or delete an existing map.")
             elif collection in constructors:
                 entities = data[collection]
                 if action == "put":
@@ -251,14 +251,27 @@ class AutomationCommands:
             if combination not in result.solver.load_combos:
                 raise AutomationError("invalid_combination", "Unknown solved combination.")
             kind = arguments.get("kind", "nodes")
-            if kind not in ("nodes", "members"):
-                raise AutomationError("invalid_query", "Choose nodes or members.")
+            if kind not in ("nodes", "members", "surface_elements"):
+                raise AutomationError("invalid_query", "Choose nodes, members or surface_elements.")
             offset, limit = arguments.get("offset", 0), arguments.get("limit", 100)
             if type(offset) is not int or offset < 0 or type(limit) is not int or not 1 <= limit <= 1000:
                 raise AutomationError("invalid_query", "Use a nonnegative offset and a limit from 1 to 1000.")
             from .reports import result_table
-            headers, rows = result_table(window.project, result.for_combination(combination), kind)
+            local_metadata = {}
+            if kind == "surface_elements":
+                from .surface_results import surface_table, centre_results
+                surface = arguments.get("surface_id")
+                if not isinstance(surface, str) or surface not in getattr(result.solver, "_pynitegui_surfaces", {}):
+                    raise AutomationError("invalid_query", "surface_elements requires a surface_id present in the solved snapshot.")
+                selected = result.for_combination(combination)
+                headers, rows = surface_table(window.project, selected, surface)
+                local_metadata = {"surface_id": surface, "sample": "Element centres, xi=eta=0; unsmoothed",
+                                  "local_axes": centre_results(selected, surface)[0]["axes"],
+                                  "convention": "Local x=i->j, y=i->n, z=x cross y. Membrane tension positive. Quad transverse shear unavailable pending validation; no combined face stresses or design checks."}
+            else:
+                headers, rows = result_table(window.project, result.for_combination(combination), kind)
             return {**self.identity(), **self.snapshot(), "combination": combination,
+                    **local_metadata,
                     "unit_system": window.project.unit_system, "headers": headers, "rows": rows[offset:offset+limit],
                     "total_rows": len(rows), "offset": offset, "analysis_state": window.results_panel.analysis_state}
         raise AutomationError("unknown_tool", "Unknown automation tool.")

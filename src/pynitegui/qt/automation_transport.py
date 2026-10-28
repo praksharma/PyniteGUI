@@ -86,13 +86,13 @@ def build_application(bridge, permissions, token, port, network_event, *, requir
         return await call("read_units", {"session_id": session_id})
 
     @server.tool(description=TOOLS["read_results"][1], annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False))
-    async def read_results(session_id: str, kind: Literal["nodes", "members"] = "nodes", combination: str | None = None,
-                           snapshot_id: str | None = None, offset: StrictInt = 0, limit: StrictInt = 100) -> dict[str, Any]:
+    async def read_results(session_id: str, kind: Literal["nodes", "members", "surface_elements"] = "nodes", combination: str | None = None,
+                           snapshot_id: str | None = None, offset: StrictInt = 0, limit: StrictInt = 100, surface_id: str | None = None) -> dict[str, Any]:
         return await call("read_results", dict(session_id=session_id, kind=kind, combination=combination,
-                                               snapshot_id=snapshot_id, offset=offset, limit=limit))
+                                               snapshot_id=snapshot_id, offset=offset, limit=limit, surface_id=surface_id))
 
     @server.tool(description=TOOLS["apply_batch"][1] + " Canonical inch-kip inputs. Operations: "
-                 "put/delete on nodes,members,loads,materials,sections,combinations; 3D also surfaces and surface_pressures; put/delete key on load_cases; "
+                 "put/delete on nodes,members,loads,materials,sections,combinations; 3D also surfaces, surface_pressures and surface_supports; put/delete key on load_cases; "
                  "set value on settings. Each operation has op,collection,key,value. Entity put merges fields; "
                  "deletion requires explicit dependent-reference updates in the same batch. All operations validate together. "
                  "REQUIRED WORKFLOW: read_model then inspect its schema or call read_schema; do not guess fields. "
@@ -103,9 +103,9 @@ def build_application(bridge, permissions, token, port, network_event, *, requir
                  "Distributed loads use magnitude and end_magnitude; equal for uniform. See read_schema for allowed directions and all fields. "
                  "2D directions: FX,FY,MZ,Angle,Local x,Local y,Local angle. "
                  "3D directions: FX,FY,FZ,MX,MY,MZ,Angle; members also accept Fx,Fy,Fz,Mx,My,Mz. "
-                 "3D surfaces: put merges recipe fields and nested material; surface_pressures put replaces a surface-keyed case->kip/in2 map. "
+                 "3D surfaces: put merges recipe fields and nested material; surface_pressures put replaces a surface-keyed case->kip/in2 map; surface_supports put replaces outer edge->global rigid DOF lists. "
                  "settings/set may enable surface_analysis_enabled. Read read_schema for exact recipes, limits and pressure signs. "
-                 "Coupled final-candidate topology/assignments validate once before commit; remove dependent pressure maps explicitly on deletion. "
+                 "Coupled final-candidate topology/assignments validate once before commit; remove dependent pressure/support maps explicitly on deletion. "
                  "Local operation errors include a zero-based error.operation_index. Whole-batch reference/constraint errors omit it; no changes apply.")
     async def apply_batch(session_id: str, expected_revision: StrictInt, operations: list[dict]) -> dict[str, Any]:
         return await call("apply_batch", dict(session_id=session_id, expected_revision=expected_revision, operations=operations))

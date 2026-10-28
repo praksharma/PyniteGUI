@@ -15,6 +15,20 @@ from pynitegui.qt.plate_workspace import PlateWorkspace
 
 
 class PlateWorkspaceTests(unittest.TestCase):
+    def test_quad_shear_is_unavailable_and_rect_remains_enabled(self):
+        from pynitegui.qt.surface_results import QUAD_SHEAR_LIMITATION
+        for family in ("Quad", "Rect"):
+            definition = PlateDefinition(element_type=family, mesh_size=60)
+            self.window.install(definition.to_dict())
+            result = analyze_plate(definition)
+            self.assertEqual(result["shears"] is None, family == "Quad")
+            self.window.result = result
+            self.window.component.setCurrentIndex(5)
+            self.assertEqual(self.window.component.currentIndex() == 5, family == "Rect")
+            self.assertEqual(self.window.component.model().item(5).isEnabled(), family == "Rect")
+            if family == "Quad":
+                self.assertEqual(self.window.recovery_note.text(), QUAD_SHEAR_LIMITATION)
+
     @classmethod
     def setUpClass(cls):
         cls.app = QApplication.instance() or QApplication([])

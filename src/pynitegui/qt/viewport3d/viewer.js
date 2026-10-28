@@ -143,6 +143,13 @@ function update(payload,dragPreview=false) {
   for (const mesh of data.surfaceMeshes || []) {
     drawSurfaces({...mesh,colors:c,surfaceName:mesh.name,surfaceSelected:selected('surfaces',mesh.name),
       surfaceOpacity:data.deformed&&mesh.nodes.some(node=>node.displacement)?.2:1},group,picks);
+    if(data.supports)for(const support of mesh.supportEdges||[]){
+      for(const segment of support.segments)line(segment.map(vector),c.support);
+      if(support.segments.length){
+        const segment=support.segments[Math.floor(support.segments.length/2)];
+        label(`${mesh.name} ${support.edge}: ${support.dofs.join(', ')}`,vector(segment[0]).add(vector(segment[1])).multiplyScalar(.5),c.support);
+      }
+    }
     if(data.deformed && mesh.nodes.some(node=>node.displacement))drawSurfaces({...mesh,colors:{...c,member:c.load,accent:c.load},
       nodes:mesh.nodes.map(node=>({...node,position:node.position.map((v,i)=>v+(node.displacement?.[i]||0)*data.factor)})),surfaceFill:false},group);
     if(mesh.pressures?.length || mesh.gravity){

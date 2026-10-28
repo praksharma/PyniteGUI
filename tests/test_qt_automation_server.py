@@ -189,7 +189,7 @@ class ServerWireTests(ServerWindowTests):
         before, count = self.window.project.to_dict(), self.window.undo.count()
         async def callback(client):
             tools = {tool.name:tool for tool in (await client.list_tools()).tools}
-            self.assertEqual(tools["read_results"].input_schema["properties"]["kind"]["enum"], ["nodes", "members"])
+            self.assertEqual(tools["read_results"].input_schema["properties"]["kind"]["enum"], ["nodes", "members", "surface_elements"])
             self.assertIn("Poll analysis_status", tools["run_analysis"].description)
             compact = (await client.call_tool("read_model", {"include_schema":False})).structured_content["data"]
             self.assertNotIn("schema", compact)
@@ -241,6 +241,11 @@ class ServerWireTests(ServerWindowTests):
             result = await client.call_tool("read_results", {"session_id":model["session_id"], "combination":"Factored"})
             self.assertFalse(result.is_error, result)
             self.assertGreater(result.structured_content["data"]["total_rows"], len(project.nodes))
+            slab = await client.call_tool("read_results", {"session_id": model["session_id"], "kind": "surface_elements",
+                "surface_id": "Floor2", "combination": "Factored", "offset": 1, "limit": 2})
+            self.assertFalse(slab.is_error, slab)
+            self.assertEqual(len(slab.structured_content["data"]["rows"]), 2)
+            self.assertEqual(slab.structured_content["data"]["surface_id"], "Floor2")
             rejected = await client.call_tool("apply_batch", {"session_id":model["session_id"], "expected_revision":revision,
                 "operations":[{"op":"put","collection":"surfaces","key":"Floor2","value":{"origin":[0,241,0]}}]})
             self.assertTrue(rejected.is_error)

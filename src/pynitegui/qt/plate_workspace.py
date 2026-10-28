@@ -6,7 +6,7 @@ import numpy as np
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.collections import PolyCollection
 from matplotlib.figure import Figure
-from PySide6.QtCore import QSaveFile, QIODevice, QThread, QTimer
+from PySide6.QtCore import QSaveFile, QIODevice, QThread, QTimer, Qt
 from PySide6.QtGui import QUndoCommand, QUndoStack
 from PySide6.QtWidgets import (QComboBox, QDialog, QFileDialog, QFormLayout, QHBoxLayout,
                               QLabel, QLineEdit, QMessageBox, QPushButton, QSplitter,
@@ -129,6 +129,9 @@ class PlateWorkspace(QDialog):
                                  "Contours use unsmoothed element-centre values; sharp opening-corner peaks are mesh-sensitive.")
         self.component.currentIndexChanged.connect(self.draw)
         layout.addWidget(self.component)
+        self.recovery_note = QLabel()
+        self.recovery_note.setWordWrap(True)
+        layout.addWidget(self.recovery_note)
         self.figure = Figure()
         self.canvas = FigureCanvasQTAgg(self.figure)
         layout.addWidget(NavigationToolbar2QT(self.canvas, self))
@@ -235,6 +238,16 @@ class PlateWorkspace(QDialog):
     def draw(self, *_):
         if not hasattr(self, "canvas"):
             return
+        from .surface_results import QUAD_SHEAR_LIMITATION
+        self.recovery_note.setText(QUAD_SHEAR_LIMITATION if self.definition.element_type == "Quad" else "")
+        self.recovery_note.setVisible(self.definition.element_type == "Quad")
+        for index in (5, 6):
+            self.component.model().item(index).setEnabled(self.definition.element_type != "Quad")
+            self.component.setItemData(index, QUAD_SHEAR_LIMITATION if self.definition.element_type == "Quad" else "Rect polynomial shear recovery", Qt.ItemDataRole.ToolTipRole)
+        if self.definition.element_type == "Quad" and self.component.currentIndex() >= 5:
+            self.component.blockSignals(True)
+            self.component.setCurrentIndex(1 if self.result is not None else 0)
+            self.component.blockSignals(False)
         model = build_plate(self.definition)
         _, points, cells = plate_geometry(model, self.definition)
         units = self.definition.units

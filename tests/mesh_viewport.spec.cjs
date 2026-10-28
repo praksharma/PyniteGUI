@@ -28,16 +28,25 @@ const server = http.createServer((request,response) => {
     await page.waitForFunction(()=>window.pyniteViewer);
     for (const [kind,payload] of Object.entries(payloads)) {
       await page.evaluate(payload=>{window.pyniteViewer.update(payload);window.pyniteViewer.orient(0);},payload);
+      // Wait for the first nonempty GPU frame, including cold SwiftShader
+      // startup, instead of reading an unrendered clear buffer after a timer.
+      await page.waitForFunction(()=>window.pyniteViewer.state().drawCalls>0);
       await page.waitForTimeout(150);
-      const pixels = await page.evaluate(()=>{
+      const readCoverage=()=>{
         const canvas=document.querySelector('canvas'),gl=canvas.getContext('webgl2');
         const values=new Uint8Array(canvas.width*canvas.height*4);
         gl.readPixels(0,0,canvas.width,canvas.height,gl.RGBA,gl.UNSIGNED_BYTE,values);
         let colored=0;
         for(let i=0;i<values.length;i+=4)if(Math.max(...values.subarray(i,i+3))-Math.min(...values.subarray(i,i+3))>35)colored++;
         return colored/(canvas.width*canvas.height);
-      });
-      assert(pixels>(kind==='mixed_hidden'?.0003:.005), `Blank ${kind} mesh`);
+      };
+      const threshold=kind==='mixed_hidden'?.0003:.005;
+      let pixels=0;
+      for(let attempt=0;attempt<100&&pixels<=threshold;attempt++){
+        pixels=await page.evaluate(readCoverage);
+        if(pixels<=threshold)await page.waitForTimeout(100);
+      }
+      assert(pixels>threshold, `Blank ${kind} mesh (${pixels} coloured coverage)`);
       const modelNodes=[...payload.nodes,...(payload.surfaceMeshes||[]).flatMap(mesh=>mesh.nodes)];
       const positions=await page.evaluate(points=>points.map(point=>window.pyniteViewer.project(point)),modelNodes.map(node=>node.position));
       assert(positions.every(([x,y])=>x>10&&x<1270&&y>10&&y<790),`Clipped ${kind}`);
@@ -67,6 +76,14 @@ const server = http.createServer((request,response) => {
     await page.evaluate(payload=>window.pyniteViewer.update({...payload,deformed:false}),coupled);
     await page.waitForTimeout(150);
     assert.notEqual(await pixels(),deformedPixels,'Coupled slab deformation did not change canvas pixels');
+    const supported=payloads.surface_supported;
+    assert.equal(supported.surfaceMeshes[0].supportEdges[0].segments.length,6);
+    await page.evaluate(payload=>{window.pyniteViewer.update({...payload,supports:true});window.pyniteViewer.orient(0);},supported);
+    await page.waitForTimeout(150);
+    const supportPixels=await pixels();
+    await page.evaluate(payload=>window.pyniteViewer.update({...payload,supports:false}),supported);
+    await page.waitForTimeout(150);
+    assert.notEqual(await pixels(),supportPixels,'Geometry-owned edge supports do not follow Supports visibility');
     await page.setViewportSize({width:1280,height:800});
     await page.evaluate(payload=>{
       window.pyniteViewer.update(payload);window.pyniteViewer.orient(0);

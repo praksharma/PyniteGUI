@@ -52,7 +52,7 @@ the exact missing part. Summary: **9 done, 4 partial, 5 pending**. P-Delta cover
 | Unilateral member behaviour | Pending | Add tension-only/compression-only flags, iterative active-set analysis and activation/mechanism benchmarks; ordinary 2D/3D trusses are not unilateral members. |
 | Node-to-node spring elements | Pending | Add separate spring entities, axial stiffness units and bilateral/tension-only/compression-only behaviour; support springs are not spring elements. |
 | Bilateral/unilateral support springs | Partial | Bilateral global DX/DY/RZ springs in 2D and all six DOFs in 3D are implemented. One-way support springs and iterative activation remain pending. |
-| DKMQ quadrilaterals | Partial | Plate-only bending tool plus opt-in rectangular Quad/frame coupling with pressure cases, self-weight, shared joints, conformity checks, nodal results/deformation and equilibrium. General shell result inspection, stress contours and curved-shell benchmarks remain pending. |
+| DKMQ quadrilaterals | Partial | Plate-only bending tool plus opt-in rectangular Quad/frame coupling with pressure cases, self-weight, shared joints, conformity checks, nodal results/deformation and equilibrium. Local moment/membrane-stress contours, probes and edge supports are implemented. Validated shear recovery and general membrane/drilling/curved-shell benchmarks remain pending. |
 | Polynomial rectangles | Partial | Quad/Rect choice for rectangular plate bending (including openings) with centre-coordinate recovery, deflection comparison and equilibrium regressions. General membrane/shell workflows and additional formulation-specific benchmarks remain pending. |
 | Shape/opening meshing | Done | All seven concrete PyNite generators with shape-specific/common options, bounded checks, control lines/openings, offline 3D geometry preview, recipes/undo and connectivity export. Curved-shell analysis and frame assembly remain distinct pending capabilities. |
 | Support reactions | Done | Unit-aware reaction tables, CSV and printable output; all six components for spatial frames, including bilateral support springs. |
@@ -251,9 +251,19 @@ Remaining 11 scripts are intentionally unchecked:
 - [x] Refuse all coupled result publication if any combination fails independent
   global force/moment equilibrium; regression-test lateral moment imbalance from
   the locked engine's weak drilling approximation without relaxing tolerances.
-- [ ] Add coupled-slab local stress/moment/shear inspection, contours and surface
-  edge-support editors; extend independent membrane, drilling, interface and
-  mesh-convergence benchmarks before broadening the experimental scope.
+- [x] Add coupled rectangular Quad local moment/membrane-stress inspection in the
+  existing Results dock: element-centre contours, natural-coordinate probes,
+  explicit axes, combination/unit/snapshot identity, CSV and paginated MCP reads.
+  Verify constant-strain/curvature patches in all planes and thin-plate Navier
+  moments/refinement. Membrane stress is tension-positive; no combined face stresses.
+- [x] Add geometry-owned outer-edge rigid supports with global DOF presets/custom
+  flags, staged preview, remesh/move/rename/delete persistence, shared-joint unions,
+  spring-conflict rejection, undo, viewport/report display and atomic MCP edits.
+  Retain rigid-body and independent all-combination equilibrium rejection.
+- [ ] Independently validate coupled Quad transverse shear recovery before exposing
+  it. PyNite 3.0/3.2 raw Qx/Qy fails the thin-plate Navier refinement benchmark;
+  disable Quad shear plots/data in the plate pilot as well. Extend solved membrane,
+  drilling, interface and mesh-convergence benchmarks before broader engineering claims.
 - [ ] Add eccentric slab/beam offsets or explicit connectors with tested load
   transfer; current connections require coincident centreline/mid-surface nodes.
 - [x] Add surface-aware MCP edit schemas and atomic topology/assignment validation;
