@@ -263,8 +263,18 @@ Remaining 11 scripts are intentionally unchecked:
   Retain rigid-body and independent all-combination equilibrium rejection.
 - [ ] Independently validate coupled Quad transverse shear recovery before exposing
   it. PyNite 3.0/3.2 raw Qx/Qy fails the thin-plate Navier refinement benchmark;
-  disable Quad shear plots/data in the plate pilot as well. Extend solved membrane,
-  drilling, interface and mesh-convergence benchmarks before broader engineering claims.
+  Quad shear plots/data remain disabled in both coupled and plate workspaces.
+- [x] Add solved traction-based affine membrane checks in every plane, signed/zero
+  combinations and refinement; independently compare applied loads, displacement
+  and stress without prescribing the solution. Add coincident nu=0 slender-strip
+  beam/slab load-transfer checks for surface pressure and member line loading,
+  three EI ratios and refinement. Quantify lateral drilling torque/residuals and
+  retain production rejection at every refinement; do not infer general membrane
+  or wall certification from these bounded tests. Fix non-square YZ edge/probe
+  axes and add notch/support/plot regressions using the upstream width-Z/height-Y convention.
+- [ ] Validate nonuniform membrane/diaphragm loads, general frame–shell rotational
+  interfaces and drilling treatment before broadening engineering claims. The
+  current lateral drilling benchmark still fails equilibrium under refinement.
 - [ ] Add eccentric slab/beam offsets or explicit connectors with tested load
   transfer; current connections require coincident centreline/mid-surface nodes.
 - [x] Add surface-aware MCP edit schemas and atomic topology/assignment validation;

@@ -13,6 +13,9 @@ from .units import UNIT_SYSTEMS
 
 
 MAX_MESH_ELEMENTS = 1024
+# Rectangle recipe width, height and perpendicular global coordinate indices.
+# Upstream YZ rectangles use local x=global Z and local y=global Y.
+RECTANGLE_AXES = {"XY": (0, 1, 2), "XZ": (0, 2, 1), "YZ": (2, 1, 0)}
 # Parameter names are the upstream names. The direct ring helpers intentionally
 # do not have a target mesh-size argument; they take a circumferential count.
 GENERATORS = {

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Independently validate solved uniform-traction membrane fields in all planes,
+  including signed/zero combinations and refinement. Add coincident beam/slab
+  strip pressure/member-load transfer benchmarks against a narrow-strip EI-sum
+  reference for three stiffness ratios. Report weak drilling moment residuals
+  under refinement while retaining all existing production rejection limits.
+- Correct coupled YZ width/height axes for outer-edge supports and local result
+  plots/probes: recipe width follows global Z and height follows global Y.
+  Share the mapping with frame placement and add non-square/notch regressions.
+  File schemas are unchanged; general wall/diaphragm behaviour and Quad shear
+  remain unvalidated and no new solver is enabled.
+
 - Extend the separate plate workspace with additional uniform pressure cases,
   named combinations and global -Y self-weight for horizontal XZ plates. Add a
   staged loading editor, solved-combination selector and snapshot-labelled CSV.

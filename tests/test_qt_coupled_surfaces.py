@@ -207,6 +207,38 @@ class CoupledEditorTests(unittest.TestCase):
         self.assertEqual(panel.table.rowCount(), 0)
         self.assertFalse(window.results_panel.tabs.isTabVisible(window.results_panel.surface_tab))
 
+    def test_nonsquare_yz_plot_support_preview_and_offcentre_probe_use_recipe_axes(self):
+        from coupled_validation import membrane_patch, quiet_solve
+        from pynitegui.qt.surface_support_dialog import SurfaceSupportDialog
+        window = self.window
+        p = membrane_patch(20., "YZ")
+        window.load_project(p)
+        result = quiet_solve(window.project)
+        window.analysis_revision = window.revision
+        window.analysis_finished(result, "")
+        window.select(("surfaces", "Patch"))
+        panel = window.results_panel.surfaces
+        panel.ensure_loaded()
+        panel.field.setCurrentIndex(panel.field.findData("Sx"))
+        polygons = np.asarray(panel.polygons)
+        np.testing.assert_allclose(np.ptp(polygons.reshape(-1, 2), axis=0), (120., 80.))
+        self.assertIn("Z", panel.ax.get_xlabel())
+        self.assertIn("Y", panel.ax.get_ylabel())
+        polygon = polygons[3]
+        # A known natural coordinate, not just the centre (which hid axis swaps).
+        point = polygon[0]+.7*(polygon[1]-polygon[0])+.3*(polygon[3]-polygon[0])
+        panel.click_plot(SimpleNamespace(inaxes=panel.ax, button=1, xdata=point[0], ydata=point[1]))
+        self.assertEqual(panel.element.currentText(), panel.rows[3]["element"])
+        self.assertAlmostEqual(panel.xi.value(), .4, places=6)
+        self.assertAlmostEqual(panel.eta.value(), -.4, places=6)
+        dialog = SurfaceSupportDialog(window, window.project, "Patch")
+        self.assertEqual(dialog.axes, (2, 1))
+        ax = dialog.figure.axes[0]
+        self.assertIn("Z", ax.get_xlabel())
+        self.assertIn("Y", ax.get_ylabel())
+        dialog.reject()
+        dialog.deleteLater()
+
 
 if __name__ == "__main__":
     unittest.main()

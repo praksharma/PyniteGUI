@@ -286,7 +286,7 @@ planes, origins and natural-coordinate probes. A coupled edge-supported 120-inch
 square plate with a negligible-stiffness perimeter beam uses 30/15/7.5-inch meshes
 against an independent Navier series: fine interior Mx/My/Mxy relative L2 errors
 are below 0.6%, and peak deflection error is below 0.5%; support forces balance.
-The beam stiffness is retained, not subtracted. These checks do not validate
+The beam stiffness is retained, not subtracted. These bending checks do not validate
 general membrane/drilling response or sharp corner peaks. Every combination still
 must pass global equilibrium, including after changing edge restraints; even a
 pressure-loaded asymmetrically clamped frame/slab can be rejected for drilling
@@ -295,8 +295,33 @@ stresses and design checks remain pending. Reproduce this bounded comparison,
 including diagnostic raw-shear errors (not production result data), with:
 
 ```sh
-uv run python -B scripts/benchmark_coupled_surfaces.py --output /tmp/coupled-plate.json
+uv run python -B scripts/benchmark_coupled_surfaces.py --output /tmp/coupled-plate.json --figure /tmp/coupled-validation.png
 ```
+
+**Solved membrane/interface checks (development after RC4):** the same report
+now includes applied-traction membrane solutions, beam/slab load sharing and a
+separate raw-engine drilling diagnostic. These are bounded verification cases:
+
+| Check | Independent reference and observed scope |
+| --- | --- |
+| Membrane extension, Poisson contraction and shear | Constant edge tractions on a 120 × 80 × 0.8 in rectangle; exact plane-stress affine displacement/stress, not prescribed solver displacements. Three scalar in-plane restraints remove rigid modes; outer edges restrain normal displacement. Three meshes in XY/XZ/YZ, translated origins, signed and zero combinations match to numerical precision. An off-plane frame anchor at the zero-motion corner carries no membrane load. |
+| Pressure or member load transferred between a beam and slab | A 240 × 12 × 0.6 in, nu=0 slab strip with a coincident centreline beam, simply supported ends and beam/slab EI ratios 0.25, 1 and 4. Compare both load paths against the independent narrow-strip rigidity sum `EI = Eb Ib + Es b t³/12`. Under refinement from 8 to 32 beam segments, fine displacement-field error is below 0.1% of reference peak, beam midspan moment error below 0.3% and slab Mx relative L2 error below 0.15%. This is a slender-strip limit, not an exact finite-width or eccentric/composite-section reference. |
+| Weak drilling under lateral loading | Raw engine diagnostic only: a loaded frame/slab's missing external MY moment matches its summed weak local drilling torque. On 12/48/192-element meshes the residual grows from about 0.296 to 0.604 to 1.046 kip-in, far above the existing approximately 0.000018 kip-in limits. The actual application rejects every case; refinement alone is not a remedy. |
+
+The raw drilling diagnostic is isolated in the benchmark; it does not bypass the
+application's acceptance gate or expose rejected engineering results to the UI/MCP.
+No drilling stiffness or equilibrium tolerance is changed. Nonuniform membrane
+loads, general diaphragm/wall action, rotational frame–shell interfaces and corner
+stress peaks still require independent validation. Quad shear remains unavailable.
+
+![Beam–slab strip convergence and the separately rejected drilling case](docs/assets/screenshots/coupled-surface-validation.png)
+
+Rectangle width/height axes are XY: X/Y, XZ: X/Z and **YZ: Z/Y**, following the
+mesh generator. Left/right mean minimum/maximum width coordinate; bottom/top mean
+minimum/maximum height coordinate. Development corrects swapped YZ edge-support
+and contour axes; non-square recipes, off-centre probes and boundary notches now
+have dedicated regressions. Review YZ edge assignments created by earlier
+development builds when upgrading. The file schema and named edge semantics are unchanged.
 
 ![Slab moment contours and local probes in the existing Results dock](docs/assets/screenshots/coupled-slab-results.png)
 

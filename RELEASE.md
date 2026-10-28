@@ -196,6 +196,44 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 Coupled Validation Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-10-28. This source checkpoint does
+not create an RC5 tag or replace the published RC4 assets.
+
+- Solve applied-traction membrane patches against independent plane-stress
+  displacement/stress formulas, rather than prescribing the solution. Cover a
+  non-square 120 × 80 in rectangle in XY/XZ/YZ, three mesh sizes, signed/zero
+  combinations, uniaxial Poisson contraction and pure shear. Numerical errors
+  remain below the explicit 1e-10 in / 1e-9 ksi regression bounds.
+- Verify load transfer in both directions between a coincident beam and a nu=0
+  slender slab strip: pressure on the slab and equivalent member line loading.
+  Independent narrow-strip EI-sum references cover three stiffness ratios and
+  refinement. Fine-mesh maxima: **0.0781%** displacement-field error relative to
+  reference peak, **0.2587%** beam midspan moment error, **0.1338%** slab Mx L2
+  error. These are bounded flat-strip checks, not general diaphragm/composite
+  or eccentric-connection validation. PyNite 3.0 and 3.2 reproduce these values.
+- Quantify the lateral weak-drilling limitation independently: external MY
+  residuals of about **0.296 / 0.604 / 1.046 kip-in** on 12/48/192 slab elements
+  agree with summed weak local drilling torque. All three actual application
+  solves reject the result using unchanged equilibrium limits. No stiffness
+  substitution or tolerance relaxation is introduced; Quad shear stays withheld.
+- Correct coupled YZ outer-edge support and contour/probe coordinates to the
+  upstream width-Z / height-Y convention, sharing the mapping with rectangle
+  placement. Non-square, notch, remesh and off-centre native probe regressions
+  prevent the square-fixture blind spot. No file-format change; review YZ edge
+  assignments saved by earlier development builds.
+- Focused surfaces: **110 tests**, **21.360 s**. Full locked suite with MCP:
+  **919 tests**, no skips, **237.281 s**. An independently installed development
+  wheel with PyNite 3.2 / Qt 6.12 also passes **919 tests**, no skips,
+  **262.552 s**. Test ownership: 143 classes in 9 groups.
+- Automated native macOS checks use the installed development wheel, actual
+  analysis worker, corrected YZ support preview/plot and the retained All tools
+  hidden-Results behaviour. They do not replace human OS-dialog/platform gates.
+  Strict docs/link checking covers 55 HTML pages; documentation browser and
+  offline mesh viewport checks pass. The guide includes a reproducible numeric
+  report command and inspected scientific convergence figure.
+
 ## Post-RC4 Plate Loading Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-10-28. No new release tag or registry

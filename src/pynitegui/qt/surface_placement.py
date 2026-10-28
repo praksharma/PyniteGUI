@@ -2,11 +2,10 @@
 from dataclasses import dataclass
 import math
 
-from .mesh_model import MeshDefinition
+from .mesh_model import MeshDefinition, RECTANGLE_AXES as PLANE_AXES
 
 
 TOLERANCE = 1e-8
-PLANE_AXES = {"XY": (0, 1, 2), "XZ": (0, 2, 1), "YZ": (2, 1, 0)}
 
 
 @dataclass(frozen=True)

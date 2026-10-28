@@ -5,12 +5,12 @@ owners. A spring on a newly fixed DOF is rejected rather than silently removed.
 """
 import numpy as np
 
+from .mesh_model import RECTANGLE_AXES as PLANE_AXES
 from .spatial_surfaces import surface_geometry
 
 
 EDGES = ("left", "right", "bottom", "top")
 DOFS = ("DX", "DY", "DZ", "RX", "RY", "RZ")
-PLANE_AXES = {"XY": (0, 1, 2), "XZ": (0, 2, 1), "YZ": (1, 2, 0)}
 
 
 def edge_indices(definition, points, edge):

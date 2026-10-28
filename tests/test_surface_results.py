@@ -49,6 +49,34 @@ def quiet_solve(project):
 
 
 class SurfaceSupportModelTests(unittest.TestCase):
+    def test_nonsquare_yz_edges_and_notch_follow_recipe_width_z_height_y(self):
+        origin = np.array((19., -7., 41.))
+        p = SpatialProject(surfaces={"Patch": MeshDefinition(name="Patch", plane="YZ", origin=origin.tolist(),
+            parameters={"width": 120., "height": 80.}, mesh_size=20.,
+            openings=[dict(name="Notch", x_left=0., y_bott=20., width=20., height=20.)])})
+        p.surface_supports = {"Patch": {"left": ["DX"], "right": ["DY"], "bottom": ["DZ"], "top": ["RZ"]}}
+        for size in (20., 10.):
+            p.surfaces["Patch"].mesh_size = size
+            p.validate()
+            points = np.asarray(surface_geometry(p.surfaces["Patch"])[2])-origin
+            supports = resolved_supports(p, "Patch")
+            for index, dofs in supports.items():
+                x, y, z = points[index]
+                self.assertEqual(x, 0.)
+                for dof, axis, value in (("DX", 2, 0.), ("DY", 2, 120.), ("DZ", 1, 0.), ("RZ", 1, 80.)):
+                    if dof in dofs:
+                        self.assertEqual(points[index, axis], value)
+            segments = {row["edge"]: row["segments"] for row in support_segments(p, "Patch")}
+            self.assertEqual(set(segments), set(EDGES))
+            left_length = 0.
+            for a, b in segments["left"]:
+                a, b = np.asarray(a)-origin, np.asarray(b)-origin
+                self.assertEqual(a[2], 0.)
+                self.assertEqual(b[2], 0.)
+                self.assertFalse(20. < (a[1]+b[1])/2 < 40.)
+                left_length += np.linalg.norm(b-a)
+            self.assertAlmostEqual(left_length, 60.)
+
     def test_version_migration_strict_schema_and_assignment_lifecycle(self):
         p = slab_frame()
         legacy = p.to_dict()

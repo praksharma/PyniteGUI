@@ -116,6 +116,7 @@ tests = [
 description = "Mesh/plate/coupled-slab geometry, native workspaces, placement and structural benchmarks."
 tests = [
   "test_coupled_surfaces",
+  "test_coupled_validation",
   "test_surface_results",
   "test_example_benchmarks.SlabExampleTests",
   "test_mesh_model",
