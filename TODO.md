@@ -15,6 +15,9 @@
 - [x] Prepare the first Brecon release, 1.0.0rc4: full locked/installed suites,
   final base/MCP and uv-tool installs, viewport/docs checks, audited artifacts
   and release notes. Retain old PyniteGUI releases and the stable-platform gates.
+- [x] Publish Brecon 1.0.0rc4 on GitHub and PyPI through Trusted Publishing after
+  the owner's environment approval. Verify registry artifact hashes and a fresh
+  public-PyPI installation; preserve existing PyniteGUI releases (2026-10-28).
 
 Current scope: a 2D/3D frame and bilateral axial-only truss editor with SI/imperial input and display, per-member materials and
 sections, custom global support restraints, global/member-local angled forces, distributed loads,

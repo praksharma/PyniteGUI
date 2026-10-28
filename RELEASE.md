@@ -1,17 +1,25 @@
 # Release Preparation
 
-Release target: **Brecon 1.0.0rc4**, tag **v1.0.0rc4**. The owner authorized
-GitHub publication and the PyPI workflow on **2026-10-28**. The previous-name
+Current release candidate: **Brecon 1.0.0rc4**, tag **v1.0.0rc4**. The owner authorized
+GitHub publication and approved the PyPI environment on **2026-10-28**. The previous-name
 **v1.0.0rc3** remains immutable. Check
 [GitHub Releases](https://github.com/praksharma/PyniteGUI/releases) for published
 assets; source tags and unpublished drafts do not imply a public binary release.
 Stable 1.0 promotion follows a feature freeze and verification of the actual
 release artifacts. Standalone installers remain a later step.
 
-**Publication status at preparation (2026-10-28):** PyniteGUI RC3 is published as a
+**Publication status (2026-10-28):** Brecon RC4 is published on
+[GitHub](https://github.com/praksharma/PyniteGUI/releases/tag/v1.0.0rc4) and
+[PyPI](https://pypi.org/project/brecon/1.0.0rc4/).
+[Workflow 40713196939](https://github.com/praksharma/PyniteGUI/actions/runs/40713196939)
+verified the tagged assets and published the same files through Trusted Publishing.
+The PyPI hashes match SHA256SUMS, and a fresh public-registry installation reports
+**Brecon 1.0.0rc4** from both launch commands.
+
+PyniteGUI RC3 remains published as a
 [GitHub prerelease](https://github.com/praksharma/PyniteGUI/releases/tag/v1.0.0rc3)
 and on [PyPI](https://pypi.org/project/pynitegui/1.0.0rc3/); its hashes match the
-sealed checkpoint. Brecon RC4 is being prepared for its first upload. Stable 1.0
+sealed checkpoint. Previous tags and assets are unchanged. Stable 1.0
 platform and prerelease-feedback gates below remain open.
 
 ## Build and Verify
@@ -145,8 +153,8 @@ pending GitHub publisher with these exact values:
 | Environment name | `pypi` |
 
 Brecon needs a **new pending publisher**, separate from the existing `pynitegui`
-project. The owner confirmed configuring it on **2026-10-28**; the first upload
-is part of the authorized RC4 release. Keep the old project/releases for existing users.
+project. The owner confirmed configuring it on **2026-10-28**; the first RC4 upload
+succeeded on that date. Keep the old project/releases for existing users.
 Its package name is not reserved until the first successful publish. See the
 [PyPI pending-publisher guide](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/).
 
@@ -166,8 +174,8 @@ Run workflow, choose **master**, and enter its tag (for example `v1.0.0rc4`, onc
 Review and approve the **pypi** environment job. This uploads to real PyPI;
 it is not a dry run. The workflow derives the distribution name from the tag
 metadata and accepts **Brecon only**. Old PyniteGUI RC2/RC3 tags are rejected
-before assets are downloaded; deleting old releases is unnecessary. This rename
-performs no publishing, new release tag or replacement of RC3 assets.
+before assets are downloaded; deleting old releases is unnecessary. The rename
+itself did not publish or replace RC3 assets; RC4 was released separately after validation.
 
 The workflow is manual only. Its read-only verification job checks out the
 requested tag, rejects a version mismatch or draft release, downloads the exact
@@ -209,6 +217,11 @@ with the stable-1.0 platform and independent-feedback gates still open.
 - The release carries a wheel, source archive and SHA256SUMS. GitHub and PyPI
   receive the same audited files; the workflow verifies tag/version, Brecon
   metadata and hashes before the environment-gated upload, without rebuilding.
+- Publication completed through workflow 40713196939 after the owner's required
+  `pypi` environment review. Public PyPI metadata and both artifact hashes match
+  the reviewed build. A fresh installation from `https://pypi.org/simple`
+  verifies the canonical and compatibility commands. This post-publication
+  record does not move the sealed tag or replace its release artifacts.
 
 ## Brecon Rename Validation
 
