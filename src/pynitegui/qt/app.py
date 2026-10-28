@@ -645,7 +645,7 @@ class MainWindow(QMainWindow):
             self.settings_store.setValue("graphics", name)
         for key, action in self.graphics_actions.items():
             action.setChecked(key == name)
-        QMessageBox.information(self, "3D Rendering", "Rendering changes take effect after restarting PyniteGUI. Save your project before closing.\n\n"
+        QMessageBox.information(self, "3D Rendering", "Rendering changes take effect after restarting Brecon. Save your project before closing.\n\n"
                                 + ("Software mode uses CPU compositing and requests a software graphics backend. Qt may choose a platform-specific WebGL driver." if name == "software" else "Automatic mode uses the default graphics backend."))
 
     def apply_theme(self):
@@ -957,7 +957,7 @@ class MainWindow(QMainWindow):
     def update_title(self):
         dirty = self.project.to_dict() != self.saved
         isolation = f" | Isolated: {self.isolated_group}" if getattr(self, "isolated_group", None) else ""
-        self.setWindowTitle(f"{'* ' if dirty else ''}{self.path.name if self.path else 'Untitled'} | PyniteGUI{isolation}")
+        self.setWindowTitle(f"{'* ' if dirty else ''}{self.path.name if self.path else 'Untitled'} | Brecon{isolation}")
 
     def set_mode(self, mode):
         if mode == "draw" and getattr(self, "isolated_group", None) is not None:
@@ -1813,7 +1813,7 @@ class MainWindow(QMainWindow):
     def open_project(self):
         if not self.confirm_discard():
             return
-        path, _ = QFileDialog.getOpenFileName(self, "Open Project", "", "PyniteGUI Project (*.pynite.json);;JSON (*.json)")
+        path, _ = QFileDialog.getOpenFileName(self, "Open Project", "", "Brecon Project (*.pynite.json);;JSON (*.json)")
         if path:
             try:
                 self.load_project(Project.open(path), Path(path))
@@ -1823,7 +1823,7 @@ class MainWindow(QMainWindow):
     def save_project(self, save_as=False):
         path = self.path
         if save_as or path is None:
-            filename, _ = QFileDialog.getSaveFileName(self, "Save Project", str(path or "structure.pynite.json"), "PyniteGUI Project (*.pynite.json)")
+            filename, _ = QFileDialog.getSaveFileName(self, "Save Project", str(path or "structure.pynite.json"), "Brecon Project (*.pynite.json)")
             if not filename:
                 return False
             path = Path(filename)
@@ -2233,10 +2233,20 @@ class MainWindow(QMainWindow):
             event.ignore()
 
 
+def configure_application_identity(application):
+    # Keep recovery snapshots discoverable at their original cross-platform path.
+    # Only the visible application name changes; no user files are moved.
+    application.setApplicationName("PyniteGUI")
+    recovery = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppDataLocation)) / "recovery"
+    application.setApplicationName("Brecon")
+    return recovery
+
+
 def main():
     from multiprocessing import freeze_support
     freeze_support()
     from .graphics import configure_graphics, launch_options
+    # Retain the preferences namespace used by existing installations.
     settings = QSettings("PyniteGUI", "PyniteGUI")
     mode, arguments = launch_options(sys.argv, settings.value("graphics", "auto"))
     try:
@@ -2245,13 +2255,12 @@ def main():
         raise SystemExit("Invalid QTWEBENGINE_CHROMIUM_FLAGS: " + str(error)) from error
     application = QApplication.instance() or QApplication(arguments)
     application.setProperty("pynitegui_graphics", mode)
-    application.setApplicationName("PyniteGUI")
+    recovery_directory = configure_application_identity(application)
     from pynitegui import __version__
     application.setApplicationVersion(__version__)
     configure_theme(application)
     from .window_controls import install_window_controls
     install_window_controls(application)
-    recovery_directory = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppDataLocation)) / "recovery"
     window = MainWindow(recovery_directory, settings)
     window.show()
     QTimer.singleShot(0, window.offer_recovery)

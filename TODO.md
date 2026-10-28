@@ -1,4 +1,13 @@
-# PyniteGUI Roadmap
+# Brecon Roadmap
+
+- [x] Rename the app/distribution/command to Brecon, with a place-inspired
+  wordmark, current docs/citation/MCP identity, legacy command/import compatibility
+  and unchanged project, preferences and recovery identifiers. Preserve existing
+  release tags/assets and repository URLs. Brecon publishing needs its own PyPI
+  project/publisher setup; the previous-name distribution is not renamed in place.
+- [ ] Owner: configure Brecon's pending PyPI publisher before its first release
+  (`brecon`, `praksharma/PyniteGUI`, `publish.yml`, environment `pypi`). Preserve
+  the existing PyniteGUI publisher; this task does not publish a renamed package.
 
 Current scope: a 2D/3D frame and bilateral axial-only truss editor with SI/imperial input and display, per-member materials and
 sections, custom global support restraints, global/member-local angled forces, distributed loads,

@@ -25,7 +25,7 @@ def main(output, hold=False):
         raise RuntimeError("Use a visible native desktop with WebEngine enabled.")
     import pynitegui
     assert Path(pynitegui.__file__).resolve().is_relative_to(Path(sys.prefix).resolve()), "Install a wheel; do not use an editable checkout."
-    from PySide6.QtCore import QSettings, Qt, QTimer
+    from PySide6.QtCore import QCoreApplication, QEvent, QSettings, Qt, QTimer
     from PySide6.QtPrintSupport import QPrintPreviewDialog, QPrinter
     from PySide6.QtTest import QTest
     from PySide6.QtWidgets import QApplication, QFileDialog
@@ -39,7 +39,7 @@ def main(output, hold=False):
     from pynitegui.qt.window_controls import install_window_controls
     output.mkdir(parents=True, exist_ok=True)
     app = QApplication.instance() or QApplication([])
-    app.setApplicationName("PyniteGUI Desktop QA")
+    app.setApplicationName("Brecon Desktop QA")
     app.setApplicationVersion(pynitegui.__version__)
     app.setProperty("pynitegui_graphics", "auto")
     configure_theme(app, "light")
@@ -202,6 +202,7 @@ def main(output, hold=False):
         window.saved = window.project.to_dict()
         window.close()
         window.deleteLater()
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
         app.processEvents()
     print("Visible native checks complete; human/OS-dialog checks remain separate.", flush=True)
 

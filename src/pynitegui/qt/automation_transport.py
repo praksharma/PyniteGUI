@@ -46,7 +46,7 @@ def build_application(bridge, permissions, token, port, network_event, *, requir
             return CallToolResult(content=[TextContent(type="text", text=json.dumps(response))],
                                   structured_content=response, is_error=True)
 
-    server = PermissionServer("PyniteGUI", version=__version__, log_level="CRITICAL",
+    server = PermissionServer("Brecon", version=__version__, log_level="CRITICAL",
         instructions="Controls one attached desktop project window. The GUI owns its session, not the client or chat. "
                      "Call read_model without session_id to discover it; reuse that ID. Opening a project changes it. "
                      "Unknown/old IDs return stale_session; read_model again rather than minting IDs. "
@@ -70,6 +70,8 @@ def build_application(bridge, permissions, token, port, network_event, *, requir
     async def read_model(include_schema: StrictBool = True) -> dict[str, Any]:
         return await call("read_model", {"include_schema": include_schema})
 
+    @server.resource("brecon://automation/reference", mime_type="application/json",
+                     description="Exact 2D and 3D model fields, supports, units and batch operation reference.")
     @server.resource("pynitegui://automation/reference", mime_type="application/json",
                      description="Exact 2D and 3D model fields, supports, units and batch operation reference.")
     def automation_reference() -> str:

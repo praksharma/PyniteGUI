@@ -47,6 +47,7 @@ def mcp_smoke(app, window, version):
                     async with ClientSession(read, write, read_timeout_seconds=10) as client:
                         initialized = await client.initialize()
                         assert initialized.server_info.version == version
+                        assert initialized.server_info.name == "Brecon"
                         response = await client.call_tool("read_model", {})
                         assert not response.is_error
                         model = response.structured_content["data"]
@@ -86,9 +87,13 @@ def main(version, mcp):
     from pynitegui.qt.reports import export_csv, report_html
     installed = Path(pynitegui.__file__).resolve()
     assert installed.is_relative_to(Path(sys.prefix).resolve()), f"Not an installed wheel: {installed}"
-    assert pynitegui.__version__ == importlib.metadata.version("pynitegui") == version
-    entry = Path(sys.executable).parent / ("pynitegui.exe" if os.name == "nt" else "pynitegui")
-    assert subprocess.check_output([str(entry), "--version"], text=True, timeout=20).strip() == f"PyniteGUI {version}"
+    assert pynitegui.__version__ == importlib.metadata.version("brecon") == version
+    entry = Path(sys.executable).parent / ("brecon.exe" if os.name == "nt" else "brecon")
+    assert subprocess.check_output([str(entry), "--version"], text=True, timeout=20).strip() == f"Brecon {version}"
+    legacy = entry.with_name("pynitegui.exe" if os.name == "nt" else "pynitegui")
+    assert subprocess.check_output([str(legacy), "--version"], text=True, timeout=20).strip() == f"Brecon {version}"
+    import brecon
+    assert brecon.__version__ == version and brecon.main is pynitegui.main
     assert dependencies_available() == mcp, "Wrong optional-dependency profile"
     assets = installed.parent / "qt/viewport3d"
     for name in ("index.html", "viewer.js", "frame_meshes.js", "node_drag.js", "vendor/three.module.js",
@@ -97,6 +102,7 @@ def main(version, mcp):
     app = QApplication.instance() or QApplication([])
     window = MainWindow()
     try:
+        assert " | Brecon" in window.windowTitle()
         with tempfile.TemporaryDirectory(prefix="pynite-installed-smoke-") as directory:
             for key in EXAMPLES:
                 project = example_project(key)

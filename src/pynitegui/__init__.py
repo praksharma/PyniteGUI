@@ -1,7 +1,7 @@
 from importlib.metadata import PackageNotFoundError, version
 
 try:
-    __version__ = version("pynitegui")
+    __version__ = version("brecon")
 except PackageNotFoundError:
     __version__ = "0+uninstalled"
 
@@ -9,7 +9,7 @@ except PackageNotFoundError:
 def main() -> None:
     import sys
     if sys.argv[1:] == ["--version"]:
-        print(f"PyniteGUI {__version__}")
+        print(f"Brecon {__version__}")
         return
     from .qt.app import main as launch
 

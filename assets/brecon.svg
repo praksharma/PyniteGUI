@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="660" height="180" viewBox="0 0 660 180" role="img" aria-labelledby="title desc">
+  <title id="title">Brecon</title>
+  <desc id="desc">A mountain ridge drawn as a structural frame beside the Brecon wordmark.</desc>
+  <rect width="660" height="180" rx="20" fill="#f3f7f6"/>
+  <g fill="none" stroke="#23776d" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M28 134 75 72 105 98 139 45 189 134Z"/>
+    <path d="M75 72 75 134 105 98 139 134 139 45M105 98 189 134" stroke-width="3"/>
+  </g>
+  <g fill="#f3f7f6" stroke="#23776d" stroke-width="3">
+    <circle cx="75" cy="72" r="5"/><circle cx="105" cy="98" r="5"/><circle cx="139" cy="45" r="5"/>
+    <circle cx="28" cy="134" r="5"/><circle cx="75" cy="134" r="5"/><circle cx="139" cy="134" r="5"/><circle cx="189" cy="134" r="5"/>
+  </g>
+  <text x="220" y="119" fill="#183c38" font-family="sans-serif" font-weight="700" font-size="82" letter-spacing="-2">Brecon</text>
+</svg>

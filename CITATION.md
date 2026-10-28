@@ -1,12 +1,15 @@
-# Citing PyniteGUI
+# Citing Brecon
 
-If you use PyniteGUI in research, cite the software and identify the exact release
+Brecon was formerly named PyniteGUI. Cite the name/version actually used;
+historical PyniteGUI release names and repository links remain valid.
+
+If you use Brecon in research, cite the software and identify the exact release
 or full Git commit used. The repository is the citation destination while the
 project continues to evolve; no DOI has been assigned by this citation file.
 
 Suggested project citation:
 
-> Sharma, P. PyniteGUI [Computer software].
+> Sharma, P. Brecon [Computer software].
 > https://github.com/praksharma/PyniteGUI
 
 Author: **[Prakhar Sharma](https://orcid.org/0000-0002-7635-1857)**.
@@ -24,7 +27,7 @@ Add the release or commit information to exported citations when needed.
 
 ## Solver attribution and reproducibility
 
-PyniteGUI is a desktop interface built on the separate
+Brecon is a desktop interface built on the separate
 [PyNite solver](https://github.com/JWock82/Pynite). When reporting structural
 analysis, also acknowledge and cite PyNite following its own citation guidance.
 Record both software versions, the model file, units, load combinations,
@@ -32,7 +35,7 @@ analysis settings and any experimental features used alongside the results.
 
 ## AI-assisted development acknowledgement
 
-PyniteGUI was developed with substantial assistance from **OpenAI Codex**, the
+Brecon was developed with substantial assistance from **OpenAI Codex**, the
 AI coding assistant used for this project. Codex was used to
 generate and revise source code, tests and documentation, and to assist with
 debugging, verification workflows and release preparation. Prakhar Sharma

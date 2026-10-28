@@ -13,11 +13,12 @@ def check(wheel, source):
     root = Path(__file__).resolve().parents[1]
     project = tomllib.loads((root / "pyproject.toml").read_text())["project"]
     version = project["version"]
+    distribution = project["name"].replace("-", "_")
     with zipfile.ZipFile(wheel) as archive:
         names = set(archive.namelist())
-        prefix = f"pynitegui-{version}.dist-info/"
+        prefix = f"{distribution}-{version}.dist-info/"
         metadata = BytesParser().parsebytes(archive.read(prefix + "METADATA"))
-        assert metadata["Name"] == "pynitegui" and metadata["Version"] == version
+        assert metadata["Name"] == project["name"] and metadata["Version"] == version
         assert metadata["Requires-Python"] == project["requires-python"]
         assert metadata["License-Expression"] == project["license"]
         assert "mcp" in metadata.get_all("Provides-Extra", [])
@@ -25,8 +26,9 @@ def check(wheel, source):
         assert any(value.name == "mcp" and value.marker and value.marker.evaluate({"extra": "mcp"})
                    and not value.marker.evaluate({"extra": ""}) for value in requirements)
         assert prefix + "licenses/LICENSE" in names
-        assert "pynitegui = pynitegui:main" in archive.read(prefix + "entry_points.txt").decode()
-        for path in (root / "src/pynitegui").rglob("*"):
+        entries = archive.read(prefix + "entry_points.txt").decode()
+        assert "brecon = brecon:main" in entries and "pynitegui = brecon:main" in entries
+        for path in (root / "src").rglob("*"):
             if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc":
                 name = path.relative_to(root / "src").as_posix()
                 assert name in names, f"Missing wheel asset: {name}"
@@ -34,12 +36,12 @@ def check(wheel, source):
         assert not any(name.startswith(("tests/", ".venv/", "scripts/", "docs/", ".docs-build/")) for name in names)
         assert not any(value.name == "zensical" for value in requirements), "Documentation tooling leaked into runtime dependencies"
     with tarfile.open(source, "r:gz") as archive:
-        prefix = f"pynitegui-{version}/"
+        prefix = f"{distribution}-{version}/"
         names = {item.name for item in archive.getmembers()}
         required = ["pyproject.toml", "README.md", "LICENSE", "CITATION.md", "CITATION.cff", "uv.lock", "GUIDE.md", "TODO.md",
                     "TODO_SECONDARY.md", "CHANGELOG.md", "RELEASE.md", "scripts/check_dist.py",
                     "scripts/smoke_installed.py", "scripts/smoke_desktop.py", "tests/test_qt_automation_server.py",
-                    "assets/structure.png", "assets/SFD.png", "assets/PyniteGUI Structural Frame Logo.png",
+                    "assets/structure.png", "assets/SFD.png", "assets/brecon.svg",
                     "zensical.toml", "scripts/docs.py", "docs/index.md", "docs/features.md",
                     "docs/start/first-model.md", "docs/stylesheets/extra.css", "tests/test_docs.py"]
         for name in required:
@@ -50,7 +52,7 @@ def check(wheel, source):
                 assert tomllib.loads(content.decode()) == tomllib.loads(expected.decode()), "Stale source metadata"
             else:
                 assert content == expected, f"Stale source file: {name}"
-        for path in (root / "src/pynitegui").rglob("*"):
+        for path in (root / "src").rglob("*"):
             if path.is_file() and "__pycache__" not in path.parts and path.suffix != ".pyc":
                 name = path.relative_to(root).as_posix()
                 assert prefix + name in names, f"Missing source asset: {name}"

@@ -20,6 +20,8 @@ jobs:
   verify:
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
+    outputs:
+      distribution: ${{ steps.metadata.outputs.distribution }}
     env:
       RELEASE_TAG: ${{ inputs.tag }}
       GH_TOKEN: ${{ github.token }}
@@ -34,18 +36,23 @@ jobs:
           version: "0.13.6"
           python-version: "3.12"
       - name: Match the tag to package metadata
+        id: metadata
         run: |
           python3 - <<'PY'
           import os, re, tomllib
           from pathlib import Path
           project = tomllib.loads(Path('pyproject.toml').read_text())['project']
           version = project['version']
-          assert project['name'] == 'pynitegui'
+          # Preserve publication of immutable pre-rename tags as well.
+          assert project['name'] in ('brecon', 'pynitegui')
+          distribution = project['name']
           assert re.fullmatch(r'\d+\.\d+\.\d+(?:(?:a|b|rc)\d+)?', version), version
           assert os.environ['RELEASE_TAG'] == f'v{version}', 'Tag/version mismatch'
           with open(os.environ['GITHUB_ENV'], 'a') as stream:
-              stream.write(f'WHEEL=pynitegui-{version}-py3-none-any.whl\n')
-              stream.write(f'SDIST=pynitegui-{version}.tar.gz\n')
+              stream.write(f'WHEEL={distribution}-{version}-py3-none-any.whl\n')
+              stream.write(f'SDIST={distribution}-{version}.tar.gz\n')
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as stream:
+              stream.write(f'distribution={distribution}\n')
           PY
       - name: Download the published release assets
         run: |
@@ -81,7 +88,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/project/pynitegui/
+      url: https://pypi.org/project/${{ needs.verify.outputs.distribution }}/
     permissions:
       id-token: write
     steps:

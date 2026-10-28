@@ -1,6 +1,7 @@
 # Release Preparation
 
-Target: **1.0.0rc3**, GitHub tag **v1.0.0rc3** (unpublished checkpoint). Check
+Development target: **Brecon 1.0.0rc4** (not published or tagged). The previous-name
+**v1.0.0rc3** remains an immutable unpublished checkpoint. Check
 [GitHub Releases](https://github.com/praksharma/PyniteGUI/releases) for published
 assets; source tags and unpublished drafts do not imply a public binary release.
 Stable 1.0 promotion follows a feature freeze and verification of the actual
@@ -20,7 +21,7 @@ From the repository root, with uv installed:
 uv sync --locked --extra mcp
 QT_QPA_PLATFORM=offscreen PYNITEGUI_NO_WEBENGINE=1 uv run --locked --extra mcp python -B -m unittest discover -s tests -q
 uv build --no-sources
-uv run --locked python -B scripts/check_dist.py dist/pynitegui-1.0.0rc3-py3-none-any.whl dist/pynitegui-1.0.0rc3.tar.gz
+uv run --locked python -B scripts/check_dist.py dist/brecon-1.0.0rc4-py3-none-any.whl dist/brecon-1.0.0rc4.tar.gz
 ```
 
 The distribution checker audits versions, metadata, bundled runtime assets,
@@ -40,9 +41,9 @@ Example POSIX commands; use the corresponding `Scripts/python.exe` on Windows:
 
 ```sh
 uv venv --python 3.12 /tmp/pynitegui-rc-base
-uv pip install --python /tmp/pynitegui-rc-base/bin/python ./dist/pynitegui-1.0.0rc3-py3-none-any.whl
+uv pip install --python /tmp/pynitegui-rc-base/bin/python ./dist/brecon-1.0.0rc4-py3-none-any.whl
 cd /tmp
-/tmp/pynitegui-rc-base/bin/python /absolute/path/to/PyniteGUI/scripts/smoke_installed.py --version 1.0.0rc3
+/tmp/pynitegui-rc-base/bin/python /absolute/path/to/PyniteGUI/scripts/smoke_installed.py --version 1.0.0rc4
 ```
 
 Repeat in another fresh environment, installing the same wheel with `[mcp]`
@@ -81,7 +82,7 @@ slabs remain explicitly experimental. Nonlinear/plastic, modal, unilateral and
 reinforced-concrete workflows are deferred. Remaining UI roadmap items do not
 block this scope.
 
-## Publication Checklist
+## Historical RC3 Checklist and Future Publication Gates
 
 - [x] Project citation guidance and GitHub citation metadata added without a DOI.
 - For each release, review CITATION.md/CITATION.cff and preserve exact version and
@@ -107,19 +108,20 @@ validation rather than renaming RC artifacts.
 ## uv Tools and PyPI
 
 uv installs tools from Python package indexes; PyPI is the intended public
-distribution channel. The existing `pynitegui` entry point is sufficient.
+distribution channel. The `brecon` entry point is canonical; `pynitegui` is a
+compatibility alias. The Brecon distribution is not published yet.
 A separate uv-specific package or registry submission is not needed.
 
 After stable 1.0 is published to PyPI, users can run:
 
 ```sh
-uv tool install --python 3.12 pynitegui
-pynitegui
-uv tool upgrade pynitegui
+uv tool install --python 3.12 brecon
+brecon
+uv tool upgrade brecon
 ```
 
-For optional MCP support, install `"pynitegui[mcp]"` instead. An RC published to
-PyPI would require an explicit version, for example `"pynitegui==1.0.0rc2"`.
+For optional MCP support, install `"brecon[mcp]"` instead. An RC published to
+PyPI would require an explicit version, for example `"brecon==1.0.0rc4"`.
 These registry commands describe the publication plan; no PyPI availability is
 claimed by this checklist. Local-wheel installation above works before upload.
 
@@ -135,11 +137,16 @@ pending GitHub publisher with these exact values:
 
 | Field | Value |
 | --- | --- |
-| PyPI project name | `pynitegui` |
+| PyPI project name | `brecon` |
 | Owner | `praksharma` |
 | Repository name | `PyniteGUI` |
 | Workflow name | `publish.yml` |
 | Environment name | `pypi` |
+
+Brecon needs a **new pending publisher**, separate from the existing `pynitegui`
+project. Its package name is not reserved by this rename. Keep the existing
+publisher for historical releases. See the
+[PyPI pending-publisher guide](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/).
 
 A pending publisher creates the project on its first successful upload; it
 does not reserve the name. If you already own the project, add this publisher
@@ -153,9 +160,11 @@ adding the workflow.
 
 **Publish an approved release:** first publish the GitHub draft with its wheel,
 source archive and SHA256SUMS attached. Then open Actions > **Publish to PyPI** >
-Run workflow, choose **master**, and enter its tag (for example `v1.0.0rc2`).
+Run workflow, choose **master**, and enter its tag (for example `v1.0.0rc4`, once prepared).
 Review and approve the **pypi** environment job. This uploads to real PyPI;
-it is not a dry run. RC2 remains a prerelease and does not imply stable 1.0.
+it is not a dry run. The workflow derives the distribution name from the tag
+metadata and supports both Brecon and immutable PyniteGUI tags. This rename
+performs no publishing, new release tag or replacement of RC3 assets.
 
 The workflow is manual only. Its read-only verification job checks out the
 requested tag, rejects a version mismatch or draft release, downloads the exact
@@ -166,6 +175,36 @@ Do not move existing release tags or replace reviewed release assets to retry.
 
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
+
+## Brecon Rename Validation
+
+Development **1.0.0rc4**, 2026-10-28. This is a source/package rename, not a
+new published release. Existing RC1/RC2/RC3 tags and assets remain unchanged.
+
+- **258 focused tests passed** without skips: UI, MCP, recovery compatibility,
+  release metadata, documentation and tooling. A regression checks that the
+  Brecon identity uses the original recovery path; version checks cover both
+  entry modules, and real wire checks read both MCP reference URIs.
+- Fresh independent base/MCP wheels passed all **26 examples** through
+  save/open/analyze/export, native-window startup, canonical `brecon` and legacy
+  `pynitegui` version commands. MCP identifies itself as Brecon and passes
+  authenticated discovery, atomic edit, undo and shutdown.
+- An isolated local-wheel uv-tool installation creates both commands, each
+  reporting **Brecon 1.0.0rc4**, without changing user tools/PATH.
+- Visible installed-wheel Cocoa checks passed previews/generators/arrays,
+  undo/redo, save/reopen with supplied paths, background solves, station queries,
+  CSV/PDF/report preview, both official spatial frames and MCP lock/unlock.
+  Runtime: macOS 27.2 arm64, Python 3.12.13, Qt 6.12.0, ANGLE Metal / Apple M4 Max.
+  These automated checks do not replace human OS-dialog/platform verification;
+  the previous RC3 owner confirmation below remains historical evidence.
+- Strict documentation/link checks passed across **55 HTML pages**. Browser QA
+  checks the new SVG wordmark, refreshed About/Help screenshots, search, retained
+  GitHub Pages subpath, dark mode and desktop layout. Its stale pre-coupled-slab
+  search assertion now checks the current page title and experimental scope.
+- Wheel/source audit checks both Python namespaces, both console commands,
+  metadata, runtime assets, sources, citations and the new wordmark, with hashes.
+  The publishing workflow's metadata step was exercised for both `brecon` and
+  historical `pynitegui` tag identities; no remote publishing was performed.
 
 ## RC3 Validation Record
 

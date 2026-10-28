@@ -10,7 +10,7 @@ unsaved work. The direct categorized menus below remain available.
 
 ## Open and Solve a Beam
 
-1. Launch PyniteGUI and choose **File > Examples > 2D Frames > Simply Supported Beam**.
+1. Launch Brecon and choose **File > Examples > 2D Frames > Simply Supported Beam**.
 2. Check the unit selector at the bottom-right. In the inch/kip preset, the beam
    spans **420 in** and has a **10 kip downward midspan load**.
 3. Inspect the two support nodes: one pin and one roller. They constrain the

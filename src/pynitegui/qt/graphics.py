@@ -24,7 +24,7 @@ def graphics_mode(value):
 
 
 def launch_options(argv, saved="auto"):
-    parser = argparse.ArgumentParser(description="PyniteGUI structural frame editor")
+    parser = argparse.ArgumentParser(description="Brecon structural frame editor")
     parser.add_argument("--graphics", choices=MODES, default=None,
                         help="3D rendering backend for this launch (auto or software)")
     parser.add_argument("--software-rendering", action="store_const", const="software", dest="graphics",

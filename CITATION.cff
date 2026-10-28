@@ -1,10 +1,10 @@
 cff-version: 1.2.0
 message: >-
-  If you use PyniteGUI, cite this project and add the exact release or full
+  If you use Brecon, cite this project and add the exact release or full
   commit used. See CITATION.md for reproducibility, PyNite solver attribution
   and the AI-assisted development acknowledgement.
 type: software
-title: PyniteGUI
+title: Brecon
 authors:
   - family-names: Sharma
     given-names: Prakhar

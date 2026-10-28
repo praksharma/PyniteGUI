@@ -1,1 +1,1 @@
-"""Qt user interface and project model for PyniteGUI."""
+"""Qt user interface and project model for Brecon."""

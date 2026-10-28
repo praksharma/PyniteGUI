@@ -67,7 +67,7 @@ class DocsTests(unittest.TestCase):
             self.assertEqual(first, second)
             for name, content in originals.items():
                 self.assertEqual((root/name).read_bytes(), content)
-            self.assertEqual((output/'assets/logo.png').read_bytes(), (ROOT/'assets/PyniteGUI Structural Frame Logo.png').read_bytes())
+            self.assertEqual((output/'assets/logo.svg').read_bytes(), (ROOT/'assets/brecon.svg').read_bytes())
             self.assertEqual((output/'assets/screenshots/help-menu.png').read_bytes(),
                              (ROOT/'docs/assets/screenshots/help-menu.png').read_bytes())
             with (root/'GUIDE.md').open('a') as stream:

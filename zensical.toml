@@ -1,5 +1,5 @@
 [project]
-site_name = "PyniteGUI"
+site_name = "Brecon"
 site_description = "Desktop frame and truss modeling, analysis, results, surfaces and automation."
 site_url = "https://praksharma.github.io/PyniteGUI/"
 repo_url = "https://github.com/praksharma/PyniteGUI"
@@ -8,7 +8,7 @@ docs_dir = ".docs-build/docs"
 site_dir = "site"
 extra_css = ["stylesheets/extra.css"]
 nav = [
-  { "Manual" = [{ "PyniteGUI" = "index.md" }, { "Feature Index" = "features.md" }] },
+  { "Manual" = [{ "Brecon" = "index.md" }, { "Feature Index" = "features.md" }] },
   { "Start" = [
     { "Installation" = "start/install.md" }, { "Your First Model" = "start/first-model.md" },
     { "Help and Workspace" = "start/help.md" },
@@ -57,8 +57,8 @@ nav = [
 
 [project.theme]
 font = false
-logo = "assets/logo.png"
-favicon = "assets/logo.png"
+logo = "assets/logo.svg"
+favicon = "assets/logo.svg"
 features = ["navigation.tabs", "navigation.sections", "navigation.path", "navigation.top",
             "navigation.footer", "toc.follow", "search.highlight", "content.code.copy"]
 

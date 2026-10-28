@@ -14,7 +14,7 @@ from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 SECTION_PAGES = {
-    "PyniteGUI Guide": ("reference/version-scope.md", "Version and Scope"),
+    "Brecon Guide": ("reference/version-scope.md", "Version and Scope"),
     "Run": ("start/install.md", "Installation"),
     "Experimental Surface Meshing": ("surfaces/meshing.md", "Surface Mesh Generators"),
     "Surfaces in the Main 3D Model": ("surfaces/main-model.md", "Slab Placement and Main-Model Surfaces"),
@@ -64,7 +64,7 @@ SECTION_PAGES = {
 }
 PROJECT_PAGES = {"TODO.md": "project/roadmap.md", "TODO_SECONDARY.md": "project/secondary.md",
                  "CHANGELOG.md": "project/changelog.md", "RELEASE.md": "project/releases.md"}
-ASSETS = {"PyniteGUI Structural Frame Logo.png": "logo.png", "structure.png": "structure.png", "SFD.png": "sfd.png"}
+ASSETS = {"brecon.svg": "logo.svg", "structure.png": "structure.png", "SFD.png": "sfd.png"}
 
 
 def sections(text):
@@ -116,7 +116,7 @@ def rewrite_links(text, page):
             guide_target = next((value[0] for key, value in SECTION_PAGES.items() if slug(key) == anchor), None)
             if anchor and guide_target is None:
                 raise ValueError(f"Unmapped GUIDE anchor: {anchor}")
-            return "](" + relative(guide_target or SECTION_PAGES["PyniteGUI Guide"][0], page) + ")"
+            return "](" + relative(guide_target or SECTION_PAGES["Brecon Guide"][0], page) + ")"
         if name.startswith("docs/assets/"):
             # GUIDE links resolve in the repository root; topic pages live at
             # different depths, with authored assets copied under assets/.

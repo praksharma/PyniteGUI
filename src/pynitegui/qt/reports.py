@@ -419,7 +419,7 @@ def report_html(project, result, source="Untitled", options=None, *, image_urls=
         h1 {{ font-size: 20pt; }} h2 {{ font-size: 12pt; }} h3 {{ font-size: 10pt; }}
         th {{ background-color: #e5ebed; text-align: left; }}
         td {{ text-align: right; }} table {{ border-color: #bac6cb; }}
-        </style></head><body><h1>PyniteGUI Analysis Results</h1>
+        </style></head><body><h1>Brecon Analysis Results</h1>
         <p><b>Source:</b> {escape(source)}<br>
         <b>Analysis ID:</b> {escape(result.snapshot_id)} | <b>Model:</b> {escape(result.model_signature[:12])}<br>
         <b>Analysis method:</b> {escape(result.method_label)}<br>
@@ -485,7 +485,7 @@ class ResultExportMenu(QMenu):
         try:
             document = report_document(project, result, source, choices.definition)
             printer = report_printer()
-            printer.setDocName(f"PyniteGUI Results {result.snapshot_id}")
+            printer.setDocName(f"Brecon Results {result.snapshot_id}")
             preview = QPrintPreviewDialog(printer, self.parentWidget())
             options = choices.definition
             scope = "Envelopes" if options.envelope_combinations and not any((options.nodes, options.members, options.diagrams)) else result.combination

@@ -28,7 +28,7 @@ def open_link(window, name):
 
 
 def support_information():
-    lines = [f"PyniteGUI {__version__}", f"System: {platform.system()} {platform.release()} ({platform.machine()})",
+    lines = [f"Brecon {__version__}", f"System: {platform.system()} {platform.release()} ({platform.machine()})",
              f"Python: {platform.python_version()}", f"Qt: {qVersion()}"]
     for package in ("PySide6", "PyniteFEA", "numpy", "scipy"):
         try:
@@ -114,13 +114,13 @@ class AboutDialog(QDialog):
     def __init__(self, window):
         super().__init__(window)
         self.setObjectName("about_pynitegui")
-        self.setWindowTitle("About PyniteGUI")
+        self.setWindowTitle("About Brecon")
         self.setMinimumWidth(440)
         self.resize(500, 310)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(24, 24, 24, 20)
         layout.setSpacing(14)
-        title = QLabel("PyniteGUI")
+        title = QLabel("Brecon")
         title_font = title.font()
         title_font.setPointSize(24)
         title_font.setBold(True)
@@ -168,7 +168,7 @@ def show_dialog(window, attribute, constructor):
 def build_help_menu(window):
     window.help_menu = window.menuBar().addMenu("&Help")
     window.help_action = window.action("Documentation", lambda: open_link(window, "documentation"), "F1")
-    window.help_action.setStatusTip("Open the PyniteGUI documentation website in your browser")
+    window.help_action.setStatusTip("Open the Brecon documentation website in your browser")
     window.help_menu.addAction(window.help_action)
     window.help_menu.addAction(window.action("Getting Started", lambda: open_link(window, "getting_started")))
     window.help_menu.addAction(window.action("Keyboard Shortcuts…", lambda: show_dialog(window, "shortcuts_dialog", ShortcutsDialog)))
@@ -176,6 +176,6 @@ def build_help_menu(window):
     window.help_menu.addAction(window.action("Report an Issue", lambda: open_link(window, "issues")))
     window.help_menu.addAction(window.action("Copy Version Details", lambda: copy_support_information(window)))
     window.help_menu.addSeparator()
-    about = window.action("About PyniteGUI…", lambda: show_dialog(window, "about_dialog", AboutDialog))
+    about = window.action("About Brecon…", lambda: show_dialog(window, "about_dialog", AboutDialog))
     about.setMenuRole(QAction.MenuRole.AboutRole)
     window.help_menu.addAction(about)

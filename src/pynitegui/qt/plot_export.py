@@ -17,7 +17,7 @@ def snapshot_metadata(owner, plot, **context):
     combinations = context.pop("combinations", (result.combination,))
     if not combinations:
         raise ValueError("Select at least one analyzed combination before exporting a plot.")
-    return {"application": f"PyniteGUI {__version__}", "source": Path(owner.source).name,
+    return {"application": f"Brecon {__version__}", "source": Path(owner.source).name,
             "snapshot_id": result.snapshot_id, "analyzed_at": result.analyzed_at,
             "model_signature": result.model_signature, "analysis_method": result.method_label,
             "combinations": list(combinations), "units": owner.project.units.summary,

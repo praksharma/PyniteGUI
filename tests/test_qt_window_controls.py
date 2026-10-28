@@ -22,7 +22,7 @@ class WindowControlsTests(unittest.TestCase):
 
     def setUp(self):
         self.window = QMainWindow()
-        self.window.setWindowTitle("Example | PyniteGUI")
+        self.window.setWindowTitle("Example | Brecon")
         self.menu = self.window.menuBar()
         self.menu.addMenu("File")
         self.controls = attach_window_controls(self.window)
@@ -38,8 +38,8 @@ class WindowControlsTests(unittest.TestCase):
     def test_title_and_menu_survive_attachment_and_title_updates(self):
         self.assertIs(attach_window_controls(self.window), self.controls)
         self.assertEqual(self.menu.actions()[0].text(), "File")
-        self.window.setWindowTitle("* Model | PyniteGUI")
-        self.assertEqual(self.controls.title.full_title, "* Model | PyniteGUI")
+        self.window.setWindowTitle("* Model | Brecon")
+        self.assertEqual(self.controls.title.full_title, "* Model | Brecon")
         self.assertIn("Model", self.controls.title.text())
 
     def test_close_button_closes_window(self):

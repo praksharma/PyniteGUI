@@ -73,6 +73,19 @@ class RecoveryEditorTests(unittest.TestCase):
         self.app.processEvents()
         self.directory.cleanup()
 
+    def test_brecon_identity_keeps_original_recovery_location(self):
+        from PySide6.QtCore import QStandardPaths
+        from pynitegui.qt.app import configure_application_identity
+        original = self.app.applicationName()
+        try:
+            self.app.setApplicationName("PyniteGUI")
+            legacy = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppDataLocation))/"recovery"
+            self.app.setApplicationName("Other name")
+            self.assertEqual(configure_application_identity(self.app), legacy)
+            self.assertEqual(self.app.applicationName(), "Brecon")
+        finally:
+            self.app.setApplicationName(original)
+
     def test_autosave_never_overwrites_original_and_recovery_is_dirty(self):
         original = Path(self.directory.name) / "model.json"
         Project().save(original)

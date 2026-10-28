@@ -1,10 +1,23 @@
-# PyniteGUI Guide
+# Brecon Guide
 
 This guide follows the development checkout: [release notes](CHANGELOG.md) and
 [artifact validation/publication checklist](RELEASE.md). Installation from a
 wheel is tested separately from this repository's editable, locked environment.
-`pynitegui --version` reports installed metadata without initializing Qt; the
+`brecon --version` reports installed metadata without initializing Qt; the
 desktop application and MCP server use the same version.
+
+Brecon was formerly named PyniteGUI. The `brecon` command and Python entry module
+are canonical; `pynitegui` remains a compatible command/import namespace. Existing
+`.pynite.json`, mesh/plate recipes, preferences and recovery storage keep their
+identifiers. Existing MCP clients may continue using the
+`pynitegui://automation/reference` resource. Repository/documentation URLs and
+historical release artifacts retain the previous name. Brecon has not yet been
+published to PyPI; use the source checkout until a Brecon release is published.
+When it is published, install Brecon in a fresh environment. If reusing an
+environment, uninstall the old `pynitegui` distribution first: both provide the
+compatibility import namespace and launch command. With uv tools, remove the old
+tool before installing Brecon so its `pynitegui` compatibility command can be
+created. Keep project files; uninstalling the tool does not delete them.
 
 The stable 1.0 scope is elastic 2D/3D frames and bilateral axial-only trusses,
 with frame-only P-Delta within the documented restrictions. Surface/plate tools
@@ -28,7 +41,7 @@ not needed:
 ```sh
 uv python install 3.12
 uv sync --managed-python
-uv run pynitegui
+uv run brecon
 ```
 
 The project sets uv's `python-preference` to `only-managed`, so normal launches
@@ -329,7 +342,7 @@ Install the optional extra and launch with it from the repository:
 
 ```sh
 uv sync --extra mcp
-uv run --extra mcp pynitegui
+uv run --extra mcp brecon
 ```
 
 A normal installation needs no MCP/server packages. **Tools > Automation Server**
@@ -348,7 +361,7 @@ copied token; use the actual port):
 ```json
 {
   "mcpServers": {
-    "PyniteGUI": {
+    "Brecon": {
       "url": "http://127.0.0.1:8765/mcp",
       "headers": {"Authorization": "Bearer <copied-token>"}
     }
@@ -418,7 +431,7 @@ mutation whose response was lost.
 | `cancel_analysis` | Cancel the identified running job through the existing cancellation workflow. |
 | `read_results` | Read node/member report rows with snapshot ID, units and current/stale analysis state. Supports solved combination, offset and limit (1–1000). |
 
-The MCP reference resource `pynitegui://automation/reference` also documents both
+The MCP reference resource `brecon://automation/reference` also documents both
 dimensions. Tool descriptions name the exact support/member/load fields and direct
 clients to the schema before editing. Since clients may not pass resources into a
 model's context automatically, `read_model` includes the schema directly and
@@ -867,10 +880,10 @@ recovery is not a substitute for saving. An EGL warning alone does not establish
 that the application is frozen.
 
 When a Linux graphics driver/EGL/Vulkan mismatch prevents WebGL2 from starting,
-close PyniteGUI after saving and launch with:
+close Brecon after saving and launch with:
 
 ```sh
-uv run pynitegui --software-rendering
+uv run brecon --software-rendering
 ```
 
 This requests Chromium's CPU-based ANGLE/SwiftShader driver before Qt initializes,
@@ -904,7 +917,7 @@ Terminal warning/output lines are not shell commands; paste only the command abo
 Automatic rendering now applies the verified NVIDIA/Wayland configuration before
 Qt starts when exactly one GPU drives connected displays, that GPU is NVIDIA,
 both driver manifests exist, and no explicit graphics overrides are present.
-On that setup, launch normally with `uv run pynitegui`; New 3D Frame needs no
+On that setup, launch normally with `uv run brecon`; New 3D Frame needs no
 additional terminal settings. A saved software preference remains respected:
 select View > 3D Rendering > Automatic (GPU) and restart to use hardware rendering.
 Connected hybrid/multiple-GPU displays, non-Wayland sessions, and explicit backend
@@ -923,7 +936,7 @@ env -u QT_OPENGL -u QT_QUICK_BACKEND -u QTWEBENGINE_CHROMIUM_FLAGS \
   __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/10_nvidia.json \
   VK_DRIVER_FILES=/usr/share/vulkan/icd.d/nvidia_icd.json \
   VK_LOADER_LAYERS_DISABLE='*MESA*' \
-  uv run pynitegui --graphics=auto
+  uv run brecon --graphics=auto
 ```
 
 Run from the project directory after saving and closing the existing app. These
@@ -944,7 +957,7 @@ the model must also succeed. A working context alone does not prove Qt can displ
 Use software rendering if this configuration does not work on another machine.
 
 On GNOME Wayland, Qt currently omits its own client-side decorations for Vulkan
-windows. PyniteGUI supplies a compact title bar for affected main windows and
+windows. Brecon supplies a compact title bar for affected main windows and
 its own box/form-layout dialogs, with close, minimize/maximize where applicable,
 title dragging and double-click maximize. Closing still uses the existing
 unsaved-work confirmation. Other platforms/backends retain their native controls.
@@ -970,7 +983,7 @@ This panel does not query the compositor's physical GPU or a driver package vers
 ### Help and Workspace
 
 The main menus follow **File, Edit, View, Tools, Help**. **Help > Documentation**
-(or **F1**) opens the [PyniteGUI website](https://praksharma.github.io/PyniteGUI/)
+(or **F1**) opens the [Brecon website](https://praksharma.github.io/PyniteGUI/)
 in your default browser. **Getting Started** opens its first-model walkthrough.
 These links open only when requested; the editor does not require an online
 connection. If your system cannot launch the browser, a dialog provides the
@@ -992,7 +1005,7 @@ The reference is available offline.
 *Search for `fit` to compare whole-model **F** and selection-only **Shift+F**.
 The reference follows the application's light or dark appearance.*
 
-**Help > About PyniteGUI** shows the installed application version and
+**Help > About Brecon** shows the installed application version and
 license, with buttons for documentation, the repository and issue reports.
 About uses the repository link rather than personal author credits.
 On macOS, the native menu may place About in the application menu.
@@ -2672,7 +2685,7 @@ uv run --locked --group docs python -B -m unittest discover -s tests -p 'test_do
 
 Optional desktop browser QA: after building, run `node tests/docs_site.spec.cjs`
 with Playwright/Chromium installed separately (or set `PLAYWRIGHT_MODULE` as in
-the viewport checks). It serves `site/` under the GitHub Pages `/PyniteGUI/` prefix
+the viewport checks). It serves `site/` under the existing GitHub Pages `/PyniteGUI/` prefix
 and checks images, search navigation, dark mode, key topics and desktop overflow.
 It closes its temporary server/browser and writes screenshots to
 `/tmp/pynite-docs-qa` (override with `DOCS_QA_OUTPUT`).

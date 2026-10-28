@@ -66,7 +66,7 @@ class AutomationServer(QObject):
         if self.thread is not None:
             return False
         if not dependencies_available():
-            self.state, self.detail = "Unavailable", "Optional dependencies missing. Run uv sync --extra mcp from the repository, then launch with uv run --extra mcp pynitegui."
+            self.state, self.detail = "Unavailable", "Optional dependencies missing. Run uv sync --extra mcp from the repository, then launch with uv run --extra mcp brecon."
             self.changed.emit()
             return False
         if type(port) is not int or not 0 <= port <= 65535:
@@ -101,7 +101,7 @@ class AutomationServer(QObject):
         self.requests, self.last_request, self.failure = 0, "", False
         self.state, self.detail = "Starting", ""
         self.bridge.set_active(True)
-        self.thread = Thread(target=self.serve, daemon=True, name="PyniteGUI automation server")
+        self.thread = Thread(target=self.serve, daemon=True, name="Brecon automation server")
         self.thread.start()
         self.timer.start()
         self.logged.emit("Server | starting")
@@ -146,7 +146,7 @@ class AutomationServer(QObject):
         entry = {"url": self.endpoint}
         if self.require_token:
             entry["headers"] = {"Authorization": f"Bearer {self.token}"}
-        return {"mcpServers": {"PyniteGUI": entry}}
+        return {"mcpServers": {"Brecon": entry}}
 
 
 class AutomationPanel(QDialog):

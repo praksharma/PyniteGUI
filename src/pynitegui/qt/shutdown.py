@@ -33,7 +33,7 @@ class TerminalShutdown(QObject):
             if modal is not None:
                 modal.raise_()
                 modal.activateWindow()
-                print("PyniteGUI: finish or cancel the open dialog, then press Ctrl+C again to close.", file=sys.stderr)
+                print("Brecon: finish or cancel the open dialog, then press Ctrl+C again to close.", file=sys.stderr)
                 return
             # Honors save/cancel prompts and the existing worker/server cleanup.
             self.application.closeAllWindows()

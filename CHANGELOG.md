@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Rename PyniteGUI to **Brecon**, named after a place visited by the author.
+  Distribution/command: `brecon`; app, Help/About, reports, MCP, citation and
+  documentation use Brecon. Keep `pynitegui` command/imports, existing file formats,
+  settings/recovery storage and MCP reference URI compatible. Add a Brecon
+  reference URI and vector mountain/frame wordmark. Development version advances
+  to 1.0.0rc4; existing releases, tags and repository URLs stay unchanged.
+
 ## 1.0.0rc3 — 2026-10-28 (unpublished checkpoint)
 
 - Avoid a native desktop freeze when analysis finishes before deferred worker

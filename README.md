@@ -1,6 +1,8 @@
-# PyniteGUI
+# Brecon
 
-<img src="https://raw.githubusercontent.com/praksharma/PyniteGUI/master/assets/PyniteGUI%20Structural%20Frame%20Logo.png" alt="PyniteGUI structural frame logo" width="420">
+Formerly **PyniteGUI**. Named after a place visited by the project author.
+
+<img src="https://raw.githubusercontent.com/praksharma/PyniteGUI/master/assets/brecon.svg" alt="Brecon structural frame logo" width="420">
 
 A desktop application for modeling and analyzing **2D/3D frames and axial-only
 trusses**, built with Qt and the PyNite solver.
@@ -10,7 +12,7 @@ trusses**, built with Qt and the PyNite solver.
 [Examples](https://github.com/praksharma/PyniteGUI/blob/master/GUIDE.md#examples-and-appearance) ·
 [Report an issue](https://github.com/praksharma/PyniteGUI/issues)
 
-**Published release candidate: 1.0.0rc2. Development checkpoint: 1.0.0rc3 (unpublished).** See [validation and platform status](https://github.com/praksharma/PyniteGUI/blob/master/RELEASE.md)
+**Brecon is available from source; its package has not been published yet.** The previous name, `pynitegui`, has a published RC2; RC3 remains an unpublished draft. See [validation and platform status](https://github.com/praksharma/PyniteGUI/blob/master/RELEASE.md)
 for the tested configurations and remaining checks before stable 1.0.
 
 ## What You Can Do
@@ -36,7 +38,7 @@ Read the [engineering scope](https://github.com/praksharma/PyniteGUI/blob/master
 Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) and Python
 3.12+. uv can manage Python and the application's isolated environment.
 
-**From [PyPI](https://pypi.org/project/pynitegui/):** install the release candidate in
+**Previous-name release from [PyPI](https://pypi.org/project/pynitegui/):** install the release candidate in
 an isolated tool environment:
 
 ```sh
@@ -46,7 +48,7 @@ pynitegui
 
 If the command is not found, run `uv tool update-shell` and reopen your terminal.
 With pip, use `python -m pip install "pynitegui==1.0.0rc2"` inside a Python
-3.12+ virtual environment, then run `pynitegui`. The explicit version selects the
+3.12+ virtual environment, then run `pynitegui` (the old name). The explicit version selects the
 prerelease. Release wheels are also available on GitHub; standalone desktop
 installers are not provided.
 
@@ -55,14 +57,17 @@ installers are not provided.
 ```sh
 uv python install 3.12
 uv sync --managed-python
-uv run pynitegui
+uv run brecon
 ```
 
 Open **File > Examples** to browse ready-to-analyze models, or choose
 **File > New 3D Frame**. If 3D graphics fail to start, launch with
-`pynitegui --software-rendering` (or `uv run pynitegui --software-rendering`).
+`brecon --software-rendering` (or `uv run brecon --software-rendering`).
 
-**Optional MCP:** use `uv run --extra mcp pynitegui` from the checkout, or install
+The source checkout launches as `brecon`; `pynitegui` remains an alias. Existing
+project formats, preferences and recovery snapshots stay compatible.
+
+**Optional MCP:** use `uv run --extra mcp brecon` from the checkout, or install
 `"pynitegui[mcp]==1.0.0rc2"` with `uv tool install --python 3.12`.
 Configure permissions, exclusive MCP mode and authentication in
 **Tools > Automation Server**. See the [MCP guide](https://github.com/praksharma/PyniteGUI/blob/master/GUIDE.md#optional-mcp-automation).

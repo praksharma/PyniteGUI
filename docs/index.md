@@ -1,18 +1,16 @@
-# PyniteGUI
+# Brecon
 
-![PyniteGUI structural frame logo](assets/logo.png){ .product-logo }
+![Brecon structural frame logo](assets/logo.svg){ .product-logo }
 
 Desktop modeling and linear elastic analysis for **2D/3D frames and axial-only
 trusses**, using PyNite and Qt. This manual covers building models, assigning
 properties and loads, running analysis, interpreting results and using automation.
 
-!!! warning "RC2 preparation, not yet published"
-    The manual follows the repository checkout. **1.0.0rc1** is the published
-    prerelease; this checkout prepares **1.0.0rc2**. Later surface-meshing and slab-placement work is available from
-    source, not that wheel. Main-model rectangular Quad slabs offer **opt-in
-    experimental frame coupling** with conforming mesh connections; other surface
-    families remain geometry-only. The separate rectangular plate tool supports
-    its documented plate-only workflow.
+!!! note "Brecon development checkout"
+    Brecon is the new name for PyniteGUI. This manual follows the source checkout;
+    Brecon is not yet on PyPI. The previous-name RC2 is published, while RC3 is an
+    unpublished checkpoint. Existing projects remain compatible. Surface/plate
+    workflows remain experimental; see the release record for validation limits.
 
 ## Start Here
 

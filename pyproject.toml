@@ -1,6 +1,6 @@
 [project]
-name = "pynitegui"
-version = "1.0.0rc3"
+name = "brecon"
+version = "1.0.0rc4"
 description = "A Qt desktop editor for 2D and 3D frame analysis with PyNite."
 readme = "README.md"
 license = "AGPL-3.0-only"
@@ -25,7 +25,8 @@ dependencies = [
 ]
 
 [project.scripts]
-pynitegui = "pynitegui:main"
+brecon = "brecon:main"
+pynitegui = "brecon:main"
 
 [project.urls]
 Repository = "https://github.com/praksharma/PyniteGUI"
@@ -52,5 +53,6 @@ docs = [
 ]
 
 [tool.uv.build-backend]
+module-name = ["brecon", "pynitegui"]
 source-include = ["GUIDE.md", "TODO.md", "TODO_SECONDARY.md", "RELEASE.md", "CHANGELOG.md", "CITATION.md", "CITATION.cff",
                   "uv.lock", "assets/**", "tests/**", "scripts/**", "docs/**", "zensical.toml"]

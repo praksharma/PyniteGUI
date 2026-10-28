@@ -52,7 +52,7 @@ class HelpQualityTests(unittest.TestCase):
                 actions[label].trigger()
                 self.assertEqual(browser.call_args.args[0].toString(), LINKS[key])
         self.assertEqual(self.snapshot(), before)
-        self.assertEqual(actions["About PyniteGUI…"].menuRole(), QAction.MenuRole.AboutRole)
+        self.assertEqual(actions["About Brecon…"].menuRole(), QAction.MenuRole.AboutRole)
 
     def test_f1_uses_documentation_website(self):
         self.window.activateWindow()
@@ -101,7 +101,7 @@ class HelpQualityTests(unittest.TestCase):
         before = self.snapshot()
         copy_support_information(self.window)
         text = self.app.clipboard().text()
-        for value in (f"PyniteGUI {__version__}", "Python:", "Qt:", "PyniteFEA:", "System:"):
+        for value in (f"Brecon {__version__}", "Python:", "Qt:", "PyniteFEA:", "System:"):
             self.assertIn(value, text)
         self.assertEqual(self.snapshot(), before)
         from importlib.metadata import PackageNotFoundError

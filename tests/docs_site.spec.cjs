@@ -33,26 +33,26 @@ const server = http.createServer((request,response)=>{
     page.on('response',response=>{if(response.url().startsWith(origin)&&response.status()>=400)missing.push(response.url());});
     page.on('request',request=>requests.push(request.url()));
     await page.goto(origin+prefix);
-    await page.locator('article h1').filter({hasText:'PyniteGUI'}).waitFor();
+    await page.locator('article h1').filter({hasText:'Brecon'}).waitFor();
     const images=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));
     assert(images.length>=3&&images.every(image=>image.ok),'Missing logo/screenshots');
     await page.screenshot({path:path.join(output,'home-light.png')});
     await page.getByPlaceholder('Search',{exact:true}).waitFor({state:'attached'});
     await page.keyboard.press('Control+k');
     await page.getByPlaceholder('Search',{exact:true}).fill('slab');
-    const result=page.locator('a').filter({hasText:'This first integration stage is geometry only'}).first();
+    const result=page.locator('a').filter({hasText:'Slab Placement and Main-Model Surfaces'}).first();
     await result.waitFor({state:'visible'});
     await page.screenshot({path:path.join(output,'search.png')});
     await result.click();
     await page.locator('article h1').filter({hasText:'Slab Placement and Main-Model Surfaces'}).waitFor();
     assert(page.url().includes('/PyniteGUI/surfaces/main-model/'),'Search lost the GitHub Pages base path');
-    assert((await page.locator('article').innerText()).includes('Analysis is blocked while any surface is present'));
+    assert((await page.locator('article').innerText()).includes('Coupled rectangular slabs (experimental)'));
     await page.locator('label[for="__palette_1"]').click();
     await page.waitForFunction(()=>document.body.dataset.mdColorScheme==='slate');
     await page.screenshot({path:path.join(output,'surfaces-dark.png')});
     for(const [url,title] of [['features/','Feature Index'],['start/first-model/','Your First Model'],
       ['analysis/loads/','Point, Angled and Distributed Loads'],['automation/mcp/','Optional MCP Server'],
-      ['reference/units/','Units and Conversions'],['project/roadmap/','PyniteGUI Roadmap']]){
+      ['reference/units/','Units and Conversions'],['project/roadmap/','Brecon Roadmap']]){
       await page.goto(origin+prefix+url);
       await page.locator('article h1').filter({hasText:title}).waitFor();
       assert((await page.locator('article').innerText()).length>250,`Empty ${url}`);
