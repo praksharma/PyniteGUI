@@ -8,6 +8,14 @@ assets; source tags and unpublished drafts do not imply a public binary release.
 Stable 1.0 promotion follows a feature freeze and verification of the actual
 release artifacts. Standalone installers remain a later step.
 
+**Known RC4 plate limitation:** independent post-release checks found raw Rect
+moment/shear recovery inconsistent with verified plate laws in PyNite 3.0/3.2.
+Use Quad for RC4 plate moment/shear results. The correction and independent
+opening/Rect benchmarks are in **1.0.0rc5.dev0** source development; RC4 assets
+are unchanged. Non-unit Rect bending modifiers are rejected in development
+because the supported engine ignores them in bending stiffness. See the
+[plate guide](GUIDE.md#experimental-rectangular-plates) for scope and benchmarks.
+
 **Publication status (2026-10-28):** Brecon RC4 is published on
 [GitHub](https://github.com/praksharma/PyniteGUI/releases/tag/v1.0.0rc4) and
 [PyPI](https://pypi.org/project/brecon/1.0.0rc4/).
@@ -186,6 +194,30 @@ Do not move existing release tags or replace reviewed release assets to retry.
 
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
+
+## Post-RC4 Plate Recovery Validation
+
+Unreleased **1.0.0rc5.dev0**, verified 2026-10-28. The published RC4 files and
+tags are unchanged; the known limitation above applies to that release.
+
+- **892 tests passed without skips** in the locked environment (202.900 seconds,
+  PyNiteFEA 3.0.0 / Qt 6.11.2) and the isolated development wheel (228.243 seconds,
+  PyNiteFEA 3.2.0 / Qt 6.12.0), including real MCP wire tests.
+- The affected surface group passed **85 tests**, including the Rect subprocess
+  solve and signed SI contour-array checks. New engineering tests cover intact
+  Navier equivalence, independent Ritz basis convergence, opening deflection and
+  patch moments, polynomial/rigid fields, mixed derivatives, cantilever strips,
+  mesh refinement and plane/origin/factor invariance. Rect bending modifiers are
+  rejected while their recipe/preview compatibility is retained.
+- In the documented 512-element opening case, opening-edge deflection errors
+  against the 13×13-mode reference are **0.214% Quad / 0.085% Rect**. Largest
+  material-patch mean moment errors are **0.636% / 0.398%** respectively. The
+  11→13-mode reference patch-moment change is at most **0.158%**. These are
+  observed bounded-case comparisons, not universal element accuracy guarantees.
+- `scripts/benchmark_plate_recovery.py` produces the numerical JSON record and
+  standalone figure. Strict docs/link checks cover the new illustration and
+  scope limits; the source/wheel audit includes the new recovery module, tests
+  and reproducible benchmark script.
 
 ## RC4 Release Validation
 

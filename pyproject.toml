@@ -1,6 +1,6 @@
 [project]
 name = "brecon"
-version = "1.0.0rc4"
+version = "1.0.0rc5.dev0"
 description = "A Qt desktop editor for 2D and 3D frame analysis with PyNite."
 readme = "README.md"
 license = "AGPL-3.0-only"

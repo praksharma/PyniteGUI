@@ -124,6 +124,9 @@ class PlateWorkspace(QDialog):
         self.component.addItems(["Mesh", "Normal displacement", "Mx (element centre)",
                                  "My (element centre)", "Mxy (element centre)",
                                  "Qx (element centre)", "Qy (element centre)"])
+        self.component.setToolTip("Resultants follow the local x/y axes shown on the plot. "
+                                 "Positive bending moments oppose positive curvature. "
+                                 "Contours use unsmoothed element-centre values; sharp opening-corner peaks are mesh-sensitive.")
         self.component.currentIndexChanged.connect(self.draw)
         layout.addWidget(self.component)
         self.figure = Figure()

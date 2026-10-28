@@ -155,6 +155,8 @@ def plate_geometry(model, definition):
 
 
 def analyze_plate(definition, progress=None):
+    if definition.element_type == "Rect" and (definition.kx_mod != 1 or definition.ky_mod != 1):
+        raise ValueError("Rect transverse bending does not support stiffness modifiers; use unmodified Rect or Quad elements.")
     phase = progress or (lambda message: None)
     phase(f"Generating {definition.element_type} mesh")
     model = build_plate(definition)
@@ -178,8 +180,17 @@ def analyze_plate(definition, progress=None):
     reactions = np.array([getattr(model.nodes[name], ("RxnFX", "RxnFY", "RxnFZ")[normal_axis])["Plate"] * sign for name in names])
     elements = list(model.meshes[definition.mesh_name].elements.values())
     stations = [(element.width()/2, element.height()/2) if definition.element_type == "Rect" else (0, 0) for element in elements]
-    moments = np.array([element.moment(*station, combo_name="Plate").ravel() for element, station in zip(elements, stations)])
-    shears = np.array([element.shear(*station, combo_name="Plate").ravel() for element, station in zip(elements, stations)])
+    if definition.element_type == "Rect":
+        # PyNite 3.0/3.2 raw Rect recovery reverses bending signs and overstates
+        # the twisting-moment coefficient. Recover from the solved polynomial.
+        from .plate_recovery import rectangular_resultants
+        recovered = [rectangular_resultants(element, definition.material.E, definition.material.nu,
+                                           definition.thickness) for element in elements]
+        moments = np.array([moment for moment, shear in recovered])
+        shears = np.array([shear for moment, shear in recovered])
+    else:
+        moments = np.array([element.moment(*station, combo_name="Plate").ravel() for element, station in zip(elements, stations)])
+        shears = np.array([element.shear(*station, combo_name="Plate").ravel() for element, station in zip(elements, stations)])
     if any(not np.isfinite(values).all() for values in (displacement, reactions, moments, shears)):
         raise ValueError("Plate analysis returned nonfinite results.")
     net_area = definition.width*definition.height - sum(opening["width"]*opening["height"] for opening in definition.openings)

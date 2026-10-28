@@ -267,8 +267,13 @@ Remaining 11 scripts are intentionally unchecked:
 - [x] Expose all seven concrete PyNite mesh generators and applicable parameters,
   including ring/transition helpers, families, origins, numbering and modifiers;
   add 3D geometry previews, recipes/undo/export and all-axis/option/browser tests.
-- [ ] Independently benchmark opening deflection/moment recovery and refinement;
-  extend formulation-specific Rect bending/shear benchmarks.
+- [x] Independently benchmark opening deflection/moment recovery and refinement:
+  centred free square opening, thin simply supported outer plate, independent
+  Ritz basis/energy convergence and signed material-patch means. Add Rect Navier
+  moment/shear refinement, manufactured polynomial and two-direction strip
+  benchmarks, plus all-plane/origin/load-factor invariance. Correct Rect recovery
+  signs/twisting coefficients from the solved polynomial; reject unsupported Rect
+  bending modifiers. Re-entrant corner peaks and general openings remain unverified.
 - [ ] Extend the plate pilot to general membrane behaviour, multiple surface load
   cases/combinations, surface self-weight and detailed local result inspection;
   independently benchmark moment/shear recovery before engineering claims.

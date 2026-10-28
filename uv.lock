@@ -1124,7 +1124,7 @@ wheels = [
 
 [[package]]
 name = "brecon"
-version = "1.0.0rc4"
+version = "1.0.0rc5.dev0"
 source = { editable = "." }
 dependencies = [
     { name = "matplotlib" },

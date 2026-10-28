@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Independently benchmark thin plates with a free centred opening using a
+  converged Rayleigh–Ritz energy reference, deflection probes, material-patch
+  moments and mesh refinement. Add Navier signed moment/shear, manufactured
+  polynomial and two-direction strip checks for Rect recovery.
+- Correct Rect postprocessing: derive moments/shears from its solved local
+  displacement polynomial with isotropic plate constitutive coefficients.
+  PyNite 3.0/3.2 raw Rect bending signs and twisting recovery are inconsistent
+  with the independently verified convention. Reject non-unit Rect bending
+  modifiers because the supported engine ignores them in bending stiffness.
+  Geometry previews/recipes remain available; frame and Quad recovery are unchanged.
+  This correction is after the immutable RC4 release; development is 1.0.0rc5.dev0.
+
 ## 1.0.0rc4 — 2026-10-28
 
 - Restrict PyPI publishing to Brecon release metadata; reject old PyniteGUI tags

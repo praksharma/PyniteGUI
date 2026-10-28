@@ -314,9 +314,57 @@ Regression coverage includes independent Navier square-plate deflection and mesh
 refinement, a zero-Poisson cantilever strip's closed-form deflection/moment,
 equilibrium/sign and plane invariance, clamped/cantilever support
 cases, mesh regeneration, persistence, units, undo, stale results and cancellation.
-Rect polynomial deflection is compared to the independently benchmarked Quad
-solution; both families are checked for opening net-load/reaction equilibrium.
-This does not constitute an independent hole-deflection or curved-shell benchmark.
+
+**Rect recovery correction after RC4:** the published RC4 wheel uses PyNite's raw
+Rect resultants. Checks against independent mechanics found opposite bending
+signs and excessive twisting coefficients in PyNite 3.0/3.2 recovery. Do not rely
+on RC4 Rect moment/shear contours; use Quad for that release. Development
+1.0.0rc5.dev0 reconstructs the Rect displacement polynomial from its solved local
+nodal translations/rotations and differentiates it with isotropic plate laws.
+This postprocessing correction does not alter stiffness, pressure loads, nodal
+displacements or reactions. Non-unit Rect bending modifiers are rejected during
+analysis: the supported engine ignores them in its bending stiffness. Such
+recipes can still be opened/previewed/edited; unmodified Rect remains supported.
+
+The common local convention is `Mx=-D(w,xx+nu*w,yy)`,
+`My=-D(w,yy+nu*w,xx)`, `Mxy=-D(1-nu)*w,xy` and
+`Q=-D*grad(laplacian(w))` in the thin-plate limit, with
+`D=E*t^3/(12*(1-nu^2))`. Rect centre recovery follows this polynomial law;
+Quad retains DKMQ rotational/shear recovery, including transverse shear.
+Non-square Navier checks exercise all three moment and both shear components;
+manufactured twist/cubic/rigid fields and two-direction zero-Poisson strip checks
+verify signs, units and mixed derivatives. XY/XZ/YZ, origins and signed pressure
+factors preserve the local resultants.
+
+**Opening benchmark:** a 120 × 120 in plate, thickness 0.6 in, E=3600 ksi,
+nu=0.2, simply supported outer edges and a centred 40 × 40 in free opening,
+under -1e-7 kip/in². A separate Rayleigh–Ritz reference integrates the Kirchhoff
+bending energy over the outer rectangle minus the opening, using odd double-sine
+functions and analytic integrals. It imports neither Brecon nor PyNite. The
+intact-domain limit reproduces Navier. Increasing the reference from 11 × 11 to
+13 × 13 modes changes the chosen deflections and patch means by less than 0.2%;
+conditioning and residuals are checked separately from FE comparisons.
+The energy formulation follows [the plate-energy derivation, equations 5.9–5.11](https://dspace.lib.cranfield.ac.uk/bitstream/1826/125/2/sherarphd.pdf);
+[Li et al.](https://doi.org/10.32604/cmes.2022.021340) describe cutout-domain energy subtraction.
+The implementation here is a static reference, not that paper's vibration solver.
+
+Both Quad and corrected Rect meshes use sizes 20, 10 and 5 in (32, 128 and 512
+elements). Fine-mesh deflections at (40,60) and (20,60) are within 0.5% of the
+reference; area-weighted mean Mx/My/Mxy on the material patch `[0,40] × [0,40]`
+are within 1.5%. Successive deflection changes shrink, patch-moment error reduces,
+and net pressure/reaction equilibrium is checked. These are test tolerances for
+this thin symmetric case, not universal accuracy guarantees. No pointwise
+opening-corner stress, general/off-centre/multiple opening, orthotropic,
+thick-plate or curved-shell certification is implied.
+
+![Independent centred-opening plate refinement checks](docs/assets/screenshots/plate-recovery-benchmarks.png)
+
+Reproduce the numerical record and figure with:
+
+```sh
+uv run --locked python -B scripts/benchmark_plate_recovery.py --output /tmp/brecon-plate-benchmarks
+uv run --locked python -B scripts/test.py test_plate_recovery
+```
 
 Mesh-specific checks:
 

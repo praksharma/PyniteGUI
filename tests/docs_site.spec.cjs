@@ -52,10 +52,15 @@ const server = http.createServer((request,response)=>{
     await page.screenshot({path:path.join(output,'surfaces-dark.png')});
     for(const [url,title] of [['features/','Feature Index'],['start/first-model/','Your First Model'],
       ['analysis/loads/','Point, Angled and Distributed Loads'],['automation/mcp/','Optional MCP Server'],
-      ['reference/units/','Units and Conversions'],['project/roadmap/','Brecon Roadmap']]){
+      ['reference/units/','Units and Conversions'],['project/roadmap/','Brecon Roadmap'],
+      ['surfaces/plates/','Rectangular Plate Analysis']]){
       await page.goto(origin+prefix+url);
       await page.locator('article h1').filter({hasText:title}).waitFor();
       assert((await page.locator('article').innerText()).length>250,`Empty ${url}`);
+      if(url==='surfaces/plates/'){
+        const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));
+        assert(figures.some(image=>image.src.endsWith('plate-recovery-benchmarks.png'))&&figures.every(image=>image.ok),'Missing plate benchmark figure');
+      }
     }
     await page.setViewportSize({width:1280,height:900});
     await page.goto(origin+prefix+'features/');

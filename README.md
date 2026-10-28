@@ -33,6 +33,9 @@ are **experimental**. P-Delta keeps materials elastic and has model restrictions
 plastic, modal and reinforced-concrete nonlinear workflows are not implemented.
 Read the [engineering scope](https://github.com/praksharma/PyniteGUI/blob/master/GUIDE.md#engineering-scope) before relying on results.
 
+**RC4 plate limitation:** use Quad elements for plate moment/shear results.
+Corrected Rect recovery is in development; see the [plate guide](https://github.com/praksharma/PyniteGUI/blob/master/GUIDE.md#experimental-rectangular-plates).
+
 ## Install and Run
 
 Requires [uv](https://docs.astral.sh/uv/getting-started/installation/) and Python

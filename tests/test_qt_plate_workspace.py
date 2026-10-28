@@ -131,6 +131,22 @@ class PlateWorkspaceTests(unittest.TestCase):
             self.assertAlmostEqual(sum(float(row[4]) for row in rows[1:]),
                                    -self.window.result["applied"]*definition.units.force_factor)
 
+    def test_rect_worker_and_signed_unit_aware_contours(self):
+        import numpy as np
+        definition = PlateDefinition(element_type="Rect", unit_system="si", mesh_size=30,
+                                     pressure=-1e-7, thickness=.6)
+        self.window.install(definition.to_dict())
+        self.window.run_analysis()
+        self.wait_until(lambda: self.window.thread is None)
+        result = self.window.result
+        self.assertIsNotNone(result)
+        self.assertTrue((result["moments"][:, :2] < 0).all())
+        for index, key, column, factor in ((2, "moments", 0, definition.units.force_factor),
+                                           (5, "shears", 0, definition.units.factor("intensity"))):
+            self.window.component.setCurrentIndex(index)
+            artist = self.window.figure.axes[0].collections[0]
+            np.testing.assert_allclose(artist.get_array(), result[key][:, column]*factor)
+
 
 if __name__ == "__main__":
     unittest.main()
