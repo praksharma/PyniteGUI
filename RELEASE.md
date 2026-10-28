@@ -196,6 +196,40 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 Plate Loading Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-10-28. No new release tag or registry
+upload is created by this checkpoint; the published RC4 files remain immutable.
+
+- The separate rectangular plate tool supports up to 32 uniform pressure cases
+  and 32 combinations. Its original primary-case Plate combination remains the
+  baseline; named combinations mix cases. A staged editor handles pressures,
+  factor maps, reference-preserving case renames and horizontal self-weight.
+- Opt-in self-weight uses material weight density and global -Y. XZ plates carry
+  the complete gravity as normal pressure, factored through its selected case.
+  XY/YZ membrane gravity is rejected. Openings remove both pressure and weight.
+  This does not enable general membrane, curved shells or a nonlinear solver.
+- Every combination must have finite results and pass six-component global
+  force/moment equilibrium before any snapshot is accepted. Cached selection,
+  unit-only changes and their undo/redo preserve snapshot identity; engineering
+  edits clear results. CSV and plot titles identify the selected combination and
+  snapshot. Quad shear remains withheld; corrected Rect shear is separate.
+- Plate files advance to version 3 with strict loading fields. Version 1/2 files
+  migrate without adding cases or gravity. Frame/spatial file formats are unchanged.
+- Independent checks cover signed/zero-result superposition for both element
+  families in every plane, self-weight/Navier deflection within 1% on the chosen
+  fine mesh, off-centre opening force/first-moment balance, migration and whole-
+  snapshot rejection after force, moment or nonfinite errors. Native checks cover
+  the worker, four combinations, staged controls, unit retention and CSV export.
+- Full locked suite: **912 tests**, no skips, **220.145 s**. Installed development
+  wheel with PyNite 3.2 / Qt 6.12: **912 tests**, no skips, **242.787 s**.
+  Focused surfaces: **103 tests** passed. Test ownership: 142 classes in 9 groups.
+  Strict documentation build/link checks cover 55 HTML pages; browser QA verifies
+  new screenshots, navigation, search, GitHub Pages subpath and dark mode.
+- Native screenshots document the actual plate controls and selected-combination
+  moment plot. Development wheel/source metadata and contents are audited.
+  Stable 1.0 platform/manual feedback gates remain open.
+
 ## Post-RC4 Coupled Slab Inspection Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-10-28; no RC5 tag or PyPI upload is

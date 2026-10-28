@@ -73,7 +73,7 @@ See [method limits and plasticity boundaries](analysis/solve.md).
 | Opt-in rectangular Quad/frame coupling, pressure cases, self-weight, deformed mesh and geometry-owned global edge supports | [Experimental coupled slabs](surfaces/main-model.md) |
 | Snapshot-bound local moment/membrane-stress contours, natural-coordinate probes, CSV and MCP; Quad shear withheld pending validation | [Slab results](surfaces/main-model.md) |
 | Rectangle fitting to selected corners/perimeters or complete frame levels | [Slab placement](surfaces/main-model.md) |
-| Separate rectangular Quad/Rect bending tool, pressure/edge supports, contours and nodal CSV | [Experimental plate-only analysis](surfaces/plates.md) |
+| Separate Quad/Rect plate bending, multiple uniform cases/combinations, horizontal self-weight, edge supports, cached combination contours and provenance CSV | [Experimental plate-only analysis](surfaces/plates.md) |
 | Independent centred-opening/Rect recovery benchmarks; corrected Rect resultants in post-RC4 development, with explicit limits | [Plate verification and RC4 limitation](surfaces/plates.md) |
 | Four display-unit presets and canonical inch/kip storage | [Units](reference/units.md) |
 | Versioned save/open, migrations, undo/redo, recent-file cleanup and autosave/recovery | [History](reference/saving.md), [formats](reference/formats.md), [recovery](reference/recovery.md) |

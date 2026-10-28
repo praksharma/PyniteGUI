@@ -63,6 +63,8 @@ const server = http.createServer((request,response)=>{
       if(url==='surfaces/plates/'){
         const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));
         assert(figures.some(image=>image.src.endsWith('plate-recovery-benchmarks.png'))&&figures.every(image=>image.ok),'Missing plate benchmark figure');
+        assert(figures.some(image=>image.src.endsWith('plate-load-combinations.png'))&&
+          figures.some(image=>image.src.endsWith('plate-load-program.png')),'Missing plate loading workflow screenshots');
       }
     }
     await page.setViewportSize({width:1280,height:900});

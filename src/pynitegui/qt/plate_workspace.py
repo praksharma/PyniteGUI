@@ -8,12 +8,13 @@ from matplotlib.collections import PolyCollection
 from matplotlib.figure import Figure
 from PySide6.QtCore import QSaveFile, QIODevice, QThread, QTimer, Qt
 from PySide6.QtGui import QUndoCommand, QUndoStack
-from PySide6.QtWidgets import (QComboBox, QDialog, QFileDialog, QFormLayout, QHBoxLayout,
+from PySide6.QtWidgets import (QComboBox, QDialog, QFileDialog, QFormLayout, QFrame, QHBoxLayout,
                               QLabel, QLineEdit, QMessageBox, QPushButton, QSplitter,
-                              QStyle, QToolBar, QVBoxLayout, QWidget)
+                              QScrollArea, QStyle, QToolBar, QVBoxLayout, QWidget)
 
 from .analysis_jobs import AnalysisWorker, AnalysisCancelled, CANCELLED, execute_analysis
-from .plate_model import PlateDefinition, EDGES, PLANES, build_plate, plate_geometry, plate_analysis_child
+from .plate_model import (PlateDefinition, EDGES, PLANES, build_plate, plate_geometry,
+                          plate_analysis_child, plate_signature, select_plate_combination)
 from .units import UNIT_SYSTEMS
 from .theme import colors, style_axes
 
@@ -35,10 +36,10 @@ class PlateEdit(QUndoCommand):
         self.window, self.before, self.after = window, before, after
 
     def undo(self):
-        self.window.install(self.before)
+        self.window.install(self.before, preserve_results=True)
 
     def redo(self):
-        self.window.install(self.after)
+        self.window.install(self.after, preserve_results=True)
 
 
 class PlateWorkspace(QDialog):
@@ -70,6 +71,7 @@ class PlateWorkspace(QDialog):
         self.export_action.setEnabled(False)
         mesh_action = toolbar.addAction(self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogDetailedView), "Mesh Options", self.configure_mesh)
         mesh_action.setToolTip("Element family, placement, control lines and openings")
+        self.loads_action = toolbar.addAction("Load Cases / Combinations…", self.configure_loading)
         splitter = QSplitter()
         root.addWidget(splitter, 1)
         self.controls = QWidget()
@@ -86,15 +88,21 @@ class PlateWorkspace(QDialog):
         form.addRow("Plane", self.plane)
         from .app import number
         self.fields = {}
-        for key in ("width", "height", "thickness", "mesh_size", "E", "nu", "pressure", "load_factor"):
+        for key in ("width", "height", "thickness", "mesh_size", "E", "nu", "rho", "pressure", "load_factor"):
             widget = number(0, -1e12, 1e12, 8)
             widget.setObjectName("plate_" + key)
             self.fields[key] = widget
             form.addRow(key, widget)
             widget.valueChanged.connect(self.mark_pending)
         self.case = QLineEdit()
+        self.case.setToolTip("Primary pressure case. Renaming updates named combination and self-weight references.")
+        self.fields["load_factor"].setToolTip("Factor for the primary-case Plate combination. Named combinations have their own factors.")
+        self.fields["rho"].setToolTip("Material weight per unit volume (force/length³). Enable horizontal plate self-weight in Load Cases / Combinations.")
         form.addRow("Load case", self.case)
         self.case.textChanged.connect(self.mark_pending)
+        self.loading_summary = QLabel()
+        self.loading_summary.setWordWrap(True)
+        form.addRow("Load program", self.loading_summary)
         self.supports = {}
         for edge in EDGES:
             box = QComboBox()
@@ -117,9 +125,18 @@ class PlateWorkspace(QDialog):
         self.cancel_button.setEnabled(False)
         row.addWidget(self.run_button)
         form.addRow(row)
-        splitter.addWidget(self.controls)
+        self.control_scroll = QScrollArea()
+        self.control_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.control_scroll.setWidgetResizable(True)
+        self.control_scroll.setWidget(self.controls)
+        splitter.addWidget(self.control_scroll)
         display = QWidget()
         layout = QVBoxLayout(display)
+        self.combination = QComboBox()
+        self.combination.setObjectName("plate_result_combination")
+        self.combination.setAccessibleName("Solved plate combination")
+        self.combination.currentTextChanged.connect(self.select_result_combination)
+        layout.addWidget(self.combination)
         self.component = QComboBox()
         self.component.addItems(["Mesh", "Normal displacement", "Mx (element centre)",
                                  "My (element centre)", "Mxy (element centre)",
@@ -146,8 +163,11 @@ class PlateWorkspace(QDialog):
         self.plane.currentTextChanged.connect(self.mark_pending)
         self.install(self.definition.to_dict())
 
-    def install(self, data):
+    def install(self, data, preserve_results=False):
+        previous = self.result
+        component = self.component.currentIndex()
         self.definition = PlateDefinition.from_dict(data)
+        keep = preserve_results and previous is not None and previous["model_signature"] == plate_signature(self.definition)
         self.loading = True
         units = self.definition.units
         if self.units_box.findData(units.key) < 0:
@@ -155,9 +175,10 @@ class PlateWorkspace(QDialog):
         self.units_box.setCurrentIndex(self.units_box.findData(units.key))
         self.plane.setCurrentText(self.definition.plane)
         labels = {"width": "Width", "height": "Height", "thickness": "Thickness", "mesh_size": "Mesh size",
-                  "E": "Elastic modulus", "nu": "Poisson ratio", "pressure": "Pressure", "load_factor": "Combination factor"}
+                  "E": "Elastic modulus", "nu": "Poisson ratio", "rho": "Weight density",
+                  "pressure": "Primary pressure", "load_factor": "Plate factor"}
         for key, widget in self.fields.items():
-            value = getattr(self.definition.material, key) if key in ("E", "nu") else getattr(self.definition, key)
+            value = getattr(self.definition.material, key) if key in ("E", "nu", "rho") else getattr(self.definition, key)
             factor, label = self.quantity(key, units)
             widget.setValue(value * factor)
             widget.setProperty("canonical", value)
@@ -168,9 +189,12 @@ class PlateWorkspace(QDialog):
             box.setCurrentText(self.definition.edges[edge])
         _, _, axis, sign = PLANES[self.definition.plane]
         self.normal_label.setText(("+" if sign > 0 else "-") + "XYZ"[axis])
-        self.pending, self.loading, self.result = False, False, None
-        self.export_action.setEnabled(False)
-        self.component.setCurrentIndex(0)
+        weight = self.definition.self_weight_case or "Off"
+        self.loading_summary.setText(f"{len(self.definition.load_cases)} pressure case(s), {len(self.definition.load_combinations)} combination(s)\nSelf-weight: {weight}")
+        self.pending, self.loading, self.result = False, False, previous if keep else None
+        self.export_action.setEnabled(keep)
+        self.update_combination_choices()
+        self.component.setCurrentIndex(component if keep else 0)
         self.draw()
 
     @staticmethod
@@ -179,6 +203,8 @@ class PlateWorkspace(QDialog):
             return units.factor("length"), units.length
         if key == "E":
             return units.factor("stress"), units.stress
+        if key == "rho":
+            return units.factor("density"), units.density
         if key == "pressure":
             return units.force_factor / units.length_factor**2, units.force + "/" + units.length + "2"
         return 1, ""
@@ -187,6 +213,7 @@ class PlateWorkspace(QDialog):
         if self.loading:
             return
         self.pending, self.result = True, None
+        self.update_combination_choices()
         self.export_action.setEnabled(False)
         self.component.setCurrentIndex(0)
         self.draw()
@@ -198,11 +225,12 @@ class PlateWorkspace(QDialog):
             widget.interpretText()
             factor, _ = self.quantity(key, self.definition.units)
             value = widget.property("canonical") if widget.value() == widget.property("initial") else widget.value() / factor
-            if key in ("E", "nu") and value != getattr(definition.material, key):
+            if key in ("E", "nu", "rho") and value != getattr(definition.material, key):
                 definition.material.preset = None
-            setattr(definition.material if key in ("E", "nu") else definition, key, value)
+            setattr(definition.material if key in ("E", "nu", "rho") else definition, key, value)
         definition.plane = self.plane.currentText()
-        definition.load_case = self.case.text()
+        if self.case.text() != definition.load_case:
+            definition.rename_case(definition.load_case, self.case.text())
         definition.edges = {edge: box.currentText() for edge, box in self.supports.items()}
         definition.validate()
         return definition
@@ -270,7 +298,7 @@ class PlateWorkspace(QDialog):
                 values = values * units.factor("force" if moment else "intensity")
                 artist = PolyCollection(polygons, array=values, cmap="coolwarm")
                 ax.add_collection(artist)
-                label = units.force if moment else units.intensity
+                label = f"{units.moment}/{units.length}" if moment else units.intensity
             peak = max(float(np.max(np.abs(values))), 1e-15)
             artist.set_clim(-peak, peak)
             self.figure.colorbar(artist, ax=ax, label=label)
@@ -288,7 +316,10 @@ class PlateWorkspace(QDialog):
         u, v, _, _ = PLANES[self.definition.plane]
         ax.set_xlabel(f"Local x / Global {'XYZ'[u]} ({units.length})")
         ax.set_ylabel(f"Local y / Global {'XYZ'[v]} ({units.length})")
-        ax.set_title(self.component.currentText() + (" | DKMQ quads" if self.definition.element_type == "Quad" else " | Polynomial rectangles"))
+        title = self.component.currentText() + (" | DKMQ quads" if self.definition.element_type == "Quad" else " | Polynomial rectangles")
+        if self.result is not None:
+            title += f"\n{self.result['combination']} | Snapshot {self.result['snapshot_id']}"
+        ax.set_title(title)
         ax.autoscale()
         ax.set_aspect("equal")
         for axis in self.figure.axes:
@@ -301,7 +332,9 @@ class PlateWorkspace(QDialog):
             peak = max(abs(self.result["displacement"])) * units.length_factor
             reaction = self.result["reactions"].sum() * units.force_factor
             self.status.setText(f"{len(cells)} {self.definition.element_type} elements | Max |normal displacement| {peak:.6g} {units.length} | "
-                                f"Normal reaction sum {reaction:.6g} {units.force} | {self.definition.load_case} x {self.definition.load_factor:g}")
+                                f"Normal reaction sum {reaction:.6g} {units.force} | {self.result['combination']}: "
+                                + "; ".join(f"{case} x {factor:g}" for case, factor in self.result["factors"].items())
+                                + " | Force/moment equilibrium passed")
             if max(abs(self.result["displacement"])) > self.definition.thickness / 2:
                 self.status.setText(self.status.text() + " | Large deflection: linear plate assumptions may be invalid")
 
@@ -312,12 +345,46 @@ class PlateWorkspace(QDialog):
         dialog = MeshWorkspace(self, definition=self.definition.mesh_definition(), selection_only=True)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             candidate = PlateDefinition.from_dict(self.definition.to_dict())
-            transfer_rectangle(dialog.definition, candidate)
-            self.undo.push(PlateEdit(self, self.definition.to_dict(), candidate.to_dict()))
+            try:
+                transfer_rectangle(dialog.definition, candidate)
+                after = candidate.to_dict()
+            except ValueError as error:
+                QMessageBox.warning(self, "Plate Mesh Options", str(error))
+                return
+            self.undo.push(PlateEdit(self, self.definition.to_dict(), after))
+
+    def configure_loading(self):
+        if self.thread is not None or not self.apply():
+            return
+        from .plate_loads import PlateLoadsDialog
+        dialog = PlateLoadsDialog(self, self.definition)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            before, after = self.definition.to_dict(), dialog.definition.to_dict()
+            if before != after:
+                self.undo.push(PlateEdit(self, before, after))
+
+    def update_combination_choices(self):
+        self.combination.blockSignals(True)
+        self.combination.clear()
+        if self.result is not None:
+            self.combination.addItems(list(self.result["solutions"]))
+            self.combination.setCurrentText(self.result["combination"])
+        self.combination.setEnabled(self.result is not None)
+        self.combination.blockSignals(False)
+
+    def select_result_combination(self, name):
+        if self.result is None or not name:
+            return
+        self.result = select_plate_combination(self.result, name)
+        self.draw()
 
     def run_analysis(self):
         if self.thread is not None or not self.apply():
             return
+        self.result = None
+        self.export_action.setEnabled(False)
+        self.update_combination_choices()
+        self.component.setCurrentIndex(0)
         self.thread = QThread(self)
         self.worker = PlateWorker(PlateDefinition.from_dict(self.definition.to_dict()))
         self.worker.moveToThread(self.thread)
@@ -334,6 +401,7 @@ class PlateWorkspace(QDialog):
 
     def analysis_finished(self, result, error):
         self.result = result
+        self.update_combination_choices()
         self.export_action.setEnabled(result is not None)
         if error:
             self.status.setText(error)
@@ -402,11 +470,15 @@ class PlateWorkspace(QDialog):
                 writer = csv.writer(stream)
                 writer.writerow(["Node", f"Local x ({units.length})", f"Local y ({units.length})",
                                  f"Normal displacement ({units.length})", f"Normal reaction ({units.force})",
-                                 "Load case", "Factor"])
+                                 "Combination", "Case factors", "Snapshot", "Analyzed UTC", "Model signature",
+                                 "Global normal", "Self-weight case"])
                 for name, point, displacement, reaction in zip(self.result["names"], self.result["points"],
                         self.result["displacement"], self.result["reactions"]):
                     writer.writerow([name, *(point*units.length_factor), displacement*units.length_factor,
-                                     reaction*units.force_factor, self.definition.load_case, self.definition.load_factor])
+                                     reaction*units.force_factor, self.result["combination"],
+                                     "; ".join(f"{case}: {factor:g}" for case, factor in self.result["factors"].items()),
+                                     self.result["snapshot_id"], self.result["analyzed_at"], self.result["model_signature"],
+                                     ", ".join(f"{v:g}" for v in self.definition.normal), self.definition.self_weight_case or "Off"])
         except OSError as error:
             QMessageBox.warning(self, "Export Plate", str(error))
 

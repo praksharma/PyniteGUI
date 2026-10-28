@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Extend the separate plate workspace with additional uniform pressure cases,
+  named combinations and global -Y self-weight for horizontal XZ plates. Add a
+  staged loading editor, solved-combination selector and snapshot-labelled CSV.
+  Retain the primary-case Plate baseline and migrate old plate files to v3
+  without adding loads. Display-unit edits/undo keep the current result snapshot.
+- Check finite plate results and all six global force/moment balances for every
+  combination before accepting any snapshot. Keep Quad shear unavailable and
+  reject unsupported vertical membrane gravity; no general shell solver is added.
+
 - Preserve Results dock visibility after solving in All tools/Model; hidden
   results stay hidden and open results update in place. The Results workspace
   continues to show them on completion, and View > Results remains available.

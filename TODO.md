@@ -206,7 +206,8 @@ Remaining 11 scripts are intentionally unchecked:
   nodal springs are not equivalent.
 - Braced Frame - Tension Only: tension-only braces/active-set analysis.
 - Rectangular Wall - Linear Varying Load: geometry-owned depth-varying pressure
-  and shell edge supports; the plate pilot accepts one uniform pressure only.
+  and a validated wall workflow. The plate pilot has multiple uniform cases,
+  but no geometry-varying pressure or general membrane behaviour.
 - Shear Wall - Basic/Advanced: validated in-plane membrane/drilling workflow,
   shell support/load assignment, wall result recovery; Advanced additionally
   needs shear-wall/story/pier/coupling-beam APIs and its stiffness modifiers.
@@ -284,9 +285,16 @@ Remaining 11 scripts are intentionally unchecked:
   benchmarks, plus all-plane/origin/load-factor invariance. Correct Rect recovery
   signs/twisting coefficients from the solved polynomial; reject unsupported Rect
   bending modifiers. Re-entrant corner peaks and general openings remain unverified.
-- [ ] Extend the plate pilot to general membrane behaviour, multiple surface load
-  cases/combinations, surface self-weight and detailed local result inspection;
-  independently benchmark moment/shear recovery before engineering claims.
+- [x] Add multiple uniform pressure cases/named combinations and complete global
+  -Y self-weight for horizontal XZ plates. Retain the primary-case Plate baseline,
+  stage case/factor/weight edits, preserve references on rename, add cached result
+  selection and provenance CSV. Check all combinations for finite values and
+  independent global force/moment equilibrium; reject vertical membrane gravity.
+  Plate v3 migrates v1/v2 without adding loads. Preserve results on display-unit
+  changes; benchmark signed/zero superposition, Navier gravity and opening moments.
+- [ ] Extend the plate pilot to general membrane behaviour and detailed local
+  result inspection; validate new formulations before engineering claims.
+  Quad transverse shear recovery remains a separate open validation task above.
 - [ ] Add annular/curved-shell boundary/load definitions, membrane behaviour,
   normal-pressure orientation, reaction/result inspection and independent shell
   benchmarks before enabling analysis for nonrectangular catalog meshes.

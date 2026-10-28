@@ -96,7 +96,8 @@ class MeshModelTests(unittest.TestCase):
     def test_old_plate_migration_and_new_options_roundtrip(self):
         definition = PlateDefinition()
         old = definition.to_dict()
-        for key in ("element_type", "origin", "x_control", "y_control", "openings", "kx_mod", "ky_mod", "node_start", "element_start", "mesh_name"):
+        for key in ("element_type", "origin", "x_control", "y_control", "openings", "kx_mod", "ky_mod", "node_start", "element_start", "mesh_name",
+                    "additional_pressures", "combinations", "self_weight_case", "self_weight_factor"):
             old.pop(key)
         old["version"] = 1
         self.assertEqual(PlateDefinition.from_dict(old), definition)

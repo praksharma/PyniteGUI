@@ -334,44 +334,103 @@ global X in XY/XZ and Z in YZ; height follows Y in XY/YZ and Z in XZ.
 
 Pressure is force per geometry-length squared, with its positive global direction
 shown beside the controls (+Z in XY, -Y in XZ, -X in YZ). Negative pressure acts
-oppositely. A named load case and combination factor define the single solved
-combination. Pressure and edge assignments belong to the surface definition,
+oppositely. The primary case and factor define the Plate baseline; **Load Cases /
+Combinations…** adds further uniform cases and named combinations. Pressure and
+edge assignments belong to the surface definition,
 not generated node IDs, and are reapplied when the mesh is refined.
 
 **Analyze** runs in a cancellable isolated process. Results include nodal normal
 displacement, normal-force reaction sum and unsmoothed element-centre Mx/My/Mxy
-and Qx/Qy contours. Moments are force-length per unit length (displayed as force);
+contours, plus Qx/Qy for Rect only. Quad shear is withheld pending validation.
+Moments are force-length per unit length (for example kN-m/m);
 shears are force per unit length. Displacement colouring interpolates nodal values
 over display triangles; it is not a higher-order displacement recovery or a
 deformed 3D shell view. Export CSV contains local node coordinates, signed normal
-displacements/reactions and case/factor identity. The plot toolbar exports images.
+displacements/reactions, selected-combination factors and snapshot identity. The plot toolbar exports images.
 
 Save/Open uses separate `.pyniteplate` files with canonical inch-kip values and
-strict format/version validation. Version 2 stores advanced mesh options;
-existing version 1 plate files migrate to the original defaults. Undo/redo covers applied definitions, not
-individual keystrokes. Changing inputs clears results; Apply validates before
-changing the definition. Units affect inputs/plots/CSV, not physical geometry.
+strict format/version validation. Version 3 adds named loading and self-weight;
+version 2 stores advanced mesh options. Existing version 1/2 plate files migrate
+without adding pressures or gravity. Undo/redo covers applied definitions, not
+individual keystrokes. Engineering changes clear results; Apply validates before
+changing the definition. Display-unit changes convert inputs/plots/CSV while
+retaining the current solved combination and snapshot, including unit undo/redo.
 This workspace has its own unsaved-change prompt, not frame autosave/recovery.
 
 Pilot limits: one axis-aligned rectangular surface at a specified origin, up to
 1,024 elements, aspect ratios up to 20, linear small-displacement elastic bending,
-one uniform normal pressure case and one factor. In-plane translations and the
+up to 32 uniform pressure cases and 32 combinations (including the primary
+**Plate** combination). In-plane translations and the
 drilling rotation are explicitly restrained everywhere; this is **not** general
 membrane/shell analysis. A simply supported edge restrains normal translation;
 a clamped edge additionally restrains both bending rotations. Rigid transverse
-mechanisms are rejected and normal-force equilibrium is checked. Large deflection
+mechanisms are rejected; every combination must pass independent global force
+and moment equilibrium before any result is published. Large deflection
 relative to thickness is flagged but does not enable geometric nonlinearity.
 Opening edges are free; outer edge supports and pressure are reapplied after
 refinement. Pressure resultant uses net area after openings, and result coordinates
 remain local to the origin. Arbitrary outlines, curved surface analysis, frame/surface coupling, nodal loads,
-surface self-weight, multi-case combinations, MCP, PDF and recovery integration
+general membrane loading, varying pressure, MCP, PDF and recovery integration
 remain separate milestones. Do not substitute this pilot for verified engineering
 design or assume the listed limits certify element quality.
+
+**Cases, combinations and self-weight:** the main pressure, case name and Plate
+factor retain the original quick workflow: `Plate = factor × primary case`.
+Open **Load Cases / Combinations…** to add uniform pressure cases, edit their
+pressures, rename them and create named combinations using per-case factors.
+The built-in Plate combination remains a primary-case baseline; edit its factor
+in the main controls. Rename propagates through combination and self-weight
+references. Delete an additional case only after removing those references.
+The dialog stages its edits: OK creates one undoable change, Cancel preserves
+the plate definition. It can use negative pressures/factors and zero-result
+combinations. An additional case can have zero manual pressure and carry weight.
+
+Set **Weight density** in the main controls (force per volume, not mass density).
+In the loading dialog select a **Self-weight case** and positive multiplier.
+The complete weight acts in global -Y, so this transverse tool permits self-weight
+only for horizontal **XZ** plates. Positive local pressure on XZ is downward;
+weight contributes `rho × thickness × multiplier` to its selected case, then
+that case's combination factor applies once. Do not include the same weight in
+manual pressure unless intentional. Disable self-weight before changing to a
+vertical plane. XY/YZ transverse pressure remains supported with self-weight off;
+the tool rejects in-plane gravity instead of silently discarding it.
+Openings remove both manual pressure and weight from their missing area.
+
+Analyze solves all combinations and checks finite results plus six-component
+force/moment equilibrium about the recipe origin. One failed combination rejects
+the entire snapshot. Choose a solved combination above the contour without
+solving again. Plot titles name the combination and snapshot; the status shows
+its actual factors and normal reaction sum. Nodal CSV uses the chosen combination
+and includes case factors, snapshot ID/time/signature, global normal and weight
+case. Quad shear remains unavailable; corrected Rect shear remains separate.
+The separate plate tool still has no general membrane or combined face-stress
+inspection and is not connected to the main-model MCP server.
+
+For example, a horizontal plate can use Dead pressure plus self-weight, a Live
+pressure case, and Service = 1.0 Dead + 1.0 Live or Ultimate = 1.2 Dead + 1.6 Live.
+The primary Plate baseline still uses Dead and its main factor alone.
+
+![Horizontal plate with named combinations and snapshot-labelled moment results](docs/assets/screenshots/plate-load-combinations.png)
+
+![Staged plate load program with named combinations and horizontal self-weight](docs/assets/screenshots/plate-load-program.png)
+
+Version 3 retains `pressure`, `load_case` and `load_factor` as the primary-case
+inputs. `additional_pressures` maps other case names to signed canonical kip/in2;
+`combinations` maps additional combination names to case-factor maps (`Plate` is
+reserved). `self_weight_case` is an existing case or null and
+`self_weight_factor` is a positive multiplier. All four new fields are required
+in version 3; extra fields in legacy versions are rejected. Solved arrays are
+not saved in `.pyniteplate` files.
 
 Regression coverage includes independent Navier square-plate deflection and mesh
 refinement, a zero-Poisson cantilever strip's closed-form deflection/moment,
 equilibrium/sign and plane invariance, clamped/cantilever support
 cases, mesh regeneration, persistence, units, undo, stale results and cancellation.
+Multi-case checks cover signed/zero superposition in all three planes for both
+families, self-weight against an independent Navier reference, off-centre opening
+first moments, old-file migrations, reference-preserving renames, cached combination
+selection, unit/snapshot preservation and whole-snapshot rejection after a force,
+moment or nonfinite failure in any combination.
 
 **Rect recovery correction after RC4:** the published RC4 wheel uses PyNite's raw
 Rect resultants. Checks against independent mechanics found opposite bending
@@ -389,7 +448,8 @@ The common local convention is `Mx=-D(w,xx+nu*w,yy)`,
 `My=-D(w,yy+nu*w,xx)`, `Mxy=-D(1-nu)*w,xy` and
 `Q=-D*grad(laplacian(w))` in the thin-plate limit, with
 `D=E*t^3/(12*(1-nu^2))`. Rect centre recovery follows this polynomial law;
-Quad retains DKMQ rotational/shear recovery, including transverse shear.
+Quad retains the DKMQ bending stiffness with transverse shear flexibility; its
+moment output is exposed, while raw Qx/Qy recovery is withheld.
 Non-square Navier checks exercise all three moment and both shear components;
 manufactured twist/cubic/rigid fields and two-direction zero-Poisson strip checks
 verify signs, units and mixed derivatives. XY/XZ/YZ, origins and signed pressure
@@ -1318,7 +1378,7 @@ notice:
   displacement **+0.00191955 in**. The source's thin-plate reference is
   **+0.00171054 in**; DKMQ retains transverse shear deformation. Do not interpret
   that difference as a failed convergence check or a cracked-concrete model.
-  The plate workspace names its single combination **Plate = 1.0W**, equivalent
+  This example's primary combination is **Plate = 1.0W**, equivalent
   to the source's **1.0W**. Its existing transverse-only constraints additionally
   restrain interior membrane translations and drilling rotation. For this flat
   uniform-pressure benchmark they leave transverse nodal displacements,
