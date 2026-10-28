@@ -1,17 +1,18 @@
 # Release Preparation
 
-Development target: **Brecon 1.0.0rc4** (not published or tagged). The previous-name
-**v1.0.0rc3** remains an immutable unpublished checkpoint. Check
+Release target: **Brecon 1.0.0rc4**, tag **v1.0.0rc4**. The owner authorized
+GitHub publication and the PyPI workflow on **2026-10-28**. The previous-name
+**v1.0.0rc3** remains immutable. Check
 [GitHub Releases](https://github.com/praksharma/PyniteGUI/releases) for published
 assets; source tags and unpublished drafts do not imply a public binary release.
 Stable 1.0 promotion follows a feature freeze and verification of the actual
 release artifacts. Standalone installers remain a later step.
 
-**Publication status (2026-10-28):** RC2 is published as a
-[GitHub prerelease](https://github.com/praksharma/PyniteGUI/releases/tag/v1.0.0rc2)
-and on [PyPI](https://pypi.org/project/pynitegui/1.0.0rc2/). Later development
-changes are not retroactively included in those artifacts. Stable 1.0 platform
-and prerelease-feedback gates below remain open.
+**Publication status at preparation (2026-10-28):** PyniteGUI RC3 is published as a
+[GitHub prerelease](https://github.com/praksharma/PyniteGUI/releases/tag/v1.0.0rc3)
+and on [PyPI](https://pypi.org/project/pynitegui/1.0.0rc3/); its hashes match the
+sealed checkpoint. Brecon RC4 is being prepared for its first upload. Stable 1.0
+platform and prerelease-feedback gates below remain open.
 
 ## Build and Verify
 
@@ -96,7 +97,7 @@ block this scope.
 - [ ] Windows installation and visible workflows checked, or explicitly labelled unverified.
 - [x] RC3 release notes and limitations reviewed; artifact hashes generated in SHA256SUMS.
 - [x] User approves the consolidation checkpoint: push changes and prepare an unpublished RC3 draft with assets.
-- [ ] Owner separately approves publishing the GitHub RC3 prerelease and uploading RC3 to PyPI.
+- [x] RC3 GitHub/PyPI publication confirmed on 2026-10-28; its tag and assets remain unchanged.
 - [x] Historical RC2 GitHub/PyPI publication completes; its artifacts and tag remain unchanged.
 
 Upload the wheel, source distribution and SHA256SUMS to the approved GitHub
@@ -109,7 +110,7 @@ validation rather than renaming RC artifacts.
 
 uv installs tools from Python package indexes; PyPI is the intended public
 distribution channel. The `brecon` entry point is canonical; `pynitegui` is a
-compatibility alias. The Brecon distribution is not published yet.
+compatibility alias. Use the publication status above to confirm availability.
 A separate uv-specific package or registry submission is not needed.
 
 After stable 1.0 is published to PyPI, users can run:
@@ -145,7 +146,7 @@ pending GitHub publisher with these exact values:
 
 Brecon needs a **new pending publisher**, separate from the existing `pynitegui`
 project. The owner confirmed configuring it on **2026-10-28**; the first upload
-has not yet been performed. Keep the old project/releases for existing users.
+is part of the authorized RC4 release. Keep the old project/releases for existing users.
 Its package name is not reserved until the first successful publish. See the
 [PyPI pending-publisher guide](https://docs.pypi.org/trusted-publishers/creating-a-project-through-oidc/).
 
@@ -177,6 +178,37 @@ Do not move existing release tags or replace reviewed release assets to retry.
 
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
+
+## RC4 Release Validation
+
+First Brecon release, **1.0.0rc4**, prepared 2026-10-28 on macOS 27.2 arm64 /
+Python 3.12.13. Publication is explicitly authorized; this is a prerelease,
+with the stable-1.0 platform and independent-feedback gates still open.
+
+- Full locked suite: **882 tests passed**, no skips (200.177 seconds), including
+  real MCP wire tests. Qt 6.11.2, PyNiteFEA 3.0.0, Matplotlib 3.11.1,
+  NumPy 2.5.3, SciPy 1.18.1, MCP 2.3.0.
+- Full installed-wheel suite: **882 tests passed**, no skips (228.083 seconds).
+  Qt 6.12.0, PyNiteFEA 3.2.0, Matplotlib 3.11.2, NumPy 2.5.4, SciPy 1.18.1,
+  MCP 2.3.0. Final runtime files match the fully tested wheel byte for byte.
+- Fresh base/MCP profiles verify the final wheel, both launch commands and all
+  **26 examples** through save/open/analyze/export and native-window startup.
+  MCP verifies Brecon identity/version, authenticated discovery, atomic edit,
+  undo and server shutdown. Isolated uv-tool installation checks both commands.
+- Both viewport suites pass against installed Brecon assets: spatial frame
+  editing/results/probes and all seven mesh families, mixed/surface-only scenes,
+  picking, context recovery and resource limits. Headless Chromium uses
+  SwiftShader; hardware evidence comes from the native check below.
+- The visible installed RC4 Cocoa run recorded in the rename validation passed
+  all workflows with ANGLE Metal / Apple M4 Max; its runtime is unchanged in the
+  release build. Human OS-dialog confirmation remains the earlier RC3 evidence,
+  not a new RC4 manual certification. Linux/Windows RC4 workflows are unverified.
+- Strict docs/local links pass across **55 HTML pages**; documentation browser QA
+  covers images, search, existing Pages subpath, dark mode and layout. Source
+  audit includes the publishing workflow and executable Brecon-only gate tests.
+- The release carries a wheel, source archive and SHA256SUMS. GitHub and PyPI
+  receive the same audited files; the workflow verifies tag/version, Brecon
+  metadata and hashes before the environment-gated upload, without rebuilding.
 
 ## Brecon Rename Validation
 

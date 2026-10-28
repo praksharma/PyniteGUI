@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.0.0rc4 — 2026-10-28
+
 - Restrict PyPI publishing to Brecon release metadata; reject old PyniteGUI tags
   and mismatched versions before downloading assets. Preserve old releases and
   add executable workflow-gate regressions.
@@ -13,7 +15,7 @@
   reference URI and vector mountain/frame wordmark. Development version advances
   to 1.0.0rc4; existing releases, tags and repository URLs stay unchanged.
 
-## 1.0.0rc3 — 2026-10-28 (unpublished checkpoint)
+## 1.0.0rc3 — 2026-10-28 (PyniteGUI)
 
 - Avoid a native desktop freeze when analysis finishes before deferred worker
   cleanup has joined. Keep frame/plate controls busy until thread teardown

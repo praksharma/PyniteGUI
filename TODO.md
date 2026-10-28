@@ -12,6 +12,9 @@
 - [x] Restrict the publishing workflow to Brecon metadata and reject pre-rename
   RC2/RC3 tags before downloading/uploading distributions. Exercise the real
   metadata gate against accepted Brecon and rejected old/mismatched tags.
+- [x] Prepare the first Brecon release, 1.0.0rc4: full locked/installed suites,
+  final base/MCP and uv-tool installs, viewport/docs checks, audited artifacts
+  and release notes. Retain old PyniteGUI releases and the stable-platform gates.
 
 Current scope: a 2D/3D frame and bilateral axial-only truss editor with SI/imperial input and display, per-member materials and
 sections, custom global support restraints, global/member-local angled forces, distributed loads,

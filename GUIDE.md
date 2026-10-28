@@ -11,9 +11,9 @@ are canonical; `pynitegui` remains a compatible command/import namespace. Existi
 `.pynite.json`, mesh/plate recipes, preferences and recovery storage keep their
 identifiers. Existing MCP clients may continue using the
 `pynitegui://automation/reference` resource. Repository/documentation URLs and
-historical release artifacts retain the previous name. Brecon has not yet been
-published to PyPI; use the source checkout until a Brecon release is published.
-When it is published, install Brecon in a fresh environment. If reusing an
+historical release artifacts retain the previous name. The first Brecon release
+candidate is **1.0.0rc4**; see [publication and validation status](RELEASE.md).
+Install Brecon in a fresh environment. If reusing an
 environment, uninstall the old `pynitegui` distribution first: both provide the
 compatibility import namespace and launch command. With uv tools, remove the old
 tool before installing Brecon so its `pynitegui` compatibility command can be

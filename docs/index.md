@@ -6,10 +6,10 @@ Desktop modeling and linear elastic analysis for **2D/3D frames and axial-only
 trusses**, using PyNite and Qt. This manual covers building models, assigning
 properties and loads, running analysis, interpreting results and using automation.
 
-!!! note "Brecon development checkout"
+!!! note "Brecon 1.0.0rc4 release candidate"
     Brecon is the new name for PyniteGUI. This manual follows the source checkout;
-    Brecon is not yet on PyPI. The previous-name RC2 is published, while RC3 is an
-    unpublished checkpoint. Existing projects remain compatible. Surface/plate
+    see the release record for published artifacts and platform validation.
+    Existing PyniteGUI projects remain compatible. Surface/plate
     workflows remain experimental; see the release record for validation limits.
 
 ## Start Here
