@@ -5,6 +5,7 @@ import hashlib
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import plistlib
 import runpy
@@ -235,6 +236,16 @@ class DesktopPackagingTests(unittest.TestCase):
                 self.checker.check_archive(archive,self.root/'output')
             command.assert_not_called()
         self.assertFalse((self.root/'output').exists())
+
+    def test_clean_launch_environment_accepts_windows_uppercase_systemroot(self):
+        supplied = dict(SYSTEMROOT='C:/Windows', PATH='/build/python', PYTHONPATH='/source',
+                        PYTHONHOME='/runtime', VIRTUAL_ENV='/build', QT_QPA_PLATFORM='windows')
+        with patch.dict(self.checker.os.environ,supplied,clear=True), patch.object(self.checker.sys,'platform','win32'):
+            environment = self.checker.clean_environment()
+        self.assertEqual(environment['PATH'],str(Path('C:/Windows')/'System32')+os.pathsep+'C:/Windows')
+        self.assertEqual(environment['QT_QPA_PLATFORM'],'windows')
+        for key in ('PYTHONHOME','PYTHONPATH','VIRTUAL_ENV'):
+            self.assertNotIn(key,environment)
 
     def test_bundle_audit_rejects_failed_checks_missing_evidence_and_wrong_source(self):
         app, report, record = self.fixture()

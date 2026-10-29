@@ -48,13 +48,14 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y xvfb libegl1 libopengl0 libxcb-cursor0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-randr0 libnss3 libasound2
+          sudo apt-get install -y xvfb libegl1 libopengl0 libxcb-cursor0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-randr0 libxcb-shape0 libnss3 libasound2 libpulse0
       - name: Run packaging checks
         env:
           QT_QPA_PLATFORM: offscreen
           PYNITEGUI_NO_WEBENGINE: "1"
         run: |
           "${{ matrix.python }}" -B scripts/test.py release tooling
+          "${{ matrix.python }}" -B scripts/check_dist.py dist/*.whl dist/*.tar.gz
       - name: Freeze the reviewed installed wheel
         env:
           QT_QPA_PLATFORM: offscreen
@@ -83,3 +84,4 @@ jobs:
             build/desktop-check/evidence/
           if-no-files-found: error
           retention-days: 14
+          compression-level: 0

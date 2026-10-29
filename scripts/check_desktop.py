@@ -24,6 +24,19 @@ def layout(app):
     return 'Linux', app/'Brecon', app/'_internal'
 
 
+def clean_environment():
+    environment = dict(os.environ)
+    for key in ('PYTHONHOME', 'PYTHONPATH', 'VIRTUAL_ENV'):
+        environment.pop(key, None)
+    if sys.platform == 'win32':
+        # os.environ normalizes Windows keys to uppercase; dict copies do not.
+        system_root = next(value for key, value in environment.items() if key.upper()=='SYSTEMROOT')
+        environment['PATH'] = str(Path(system_root)/'System32')+os.pathsep+system_root
+    else:
+        environment['PATH'] = '/usr/bin:/bin:/usr/sbin:/sbin'
+    return environment
+
+
 def audit(app, report):
     app = app.resolve()
     target, executable, resources = layout(app)
@@ -79,12 +92,7 @@ def check_archive(archive, output):
     app = relocated/('Brecon.app' if sys.platform=='darwin' else 'Brecon')
     target, executable, _ = layout(app)
     assert target == {'darwin':'macOS','win32':'Windows','linux':'Linux'}[sys.platform], 'Build on the target OS'
-    environment = dict(os.environ)
-    for key in ('PYTHONHOME', 'PYTHONPATH', 'VIRTUAL_ENV'):
-        environment.pop(key, None)
-    environment['PATH'] = (str(Path(environment['SystemRoot'])/'System32')+os.pathsep+environment['SystemRoot']
-                           if sys.platform=='win32' else '/usr/bin:/bin:/usr/sbin:/sbin')
-    subprocess.run([str(executable), '--desktop-check', str(output/'evidence')], env=environment, check=True, timeout=600)
+    subprocess.run([str(executable), '--desktop-check', str(output/'evidence')], env=clean_environment(), check=True, timeout=600)
     audit(app, output/'evidence/desktop-check.json')
 
 
