@@ -5,7 +5,8 @@ import unittest
 from unittest.mock import patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 os.environ.setdefault("PYNITEGUI_NO_WEBENGINE", "1")
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QCoreApplication, QEvent
+from shiboken6 import isValid
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QDialog, QDoubleSpinBox, QLineEdit
 from pynitegui.qt.app import MainWindow
@@ -77,17 +78,31 @@ class AutomationModeTests(unittest.TestCase):
         self.window.automation_mode.set_enabled(True)
         self.assertFalse(self.window.mcp_mode)
 
-    def test_application_filter_is_active_only_during_mcp_mode(self):
+    def test_editor_filters_are_scoped_bounded_and_removed_without_application_filter(self):
         with patch.object(self.app, "installEventFilter", wraps=self.app.installEventFilter) as install, \
              patch.object(self.app, "removeEventFilter", wraps=self.app.removeEventFilter) as remove:
             self.window.automation_mode.set_enabled(False)
             install.assert_not_called()
             self.enable()
-            install.assert_called_once_with(self.window.automation_mode)
+            install.assert_not_called()
+            mode = self.window.automation_mode
+            self.assertIn(self.window, mode.filtered)
+            self.assertIn(self.window.analyze_action, mode.filtered)
+            self.assertTrue(all(mode.owns(control) for control in mode.filtered))
+            original = len(mode.filtered)
+            mode.sync_filters()
+            self.assertEqual(len(mode.filtered), original)
             self.window.automation_mode.set_enabled(True)
-            install.assert_called_once()
+            self.assertEqual(len(mode.filtered), original)
+            for _ in range(3):
+                self.window.refresh()
+                QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+                mode.sync_filters()
+                self.assertTrue(all(isValid(control) and mode.owns(control) for control in mode.filtered))
+                self.assertLessEqual(len(mode.filtered), original+10)
             self.server.stop()
-            remove.assert_called_once_with(self.window.automation_mode)
+            remove.assert_not_called()
+            self.assertEqual(mode.filtered, [])
             self.assertFalse(self.window.mcp_mode)
 
     def test_lock_disables_manual_controls_but_both_release_buttons_work(self):

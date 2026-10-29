@@ -43,7 +43,10 @@ def check(wheel, source):
                     "scripts/smoke_installed.py", "scripts/smoke_desktop.py", "tests/test_qt_automation_server.py",
                     "assets/structure.png", "assets/SFD.png", "assets/brecon.svg",
                     "zensical.toml", "scripts/docs.py", ".github/workflows/publish.yml", "docs/index.md", "docs/features.md",
-                    "docs/start/first-model.md", "docs/stylesheets/extra.css", "tests/test_docs.py"]
+                    "docs/start/first-model.md", "docs/stylesheets/extra.css", "tests/test_docs.py",
+                    "desktop/entry.py", "desktop/desktop_check.py", "desktop/brecon.spec", "desktop/requirements.txt",
+                    "scripts/build_desktop.py", "scripts/check_desktop.py", "tests/test_desktop_packaging.py",
+                    ".github/workflows/desktop.yml"]
         for name in required:
             assert prefix + name in names, f"Missing source file: {name}"
             content, expected = archive.extractfile(prefix + name).read(), (root / name).read_bytes()

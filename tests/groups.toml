@@ -164,6 +164,7 @@ tests = [
 [groups.release]
 description = "Installed version metadata and the lightweight version entrypoint."
 tests = [
+  "test_desktop_packaging",
   "test_release_metadata",
 ]
 

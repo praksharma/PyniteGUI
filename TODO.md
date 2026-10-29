@@ -559,7 +559,17 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
   diagnostics showing Qt 6.11.2 / Cocoa and a ready WebGL 2.0 viewport using
   ANGLE Metal on Apple M4 Max with platform defaults. macOS version,
   installation steps and individual workflows remain unrecorded.
-- [ ] Package standalone desktop releases.
+- [x] Add a macOS development app-bundle build from reviewed wheel/source and
+  locked runtime, separate pinned build tools, existing-logo icon, bundled source/
+  notices, architecture/version/provenance, symlink-preserving ZIP and checksums.
+  Add relocated frozen-app analysis/viewport/plate/PDF/MCP checks and a manual
+  Actions build that produces temporary artifacts without publishing a release.
+- [ ] Complete Developer ID signing, notarization and Finder/quarantine checks
+  before claiming a public macOS standalone release.
+- [ ] Package and natively validate Windows/Linux standalone desktop releases.
+- [x] Fix native Chromium/MCP handover crashes by scoping input filters to the
+  editor's known widgets/actions, refreshing them after edits and removing them
+  on unlock. Preserve shortcut/input blocking and both manual unlock controls.
 - [x] Add a separate 3D spatial-frame project and offline Three.js viewport,
   keeping the established 2D editor and file format intact.
 

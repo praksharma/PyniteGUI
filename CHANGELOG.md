@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Add a macOS development app-bundle recipe with locked runtime verification,
+  pinned separate build tools, corresponding-source/notices, dependency identity,
+  a native icon and symlink-preserving ZIP/checksums. Verify a relocated frozen
+  executable through examples, spawned frame/plate workers, offline WebEngine,
+  PNG/PDF and authenticated MCP. Add a manual artifact-only Actions workflow;
+  signing/notarization and other platforms remain separate pending gates.
+- Fix a reproducible native macOS WebEngine/MCP handover crash in both Qt 6.11
+  and 6.12: replace application-wide Python input filtering with filters on the
+  editor's known widgets/actions, retaining manual-control and shortcut locks.
+  Refresh the bounded set after model edits and remove it on unlock.
+
 - Add local RX/RY/RZ end releases to linear, frame-only spatial analysis, with
   staged inspector/table/bulk/MCP editing, viewport labels and recovered member-
   end bending rotations. Handle oblique unused joint rotations through verified

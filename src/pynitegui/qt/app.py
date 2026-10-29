@@ -1162,6 +1162,7 @@ class MainWindow(QMainWindow):
         self.update_inspector()
         self.view.redraw()
         self.update_title()
+        self.automation_mode.sync_filters()
 
     def load_visible(self, load):
         case = self.load_filter.currentData()

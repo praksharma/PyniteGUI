@@ -56,4 +56,4 @@ docs = [
 module-name = ["brecon", "pynitegui"]
 source-include = ["GUIDE.md", "TODO.md", "TODO_SECONDARY.md", "RELEASE.md", "CHANGELOG.md", "CITATION.md", "CITATION.cff",
                   "uv.lock", "assets/**", "tests/**", "scripts/**", "docs/**", "zensical.toml",
-                  ".github/workflows/publish.yml"]
+                  ".github/workflows/publish.yml", "desktop/**", ".github/workflows/desktop.yml"]

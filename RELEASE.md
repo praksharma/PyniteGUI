@@ -6,7 +6,8 @@ GitHub publication and approved the PyPI environment on **2026-10-28**. The prev
 [GitHub Releases](https://github.com/praksharma/PyniteGUI/releases) for published
 assets; source tags and unpublished drafts do not imply a public binary release.
 Stable 1.0 promotion follows a feature freeze and verification of the actual
-release artifacts. Standalone installers remain a later step.
+release artifacts. A macOS development app-bundle workflow is available in source;
+public signed installers and Windows/Linux packaging remain later steps.
 
 **Known RC4 plate limitation:** independent post-release checks found raw Rect
 moment/shear recovery inconsistent with verified plate laws in PyNite 3.0/3.2.
@@ -195,6 +196,49 @@ Do not move existing release tags or replace reviewed release assets to retry.
 
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
+
+## Post-RC4 Desktop Packaging Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-10-29. This work creates local macOS
+development artifacts and a manually dispatched artifact-only build workflow;
+it does not create a release tag, publish a release or upload to PyPI.
+
+- Build an architecture-specific `Brecon.app` from the reviewed installed wheel
+  and corresponding source archive, with PyInstaller 6.22.3 / hooks 2026.9 and
+  a fresh locked runtime. Reject editable/stale installations, source/recipe
+  mismatches and runtime drift. Include the existing vector mark as the app icon,
+  distribution metadata/licenses, AGPL/citation files, source archive and dependency/
+  wheel/source-hash provenance. Derive the minimum macOS bound from Python and
+  native wheel tags without claiming manual coverage of that lower bound.
+- Archive with symlink-preserving `ditto`; retain SHA256SUMS and build-info.json.
+  Extract the ZIP to a different location and run the embedded desktop check
+  with Python paths removed and PATH limited to system utilities. Audit resources,
+  symlinks, corresponding-source hash and the ad-hoc signature separately.
+- The frozen check covers all 27 examples through save/open/analyze/export,
+  spawned frame/released-member and plate workers, actual offline Qt WebEngine
+  and PNG export, Matplotlib/local plate inspection, Qt PDF output and authenticated
+  MCP schema/edit/background-analysis/result reads. It uses disposable settings
+  and writes a record plus native/plot/PDF evidence for that exact executable.
+- The packaging exercise exposed a real native WebEngine/MCP transition crash
+  under both Qt 6.11.2 and 6.12, including the regular installed application.
+  Replace the application-wide Python input filter with a bounded set on known
+  editor widgets/actions, refresh after edits and remove on unlock. The original
+  native reproduction now completes with input/shortcut protections retained.
+- Verified locally on macOS 27.2 arm64, Python 3.12.13, locked PyNite 3.0.0 /
+  Qt 6.11.2. The relocated frozen app completes every check, including the plate-
+  to-MCP transition, and passes the bundle/source/signature audit. Native
+  screenshots and plate/PDF exports were inspected. The archive is about 228 MiB;
+  its exact identity is recorded in its SHA256SUMS and embedded build-info.json.
+- Full source suite with MCP: **948 tests**, no skips, **252.752 s**. The
+  independently installed wheel using the exact locked bundle dependencies:
+  **948 tests**, no skips, **272.837 s**. Test ownership: 147 classes in nine
+  groups. Final focused input-filter/packaging/tooling checks pass. The native
+  crash reproduction also passes with the repaired code under Qt 6.12.
+  Strict documentation/link checks cover 55 HTML pages and browser QA passes.
+  Wheel/source audits include all desktop recipes, scripts, tests and workflow.
+- Developer ID signing, notarization, Finder/quarantine handling, Intel and
+  Windows/Linux desktop artifacts remain unverified. The preview has an ad-hoc
+  signature and must not be presented as a notarized public installer.
 
 ## Post-RC4 Spatial Rotational Release Checkpoint
 

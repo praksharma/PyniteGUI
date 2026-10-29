@@ -1,7 +1,8 @@
 """Per-window manual input lock with an always-available native release button."""
 from PySide6.QtCore import QObject, QEvent, Signal
 from PySide6.QtGui import QAction
-from PySide6.QtWidgets import QApplication, QDialog, QDockWidget, QToolBar
+from PySide6.QtWidgets import QApplication, QDialog, QDockWidget, QToolBar, QWidget
+from shiboken6 import isValid
 
 
 class AutomationMode(QObject):
@@ -18,6 +19,7 @@ class AutomationMode(QObject):
         super().__init__(window)
         self.window = window
         self.locked = []
+        self.filtered = []
         self.action = QAction("MCP mode", self)
         self.action.setCheckable(True)
         self.action.setEnabled(False)
@@ -50,7 +52,10 @@ class AutomationMode(QObject):
             window.set_mode("select")
             window.refresh()  # Explicit handover discards unapplied inspector drafts.
             window.mcp_mode = True
-            QApplication.instance().installEventFilter(self)
+            # Application-wide Python filters also wrap private Chromium
+            # objects during destruction, which can crash Shiboken on macOS.
+            # Keep filters on this editor's known widgets/actions instead.
+            self.sync_filters()
             controls = [window.menuBar(), window.centralWidget(), window.unit_selector,
                         window.analysis_cancel_button, *window.findChildren(QToolBar),
                         *window.findChildren(QDockWidget), *window.findChildren(QDialog)]
@@ -62,7 +67,10 @@ class AutomationMode(QObject):
             window.statusBar().showMessage("MCP mode | Manual controls locked; automation server controls this project")
         else:
             window.mcp_mode = False
-            QApplication.instance().removeEventFilter(self)
+            for control in self.filtered:
+                if isValid(control):
+                    control.removeEventFilter(self)
+            self.filtered.clear()
             for control, previously_enabled in self.locked:
                 try:
                     control.setEnabled(previously_enabled)
@@ -73,6 +81,20 @@ class AutomationMode(QObject):
             window.statusBar().showMessage("Manual controls unlocked")
         self.action.setChecked(enabled)
         self.changed.emit()
+
+    def sync_filters(self):
+        if not self.window.mcp_mode:
+            return
+        current = [self.window, *self.window.findChildren(QWidget), *self.window.findChildren(QAction)]
+        previous = {id(control) for control in self.filtered if isValid(control)}
+        current_ids = {id(control) for control in current}
+        for control in self.filtered:
+            if isValid(control) and id(control) not in current_ids:
+                control.removeEventFilter(self)
+        for control in current:
+            if id(control) not in previous:
+                control.installEventFilter(self)
+        self.filtered = current
 
     def owns(self, target):
         while target is not None:

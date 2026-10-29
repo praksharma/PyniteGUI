@@ -56,6 +56,48 @@ sections, cases/combinations and self-weight. Diagrams and deformation stay
 disabled until a valid snapshot exists. The same commands remain accessible
 through the menus and existing keyboard shortcuts.
 
+**Standalone macOS development preview.** The repository can build a self-contained
+`Brecon.app` with its own Python, Qt/WebEngine, solver, plotting and MCP dependencies.
+This is a development artifact, not a new published release. Extract the supplied
+ZIP as a complete app bundle; keep its internal libraries and symlinks together.
+The archive name identifies its version and CPU architecture. Developer ID signing,
+notarization, Finder quarantine testing and Windows/Linux standalone packages remain
+pending. Use the Python/uv installation for the current published release.
+
+Build on macOS from a reviewed wheel and corresponding source archive. Start with
+a fresh build environment and export the locked runtime; the builder rejects an
+editable install, stale wheel/source bytes or runtime versions outside `uv.lock`.
+Build tools are separate from the application's runtime requirements:
+
+```sh
+uv build --no-sources
+uv export --locked --no-dev --extra mcp --no-emit-project --format requirements-txt --output-file build-runtime.txt
+uv venv --python 3.12 build/desktop-env
+uv pip install --python build/desktop-env/bin/python -r build-runtime.txt -r desktop/requirements.txt dist/*.whl
+build/desktop-env/bin/python -B scripts/build_desktop.py --wheel dist/*.whl --source dist/*.tar.gz --output dist/desktop
+mkdir -p build/relocated
+ditto -x -k dist/desktop/Brecon-*.zip build/relocated
+env -u PYTHONHOME -u PYTHONPATH PATH=/usr/bin:/bin:/usr/sbin:/sbin build/relocated/Brecon.app/Contents/MacOS/Brecon --desktop-check "$PWD/build/desktop-check"
+build/desktop-env/bin/python -B scripts/check_desktop.py build/relocated/Brecon.app build/desktop-check/desktop-check.json
+```
+
+Run the desktop check from the extracted app, outside the build location. It uses
+disposable preferences/recovery storage and exercises all built-in examples,
+actual spawned frame/plate workers, the offline viewport and PNG export, local
+plate inspection, print-to-PDF and authenticated MCP edits/analysis/result reads.
+Its JSON record and images identify that exact executable. The separate audit
+checks bundle symlinks, assets, metadata, notices, corresponding-source hash and
+ad-hoc signature. A minimum macOS bound is inferred from Python/native wheel tags;
+that bound does not replace testing on each claimed OS version.
+
+The app's `Contents/Resources/notices` includes its AGPL license, citation files,
+corresponding source archive and build/dependency record. Dependency metadata and
+its included license files are retained. The ZIP preserves bundle symlinks and
+has a SHA-256 manifest. The manually dispatched **Build macOS Desktop Preview**
+workflow performs the same relocated checks and uploads temporary Actions
+artifacts; it does not publish a GitHub release, a PyPI upload or a signed installer.
+See the [desktop validation record](RELEASE.md) for the actual checked platform.
+
 ### Experimental Surface Meshing
 
 Post-1.0.0rc1 development adds **Tools > Surface Meshing (Experimental)**.
