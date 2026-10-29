@@ -10,6 +10,7 @@ from matplotlib.collections import PolyCollection
 from .annotations import combination_loads
 from .diagram_labels import add_diagram_label, reserve_annotation
 from .spatial_model import DOFS
+from .support_axes import support_normal
 from .spatial_results import DIAGRAM_AXES, LABELS, QUANTITIES, UNITS, member_axes, sampled_member
 from .theme import LIGHT
 
@@ -121,7 +122,7 @@ def draw_report(ax, project, result, rows, kind, view, options):
         ax.plot(*point, marker=".", color=LIGHT["member"], markersize=5, zorder=4)
         if options.ids:
             add_diagram_label(ax, node.name, point, LIGHT["label"], "white", member=True)
-        if options.supports and (any(node.restraints) or any(node.springs)):
+        if options.supports and (node.support == "inclined" or any(node.restraints) or any(node.springs)):
             if any(node.restraints):
                 ax.plot(*point, marker="^", markerfacecolor="white", markeredgecolor=LIGHT["support"], markersize=8, zorder=4)
             if any(node.springs):
@@ -129,6 +130,18 @@ def draw_report(ax, project, result, rows, kind, view, options):
             fixed = "/".join(dof for dof, value in zip(DOFS, node.restraints) if value)
             spring = "/".join(dof for dof, value in zip(DOFS, node.springs) if value)
             context = (f"fixed {fixed}" if fixed else "") + (f"; spring {spring}" if spring else "")
+            if node.support == "inclined":
+                normal = support_normal(node)
+                projected = basis @ normal
+                tip = point-projected*span*.045*length_factor
+                ax.plot(*np.array((point, tip)).T, color=LIGHT["support"], linewidth=1.5, zorder=5)
+                # An edge-on normal has zero projected length; the explicit XYZ
+                # label still identifies its physical direction unambiguously.
+                if np.linalg.norm(projected) > 1e-8:
+                    tangent = np.array((-projected[1], projected[0]))/np.linalg.norm(projected)
+                    half = tangent*span*.012*length_factor
+                    ax.plot(*np.array((tip-half, tip+half)).T, color=LIGHT["support"], linewidth=2, zorder=5)
+                context += "; normal ("+", ".join(f"{v:.4g}" for v in normal)+") fixed"
             add_diagram_label(ax, f"{node.name+': ' if options.ids else ''}{context.lstrip('; ')}", point, LIGHT["support"], "white")
     if options.loads:
         for load in combination_loads(project, result):

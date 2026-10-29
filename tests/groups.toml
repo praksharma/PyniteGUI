@@ -116,6 +116,7 @@ tests = [
   "test_spatial_sample_cache",
   "test_inclined_constraints",
   "test_inclined_supports",
+  "test_spatial_inclined",
 ]
 
 [groups.surfaces]

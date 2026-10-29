@@ -197,6 +197,57 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 General Inclined-Support Checkpoint
+
+Development **1.0.0rc5.dev0**, 2026-10-29; public RC4 assets remain unchanged.
+This extends the planar checkpoint below across existing model and analysis types.
+
+- Spatial v34 stores required normal azimuth/elevation. Two tangent translations
+  remain free; optional global restraint flags add exact homogeneous constraints.
+  Exact redundancy is deduplicated; nearly dependent constraints and springs on
+  fully constrained directions reject the model. Planar v27 keeps tangent angles.
+- The sparse constrained solve includes trusses, linear end releases and shared
+  coupled-surface nodes. Physical free equations use the unaugmented matrix;
+  unused-rotation gauges never become ground torques. Existing shell drilling,
+  release/surface and independent equilibrium gates remain active.
+- Existing frame P-Delta starts each combination elastically and updates geometric
+  stiffness until physical equilibrium closes, with at most 30 updates and positive
+  constrained effective stiffness required. This closes axial-strain coupling beyond
+  the engine's ordinary two-step approximation. Global P-Delta checks remain force-
+  only; no truss/surface/translation-release/spatial-rotation-release P-Delta scope
+  is added. Settlements and plastic/nonlinear connection methods remain separate.
+- Staged native Properties, tables, bulk edits, global support copying, 2D-to-3D
+  conversion, normal-facing offline viewport symbols/picking, orthographic reports
+  and six-component paginated MCP reaction metadata use the same definitions.
+  Released-rotation metadata is retained alongside inclined reaction metadata.
+- Add **3D Cantilever - Oblique Roller Normal** and a native Properties capture.
+  Independent cantilever compliance and dense P-Delta references cover all six
+  motions/reactions, poles, oblique normals, signed/zero combinations, spring axes,
+  additional constraints/redundancy, releases/trusses, conversion, coupled nodes,
+  buckling/nonconvergence and process-worker snapshot transport.
+
+Validation of this extension:
+
+- Full locked source suite with MCP: **1,009 tests**, no skips, **252.652 s**;
+  **154 classes / nine groups**. Final schema/editor/mechanics follow-up:
+  **40 tests**, no skips, **4.047 s**.
+- Installed-wheel compatibility outside the checkout: **76 focused tests** each
+  on PyNite **3.0.0** / Qt **6.11.2** (**5.459 s**) and PyNite **3.2.1** /
+  Qt **6.12.0** (**5.378 s**), with no skips. The installed locked runtime also
+  passes all **30 examples** through save/open/analysis/export/native initialization
+  and a real authenticated MCP discovery/edit/undo session.
+- Wheel/source metadata, bundled assets, notices and source-content audit pass.
+  Offline viewport checks cover normal-facing geometry, roller/pick identity and
+  actual example hover alongside existing interaction/result/context-loss checks.
+  Focus-resource tests explicitly render pending texture uploads before retaining
+  their exact leak assertions. The native offscreen Properties capture was inspected.
+- Strict documentation/local links cover **55 HTML pages**. Browser documentation
+  checks pass imagery (including spatial normal controls), search, subpath, dark
+  mode and layout. Public releases and manual OS/hardware/signing gates are unchanged.
+
+The following section records the earlier, narrower checkpoint and its historical
+validation results; its exclusions are superseded by this extension.
+
 ## Post-RC4 Planar Inclined-Roller Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-10-29. This extends the existing

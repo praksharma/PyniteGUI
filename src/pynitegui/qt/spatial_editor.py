@@ -223,18 +223,34 @@ def populate_inspector(window):
             fields[key] = unit_number(getattr(entity, key), project.units, "length")
             fields[key].setObjectName("spatial_" + key)
             form.addRow(f"{key.upper()} ({project.units.length})", fields[key])
-        fields["support"] = choices(("free", "pin", "roller", "fixed", "custom"), entity.support, "spatial_support")
-        fields["support"].setToolTip("Pin restrains XYZ translations. Roller restrains global Y only. Custom controls all six global DOFs.")
+        fields["support"] = choices(("free", "pin", "roller", "fixed", "custom", "inclined"), entity.support, "spatial_support")
+        fields["support"].setToolTip("Pin restrains XYZ translations. Roller restrains global Y only. Inclined restrains its normal, with optional additional global restraints. Custom controls all six global DOFs.")
         form.addRow("Support", fields["support"])
+        for key, label, limit in (("support_angle", "Normal azimuth (deg)", 180), ("support_elevation", "Normal elevation (deg)", 90)):
+            widget = number(getattr(entity, key), -limit, limit, 8)
+            widget.setObjectName(key)
+            widget.setProperty("initial", widget.value())
+            widget.setToolTip("Spatial normal: azimuth from global +X toward +Z; elevation toward +Y. Translation along this normal is fixed. Additional global restraints below are optional.")
+            fields[key] = widget
+            form.addRow(label, widget)
+        previous_support = [entity.support]
         for key, dof, fixed in zip(RESTRAINT_FIELDS, DOFS, entity.restraints):
             fields[key] = QCheckBox("Restrained")
             fields[key].setChecked(fixed)
             fields[key].setObjectName(key)
             form.addRow(dof, fields[key])
         def update_support():
-            custom = fields["support"].currentText() == "custom"
+            selected = fields["support"].currentText()
+            custom = selected in ("custom", "inclined")
+            for key in ("support_angle", "support_elevation"):
+                form.setRowVisible(fields[key], selected == "inclined")
+            if selected == "inclined" and previous_support[0] != "inclined":
+                for key in RESTRAINT_FIELDS:
+                    fields[key].setChecked(False)
+            previous_support[0] = selected
             for index, key in enumerate(RESTRAINT_FIELDS):
                 form.setRowVisible(fields[key], custom)
+                form.labelForField(fields[key]).setText(("Additional " if selected == "inclined" else "")+DOFS[index])
                 if not custom:
                     fields[key].setChecked(replace(entity, support=fields["support"].currentText()).restraints[index])
         fields["support"].currentTextChanged.connect(update_support)
@@ -244,6 +260,12 @@ def populate_inspector(window):
             fields[key] = unit_number(getattr(entity, key), project.units, quantity, 0)
             fields[key].setObjectName(key)
             form.addRow(f"Spring {dof} ({getattr(project.units, quantity)})", fields[key])
+        if entity.support == "inclined":
+            reaction = QLabel()
+            reaction.setObjectName("inclined_normal_reaction")
+            reaction.setProperty("node_id", name)
+            form.addRow("Rigid normal reaction", reaction)
+            window.update_support_reaction_label()
     elif kind == "members":
         fields["kind"] = choices(("frame", "truss"), entity.kind, "spatial_member_kind")
         form.addRow("Type", fields["kind"])
@@ -304,9 +326,12 @@ def populate_inspector(window):
         else:
             values = {key: widget.currentText() if isinstance(widget, QComboBox) else widget.isChecked() if isinstance(widget, QCheckBox)
                       else unit_value(widget, project.units) if widget.property("quantity") else widget.value() for key, widget in fields.items()}
-            if kind == "nodes" and values["support"] != "custom":
-                for key in RESTRAINT_FIELDS:
-                    values.pop(key)
+            if kind == "nodes":
+                if values["support"] not in ("custom", "inclined"):
+                    for key in RESTRAINT_FIELDS:
+                        values.pop(key)
+                for key in ("support_angle", "support_elevation"):
+                    values[key] = (getattr(entity, key) if fields[key].value() == fields[key].property("initial") else values[key]) if values["support"] == "inclined" else 0.
             if kind == "members" and fields["roll"].value() == fields["roll"].property("initial"):
                 values["roll"] = entity.roll
         def mutate(candidate):

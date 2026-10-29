@@ -274,19 +274,22 @@ class AutomationCommands:
                 if kind == "nodes" and inclined:
                     names = {row[0] for row in rows[offset:offset+limit]}
                     units = window.project.units
+                    quantities = ("force",)*3+("moment",)*3 if result.spatial else ("force", "force", "moment")
                     def reaction_units(values):
-                        return [units.to_display(value, quantity) for value, quantity in zip(values, ("force", "force", "moment"))]
+                        return [units.to_display(value, quantity) for value, quantity in zip(values, quantities)]
                     local_metadata = {"inclined_supports": {key: {
-                        "tangent_angle_deg": row["tangent_angle_deg"], "normal_global_xy": row["normal"],
+                        **({"normal_azimuth_deg": row["normal_azimuth_deg"], "normal_elevation_deg": row["normal_elevation_deg"], "normal_global_xyz": row["normal"]}
+                           if result.spatial else {"tangent_angle_deg": row["tangent_angle_deg"], "normal_global_xy": row["normal"]}),
                         "normal_reaction": units.to_display(row["normal_reaction_kip"], "force"),
                         "rigid_reaction": reaction_units(row["rigid_reaction"]), "spring_reaction": reaction_units(row["spring_reaction"])}
                         for key, row in inclined.items() if key in names},
-                        "support_reaction_units": [units.force, units.force, units.moment],
-                        "support_reaction_note": "Rigid/spring vectors are global FX/FY/MZ; normal_reaction uses force units and the listed normal sign. Node rows contain their total. Springs retain global axes."}
+                        "support_reaction_units": [getattr(units, quantity) for quantity in quantities],
+                        "support_reaction_note": ("Rigid/spring vectors are global "+("FX/FY/FZ/MX/MY/MZ" if result.spatial else "FX/FY/MZ")+
+                            "; normal_reaction uses force units and the listed normal sign. Node rows contain their total. Springs retain global axes. An exactly redundant normal has zero separate normal force; additional global restraints own that reaction.")}
                 directions = getattr(result.solver, "rotation_nullspaces", None)
                 if kind == "nodes" and directions is not None:
                     names = {row[0] for row in rows[offset:offset+limit]}
-                    local_metadata = {"inactive_rotation_directions": {name: basis.T.tolist() for name, basis in directions.items() if name in names},
+                    local_metadata = {**local_metadata, "inactive_rotation_directions": {name: basis.T.tolist() for name, basis in directions.items() if name in names},
                         "rotation_note": "Undefined global joint-rotation components are n/a, not measured zero. Listed global unit vectors span unused rotations. Recovered member-end bending slopes are separate from the shared joint rotation."}
                 if kind == "members" and result.spatial:
                     from .spatial_results import released_translation_table

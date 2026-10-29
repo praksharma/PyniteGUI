@@ -34,11 +34,11 @@ class ModelTablesDialog(QDialog):
         if self.spatial:
             from .spatial_model import SpatialNode, SpatialMember, SpatialLoad, RESTRAINT_FIELDS, SPRING_FIELDS
             from .spatial_releases import RELEASE_FIELDS
-            self.fields = {"nodes": ("name", "x", "y", "z", "support", *RESTRAINT_FIELDS, *SPRING_FIELDS),
+            self.fields = {"nodes": ("name", "x", "y", "z", "support", *RESTRAINT_FIELDS, *SPRING_FIELDS, "support_angle", "support_elevation"),
                            "members": ("name", "start", "end", "material", "section", "roll", "kind", *RELEASE_FIELDS),
                            "loads": (*FIELDS["loads"][:-1], "elevation", "units")}
             self.boolean_fields = {*RESTRAINT_FIELDS, *RELEASE_FIELDS}
-            self.numeric_fields = NUMERIC_FIELDS | {"z", "roll", "elevation", *SPRING_FIELDS}
+            self.numeric_fields = NUMERIC_FIELDS | {"z", "roll", "elevation", "support_elevation", *SPRING_FIELDS}
             self.constructors = {"nodes": SpatialNode, "members": SpatialMember, "loads": SpatialLoad}
         self.original = project.clone()
         self.definition = None
@@ -62,7 +62,7 @@ class ModelTablesDialog(QDialog):
             from .spatial_model import DOFS
             headers["nodes"] = ["ID", *(f"{axis} ({project.units.length})" for axis in ("X", "Y", "Z")), "Support",
                                 *("Restrain " + dof for dof in DOFS),
-                                *(f"Spring {dof} ({project.units.stiffness if index < 3 else project.units.rotational_stiffness})" for index, dof in enumerate(DOFS))]
+                                *(f"Spring {dof} ({project.units.stiffness if index < 3 else project.units.rotational_stiffness})" for index, dof in enumerate(DOFS)), "Normal azimuth (deg)", "Normal elevation (deg)"]
             headers["members"] = ["ID", "Start", "End", "Material", "Section", "Roll (deg)", "Type",
                                    "Start RX", "Start RY", "Start RZ", "End RX", "End RY", "End RZ"]
             headers["loads"] = [*headers["loads"][:-2], "Azimuth (deg)", "Elevation (deg)", "Magnitude units"]
@@ -119,7 +119,7 @@ class ModelTablesDialog(QDialog):
             return list(self.original.sections)
         if key == "case":
             return self.original.load_cases
-        return {"support": ["free", "pin", "roller", "fixed", "custom"]+([] if self.spatial else ["inclined"]),
+        return {"support": ["free", "pin", "roller", "fixed", "custom", "inclined"],
                 "kind": ["point", "distributed"],
                 "direction": ["FX", "FY", "MZ", "Angle", "Local x", "Local y", "Local angle"]}.get(key)
 
@@ -214,19 +214,25 @@ class ModelTablesDialog(QDialog):
         table = self.tables["nodes"]
         for row in range(table.rowCount()):
             support = table.cellWidget(row, self.fields["nodes"].index("support")).currentText()
-            if not self.spatial:
-                item = table.item(row, self.fields["nodes"].index("support_angle"))
+            previous = table.cellWidget(row, self.fields["nodes"].index("support")).property("previous_support")
+            if self.spatial and support == "inclined" and previous not in (None, "inclined"):
+                for key in self.boolean_fields:
+                    if key.startswith("restraint_"):
+                        table.item(row, self.fields["nodes"].index(key)).setCheckState(Qt.CheckState.Unchecked)
+            table.cellWidget(row, self.fields["nodes"].index("support")).setProperty("previous_support", support)
+            for angle_key in (("support_angle", "support_elevation") if self.spatial else ("support_angle",)):
+                item = table.item(row, self.fields["nodes"].index(angle_key))
                 item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEnabled if support == "inclined" else item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
-                item.setToolTip("Inclined roller tangent in degrees, counterclockwise from global +X; used only for inclined supports.")
+                item.setToolTip("Spatial normal azimuth +X toward +Z, elevation toward +Y; degrees." if self.spatial else "Inclined roller tangent in degrees, counterclockwise from global +X; used only for inclined supports.")
             keys = tuple(key for key in self.fields["nodes"] if key.startswith("restraint_"))
             for index, key in enumerate(keys):
                 item = table.item(row, self.fields["nodes"].index(key))
                 flags = item.flags()
-                item.setFlags(flags | Qt.ItemFlag.ItemIsEnabled if support == "custom" else flags & ~Qt.ItemFlag.ItemIsEnabled)
-                if support != "custom":
+                item.setFlags(flags | Qt.ItemFlag.ItemIsEnabled if support == "custom" or (self.spatial and support == "inclined") else flags & ~Qt.ItemFlag.ItemIsEnabled)
+                if support != "custom" and not (self.spatial and support == "inclined"):
                     restrained = self.constructors["nodes"]("", 0, 0, support).restraints[index]
                     item.setCheckState(Qt.CheckState.Checked if restrained else Qt.CheckState.Unchecked)
-                item.setToolTip("Used only with a custom support.")
+                item.setToolTip("Global restraint; used with custom, or in addition to an inclined normal in 3D.")
 
     def refresh_references(self):
         for kind, keys in (("members", ("start", "end")), ("loads", ("target",))):
@@ -277,13 +283,13 @@ class ModelTablesDialog(QDialog):
                     if key == "units":
                         continue
                     widget, item = table.cellWidget(row, column), table.item(row, column)
-                    if kind == "nodes" and key == "support_angle" and values.get("support") != "inclined":
+                    if kind == "nodes" and key in ("support_angle", "support_elevation") and values.get("support") != "inclined":
                         value = 0.
                     elif widget is not None:
                         value = widget.currentText()
                     elif key in self.boolean_fields:
                         value = item.checkState() == Qt.CheckState.Checked
-                        if kind == "nodes" and values["support"] != "custom":
+                        if kind == "nodes" and values["support"] != "custom" and not (self.spatial and values["support"] == "inclined"):
                             value = item.data(Qt.ItemDataRole.UserRole)
                     elif key in self.numeric_fields:
                         quantity = self.quantity(kind, key, values.get("direction", "FY"), values.get("kind", "point"))
@@ -302,8 +308,10 @@ class ModelTablesDialog(QDialog):
                     else:
                         value = item.text()
                     values[key] = value
-                if kind == "nodes" and not self.spatial and values["support"] != "inclined":
+                if kind == "nodes" and values["support"] != "inclined":
                     values["support_angle"] = 0.
+                    if self.spatial:
+                        values["support_elevation"] = 0.
                 entities[values["name"]] = constructor(**values)
             setattr(candidate, kind, entities)
         candidate.validate()

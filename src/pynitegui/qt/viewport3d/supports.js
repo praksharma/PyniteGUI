@@ -5,6 +5,11 @@ const vector = values => new THREE.Vector3(...values);
 
 export function supportSymbols(node, span) {
   const origin=vector(node.position), result=[];
+  if(node.supportNormal){
+    const axis=vector(node.supportNormal).normalize();
+    result.push({node:node.name,dof:'Normal',index:6,kind:'inclined',
+      center:origin.clone().addScaledVector(axis,-span*.046),axis});
+  }
   for(let index=0;index<6;index++){
     const fixed=node.restraints[index], spring=node.springs[index];
     if(!fixed&&!spring)continue;
@@ -28,7 +33,7 @@ export function drawSupports(node, span, colors, group, picks) {
     };
     const u=new THREE.Vector3().crossVectors(axis,Math.abs(axis.y)<.8?new THREE.Vector3(0,1,0):new THREE.Vector3(1,0,0)).normalize();
     const v=new THREE.Vector3().crossVectors(axis,u), radius=span*.014;
-    if(index<3){
+    if(index<3||symbol.kind==='inclined'){
       if(spring){
         const points=[origin.clone()];
         for(let step=0;step<=48;step++){
@@ -43,6 +48,13 @@ export function drawSupports(node, span, colors, group, picks) {
       const pad=new THREE.Mesh(new THREE.BoxGeometry(radius*1.6,radius*1.6,span*.003),new THREE.MeshBasicMaterial({color}));
       pad.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),axis);
       pad.position.copy(center);root.add(pad);
+      if(symbol.kind==='inclined'){
+        for(const sign of [-1,1]){
+          const roller=new THREE.Mesh(new THREE.SphereGeometry(radius*.28,8,6),new THREE.MeshBasicMaterial({color}));
+          roller.position.copy(center).addScaledVector(axis,radius*.4).addScaledVector(u,sign*radius*.55);
+          root.add(roller);
+        }
+      }
       for(const shift of [-.6,0,.6]){
         const start=center.clone().addScaledVector(u,radius*shift).addScaledVector(v,-radius*.8);
         line([start,start.clone().addScaledVector(v,-radius*.4).addScaledVector(u,-radius*.35)]);

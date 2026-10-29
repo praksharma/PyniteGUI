@@ -16,6 +16,9 @@ def rigid_body_issue(project):
         x, y, z = (np.array(node.coords) - origin) / span
         rows = ((1, 0, 0, 0, z, -y), (0, 1, 0, -z, 0, x), (0, 0, 1, y, -x, 0),
                 (0, 0, 0, 1, 0, 0), (0, 0, 0, 0, 1, 0), (0, 0, 0, 0, 0, 1))
+        if node.support == "inclined":
+            from .support_axes import support_normal
+            constraints.append(support_normal(node) @ np.asarray(rows[:3]))
         for direction, fixed, k, row in zip(DOFS, node.restraints, node.springs, rows):
             if (fixed or k) and (not direction.startswith("R") or node.name in frame_nodes):
                 constraints.append(row)
@@ -133,7 +136,7 @@ def analyze_spatial(project, progress=None):
     try:
         solve_model(model, project, phase)
     except Exception as error:
-        if project.analysis_method == "p_delta":
+        if project.analysis_method == "p_delta" or any(n.support == "inclined" for n in project.nodes.values()):
             raise
         if not any(word in str(error).lower() for word in ("unstable", "singular", "instability")):
             raise
@@ -148,7 +151,7 @@ def analyze_spatial(project, progress=None):
            for key in (*DOFS, "RxnFX", "RxnFY", "RxnFZ", "RxnMX", "RxnMY", "RxnMZ")
            for value in getattr(node, key).values()):
         raise ValueError("Spatial analysis returned nonfinite results.")
-    issue = stiffness_issue(model, spatial=True)
+    issue = None if any(n.support == "inclined" for n in project.nodes.values()) else stiffness_issue(model, spatial=True)
     if issue:
         raise ValueError("Spatial stiffness is singular or numerically ill-conditioned.\n" + issue)
     if released:

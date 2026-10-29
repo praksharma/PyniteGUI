@@ -74,6 +74,13 @@ if __name__ == "__main__":
     window.view.diagram.setCurrentIndex(window.view.diagram.findData("moment_z"))
     payload["qaSplit"] = viewport_payload(window)
     payload["qaSplit"].update(plane="XY", offset=0, labels=True)
+    window.load_project(example_project("3d_inclined_roller"))
+    with contextlib.redirect_stdout(io.StringIO()):
+        window.result = analyze(window.project)
+    window.deformed_action.setChecked(False)
+    window.view.diagram.setCurrentIndex(0)
+    payload["qaInclined"] = viewport_payload(window)
+    payload["qaInclined"].update(plane="XY", offset=0, labels=True)
     window.load_project(example_project("3d_tripod"))
     with contextlib.redirect_stdout(io.StringIO()):
         window.result = analyze(window.project)

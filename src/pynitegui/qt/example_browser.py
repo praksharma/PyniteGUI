@@ -27,7 +27,8 @@ NOTES = {
     "self_weight": ("Beam loaded only by automatic member self-weight.", "Each support carries half the member weight; no extra applied load."),
     "truss": ("Planar triangular, bilateral axial-only truss.", "Service: 5 kip vertical reaction at each support; joint rotations are n/a."),
     "elastic": ("Cantilever with bilateral translational and rotational base springs.", "Service: base DY -0.01 in; total FY reaction 10 kip."),
-    "inclined_roller": ("Pin and frictionless roller with a 30-degree global tangent; linear unreleased frame.", "Service: N2 FX -0.346410 kip, FY +0.6 kip; N1 FX +0.346410 kip, FY +0.6 kip. Roller motion follows its tangent."),
+    "inclined_roller": ("Pin and frictionless roller with a 30-degree global tangent.", "Service: N2 FX -0.346410 kip, FY +0.6 kip; N1 FX +0.346410 kip, FY +0.6 kip. Roller motion follows its tangent."),
+    "3d_inclined_roller": ("Frictionless support with normal azimuth 60 degrees (+X toward +Z) and elevation 30 degrees toward +Y; two free tangent translations.", "Normal (0.433013, 0.5, 0.75). Normal displacement and global force/moment residuals are zero within numerical tolerance. Reversed and Zero combinations are included."),
     "shear_release": ("Fixed-guided beam with a released member-end transverse translation.", "Released end transfers zero member shear; fixed nodal translations stay zero."),
     "3d_cantilever": ("Spatial cantilever with biaxial bending and torsion.", "Service: base FY 1.9 kip, FZ -0.5 kip and MX -5 kip-in."),
     "3d_space_frame": ("Four-column spatial frame with gravity and wind cases.", "Gravity: total FY 12.6 kip. Wind: total FX -1 kip and FZ -1.5 kip."),
@@ -131,7 +132,13 @@ class ExamplePreview(QWidget):
             painter.drawEllipse(point, 3., 3.)
             if node.support == "inclined":
                 from .annotations import support_geometry
-                paths, circles = support_geometry('inclined', (), node.support_angle)
+                angle = node.support_angle
+                if spatial:
+                    import math
+                    from .support_axes import support_normal
+                    px, py = project_point(support_normal(node))
+                    angle = math.degrees(math.atan2(px, py)) if math.hypot(px, py) > 1e-12 else 0.
+                paths, circles = support_geometry('inclined', (), angle)
                 for path in paths:
                     for a, b in zip(path, path[1:]):
                         painter.drawLine(point+QPointF(*a)*.65, point+QPointF(*b)*.65)

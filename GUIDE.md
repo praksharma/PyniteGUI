@@ -1814,14 +1814,54 @@ keep their global axes; rigid and spring reactions are computed separately and
 summed. A spring cannot occupy a global direction fixed exactly by the roller's
 normal. Other global springs can act along the permitted motion. Properties shows
 the signed rigid normal force; MCP node reads include paginated `inclined_supports`
-metadata, separate global FX/FY/MZ rigid/spring vectors, normal force and explicit
-display units. A total reaction with springs need not point along the roller normal.
+metadata, separate global FX/FY/MZ (2D) or FX/FY/FZ/MX/MY/MZ (3D) rigid/spring
+vectors, normal force and explicit display units. A total reaction with springs need not point along the roller normal.
 
-This workflow requires **Linear elastic, unreleased planar frame members**.
-P-Delta, trusses, released/spatial frames and imposed movements are rejected.
-Create 3D Copy refuses inclined supports until their spatial constraints are
-implemented. Previewed transforms retain support directions in global axes;
+**3D normals:** choose Support **inclined**, then set **Normal azimuth (deg)**
+from global +X toward +Z (-180° to +180°) and **Normal elevation (deg)** toward
++Y (-90° to +90°). Unlike the 2D tangent angle, these specify the **normal**:
+`normal = (cos(el)*cos(az), sin(el), cos(el)*sin(az))`. Translation along that
+normal is fixed; two tangent translations and all rotations are free. Azimuth 0°
+and elevation 90° give the ordinary global-Y roller. The viewport pad faces the
+normal, its two rollers identify permitted sliding, and hover lists the normal
+beside the six global directions. Orthographic reports project the same direction
+and print its global XYZ components even when it points out of the view.
+
+Optional global restraint checkboxes add constraints to a 3D inclined support.
+They are also available in Model Tables and bulk edits. Changing a preset to
+inclined starts with no additional restraints; select those you need explicitly.
+An exactly redundant normal does not create an extra reaction: its separate normal
+force is reported as zero and the additional global restraints own that reaction.
+Nearly dependent constraints are rejected. Rigid/spring vectors include all
+additional global support forces and couples.
+
+Try **File > Examples > 3D Frames > 3D Cantilever - Oblique Roller Normal**:
+azimuth 60°, elevation 30°, normal `(0.433013, 0.5, 0.75)`. It includes normal,
+reversed and zero load combinations and a Properties readout of the solved normal
+force. This native offscreen capture shows the staged controls; the separate
+viewport checks verify its rendered orientation and pick identity.
+
+![Native spatial roller normal controls and solved normal force](docs/assets/screenshots/spatial-inclined-properties.png)
+
+Inclined supports work with **linear frames, axial trusses and supported end
+releases** in both dimensions, including shared nodes in the existing experimental
+coupled-shell workflow. All existing surface/release compatibility and shell
+force/moment rejection gates still apply. **Create 3D Copy** preserves the physical
+normal; Preserve planar constraints additionally fixes DZ/RX/RY. Its source is
+unchanged. Previewed transforms retain support directions in global axes;
 support copying is explicit and conflicts at reused joints remain rejected.
+
+**P-Delta** supports inclined rollers within the existing frame-only scope. Each
+combination starts with an elastic preload, updates PyNite's geometric stiffness,
+and repeats until free physical forces/moments close (at most 30 updates).
+This extra convergence step matters when an oblique reaction changes axial strain;
+it also closes the engine's axial geometric-stiffness contribution, so results can
+differ slightly from its ordinary two-step solve. Effective constrained stiffness
+must remain positive definite. Failure or nonconvergence rejects the snapshot.
+As for other P-Delta results, global equilibrium checks forces only; undeformed
+moment arms do not include second-order effects. P-Delta with trusses, released
+translations, spatial rotational releases or surfaces remains unsupported.
+Settlements, unilateral contact and plastic connections remain separate tasks.
 
 Production uses sparse node-local free coordinates and unchanged engine member
 stiffness/fixed-end vectors. Global physical displacements drive ordinary member
@@ -1829,8 +1869,10 @@ recovery. Constrained rigid-body checks, dense/sparse stiffness checks, a
 pre-cancellation projection roundoff bound, free physical equations and independent
 global equilibrium for every combination must pass. No penalty stiffness or unused-
 rotation gauge grounds a physical mechanism. Independent cantilever flexibility,
-pin/roller nodal/member fields, signed/zero combinations, global springs, sparse
-stability and actual worker transport are regression-tested. The earlier **test-only**
+pin/roller nodal/member fields, six-DOF spatial compliance, signed/zero combinations,
+global springs, released-end recovery, trusses, conversion, shared surface nodes,
+independent dense P-Delta compliance/axial references, sparse stability and actual
+worker transport are regression-tested. The earlier **test-only**
 dense feasibility report remains reproducible separately (153 reference cases and
 six rejected configurations); it does not publish application snapshots:
 
@@ -2554,7 +2596,7 @@ Custom supports independently restrain global DX, DY, and RZ. Bilateral elastic
 springs may resist any otherwise free global DX/DY/RZ direction. Spring reactions
 are the opposing stiffness times displacement/rotation and are included in all
 reaction tables, envelopes, and exports. Inclined rollers are additionally available
-for unreleased planar linear frames as described under Supports and Springs. One-sided springs,
+for planar and spatial models within the method limits described under Supports and Springs. One-sided springs,
 and semi-rigid member-end springs are not implemented. Point loads support global FX, FY,
 MZ, and signed angled forces. Member point/distributed forces additionally
 support local x/y and member-relative angles. Nodal forces use global axes only;
@@ -2877,7 +2919,13 @@ roller preset. Older versions migrate to angle 0 without changing supports;
 nonzero angles/inclined presets in older schemas, missing v27 angles and malformed
 values are rejected. Spatial projects retain their existing support schema;
 nonzero support angles are rejected and no planar angle field is serialized.
-New saves use planar v27, spatial v32 and plate v3.
+Spatial version 34 adds required node `support_angle` (normal azimuth) and
+`support_elevation` fields, the `inclined` preset and additional global restraints
+for that preset. Earlier spatial versions migrate zero orientation with their
+original supports; inclined/nonzero orientations in older schemas are rejected.
+Planar v27 keeps its original tangent convention. Missing current fields, malformed
+angles and angles attached to other presets are rejected.
+New saves use planar v27, spatial v34 and plate v3.
 
 Spatial files retain XYZ, all six restraints/springs, and roll. Unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be

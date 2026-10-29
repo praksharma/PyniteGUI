@@ -165,7 +165,7 @@ class ServerWireTests(ServerWindowTests):
         self.server.permissions.set_group("Analysis", True)
         async def callback(client):
             model = (await client.call_tool("read_model", {})).structured_content["data"]
-            self.assertEqual(model["model"]["version"], 32)
+            self.assertEqual(model["model"]["version"], 34)
             fields = model["schema"]["entities"]["members"]["properties"]
             self.assertNotIn("const", fields["release_end_ry"])
             edited = await client.call_tool("apply_batch", {"session_id": model["session_id"],

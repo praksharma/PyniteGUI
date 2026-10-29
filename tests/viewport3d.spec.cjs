@@ -263,6 +263,29 @@ const server = http.createServer((request,response)=>{
       };
       return {spring:shape(true),fixed:shape(false)};
     });
+    const inclinedSymbol=await page.evaluate(async()=>{
+      const THREE=await import('three'),{drawSupports,SupportTooltip}=await import('./supports.js');
+      const node={name:'Oblique',position:[10,20,30],restraints:Array(6).fill(false),springs:Array(6).fill(0),
+        supportNormal:[Math.sqrt(3)/4,.5,.75],supportDetails:[...Array.from({length:6},(_,i)=>({dof:['DX','DY','DZ','RX','RY','RZ'][i],state:'Free'})),
+          {dof:'Normal',state:'Fixed translation along normal'}]};
+      const group=new THREE.Group(),picks=[];
+      const symbols=drawSupports(node,100,{support:'#00aa00',axial:'#0000aa'},group,picks);
+      const tooltip=new SupportTooltip();tooltip.show(node,6,{clientX:100,clientY:100},{text:'#000',canvas:'#fff',support:'#00aa00'});
+      const active=tooltip.element.querySelector('.active-dof td').textContent;
+      tooltip.element.remove();
+      const pad=picks.find(object=>object.geometry.type==='BoxGeometry');
+      const axis=new THREE.Vector3(0,0,1).applyQuaternion(pad.quaternion).toArray();
+      const result={count:symbols.length,normal:symbols[0].axis.toArray(),center:symbols[0].center.toArray(),
+        axis,active,tags:picks.map(object=>[object.userData.identity,object.userData.supportDof]),
+        rollers:picks.filter(object=>object.geometry.type==='SphereGeometry').length};
+      group.traverse(object=>{object.geometry?.dispose();object.material?.dispose();});return result;
+    });
+    assert.equal(inclinedSymbol.count,1);assert.equal(inclinedSymbol.active,'Normal');assert.equal(inclinedSymbol.rollers,2);
+    for(let i=0;i<3;i++){
+      assert(Math.abs(inclinedSymbol.axis[i]-inclinedSymbol.normal[i])<1e-12,'Inclined pad normal is wrong');
+      assert(Math.abs(inclinedSymbol.center[i]-([10,20,30][i]-4.6*inclinedSymbol.normal[i]))<1e-12,'Inclined anchor is wrong');
+    }
+    assert(inclinedSymbol.tags.every(([identity,dof])=>identity[0]==='nodes'&&identity[1]==='Oblique'&&dof===6));
     assert(symbolShape.spring.sizes.includes(51),'Translational spring coil missing');
     assert(symbolShape.spring.sizes.includes(65),'Rotational spring spiral missing');
     assert(!symbolShape.fixed.sizes.includes(51)&&!symbolShape.fixed.sizes.includes(65),'Rigid supports rendered as springs');
@@ -295,6 +318,15 @@ const server = http.createServer((request,response)=>{
     assert(await page.locator('#support-tooltip').isHidden(),'Escape left support tooltip open');
     await page.mouse.move(1100,40);
     assert(await page.locator('#support-tooltip').isHidden(),'Empty-space hover left tooltip open');
+    await page.evaluate(data=>{window.pyniteViewer.update(data);window.pyniteViewer.orient(1);window.pyniteViewer.exportImage();},payload.qaInclined);
+    const inclined=await page.evaluate(()=>window.pyniteViewer.supportSymbols().filter(symbol=>symbol.node==='N2'));
+    assert.equal(inclined.length,1);assert.equal(inclined[0].kind,'inclined');
+    const normalPoint=await page.evaluate(position=>window.pyniteViewer.project(position),inclined[0].center);
+    await page.mouse.move(...normalPoint);
+    await page.waitForFunction(()=>!document.getElementById('support-tooltip').hidden);
+    await page.screenshot({path:path.join(output,'inclined-roller-spatial.png')});
+    assert.equal(await page.locator('#support-tooltip .active-dof td').first().innerText(),'Normal');
+    assert((await page.locator('#support-tooltip').innerText()).includes('az 60, el 30 deg'));
     await page.evaluate(payload=>{window.pyniteViewer.update(payload);window.pyniteViewer.orient(0);},dark);
     for(const [type,index,direction] of [['posX',3,[1,0,0]],['posY',2,[0,1,0]],['posZ',1,[0,0,1]],['negX',6,[-1,0,0]],['negY',5,[0,-1,0]],['negZ',4,[0,0,-1]]]){
       await page.evaluate(()=>{window.pyniteViewer.orient(0);window.viewEvent=-1;});

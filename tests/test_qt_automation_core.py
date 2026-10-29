@@ -162,10 +162,12 @@ class AutomationCoreTests(unittest.TestCase):
                 self.assertTrue(docs["ok"], docs)
                 schema = docs["data"]["schema"]
                 expected_fields = {field.name for field in fields(node_type)}
-                if node_type is SpatialNode:
-                    expected_fields.remove("support_angle")  # Planar-only field; spatial files omit it.
                 self.assertEqual(set(schema["entities"]["nodes"]["properties"]), expected_fields)
+                self.assertIn("inclined", schema["supports"])
                 example = batch_candidate(project, docs["data"]["examples"]["create_cantilever"])
+                inclined = batch_candidate(example, [docs["data"]["examples"]["update_inclined_roller"]])
+                self.assertEqual(inclined.nodes["ExampleB"].support, "inclined")
+                self.assertFalse(any(inclined.nodes["ExampleB"].restraints))
                 self.assertTrue(all(example.nodes["ExampleA"].restraints))
                 self.assertEqual(example.members["ExampleBeam"].start, "ExampleA")
                 self.assertEqual(example.loads["ExampleForce"].target, "ExampleB")

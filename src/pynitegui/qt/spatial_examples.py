@@ -47,7 +47,16 @@ def example_project(key, unit_system="imperial"):
     def load(target, direction, magnitude, **kwargs):
         name = project.next_name("L", project.loads)
         project.loads[name] = SpatialLoad(name, target, direction, magnitude, **kwargs)
-    if key == "3d_sliding_beam":
+    if key == "3d_inclined_roller":
+        project.add_member((0., 0., 0.), (120., 0., 0.))
+        project.nodes["N1"].support = "fixed"
+        node = project.nodes["N2"]
+        node.support, node.support_angle, node.support_elevation = "inclined", 60., 30.
+        load("N2", "FY", -1.)
+        load("N2", "FZ", -.5)
+        project.set_combination("Reversed", {"Case 1": -2.})
+        project.set_combination("Zero", {"Case 1": 0.})
+    elif key == "3d_sliding_beam":
         member = project.add_member((0., 0., 0.), (144., 96., 108.))
         project.nodes["N1"].support = project.nodes["N2"].support = "fixed"
         beam = project.members[member]

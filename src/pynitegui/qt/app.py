@@ -1117,7 +1117,7 @@ class MainWindow(QMainWindow):
                     if entity.support == "custom":
                         detail += " " + ",".join(label for label, fixed in zip(dofs, entity.restraints) if fixed)
                     if entity.support == "inclined":
-                        detail += f" | tangent {entity.support_angle:g} deg"
+                        detail += (f" | normal az {entity.support_angle:g}, el {entity.support_elevation:g} deg" if hasattr(entity, "z") else f" | tangent {entity.support_angle:g} deg")
                     if any(entity.springs):
                         detail += " | springs: " + ", ".join(label for label, k in zip(dofs, entity.springs) if k)
                 elif kind == "members":
@@ -1267,7 +1267,7 @@ class MainWindow(QMainWindow):
             fields["support_angle"].setObjectName("support_angle")
             fields["support_angle"].setProperty("original_angle", entity.support_angle)
             fields["support_angle"].setProperty("initial_angle", fields["support_angle"].value())
-            fields["support_angle"].setToolTip("Roller tangent, degrees counterclockwise from global +X. 0: vertical reaction; 90: horizontal reaction. Linear unreleased frames only.")
+            fields["support_angle"].setToolTip("Roller tangent, degrees counterclockwise from global +X. 0: vertical reaction; 90: horizontal reaction. Frame/truss linear analysis and supported frame P-Delta analysis.")
             self.form.addRow("Roller tangent (deg)", fields["support_angle"])
             for key, label, fixed in zip(("restraint_x", "restraint_y", "restraint_rz"),
                                          ("Horizontal DX", "Vertical DY", "Rotation RZ"), entity.restraints):
@@ -1683,7 +1683,7 @@ class MainWindow(QMainWindow):
         from PySide6.QtWidgets import QInputDialog
         name = self.selected[1]
         current = self.project.nodes[name].support
-        choices = ["free", "pin", "roller", "fixed", "custom"]+([] if getattr(self.project, "dimension", "2D") == "3D" else ["inclined"])
+        choices = ["free", "pin", "roller", "fixed", "custom", "inclined"]
         value, accepted = QInputDialog.getItem(self, f"Support on {name}", "Type", choices, choices.index(current), False)
         if accepted:
             def assign(project):
@@ -1695,9 +1695,15 @@ class MainWindow(QMainWindow):
                             setattr(node, key, fixed)
                     else:
                         node.restraint_x, node.restraint_y, node.restraint_rz = node.restraints
+                if value == "inclined" and node.support != "inclined" and hasattr(node, "z"):
+                    from .spatial_model import RESTRAINT_FIELDS
+                    for key in RESTRAINT_FIELDS:
+                        setattr(node, key, False)
                 node.support = value
                 if value != "inclined":
                     node.support_angle = 0.
+                    if hasattr(node, "support_elevation"):
+                        node.support_elevation = 0.
             self.edit("Assign support", assign)
 
     def manage_materials(self):
@@ -2077,7 +2083,9 @@ class MainWindow(QMainWindow):
                if self.result is not None else None)
         if row:
             label.setText(f"{self.project.units.to_display(row['normal_reaction_kip'], 'force'):.6g} {self.project.units.force}")
-            label.setToolTip(f"{self.result.combination} | Snapshot {self.result.snapshot_id} | Solved tangent {row['tangent_angle_deg']:g} deg")
+            orientation = (f"tangent {row['tangent_angle_deg']:g} deg" if "tangent_angle_deg" in row else
+                           f"normal az {row['normal_azimuth_deg']:g}, el {row['normal_elevation_deg']:g} deg")
+            label.setToolTip(f"{self.result.combination} | Snapshot {self.result.snapshot_id} | Solved {orientation}")
         else:
             label.setText("Analyze to inspect")
             label.setToolTip("")

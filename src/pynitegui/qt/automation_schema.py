@@ -35,13 +35,16 @@ def model_reference(dimension="2D"):
     entities["materials"]["properties"]["shear_modulus"].update(type=["number", "null"], exclusiveMinimum=0,
         description="Optional independent frame/truss G in ksi. null (default) derives E/[2(1+nu)]. Positive finite numbers only; independent G requires custom provenance.")
     nodes = entities["nodes"]["properties"]
-    nodes["support"]["enum"] = ["free", "pin", "roller", "fixed", "custom"]+([] if spatial else ["inclined"])
-    nodes["support"]["description"] = "Supports are node fields, not a supports collection/object. restraint_* flags are used only when support='custom'."
+    nodes["support"]["enum"] = ["free", "pin", "roller", "fixed", "custom", "inclined"]
+    nodes["support"]["description"] = ("Supports are node fields, not a supports collection/object. restraint_* flags apply to custom and, in 3D, as additional global restraints for inclined. An inclined support fixes translation along its normal; other translations/rotations remain free unless separately restrained. Springs retain global axes.")
     if spatial:
-        nodes.pop("support_angle", None)
+        nodes["support_angle"].update(minimum=-180, maximum=180,
+            description="Inclined support NORMAL azimuth, degrees from global +X toward +Z. Use with support_elevation; normal=(cos(el)cos(az),sin(el),cos(el)sin(az)). Other presets require both angles 0. Additional restraint_* flags constrain global DOFs; exact redundant normal is assigned zero separate normal force.")
+        nodes["support_elevation"].update(minimum=-90, maximum=90,
+            description="Inclined support NORMAL elevation toward global +Y, degrees. Azimuth 0/elevation 90 equals the global-Y roller. Linear frames/trusses, released frames and existing frame P-Delta restrictions apply. No settlements.")
     else:
         nodes["support_angle"].update(minimum=-180, maximum=180,
-            description="For support='inclined': roller tangent angle in degrees CCW from global +X. Normal (-sin a, cos a) translation fixed; tangent and RZ free. Other support presets require 0. Linear unreleased planar frame-only; no P-Delta, trusses or spatial conversion. Springs retain global axes. Reactions are global total rigid+spring forces.")
+            description="For support='inclined': roller TANGENT angle in degrees CCW from global +X. Normal (-sin a, cos a) translation fixed; tangent and RZ free. Other support presets require 0. Linear frames/trusses/releases and existing frame P-Delta restrictions apply. Springs retain global axes. Reactions are global total rigid+spring forces. No settlements.")
     members = entities["members"]["properties"]
     members["kind"]["enum"] = ["frame", "truss"]
     members["start"]["description"] = members["end"]["description"] = "Existing node identifier; start/end, not i_node/j_node."
@@ -79,7 +82,7 @@ def model_reference(dimension="2D"):
             "description": "Key is a rectangular Quad surface ID. put replaces its entire outer-edge -> global rigid DOF list map. Omit free edges. Geometry-owned, reapplied on remesh. Shared joints use the union of restraints; spring conflicts are rejected. Remove explicitly when deleting a surface. Opening rims are excluded."}
         settings["surface_analysis_enabled"] = {"type": "boolean", "default": False,
             "description": "Experimental coupled analysis opt-in. When true, the complete candidate must contain only conforming, connected rectangular Quad surfaces. No solve occurs during editing."}
-        surface_info = "Spatial v32: surfaces, surface_pressures and surface_supports are editable via put/delete; surface_analysis_enabled via settings/set. Recipes use canonical inches/kip, pressure kip/in2. Geometry-only surfaces block analysis. Frame releases cannot be combined with surfaces. Coupled candidate topology is checked once after all operations; stability and independent equilibrium remain analysis gates."
+        surface_info = "Spatial v34: surfaces, surface_pressures and surface_supports are editable via put/delete; surface_analysis_enabled via settings/set. Recipes use canonical inches/kip, pressure kip/in2. Geometry-only surfaces block analysis. Frame releases cannot be combined with surfaces. Coupled candidate topology is checked once after all operations; stability and independent equilibrium remain analysis gates."
     return {
         "dimension": dimension, "input_units": "Canonical inch-kip regardless of display units; angles in degrees, rotations in radians.",
         "entities": entities,
@@ -88,7 +91,9 @@ def model_reference(dimension="2D"):
             "dof_order": ["DX", "DY", "DZ", "RX", "RY", "RZ"] if spatial else ["DX", "DY", "RZ"],
             "presets": {"free": [False]*(6 if spatial else 3), "pin": [True, True, True, False, False, False] if spatial else [True, True, False],
                         "roller": [False, True, False, False, False, False] if spatial else [False, True, False], "fixed": [True]*(6 if spatial else 3)},
-            "custom": "Set support='custom' and the corresponding restraint_x/y/rz (2D) or restraint_x/y/z/rx/ry/rz (3D) booleans. True fixes that global DOF. Presets ignore these booleans.",
+            "custom": "Set support='custom' and the corresponding restraint_x/y/rz (2D) or restraint_x/y/z/rx/ry/rz (3D) booleans. True fixes that global DOF. In 3D inclined supports also use these flags as additional global constraints; other presets ignore them.",
+            "inclined": ("Set support='inclined', support_angle=normal azimuth +X toward +Z, support_elevation=normal elevation toward +Y (degrees). Fixes n dot u=0. Optional restraint_* flags add global constraints; explicitly clear them if changing an existing custom support to a freely sliding roller." if spatial else
+                         "Set support='inclined' and support_angle=roller tangent CCW from +X (degrees). Fixes (-sin a,cos a) dot (DX,DY)=0; tangent/RZ stay free. Cannot be represented by a global restraint boolean list."),
         },
         "operations": {"put": "op,collection,key,value; merge/create entity or replace combination case-factor map.",
                        "delete": "op,collection,key; no value. Fix all dependent references explicitly in the same batch.",
@@ -119,6 +124,11 @@ def batch_examples(project):
                 "plane":"XZ", "origin":[0,144,0], "parameters":{"width":240,"height":180}, "mesh_size":60, "thickness":6}},
             {"op":"put", "collection":"surface_pressures", "key":"ExampleFloor", "value":{project.default_load_case:.001}}]
         examples["surface_note"] = "ExampleFloor is geometry-only until settings.surface_analysis_enabled is true. Positive XZ pressure acts in -Y. Enabling requires a conforming connected frame/interface; include matching frame/surface edits together."
+    spatial = getattr(project, "dimension", "2D") == "3D"
+    examples["update_inclined_roller"] = {"op": "put", "collection": "nodes", "key": "ExampleB", "value": {
+        "support": "inclined", "support_angle": 60. if spatial else 30.,
+        **({"support_elevation": 30., **{key: False for key in
+            ("restraint_x", "restraint_y", "restraint_z", "restraint_rx", "restraint_ry", "restraint_rz")}} if spatial else {})}}
     return examples
 
 

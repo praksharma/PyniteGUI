@@ -120,27 +120,14 @@ class InclinedSupportTests(unittest.TestCase):
         signature = model_signature(p)
         p.unit_system = 'si'
         self.assertEqual(model_signature(p), signature)
-        with self.assertRaisesRegex(ValueError, 'Inclined rollers'):
-            to_spatial(p)
-        spatial = to_spatial(beam())
-        self.assertEqual(spatial.to_dict()['version'], 32)
-        self.assertNotIn('support_angle', spatial.to_dict()['nodes']['N1'])
+        spatial = to_spatial(p)
+        self.assertEqual(spatial.to_dict()['version'], 34)
+        self.assertEqual(spatial.nodes['N2'].support, 'inclined')
         spatial.nodes['N1'].support_angle = 27.
         with self.assertRaisesRegex(ValueError, 'spatial'):
             spatial.validate()
 
     def test_model_gates_and_normal_spring_conflicts(self):
-        for kind in ('p_delta', 'truss', 'release'):
-            p = supported()
-            if kind == 'p_delta':
-                p.analysis_method = kind
-            elif kind == 'truss':
-                p.members['M1'].kind = kind
-                p.loads.clear()
-            else:
-                p.members['M1'].release_start = True
-            with self.assertRaisesRegex(ValueError, 'Inclined rollers'):
-                solve(p)
         for angle, spring in ((0., 'spring_y'), (90., 'spring_x')):
             p = supported(angle)
             setattr(p.nodes['N2'], spring, 500.)

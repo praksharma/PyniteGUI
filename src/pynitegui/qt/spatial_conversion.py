@@ -15,14 +15,18 @@ def to_spatial(project, support_mode="planar", offset=0.0):
     if not finite_number(offset):
         raise ValueError("The global Z offset must be finite.")
     project.validate()
-    if any(node.support == "inclined" for node in project.nodes.values()):
-        raise ValueError("Inclined rollers cannot be converted to spatial supports yet. Revise their constraints explicitly before creating a 3D copy.")
     result = SpatialProject(**{field.name: deepcopy(getattr(project, field.name))
                               for field in fields(Project) if field.name not in ("nodes", "members", "loads")})
     for name, node in project.nodes.items():
         converted = SpatialNode(**asdict(node), z=offset)
+        if node.support == "inclined":
+            from .support_axes import support_normal
+            nx, ny = support_normal(node)
+            converted.support_angle = 0. if nx >= 0 else 180.
+            converted.support_elevation = math.degrees(math.atan2(ny, abs(nx)))
+            converted.restraint_x = converted.restraint_y = converted.restraint_rz = False
         if support_mode == "planar":
-            converted.support = "custom"
+            converted.support = "inclined" if node.support == "inclined" else "custom"
             converted.restraint_x, converted.restraint_y, converted.restraint_rz = node.restraints
             converted.restraint_z = converted.restraint_rx = converted.restraint_ry = True
         result.nodes[name] = converted

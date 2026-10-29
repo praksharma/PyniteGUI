@@ -379,8 +379,19 @@ Remaining 11 scripts are intentionally unchecked:
   tangent angles, planar v27 migration, staged inspector/table/bulk editing,
   rotated native/report symbols, MCP schema/paginated reaction metadata, example
   and real worker/snapshot checks. Copied support orientations remain global;
-  spatial conversion is explicitly rejected. P-Delta, trusses, released/spatial
-  frames, settlements and nonlinear connections remain excluded.
+  the initial planar checkpoint excluded other support workflows. The next checked
+  item records their extension; settlements and nonlinear connections remain separate.
+
+- [x] Extend inclined rollers across supported workflows: 3D normal azimuth/elevation
+  and optional global restraints (spatial v34), exact constraint unions, near-dependent
+  rejection, trusses and linear end-release recovery without artificial support
+  torques. Preserve normal directions on 2D-to-3D conversion and copied supports;
+  update staged native Properties/tables/bulk controls, normal-facing viewport pads,
+  hover/picking, orthographic reports and paginated six-DOF MCP reactions. Add an
+  editable spatial example, independent 3D compliance/P-Delta references and actual
+  worker/metadata checks. Existing frame P-Delta gains constrained geometric-stiffness
+  convergence and instability rejection; its truss/surface/release restrictions
+  remain. Settlements, unilateral behaviour and plastic connections remain separate.
 
 ## Loads and Analysis
 

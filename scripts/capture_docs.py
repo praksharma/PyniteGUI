@@ -274,7 +274,7 @@ def capture(output):
             app.processEvents()
 
 
-def capture_inclined(output):
+def capture_inclined(output, spatial=False):
     output.mkdir(parents=True, exist_ok=True)
     app = QApplication.instance() or QApplication([])
     configure_theme(app, "light")
@@ -284,7 +284,7 @@ def capture_inclined(output):
         window = MainWindow(root / "recovery", settings)
         try:
             window.resize(1280, 820)
-            window.load_project(example_project("inclined_roller"))
+            window.load_project(example_project("3d_inclined_roller" if spatial else "inclined_roller"))
             window.show()
             with redirect_stdout(StringIO()):
                 result = analyze(window.project)
@@ -294,9 +294,11 @@ def capture_inclined(output):
             app.processEvents()
             window.view.fit()
             app.processEvents()
-            if not window.grab().save(str(output / "inclined-roller.png")):
-                raise RuntimeError("Could not save inclined-roller.png")
-            print("Captured inclined-roller.png")
+            filename = "spatial-inclined-properties.png" if spatial else "inclined-roller.png"
+            widget = window.inspector if spatial else window
+            if not widget.grab().save(str(output / filename)):
+                raise RuntimeError(f"Could not save {filename}")
+            print(f"Captured {filename}")
         finally:
             window.saved = window.project.to_dict()
             window.close()
@@ -309,5 +311,9 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=Path,
                         default=Path(__file__).resolve().parents[1] / "docs/assets/screenshots")
     parser.add_argument("--inclined-only", action="store_true", help="Capture only the inclined-roller example and editor.")
+    parser.add_argument("--spatial-inclined-only", action="store_true", help="Capture the spatial roller normal Properties controls.")
     options = parser.parse_args()
-    (capture_inclined if options.inclined_only else capture)(options.output)
+    if options.spatial_inclined_only:
+        capture_inclined(options.output, spatial=True)
+    else:
+        (capture_inclined if options.inclined_only else capture)(options.output)

@@ -4,11 +4,6 @@ METHODS = {"linear": "Linear elastic", "p_delta": "P-Delta elastic"}
 
 
 def analysis_method_issue(project):
-    if any(node.support == "inclined" for node in project.nodes.values()):
-        if project.analysis_method != "linear" or getattr(project, "dimension", "2D") != "2D":
-            return "Inclined rollers require planar Linear elastic analysis; P-Delta and spatial constraints are not validated."
-        if any(member.kind != "frame" or any(any(end) for end in member.end_releases) for member in project.members.values()):
-            return "Inclined rollers currently require unreleased frame members only; trusses and released connections are not validated."
     if project.analysis_method != "p_delta":
         return None
     if getattr(project, "dimension", "2D") == "3D":
@@ -38,7 +33,7 @@ def settings_dialog(parent, project):
     method.setCurrentIndex(method.findData(project.analysis_method))
     form.addRow("Method", method)
     help_text = QLabel("P-Delta includes geometric stiffness from axial loads and solves each combination separately. "
-                       "Materials remain elastic. Frame-only models; no inclined rollers, coupled slabs, trusses, released translations or spatial rotational releases. "
+                       "Materials remain elastic. Frame-only models; no coupled slabs, trusses, released translations or spatial rotational releases. "
                        "Add intermediate joints to resolve member curvature and compare mesh refinement. "
                        "Steel plastic pushover and reinforced-concrete plasticity are separate capabilities and are not enabled here.")
     help_text.setWordWrap(True)

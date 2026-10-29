@@ -203,7 +203,7 @@ class SpatialReleaseTests(unittest.TestCase):
     def test_serialization_strict_legacy_defaults_split_and_unsupported_boundaries(self):
         p = beam()
         data = p.to_dict()
-        self.assertEqual(data["version"], 32)
+        self.assertEqual(data["version"], 34)
         self.assertEqual(Project.from_dict(data).to_dict(), data)
         old = deepcopy(data)
         old["version"] = 28

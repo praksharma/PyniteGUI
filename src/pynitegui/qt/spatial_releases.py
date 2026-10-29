@@ -135,6 +135,9 @@ def recover_spatial_releases(model):
         if not np.isfinite(residual).all() or not np.isfinite(scale).all():
             raise ValueError("Released frame physical equilibrium returned nonfinite values. No results were accepted.")
         for node in model.nodes.values():
+            inclined = getattr(model, "_pynitegui_support_reactions", {}).get(combination, {}).get(node.name)
+            if inclined:
+                residual[node.ID*6:node.ID*6+6] -= inclined["rigid_reaction"]
             for index, dof in enumerate(("DX", "DY", "DZ", "RX", "RY", "RZ")):
                 position = node.ID*6+index
                 tolerance = (FORCE_TOLERANCE if index < 3 else MOMENT_TOLERANCE)+RELATIVE_TOLERANCE*scale[position]

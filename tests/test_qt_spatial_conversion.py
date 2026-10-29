@@ -61,10 +61,6 @@ class SpatialConversionTests(unittest.TestCase):
                 continue
             with self.subTest(example=key):
                 source = example_project(key)
-                if any(node.support == "inclined" for node in source.nodes.values()):
-                    with self.assertRaisesRegex(ValueError, "Inclined rollers"):
-                        to_spatial(source, offset=-54)
-                    continue
                 converted = to_spatial(source, offset=-54)
                 planar, spatial = solve(source), solve(converted)
                 for combination in source.combinations:

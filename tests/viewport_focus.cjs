@@ -3,6 +3,9 @@ const assert=require('node:assert/strict');
 module.exports=async(page,payload,points,screenshot)=>{
   await page.evaluate(payload=>{window.pyniteViewer.update(payload);window.pyniteViewer.fit();},payload);
   await page.waitForTimeout(100);
+  // Flush lazy sprite texture uploads before measuring retained GPU resources.
+  const flush=()=>page.evaluate(()=>{window.pyniteViewer.exportImage();window.pyniteViewer.exportImage();});
+  await flush();
   const before=await page.evaluate(()=>window.pyniteViewer.state());
   const low=[0,1,2].map(axis=>Math.min(...points.map(point=>point[axis])));
   const high=[0,1,2].map(axis=>Math.max(...points.map(point=>point[axis])));
@@ -10,6 +13,7 @@ module.exports=async(page,payload,points,screenshot)=>{
   const bounds=[low.map(value=>value-margin),high.map(value=>value+margin)];
   assert.equal(await page.evaluate(bounds=>window.pyniteViewer.focus(bounds),bounds),true);
   await page.waitForTimeout(100);
+  await flush();
   const after=await page.evaluate(()=>window.pyniteViewer.state());
   const centre=low.map((value,axis)=>(value+high[axis])/2);
   centre.forEach((value,axis)=>assert(Math.abs(after.target[axis]-value)<1e-7,'Focus target is not the requested geometry centre'));
@@ -28,6 +32,7 @@ module.exports=async(page,payload,points,screenshot)=>{
   for(let repeat=0;repeat<3;repeat++){
     await page.evaluate(bounds=>window.pyniteViewer.focus(bounds),bounds);
     await page.waitForTimeout(30);
+    await flush();
     const current=await page.evaluate(()=>window.pyniteViewer.state());
     assert.deepEqual(current.resources,after.resources,'Repeated focus leaked graphics resources');
   }

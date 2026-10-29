@@ -13,6 +13,7 @@ from PySide6.QtWidgets import QCheckBox, QComboBox, QFileDialog, QHBoxLayout, QL
 
 from .annotations import combination_loads
 from .spatial_model import DOFS
+from .support_axes import support_normal
 from .spatial_results import LABELS, QUANTITIES, diagram_metadata, member_axes, sampled_member
 from .theme import colors
 
@@ -28,9 +29,13 @@ def viewport_payload(window):
             state = "Fixed" if fixed else (f"Bilateral spring: {units.to_display(stiffness, quantity):.6g} {getattr(units, quantity)}"
                                           if stiffness else "Free")
             rows.append({"dof": dof, "state": state})
+        if node.support == "inclined":
+            normal = ", ".join(f"{v:.6g}" for v in support_normal(node))
+            rows.append({"dof": "Normal", "state": f"Fixed translation; global normal ({normal}); az {node.support_angle:g}, el {node.support_elevation:g} deg"})
         return rows
     nodes = [{"name": n.name, "position": list(n.coords), "restraints": list(n.restraints), "springs": list(n.springs),
-              "supportDetails": support_details(n)}
+              "supportDetails": support_details(n),
+              **({"supportNormal": support_normal(n).tolist()} if n.support == "inclined" else {})}
              for n in project.nodes.values() if window.entity_visible("nodes", n.name)]
     members, peak, samples = [], 0., []
     straight = window.deformation_shape.currentData() == "straight"

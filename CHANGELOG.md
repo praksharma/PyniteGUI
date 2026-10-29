@@ -2,17 +2,18 @@
 
 ## Unreleased
 
-- Add native inclined rollers to unreleased planar linear frames, with explicit
-  global tangent angles, sparse constrained coordinates, physical member recovery,
-  separate rigid/spring reactions and stability/equilibrium rejection. Add staged
-  inspector/table/bulk edits, rotated symbols/reports, MCP reaction metadata and
-  an editable example. Planar files advance to v27; spatial stays v32. P-Delta,
-  trusses, released/spatial frames, settlements and nonlinear connections remain excluded.
-- Establish test-only inclined-support feasibility for unreleased planar linear
-  frames with exact constraint elimination. Independently verify beam fields,
-  rigid/spring reactions, signed/zero combinations, coordinate invariance and
-  unstable/duplicate-constraint rejection. Add a reproducible report and explicit
-  production integration gates; inclined supports remain unavailable in the app.
+- Add inclined rollers across 2D/3D linear frames, trusses and supported releases,
+  with global tangent angles in 2D and normal azimuth/elevation plus optional
+  global restraints in 3D. Use sparse exact constraints, physical member recovery,
+  separate rigid/spring reactions and stability/equilibrium rejection. Extend
+  staged native editing, oriented symbols/reports, MCP six-DOF reactions, support
+  copying and 2D-to-3D conversion. Add planar and spatial examples; save planar
+  v27/spatial v34 with strict legacy migration. Existing frame P-Delta supports
+  inclined constraints with geometric-stiffness convergence; its global truss,
+  surface and release restrictions remain. Settlements, unilateral behaviour
+  and plastic connections remain separate tasks. Retain independent beam,
+  compliance, release/truss, shared-shell and second-order reference checks;
+  the earlier test-only feasibility report remains reproducible separately.
 - Add independent nonuniform flat-membrane traction benchmarks for pure in-plane
   bending and mixed normal/shear stress. Verify displacement/stress convergence,
   strain energy, exact load resultants and signed/zero combinations in every

@@ -42,20 +42,23 @@ def populate_bulk_inspector(window):
     kinds = {kind for kind, name in selections}
     if "nodes" in kinds:
         window.form.addRow(QLabel(f"Nodes ({sum(kind == 'nodes' for kind, name in selections)})"))
-        support = choice("support", "Support", ("free", "pin", "roller", "fixed", "custom")+(() if spatial else ("inclined",)))
-        if not spatial:
-            angle_enabled = QCheckBox("Set roller tangent (deg)")
-            angle_enabled.setObjectName("bulk_change_support_angle")
-            angle = number(0., -180, 180, 8)
-            angle.setObjectName("bulk_support_angle")
-            angle.setEnabled(False)
-            angle_enabled.toggled.connect(angle.setEnabled)
-            angle.setToolTip("Absolute tangent angle CCW from global +X; selected nodes must be inclined rollers.")
-            window.form.addRow(angle_enabled, angle)
+        support = choice("support", "Support", ("free", "pin", "roller", "fixed", "custom", "inclined"))
+        angles = {}
+        for key, label, limit in (("support_angle", "normal azimuth" if spatial else "roller tangent", 180),
+                                  *((("support_elevation", "normal elevation", 90),) if spatial else ())):
+            enabled = QCheckBox(f"Set {label} (deg)")
+            enabled.setObjectName("bulk_change_"+key)
+            widget = number(0., -limit, limit, 8)
+            widget.setObjectName("bulk_"+key)
+            widget.setEnabled(False)
+            enabled.toggled.connect(widget.setEnabled)
+            widget.setToolTip("Spatial normal: azimuth +X toward +Z, elevation toward +Y." if spatial else "Tangent CCW from global +X.")
+            window.form.addRow(enabled, widget)
+            angles[key] = enabled, widget
         restraints = [boolean(key, "Restrain " + dof) for key, dof in zip(restraint_fields, dofs)]
         def update_support():
             for widget in restraints:
-                widget.setEnabled(support.currentData() == "custom")
+                widget.setEnabled(support.currentData() in (("custom", "inclined") if spatial else ("custom",)))
         support.currentIndexChanged.connect(update_support)
         update_support()
         for key, dof in zip(spring_fields, dofs):
@@ -118,17 +121,22 @@ def populate_bulk_inspector(window):
                 values[key] = unit_value(widget, window.project.units)
         if spatial and "members" in kinds and roll_enabled.isChecked():
             values["roll"] = roll.value()
-        if not spatial and "nodes" in kinds and angle_enabled.isChecked():
-            values["support_angle"] = angle.value()
+        if "nodes" in kinds:
+            for key, (enabled, widget) in angles.items():
+                if enabled.isChecked():
+                    values[key] = widget.value()
         def mutate(project):
             for kind, name in selections:
                 entity = getattr(project, kind)[name]
-                if kind == "nodes" and "support_angle" in values and "support" not in values and entity.support != "inclined":
+                if kind == "nodes" and any(key in values for key in ("support_angle", "support_elevation")) and values.get("support", entity.support) != "inclined":
                     raise ValueError("Choose Support inclined before applying a roller tangent angle to these nodes.")
                 if kind == "nodes" and values.get("support") == "custom":
                     for key, fixed in zip(restraint_fields, entity.restraints):
                         setattr(entity, key, fixed)
-                keys = {"nodes": ("support", "support_angle", *restraint_fields, *spring_fields),
+                if spatial and kind == "nodes" and values.get("support") == "inclined" and entity.support != "inclined":
+                    for key in restraint_fields:
+                        setattr(entity, key, False)
+                keys = {"nodes": ("support", "support_angle", "support_elevation", *restraint_fields, *spring_fields),
                         "members": ("material", "section", "roll", "kind", *RELEASE_FIELDS) if spatial else ("material", "section", "kind", "release_start", "release_end",
                                     "release_start_x", "release_end_x", "release_start_y", "release_end_y"),
                         "loads": ("case",)}[kind]
@@ -137,6 +145,8 @@ def populate_bulk_inspector(window):
                         setattr(entity, key, values[key])
                 if kind == "nodes" and entity.support != "inclined":
                     entity.support_angle = 0.
+                    if spatial:
+                        entity.support_elevation = 0.
                 if kind == "loads" and factor is not None:
                     entity.magnitude *= factor
                     if entity.kind == "distributed":

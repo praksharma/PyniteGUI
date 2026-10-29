@@ -23,6 +23,7 @@ class SpatialNode(Node):
     spring_z: float = 0.0
     spring_rx: float = 0.0
     spring_ry: float = 0.0
+    support_elevation: float = field(default=0.0, kw_only=True)
 
     @property
     def coords(self):
@@ -30,7 +31,7 @@ class SpatialNode(Node):
 
     @property
     def restraints(self):
-        if self.support == "custom":
+        if self.support in ("custom", "inclined"):
             return tuple(getattr(self, key) for key in RESTRAINT_FIELDS)
         return {"free": (False,) * 6, "pin": (True, True, True, False, False, False),
                 "roller": (False, True, False, False, False, False), "fixed": (True,) * 6}[self.support]
@@ -95,16 +96,13 @@ class SpatialProject(Project):
     surface_supports: dict = field(default_factory=dict)
 
     def to_dict(self):
-        data = {"version": 32, "units": "in-kip", **asdict(self),
+        data = {"version": 34, "units": "in-kip", **asdict(self),
                 "surfaces": {name: mesh.to_dict() for name, mesh in self.surfaces.items()}}
-        for node in data["nodes"].values():
-            if finite_number(node["support_angle"]) and node["support_angle"] == 0.:
-                node.pop("support_angle")
         return data
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22, 24, 26, 28, 30, 32) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
+        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22, 24, 26, 28, 30, 32, 34) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
             raise ValueError("Unsupported spatial project version, dimension, or units.")
         if data["version"] < 28 and data.get("surface_supports", {}):
             raise ValueError("Surface edge supports require spatial version 28.")
@@ -146,6 +144,12 @@ class SpatialProject(Project):
             for name, value in data[key].items():
                 if not identifier(name) or not isinstance(value, dict):
                     raise ValueError(f"Invalid spatial {key} entry: {name!r}.")
+                if key == "nodes":
+                    if data["version"] < 34 and (value.get("support") == "inclined" or
+                            any(value.get(key, 0.) != 0. for key in ("support_angle", "support_elevation"))):
+                        raise ValueError("Spatial inclined supports require project version 34.")
+                    if data["version"] >= 34 and not {"support_angle", "support_elevation"} <= value.keys():
+                        raise ValueError(f"Node {name}: Missing spatial support angle fields.")
                 if key == "loads" and data["version"] == 16 and ("elevation" in value or value.get("direction") == "Angle"):
                     raise ValueError("Spatial angle forces require project version 17.")
                 if key == "members" and data["version"] < 18 and value.get("kind", "frame") != "frame":
@@ -193,13 +197,22 @@ class SpatialProject(Project):
             if node.coords in coordinates:
                 raise ValueError("Two nodes cannot occupy the same coordinates.")
             coordinates.add(node.coords)
-            if node.support not in ("free", "pin", "roller", "fixed", "custom"):
+            if node.support not in ("free", "pin", "roller", "fixed", "custom", "inclined"):
                 raise ValueError("Unknown spatial support type.")
-            if not finite_number(node.support_angle) or node.support_angle != 0.:
-                raise ValueError("Inclined support angles are not supported in spatial projects.")
+            if (not finite_number(node.support_angle) or not -180 <= node.support_angle <= 180 or
+                    not finite_number(node.support_elevation) or not -90 <= node.support_elevation <= 90):
+                raise ValueError(f"Node {name}: spatial support normal azimuth must be within [-180, 180] and elevation within [-90, 90].")
+            if node.support != "inclined" and (node.support_angle != 0. or node.support_elevation != 0.):
+                raise ValueError(f"Node {name}: spatial support angles require an inclined support.")
             if any(type(getattr(node, key)) is not bool for key in RESTRAINT_FIELDS):
                 raise ValueError("Support restraints must be boolean values.")
-            for dof, stiffness, fixed in zip(DOFS, node.springs, node.restraints):
+            from .support_axes import support_normal, translation_spaces
+            free = None
+            if node.support == "inclined":
+                free, _ = translation_spaces(node.restraints[:3], support_normal(node))
+            for index, (dof, stiffness, fixed) in enumerate(zip(DOFS, node.springs, node.restraints)):
+                if free is not None and index < 3:
+                    fixed = np.linalg.norm(free[index]) < 1e-12
                 if not finite_number(stiffness) or stiffness < 0:
                     raise ValueError(f"Node {name}: {dof} spring stiffness must be finite and nonnegative.")
                 if stiffness and fixed:

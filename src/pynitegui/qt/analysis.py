@@ -293,11 +293,16 @@ class FrameSolver(FEModel3D):
 
 
 def solve_model(model, project, phase):
-    if project.analysis_method == "linear":
-        from .inclined_supports import has_inclined, solve_inclined
-        if has_inclined(project):
+    from .inclined_supports import has_inclined, solve_inclined
+    if has_inclined(project):
+        try:
             solve_inclined(model, project, phase)
-            return
+        except Exception as error:
+            if project.analysis_method == "p_delta":
+                raise ValueError(f"P-Delta inclined-support analysis failed: {error}") from error
+            raise
+        return
+    if project.analysis_method == "linear":
         model.analyze_linear(check_stability=True, check_statics=True)
         return
     model._spatial = getattr(project, "dimension", "2D") == "3D"

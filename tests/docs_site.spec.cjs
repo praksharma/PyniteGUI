@@ -65,6 +65,7 @@ const server = http.createServer((request,response)=>{
       if(url==='modeling/supports/'){
         const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));
         assert(figures.some(image=>image.src.endsWith('inclined-roller.png'))&&figures.every(image=>image.ok),'Missing inclined roller screenshot');
+        assert(figures.some(image=>image.src.endsWith('spatial-inclined-properties.png')),'Missing spatial support normal controls');
       }
       if(url==='modeling/3d/'){
         const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));
