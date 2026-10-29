@@ -1,4 +1,4 @@
-"""Exact, sparse homogeneous support constraints for planar and spatial frames.
+"""Exact, sparse affine support constraints for planar and spatial frames.
 
 Only the node-local free coordinate basis changes. Member stiffness and fixed-
 end vectors remain those of PyNite. Store global physical displacements for its
@@ -57,7 +57,7 @@ def free_basis(model, project):
 
 def factor_stiffness(K, basis, labels, translations, length):
     if not np.isfinite(K.data).all():
-        raise ValueError("Inclined-support stiffness contains nonfinite values.")
+        raise ValueError("Support-constraint stiffness contains nonfinite values.")
     S = np.array([length if translation else 1. for translation in translations])
     transform = basis @ diags(S)
     reduced = (transform.T @ K @ transform).tocsr()
@@ -66,7 +66,7 @@ def factor_stiffness(K, basis, labels, translations, length):
     diagonal = reduced.diagonal()
     if np.any(diagonal <= 0):
         affected = ", ".join(label for label, bad in zip(labels, diagonal <= 0) if bad)
-        raise ValueError("Unstable inclined-support model: no free stiffness at "+affected+".")
+        raise ValueError("Unstable support-constrained model: no free stiffness at "+affected+".")
     scale = 1/np.sqrt(diagonal)
     normalized = (diags(scale) @ ((reduced+reduced.T)*.5) @ diags(scale)).tocsr()
     # Preserve the pre-cancellation error bound: reduced-diagonal scaling alone
@@ -83,11 +83,11 @@ def factor_stiffness(K, basis, labels, translations, length):
             values, vectors = eigsh(normalized, k=1, which="SA",
                 tol=1e-9, maxiter=max(1000, 5*len(labels)), v0=np.random.default_rng(0).normal(size=len(labels)))
         except ArpackNoConvergence as error:
-            raise ValueError("Inclined-support stability check did not converge; no results were accepted.") from error
+            raise ValueError("Support-constraint stability check did not converge; no results were accepted.") from error
         value, mode = values[0], vectors[:, 0]
     if value <= limit:
         affected = ", ".join(label for label, size in zip(labels, abs(mode)) if size > abs(mode).max()*1e-7)
-        raise ValueError("Unstable or ill-conditioned inclined-support model. Affected free coordinates: "+affected+".")
+        raise ValueError("Unstable or ill-conditioned support-constrained model. Affected free coordinates: "+affected+".")
     return transform, splu(normalized.tocsc()), scale
 
 
@@ -105,13 +105,23 @@ def solve_inclined(model, project, phase):
     second_order = project.analysis_method == "p_delta"
     Analysis._prepare_model(model)
     basis, labels, translations = free_basis(model, project)
+    from .support_movements import movement_lift, movement_fields
+    lift = np.zeros((6*len(model.nodes), 1))
+    offsets = np.arange(6) if spatial else np.array((0, 1, 5))
+    dofs = ("DX", "DY", "DZ", "RX", "RY", "RZ") if spatial else ("DX", "DY", "RZ")
+    for name, definition in project.nodes.items():
+        node = model.nodes[name]
+        fixed = [getattr(node, "support_"+dof) for dof in dofs]
+        lift[6*node.ID+offsets, 0] = movement_lift(definition, fixed)
+    model._pynitegui_support_movements = {name: {key: getattr(node, key) for key in movement_fields(node) if getattr(node, key)}
+        for name, node in project.nodes.items() if any(getattr(node, key) for key in movement_fields(node))}
     coordinates = np.array([(n.X, n.Y, n.Z) for n in model.nodes.values()])
     length = max(1., float(np.linalg.norm(np.ptp(coordinates, axis=0))))
     model._pynitegui_support_reactions = {}
     signature = model_signature(project)
     for combination in model.load_combos:
         method = "P-Delta" if second_order else "Linear elastic"
-        phase(f"{method} | {combination}: checking inclined-support constrained stiffness")
+        phase(f"{method} | {combination}: checking {'inclined' if has_inclined(project) else 'prescribed'} support constraints")
         elastic = model.Ke(combination, check_stability=False, sparse=True).tocsr()
         physical = FEModel3D.Ke(model, combination, check_stability=False, sparse=True).tocsr()
         force, fixed_end = model.P(combination), model.FER(combination)
@@ -120,9 +130,9 @@ def solve_inclined(model, project, phase):
             if second_order and step:
                 phase(f"P-Delta | {combination}: solving second-order response (inclined supports, update {step}/30)")
             transform, factor, scale = factor_stiffness(stiffness, basis, labels, translations, length)
-            rhs = np.asarray(transform.T @ (force-fixed_end)).ravel()
+            rhs = np.asarray(transform.T @ (force-fixed_end-stiffness @ lift)).ravel()
             q = scale*factor.solve(scale*rhs) if factor is not None else np.empty(0)
-            displacement = np.asarray(transform @ q).reshape(-1, 1)
+            displacement = lift+np.asarray(transform @ q).reshape(-1, 1)
             if not np.isfinite(displacement).all():
                 raise ValueError(f"Nonfinite inclined-support displacement in {combination}.")
             store_displacements(model, combination, displacement)
@@ -155,7 +165,7 @@ def solve_inclined(model, project, phase):
         result.model_signature = signature
         result.analysis_method = project.analysis_method
         if not check_equilibrium(project, result).passed:
-            raise ValueError(f"Inclined-support global equilibrium failed in {combination}; no results were accepted.")
+            raise ValueError(f"Support-constraint global equilibrium failed in {combination}; no results were accepted.")
     model.solution = "P-Delta" if second_order else "Linear"
 
 
@@ -193,8 +203,8 @@ def recover_reactions(model, project, combination, matrix, force, fixed_end, dis
         rigid[:count] = constrained @ (constrained.T @ reaction[:count])
         tolerance = np.array([FORCE_TOLERANCE]*count+[MOMENT_TOLERANCE]*(len(offsets)-count))+RELATIVE_TOLERANCE*magnitude[positions]
         if np.any(abs(reaction-rigid) > tolerance):
-            raise FreeEquilibriumError(f"Inclined-support free physical equilibrium failed at {name} in {combination}; no results were accepted.")
-        if normal is not None and abs(float(normal @ d[:count])) > 1e-10*max(1., float(abs(d[:count]).max())):
+            raise FreeEquilibriumError(f"Support-constraint free physical equilibrium failed at {name} in {combination}; no results were accepted.")
+        if normal is not None and abs(float(normal @ d[:count])-definition.settlement_normal) > 1e-10*max(1., float(abs(d[:count]).max())):
             raise ValueError(f"Inclined constraint displacement failed at {name} in {combination}.")
         springs = np.array(definition.springs) if definition is not None else np.zeros(len(offsets))
         spring = -springs*d

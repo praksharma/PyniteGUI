@@ -122,6 +122,10 @@ class Node:
     spring_y: float = 0.0
     spring_rz: float = 0.0
     support_angle: float = field(default=0.0, kw_only=True)
+    settlement_x: float = field(default=0.0, kw_only=True)
+    settlement_y: float = field(default=0.0, kw_only=True)
+    settlement_rz: float = field(default=0.0, kw_only=True)
+    settlement_normal: float = field(default=0.0, kw_only=True)
 
     @property
     def springs(self):
@@ -390,7 +394,7 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 27, "units": "in-kip", **asdict(self)}
+        return {"version": 29, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
@@ -402,7 +406,7 @@ class Project:
         if "dimension" in data:
             raise ValueError("Unsupported project dimension.")
         version = data.get("version")
-        if type(version) is not int or version not in (*range(1, 16), 21, 23, 25, 27) or data.get("units") != "in-kip":
+        if type(version) is not int or version not in (*range(1, 16), 21, 23, 25, 27, 29) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         required = {"grid", "nodes", "members", "loads"}
         required.update({"E", "nu", "rho"} if version == 1 else {"materials", "default_material"})
@@ -435,6 +439,11 @@ class Project:
                 if key == "materials" and version < 25 and value.get("shear_modulus") is not None:
                     raise ValueError("Independent G requires planar version 25 or spatial version 26.")
                 if key == "nodes":
+                    movement_keys = {"settlement_x", "settlement_y", "settlement_rz", "settlement_normal"}
+                    if version < 29 and any(value.get(field, 0.) != 0. for field in movement_keys):
+                        raise ValueError("Imposed support movements require planar version 29.")
+                    if version >= 29 and not movement_keys <= value.keys():
+                        raise ValueError(f"Invalid nodes entry {name}: Missing imposed support movement fields.")
                     if version < 27 and (value.get("support") == "inclined" or value.get("support_angle", 0.) != 0.):
                         raise ValueError("Inclined supports require planar version 27.")
                     if version >= 27 and "support_angle" not in value:
@@ -555,6 +564,8 @@ class Project:
                 raise ValueError(f"Node {name}: a nonzero support angle requires an inclined support.")
             if any(type(value) is not bool for value in (node.restraint_x, node.restraint_y, node.restraint_rz)):
                 raise ValueError("Support restraints must be boolean values.")
+            from .support_movements import validate_movements
+            validate_movements(node)
             for label, stiffness, fixed in zip(("DX", "DY", "RZ"), node.springs, node.restraints):
                 if node.support == "inclined" and label != "RZ":
                     a = math.radians(node.support_angle)

@@ -274,7 +274,7 @@ def capture(output):
             app.processEvents()
 
 
-def capture_inclined(output, spatial=False):
+def capture_inclined(output, spatial=False, settlement=False):
     output.mkdir(parents=True, exist_ok=True)
     app = QApplication.instance() or QApplication([])
     configure_theme(app, "light")
@@ -284,17 +284,19 @@ def capture_inclined(output, spatial=False):
         window = MainWindow(root / "recovery", settings)
         try:
             window.resize(1280, 820)
-            window.load_project(example_project("3d_inclined_roller" if spatial else "inclined_roller"))
+            window.load_project(example_project("support_settlement" if settlement else "3d_inclined_roller" if spatial else "inclined_roller"))
             window.show()
             with redirect_stdout(StringIO()):
                 result = analyze(window.project)
             window.analysis_revision = window.revision
             window.analysis_finished(result, "")
             window.select(("nodes", "N2"))
+            if settlement:
+                window.deformed_action.setChecked(True)
             app.processEvents()
             window.view.fit()
             app.processEvents()
-            filename = "spatial-inclined-properties.png" if spatial else "inclined-roller.png"
+            filename = "support-settlement.png" if settlement else "spatial-inclined-properties.png" if spatial else "inclined-roller.png"
             widget = window.inspector if spatial else window
             if not widget.grab().save(str(output / filename)):
                 raise RuntimeError(f"Could not save {filename}")
@@ -312,8 +314,11 @@ if __name__ == "__main__":
                         default=Path(__file__).resolve().parents[1] / "docs/assets/screenshots")
     parser.add_argument("--inclined-only", action="store_true", help="Capture only the inclined-roller example and editor.")
     parser.add_argument("--spatial-inclined-only", action="store_true", help="Capture the spatial roller normal Properties controls.")
+    parser.add_argument("--settlement-only", action="store_true", help="Capture the settled beam and prescribed motion controls.")
     options = parser.parse_args()
-    if options.spatial_inclined_only:
+    if options.settlement_only:
+        capture_inclined(options.output, settlement=True)
+    elif options.spatial_inclined_only:
         capture_inclined(options.output, spatial=True)
     else:
         (capture_inclined if options.inclined_only else capture)(options.output)

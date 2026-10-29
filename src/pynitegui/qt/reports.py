@@ -200,12 +200,13 @@ def model_definition_tables(project):
         return definition_tables(project)
     units = project.units
     show = units.to_display
+    from .support_movements import movement_summary
     nodes = (["Node", f"X ({units.length})", f"Y ({units.length})", "Support", "DX", "DY", "RZ",
-              f"Spring DX ({units.stiffness})", f"Spring DY ({units.stiffness})", f"Spring RZ ({units.rotational_stiffness})"],
+              f"Spring DX ({units.stiffness})", f"Spring DY ({units.stiffness})", f"Spring RZ ({units.rotational_stiffness})", "Imposed motion (all combinations)"],
              [[node.name, show(node.x, "length"), show(node.y, "length"),
                f"Inclined roller, tangent {node.support_angle:g} deg" if node.support == "inclined" else node.support,
                *(("Coupled normal" if i < 2 else "Free") if node.support == "inclined" else "Fixed" if fixed else "Free" for i, fixed in enumerate(node.restraints)),
-               show(node.spring_x, "stiffness"), show(node.spring_y, "stiffness"), show(node.spring_rz, "rotational_stiffness")]
+               show(node.spring_x, "stiffness"), show(node.spring_y, "stiffness"), show(node.spring_rz, "rotational_stiffness"), movement_summary(node, units)]
               for node in project.nodes.values()])
     members = (["Member", "Start", "End", "Type", "Material", "Section", "Start hinge", "End hinge", "Start releases (local)", "End releases (local)"],
                [[m.name, m.start, m.end, m.kind, m.material, m.section,

@@ -6,6 +6,7 @@ from Pynite import FEModel3D
 
 from .spatial_model import DOFS, FORCES
 from .support_axes import support_normal
+from .support_movements import movement_summary
 
 
 QUANTITIES = ("axial", "shear_y", "shear_z", "torque", "moment_y", "moment_z", "dy", "dz")
@@ -235,12 +236,12 @@ def definition_tables(project):
                        load_cases=project.load_cases, default_load_case=project.default_load_case, combinations=project.combinations)
     shared = model_definition_tables(metadata)
     units = project.units
-    nodes = (["Node", *(f"{axis} ({units.length})" for axis in ("X", "Y", "Z")), "Support", "Rigid DOFs", "Springs", "Inclined normal (global XYZ)"],
+    nodes = (["Node", *(f"{axis} ({units.length})" for axis in ("X", "Y", "Z")), "Support", "Rigid DOFs", "Springs", "Inclined normal (global XYZ)", "Imposed motion (all combinations)"],
              [[node.name, *(units.to_display(value, "length") for value in node.coords), node.support,
                ", ".join(dof for dof, fixed in zip(DOFS, node.restraints) if fixed) or "None",
                "; ".join(f"{dof}: {units.to_display(k, 'stiffness' if i < 3 else 'rotational_stiffness'):.6g} {units.stiffness if i < 3 else units.rotational_stiffness}"
                          for i, (dof, k) in enumerate(zip(DOFS, node.springs)) if k) or "None",
-               (f"az {node.support_angle:g}, el {node.support_elevation:g} deg; "+", ".join(f"{v:.8g}" for v in support_normal(node))) if node.support == "inclined" else "None"] for node in project.nodes.values()])
+               (f"az {node.support_angle:g}, el {node.support_elevation:g} deg; "+", ".join(f"{v:.8g}" for v in support_normal(node))) if node.support == "inclined" else "None", movement_summary(node, units)] for node in project.nodes.values()])
     members = (["Member", "Start", "End", "Material", "Section", "Roll (deg)", "Type", "Start releases (local)", "End releases (local)"],
                [[member.name, member.start, member.end, member.material, member.section, member.roll, member.kind, *member.release_labels] for member in project.members.values()])
     def loads(definitions):

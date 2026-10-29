@@ -1861,7 +1861,7 @@ must remain positive definite. Failure or nonconvergence rejects the snapshot.
 As for other P-Delta results, global equilibrium checks forces only; undeformed
 moment arms do not include second-order effects. P-Delta with trusses, released
 translations, spatial rotational releases or surfaces remains unsupported.
-Settlements, unilateral contact and plastic connections remain separate tasks.
+Imposed support movements are available in linear analysis as described below; unilateral contact and plastic connections remain separate tasks.
 
 Production uses sparse node-local free coordinates and unchanged engine member
 stiffness/fixed-end vectors. Global physical displacements drive ordinary member
@@ -1882,7 +1882,74 @@ uv run python -B scripts/benchmark_inclined_supports.py --output /tmp/inclined-s
 
 The prototype's quadratic-energy identity concerns equivalent nodal equations;
 it does not validate total distributed-load strain-energy recovery. Nonlinear
-connections and inclined support settlements remain separate work.
+connections and second-order support-movement validation remain separate work.
+
+**Imposed support settlements and rotations (development after RC4):** select a
+supported node and enter **Imposed DX/DY/RZ** in 2D, or **DX/DY/DZ/RX/RY/RZ** in
+3D. Only directions with explicit rigid global restraints are offered. Translation
+uses the current length unit; rotations use **radians**, with the right-hand sign
+rule. Apply commits the complete edit with one undo. Model Tables and bulk
+properties offer the same quantities. Removing a restraint through the native
+controls clears its inapplicable motion; MCP edits must clear incompatible values
+explicitly in the same batch.
+
+For an inclined roller, **Imposed normal** is signed along its displayed global
+normal: `normal dot displacement = settlement_normal`. It does not prescribe
+motion along the tangent. A 3D inclined support can also have global prescribed
+movements on its additional rigid restraints. Redundant constraints must prescribe
+the same motion; incompatible global/normal or shared-edge prescriptions reject
+the model/analysis. Exact redundant normals still have zero separate normal
+reaction, with the global restraints owning that reaction.
+
+These are **model-level prescriptions**, applied unchanged in **every load
+combination**, including a combination with all load factors zero. A reverse load
+combination reverses the loads; it does not reverse the settlement. Linear load
+increments superpose about the same prescribed-motion state; adding complete
+combination responses would count the settlement twice. Bilateral springs retain
+zero rest displacement: their reactions remain `-k * global displacement`, not
+`-k * displacement relative to the imposed motion`. Spring rest-position movement,
+case-specific prescriptions and staged construction are not provided.
+
+Try **File > Examples > 2D Frames > Beam - Support Settlement and Rotation**.
+The 120 in fixed-ended beam carries -0.01 kip/in; its right support moves
+**DY -0.1 in** and **RZ +0.001 rad**. **Settlement only** sets the applied-load
+factor to zero but retains those support motions. Its reactions are:
+
+| Node | FY (kip) | MZ (kip-in) |
+| --- | ---: | ---: |
+| N1 | +16.433333 | +862.75 |
+| N2 | -16.433333 | +1109.25 |
+
+**Service** adds +0.6 kip at each end, +12 kip-in at N1 and -12 kip-in at N2
+from the distributed load. **Reverse load** reverses only those load contributions.
+The native offscreen capture shows prescribed inputs and scaled solved deformation.
+
+![Native settlement and rotation inputs with the solved beam](docs/assets/screenshots/support-settlement.png)
+
+**Scope:** linear frames, trusses and supported releases in 2D/3D, plus prescribed
+frame joints in the existing experimental coupled-surface workflow. Generated
+mesh-edge support motions remain zero unless the joint has an explicit compatible
+frame-node prescription. Existing surface/release, drilling and independent
+force/moment gates remain active. Nonzero imposed movements reject **P-Delta**
+until second-order prescribed-motion recovery is independently validated.
+
+The constrained solver adds a particular physical motion to the free-coordinate
+solution and subtracts its stiffness contribution from the free load vector.
+It checks physical joint equations and independent global equilibrium for every
+combination, including the zero-load state. Independent beam stiffness/Hermite
+fields, six-DOF compliance, zero-force rigid-body motion, ground-spring laws,
+released-end recovery, trusses and shared-node checks cover this workflow.
+
+Support tooltips, the model tree, 3D hover and printed definitions identify the
+imposed motions and their units. MCP node-result pages include
+`imposed_support_movements` with explicit display units and the model-level note;
+normal and unused-rotation metadata remain available alongside it. `read_schema`
+provides the exact `settlement_*` fields and a valid batch example. Inputs are
+canonical inches/radians. Movements copy only when **Copy supports** is chosen;
+collision checks include their values, and global orientations stay global.
+Changing a prescription invalidates results; changing display units retains the
+snapshot and converts its labels.
+
 ### Moving Nodes
 
 - In Select mode, drag a node to move it with snapping. Dashed connected members
@@ -2602,7 +2669,7 @@ MZ, and signed angled forces. Member point/distributed forces additionally
 support local x/y and member-relative angles. Nodal forces use global axes only;
 distributed moments are not implemented.
 Loads belong to named cases. User-defined combinations apply finite case factors.
-Linear elastic analysis uses superposition; P-Delta elastic solves each complete
+Linear elastic load increments use superposition about the prescribed support-motion state; P-Delta elastic solves each complete
 combination independently with its own axial-load-dependent geometric stiffness. The initial project has
 Case 1 and a Service combination at factor 1. No design-code factors or
 envelopes are generated automatically.
@@ -2925,7 +2992,13 @@ for that preset. Earlier spatial versions migrate zero orientation with their
 original supports; inclined/nonzero orientations in older schemas are rejected.
 Planar v27 keeps its original tangent convention. Missing current fields, malformed
 angles and angles attached to other presets are rejected.
-New saves use planar v27, spatial v34 and plate v3.
+Planar version 29 and spatial version 36 add required node `settlement_*` fields:
+DX/DY/RZ and inclined-normal translation in 2D; all six global DOFs plus normal
+translation in 3D. Values are canonical inches/radians, default zero. Older schemas
+migrate zero movement without altering support conditions; nonzero movement in
+older versions, missing current fields, nonfinite/non-numeric values, movement on
+free/spring-only directions and inconsistent normal/global prescriptions are rejected.
+New saves use planar v29, spatial v36 and plate v3.
 
 Spatial files retain XYZ, all six restraints/springs, and roll. Unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be

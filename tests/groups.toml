@@ -37,6 +37,7 @@ tests = [
 description = "Geometry/editing, units, assignments, libraries, validation, persistence and native model editors."
 tests = [
   "test_qt_inclined",
+  "test_qt_support_movements",
   "test_qt_spatial_releases",
   "test_independent_g.IndependentGModelTests",
   "test_geometry_tools.GeometryPlanTests",
@@ -117,6 +118,7 @@ tests = [
   "test_inclined_constraints",
   "test_inclined_supports",
   "test_spatial_inclined",
+  "test_support_movements",
 ]
 
 [groups.surfaces]

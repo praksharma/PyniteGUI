@@ -165,6 +165,8 @@ class AutomationCoreTests(unittest.TestCase):
                 self.assertEqual(set(schema["entities"]["nodes"]["properties"]), expected_fields)
                 self.assertIn("inclined", schema["supports"])
                 example = batch_candidate(project, docs["data"]["examples"]["create_cantilever"])
+                settled = batch_candidate(example, [docs["data"]["examples"]["impose_support_settlement"]])
+                self.assertEqual(settled.nodes["ExampleA"].settlement_y, -.1)
                 inclined = batch_candidate(example, [docs["data"]["examples"]["update_inclined_roller"]])
                 self.assertEqual(inclined.nodes["ExampleB"].support, "inclined")
                 self.assertFalse(any(inclined.nodes["ExampleB"].restraints))

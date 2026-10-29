@@ -4,6 +4,9 @@ METHODS = {"linear": "Linear elastic", "p_delta": "P-Delta elastic"}
 
 
 def analysis_method_issue(project):
+    from .support_movements import has_movements
+    if project.analysis_method != "linear" and has_movements(project):
+        return "Imposed support movements currently require Linear elastic analysis; second-order settlement recovery is not validated."
     if project.analysis_method != "p_delta":
         return None
     if getattr(project, "dimension", "2D") == "3D":
@@ -33,7 +36,7 @@ def settings_dialog(parent, project):
     method.setCurrentIndex(method.findData(project.analysis_method))
     form.addRow("Method", method)
     help_text = QLabel("P-Delta includes geometric stiffness from axial loads and solves each combination separately. "
-                       "Materials remain elastic. Frame-only models; no coupled slabs, trusses, released translations or spatial rotational releases. "
+                       "Materials remain elastic. Frame-only models; no coupled slabs, trusses, released translations, spatial rotational releases or imposed support movements. "
                        "Add intermediate joints to resolve member curvature and compare mesh refinement. "
                        "Steel plastic pushover and reinforced-concrete plasticity are separate capabilities and are not enabled here.")
     help_text.setWordWrap(True)

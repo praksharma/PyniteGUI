@@ -294,7 +294,8 @@ class FrameSolver(FEModel3D):
 
 def solve_model(model, project, phase):
     from .inclined_supports import has_inclined, solve_inclined
-    if has_inclined(project):
+    from .support_movements import has_movements
+    if has_inclined(project) or has_movements(project):
         try:
             solve_inclined(model, project, phase)
         except Exception as error:

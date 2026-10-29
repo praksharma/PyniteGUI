@@ -95,7 +95,7 @@ class InclinedSupportTests(unittest.TestCase):
     def test_version_migration_strict_flags_spatial_boundary_units_and_signature(self):
         p = supported()
         data = p.to_dict()
-        self.assertEqual(data['version'], 27)
+        self.assertEqual(data['version'], 29)
         self.assertEqual(Project.from_dict(data).to_dict(), data)
         for bad in (True, None, float('nan'), float('inf'), 181., '27'):
             copy = deepcopy(data)
@@ -121,7 +121,7 @@ class InclinedSupportTests(unittest.TestCase):
         p.unit_system = 'si'
         self.assertEqual(model_signature(p), signature)
         spatial = to_spatial(p)
-        self.assertEqual(spatial.to_dict()['version'], 34)
+        self.assertEqual(spatial.to_dict()['version'], 36)
         self.assertEqual(spatial.nodes['N2'].support, 'inclined')
         spatial.nodes['N1'].support_angle = 27.
         with self.assertRaisesRegex(ValueError, 'spatial'):

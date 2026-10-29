@@ -66,6 +66,7 @@ const server = http.createServer((request,response)=>{
         const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));
         assert(figures.some(image=>image.src.endsWith('inclined-roller.png'))&&figures.every(image=>image.ok),'Missing inclined roller screenshot');
         assert(figures.some(image=>image.src.endsWith('spatial-inclined-properties.png')),'Missing spatial support normal controls');
+        assert(figures.some(image=>image.src.endsWith('support-settlement.png')),'Missing imposed support movement example');
       }
       if(url==='modeling/3d/'){
         const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));

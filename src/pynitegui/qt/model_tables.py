@@ -1,7 +1,7 @@
 """Transactional, unit-aware numerical model editing."""
 import math
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QSignalBlocker
 from PySide6.QtWidgets import (
     QAbstractItemView, QComboBox, QDialog, QDialogButtonBox, QHBoxLayout,
     QMessageBox, QPushButton, QStyle, QTableWidget, QTableWidgetItem,
@@ -40,6 +40,10 @@ class ModelTablesDialog(QDialog):
             self.boolean_fields = {*RESTRAINT_FIELDS, *RELEASE_FIELDS}
             self.numeric_fields = NUMERIC_FIELDS | {"z", "roll", "elevation", "support_elevation", *SPRING_FIELDS}
             self.constructors = {"nodes": SpatialNode, "members": SpatialMember, "loads": SpatialLoad}
+        from .support_movements import movement_fields, movement_label
+        self.movement_keys = movement_fields(self.constructors["nodes"]("", 0., 0.))
+        self.fields = {**self.fields, "nodes": (*self.fields["nodes"], *self.movement_keys)}
+        self.numeric_fields = {*self.numeric_fields, *self.movement_keys}
         self.original = project.clone()
         self.definition = None
         self.setWindowTitle("Model Tables")
@@ -66,6 +70,7 @@ class ModelTablesDialog(QDialog):
             headers["members"] = ["ID", "Start", "End", "Material", "Section", "Roll (deg)", "Type",
                                    "Start RX", "Start RY", "Start RZ", "End RX", "End RY", "End RZ"]
             headers["loads"] = [*headers["loads"][:-2], "Azimuth (deg)", "Elevation (deg)", "Magnitude units"]
+        headers["nodes"].extend(f"Imposed {movement_label(key)} ({'rad' if key.startswith('settlement_r') else project.units.length})" for key in self.movement_keys)
         for kind, fields in self.fields.items():
             panel = QWidget()
             panel_layout = QVBoxLayout(panel)
@@ -94,6 +99,7 @@ class ModelTablesDialog(QDialog):
         for kind, table in self.tables.items():
             table.resizeColumnsToContents()
             table.horizontalHeader().setStretchLastSection(kind == "loads")
+        self.tables["nodes"].itemChanged.connect(self.update_supports)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
@@ -124,6 +130,8 @@ class ModelTablesDialog(QDialog):
                 "direction": ["FX", "FY", "MZ", "Angle", "Local x", "Local y", "Local angle"]}.get(key)
 
     def quantity(self, kind, key, direction="FY", load_kind="point"):
+        if key.startswith("settlement_"):
+            return "rotation" if key.startswith("settlement_r") else "length"
         if key in ("x", "y", "z"):
             return "length"
         if key in ("spring_x", "spring_y", "spring_z"):
@@ -138,6 +146,7 @@ class ModelTablesDialog(QDialog):
 
     def insert_entity(self, kind, entity):
         table = self.tables[kind]
+        blocker = QSignalBlocker(table)
         row = table.rowCount()
         table.insertRow(row)
         for column, key in enumerate(self.fields[kind]):
@@ -212,6 +221,7 @@ class ModelTablesDialog(QDialog):
 
     def update_supports(self):
         table = self.tables["nodes"]
+        blocker = QSignalBlocker(table)
         for row in range(table.rowCount()):
             support = table.cellWidget(row, self.fields["nodes"].index("support")).currentText()
             previous = table.cellWidget(row, self.fields["nodes"].index("support")).property("previous_support")
@@ -233,6 +243,12 @@ class ModelTablesDialog(QDialog):
                     restrained = self.constructors["nodes"]("", 0, 0, support).restraints[index]
                     item.setCheckState(Qt.CheckState.Checked if restrained else Qt.CheckState.Unchecked)
                 item.setToolTip("Global restraint; used with custom, or in addition to an inclined normal in 3D.")
+
+            for key in self.movement_keys:
+                item = table.item(row, self.fields["nodes"].index(key))
+                applicable = support == "inclined" if key == "settlement_normal" else table.item(row, self.fields["nodes"].index("restraint_"+key.removeprefix("settlement_"))).checkState() == Qt.CheckState.Checked
+                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEnabled if applicable else item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
+                item.setToolTip("Imposed rigid support motion. Same value in every combination, independent of load factors. Rotations use radians.")
 
     def refresh_references(self):
         for kind, keys in (("members", ("start", "end")), ("loads", ("target",))):
@@ -283,7 +299,9 @@ class ModelTablesDialog(QDialog):
                     if key == "units":
                         continue
                     widget, item = table.cellWidget(row, column), table.item(row, column)
-                    if kind == "nodes" and key in ("support_angle", "support_elevation") and values.get("support") != "inclined":
+                    if kind == "nodes" and key in self.movement_keys and not item.flags() & Qt.ItemFlag.ItemIsEnabled:
+                        value = 0.
+                    elif kind == "nodes" and key in ("support_angle", "support_elevation") and values.get("support") != "inclined":
                         value = 0.
                     elif widget is not None:
                         value = widget.currentText()

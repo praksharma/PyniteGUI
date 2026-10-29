@@ -9,6 +9,7 @@ def populate_bulk_inspector(window):
     selections = list(window.selections)
     fields = {}
     springs = {}
+    movements = {}
     spatial = getattr(window.project, "dimension", "2D") == "3D"
     restraint_fields = ("restraint_x", "restraint_y", "restraint_rz")
     spring_fields = ("spring_x", "spring_y", "spring_rz")
@@ -71,6 +72,20 @@ def populate_bulk_inspector(window):
             enabled.toggled.connect(value.setEnabled)
             window.form.addRow(enabled, value)
             springs[key] = enabled, value
+        from .support_movements import movement_fields, movement_label
+        template = next(window.project.nodes[name] for kind, name in selections if kind == "nodes")
+        for key in movement_fields(template):
+            rotation = key.startswith("settlement_r")
+            label = movement_label(key)
+            enabled = QCheckBox(f"Set imposed {label} ({'rad' if rotation else window.project.units.length})")
+            enabled.setObjectName("bulk_change_"+key)
+            value = unit_number(0., window.project.units, "rotation" if rotation else "length", decimals=9)
+            value.setObjectName("bulk_"+key)
+            value.setEnabled(False)
+            value.setToolTip("Same signed prescribed motion in every combination. Requires the corresponding rigid restraint.")
+            enabled.toggled.connect(value.setEnabled)
+            window.form.addRow(enabled, value)
+            movements[key] = enabled, value
     if "members" in kinds:
         window.form.addRow(QLabel(f"Members ({sum(kind == 'members' for kind, name in selections)})"))
         choice("material", "Material", window.project.materials)
@@ -116,7 +131,7 @@ def populate_bulk_inspector(window):
                 if widget.checkState() != Qt.CheckState.PartiallyChecked:
                     values[key] = widget.isChecked()
         factor = fields["factor"].value() if "scale" in fields and fields["scale"].isChecked() else None
-        for key, (enabled, widget) in springs.items():
+        for key, (enabled, widget) in {**springs, **movements}.items():
             if enabled.isChecked():
                 values[key] = unit_value(widget, window.project.units)
         if spatial and "members" in kinds and roll_enabled.isChecked():
@@ -147,6 +162,12 @@ def populate_bulk_inspector(window):
                     entity.support_angle = 0.
                     if spatial:
                         entity.support_elevation = 0.
+                if kind == "nodes":
+                    from .support_movements import clear_inapplicable_movements
+                    clear_inapplicable_movements(entity)
+                    for key in movements:
+                        if key in values:
+                            setattr(entity, key, values[key])
                 if kind == "loads" and factor is not None:
                     entity.magnitude *= factor
                     if entity.kind == "distributed":

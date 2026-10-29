@@ -28,6 +28,7 @@ NOTES = {
     "truss": ("Planar triangular, bilateral axial-only truss.", "Service: 5 kip vertical reaction at each support; joint rotations are n/a."),
     "elastic": ("Cantilever with bilateral translational and rotational base springs.", "Service: base DY -0.01 in; total FY reaction 10 kip."),
     "inclined_roller": ("Pin and frictionless roller with a 30-degree global tangent.", "Service: N2 FX -0.346410 kip, FY +0.6 kip; N1 FX +0.346410 kip, FY +0.6 kip. Roller motion follows its tangent."),
+    "support_settlement": ("120 in fixed-ended beam. Right support moves -0.1 in in Y and rotates +0.001 rad in every combination, under -0.01 kip/in. Includes reversed load and settlement-only cases.", "Settlement only: N1 FY +16.433333 kip / MZ +862.75 kip-in; N2 FY -16.433333 kip / MZ +1109.25 kip-in. Imposed motion does not change with load factors."),
     "3d_inclined_roller": ("Frictionless support with normal azimuth 60 degrees (+X toward +Z) and elevation 30 degrees toward +Y; two free tangent translations.", "Normal (0.433013, 0.5, 0.75). Normal displacement and global force/moment residuals are zero within numerical tolerance. Reversed and Zero combinations are included."),
     "shear_release": ("Fixed-guided beam with a released member-end transverse translation.", "Released end transfers zero member shear; fixed nodal translations stay zero."),
     "3d_cantilever": ("Spatial cantilever with biaxial bending and torsion.", "Service: base FY 1.9 kip, FZ -0.5 kip and MX -5 kip-in."),

@@ -130,6 +130,10 @@ def draw_report(ax, project, result, rows, kind, view, options):
             fixed = "/".join(dof for dof, value in zip(DOFS, node.restraints) if value)
             spring = "/".join(dof for dof, value in zip(DOFS, node.springs) if value)
             context = (f"fixed {fixed}" if fixed else "") + (f"; spring {spring}" if spring else "")
+            from .support_movements import movement_summary
+            movement = movement_summary(node, units)
+            if movement != "None":
+                context += "; imposed "+movement+" (all combinations)"
             if node.support == "inclined":
                 normal = support_normal(node)
                 projected = basis @ normal

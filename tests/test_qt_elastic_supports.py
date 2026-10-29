@@ -288,7 +288,8 @@ class ElasticEditorsTests(unittest.TestCase):
                 self.assertTrue(candidate.members["M1"].release_end_x)
                 tables = {title: (headers, rows) for title, headers, rows in model_definition_tables(candidate)}
                 self.assertIn(f"Spring RZ ({project.units.rotational_stiffness})", tables["Nodes and Supports"][0])
-                self.assertAlmostEqual(tables["Nodes and Supports"][1][1][-1], project.units.to_display(project.nodes["N2"].spring_rz, "rotational_stiffness"))
+                headers, rows = tables["Nodes and Supports"]
+                self.assertAlmostEqual(rows[1][headers.index(f"Spring RZ ({project.units.rotational_stiffness})")], project.units.to_display(project.nodes["N2"].spring_rz, "rotational_stiffness"))
                 self.assertEqual(tables["Members and Assignments"][1][0][-1], "DX")
             finally:
                 dialog.close()

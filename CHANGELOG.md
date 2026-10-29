@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add model-level support settlements/rotations and inclined-normal movements to
+  existing linear workflows. Keep prescriptions unchanged across every combination,
+  including zero loads; preserve zero spring rest positions and reject incompatible
+  constraints. Add staged native/table/bulk editing, support copying/conversion,
+  reports, explicit-unit MCP metadata, a beam example and independent mechanics/
+  worker/wire checks. Save planar v29/spatial v36 with zero-motion legacy migration.
+  Nonzero imposed movements remain excluded from P-Delta pending validation.
+
 - Add inclined rollers across 2D/3D linear frames, trusses and supported releases,
   with global tangent angles in 2D and normal azimuth/elevation plus optional
   global restraints in 3D. Use sparse exact constraints, physical member recovery,

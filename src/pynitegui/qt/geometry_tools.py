@@ -30,7 +30,8 @@ def unique_name(project, prefix):
 
 
 def support_state(node):
-    return node.restraints, node.springs, ((node.support_angle, getattr(node, "support_elevation", 0.)) if node.support == "inclined" else None)
+    from .support_movements import movement_fields
+    return node.restraints, node.springs, ((node.support_angle, getattr(node, "support_elevation", 0.)) if node.support == "inclined" else None), tuple(getattr(node, key) for key in movement_fields(node))
 
 
 def clear_support(node):
@@ -41,13 +42,13 @@ def clear_support(node):
     for field in fields(node):
         if field.name.startswith("restraint_"):
             setattr(node, field.name, False)
-        elif field.name.startswith("spring_"):
+        elif field.name.startswith(("spring_", "settlement_")):
             setattr(node, field.name, 0.)
 
 
 def copy_support(source, target):
     for field in fields(source):
-        if field.name in ("support", "support_angle", "support_elevation") or field.name.startswith(("restraint_", "spring_")):
+        if field.name in ("support", "support_angle", "support_elevation") or field.name.startswith(("restraint_", "spring_", "settlement_")):
             setattr(target, field.name, getattr(source, field.name))
 
 

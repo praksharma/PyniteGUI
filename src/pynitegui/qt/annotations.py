@@ -24,6 +24,7 @@ def load_label(project, load):
 
 
 def support_label(project, node):
+    from .support_movements import movement_summary
     fixed = ", ".join(label for label, value in zip(("DX", "DY", "RZ"), node.restraints) if value)
     pieces = [f"{node.name}: {node.support}" + (f" ({fixed})" if fixed else "")]
     if node.support == "inclined":
@@ -32,6 +33,9 @@ def support_label(project, node):
                                   ("stiffness", "stiffness", "rotational_stiffness")):
         if k:
             pieces.append(f"{label} spring {project.units.to_display(k, quantity):g} {getattr(project.units, quantity)}")
+    movement = movement_summary(node, project.units)
+    if movement != "None":
+        pieces.append("Imposed: "+movement+" | all combinations")
     return " | ".join(pieces)
 
 

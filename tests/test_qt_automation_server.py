@@ -127,6 +127,40 @@ window.close()
 
 @unittest.skipUnless(dependencies_available(), "Install the optional mcp extra for wire tests")
 class ServerWireTests(ServerWindowTests):
+    def test_wire_imposed_motion_is_unfactored_and_reported_in_zero_combination(self):
+        self.window.load_project(example_project('support_settlement'))
+        self.window.automation_mode.set_enabled(True)
+        self.server.permissions.set_group('Model edits',True)
+        self.server.permissions.set_group('Analysis',True)
+        async def callback(client):
+            model=(await client.call_tool('read_model',{})).structured_content['data']
+            identity={'session_id':model['session_id']}
+            self.assertIn('every combination',model['schema']['entities']['nodes']['properties']['settlement_y']['description'])
+            edited=await client.call_tool('apply_batch',{**identity,'expected_revision':model['revision'],
+                'operations':[{'op':'put','collection':'nodes','key':'N2','value':{'settlement_y':-.2}}]})
+            self.assertFalse(edited.is_error,edited)
+            revision=edited.structured_content['data']['revision']
+            started=await client.call_tool('run_analysis',{**identity,'expected_revision':revision})
+            self.assertFalse(started.is_error,started);job=started.structured_content['data']['job_id']
+            for _ in range(300):
+                status=(await client.call_tool('analysis_status',{**identity,'job_id':job})).structured_content['data']
+                if not status['running']:break
+                await asyncio.sleep(.02)
+            self.assertEqual(status['state'],'Current',status)
+            response=await client.call_tool('read_results',{**identity,'kind':'nodes','offset':1,'limit':1,'combination':'Settlement only'})
+            self.assertFalse(response.is_error,response)
+            result=response.structured_content['data']
+            self.assertAlmostEqual(result['rows'][0][2],-.2)
+            self.assertEqual(set(result['imposed_support_movements']),{'N2'})
+            self.assertEqual(result['imposed_support_movements']['N2']['settlement_y'],{'value':-.2,'unit':'in'})
+            bad=await client.call_tool('apply_batch',{**identity,'expected_revision':revision,
+                'operations':[{'op':'put','collection':'nodes','key':'N2','value':{'support':'free'}}]})
+            self.assertTrue(bad.is_error)
+            after=(await client.call_tool('read_model',{})).structured_content['data']
+            self.assertEqual(after['revision'],revision)
+            self.assertEqual(after['model']['nodes']['N2']['settlement_y'],-.2)
+        self.with_client(callback)
+
     def test_wire_translational_release_edit_solve_and_member_side_motion(self):
         self.window.load_project(example_project('3d_sliding_beam'))
         self.window.automation_mode.set_enabled(True)
@@ -165,7 +199,7 @@ class ServerWireTests(ServerWindowTests):
         self.server.permissions.set_group("Analysis", True)
         async def callback(client):
             model = (await client.call_tool("read_model", {})).structured_content["data"]
-            self.assertEqual(model["model"]["version"], 34)
+            self.assertEqual(model["model"]["version"], 36)
             fields = model["schema"]["entities"]["members"]["properties"]
             self.assertNotIn("const", fields["release_end_ry"])
             edited = await client.call_tool("apply_batch", {"session_id": model["session_id"],

@@ -286,6 +286,14 @@ class AutomationCommands:
                         "support_reaction_units": [getattr(units, quantity) for quantity in quantities],
                         "support_reaction_note": ("Rigid/spring vectors are global "+("FX/FY/FZ/MX/MY/MZ" if result.spatial else "FX/FY/MZ")+
                             "; normal_reaction uses force units and the listed normal sign. Node rows contain their total. Springs retain global axes. An exactly redundant normal has zero separate normal force; additional global restraints own that reaction.")}
+                movements = getattr(result.solver, "_pynitegui_support_movements", {})
+                if kind == "nodes" and movements:
+                    names = {row[0] for row in rows[offset:offset+limit]}
+                    local_metadata["imposed_support_movements"] = {node: {key: {
+                        "value": window.project.units.to_display(value, "rotation" if key.startswith("settlement_r") else "length"),
+                        "unit": "rad" if key.startswith("settlement_r") else window.project.units.length}
+                        for key, value in values.items()} for node, values in movements.items() if node in names}
+                    local_metadata["support_movement_note"] = "Model-level prescriptions applied unchanged in every combination; not factored loads. Global node displacements include these imposed motions."
                 directions = getattr(result.solver, "rotation_nullspaces", None)
                 if kind == "nodes" and directions is not None:
                     names = {row[0] for row in rows[offset:offset+limit]}

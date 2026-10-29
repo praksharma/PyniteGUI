@@ -13,6 +13,7 @@ EXAMPLES = {
     "truss": "Triangular Truss - Joint Loads",
     "elastic": "Cantilever - Elastic Base",
     "inclined_roller": "Beam - Inclined Roller",
+    "support_settlement": "Beam - Support Settlement and Rotation",
     "shear_release": "Fixed-Guided Beam - Shear Release",
     "3d_cantilever": "3D Cantilever - Biaxial Bending and Torsion",
     "3d_space_frame": "3D Space Frame - Gravity and Wind",
@@ -40,7 +41,7 @@ EXAMPLES = {
 # The native menu uses this ordered grouping; each example belongs exactly once.
 EXAMPLE_GROUPS = {
     "2D Frames": ("simple_beam", "portal", "cantilever", "continuous", "pitched",
-                  "multistorey", "self_weight", "elastic", "inclined_roller", "shear_release",
+                  "multistorey", "self_weight", "elastic", "inclined_roller", "support_settlement", "shear_release",
                   "official_beam_point", "official_beam_uniform", "official_beam_envelope", "official_moment_frame",
                   "gerber", "three_hinged_arch"),
     "3D Frames": ("3d_cantilever", "3d_space_frame", "3d_released_beam", "3d_sliding_beam", "3d_inclined_roller", "3d_official_space_frame_1", "3d_official_space_frame_2"),
@@ -71,7 +72,16 @@ def example_project(key, unit_system="imperial"):
         name = project.next_name("L", project.loads)
         project.loads[name] = Load(name, target, direction, magnitude, **kwargs)
 
-    if key == "inclined_roller":
+    if key == "support_settlement":
+        beam = member((0., 0.), (120., 0.))
+        support((0., 0.), "fixed")
+        support((120., 0.), "fixed")
+        project.nodes["N2"].settlement_y = -.1
+        project.nodes["N2"].settlement_rz = .001
+        load(beam, "FY", -.01, position=0., kind="distributed", end_magnitude=-.01)
+        project.set_combination("Reverse load", {"Case 1": -1.})
+        project.set_combination("Settlement only", {"Case 1": 0.})
+    elif key == "inclined_roller":
         beam = member((0., 0.), (120., 0.))
         support((0., 0.), "pin")
         support((120., 0.), "inclined")

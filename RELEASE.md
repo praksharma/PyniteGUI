@@ -197,6 +197,61 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 Imposed Support-Movement Checkpoint
+
+Development **1.0.0rc5.dev0**, 2026-10-29; public RC4 assets remain unchanged.
+
+- Add signed global support translations/rotations and inclined-normal displacement
+  to the existing linear solve. Use canonical inches/radians and display-unit-aware
+  staged Properties, numerical tables and explicit bulk opt-ins. Prescriptions are
+  model-level and unchanged in every combination, including zero applied loads.
+- Solve with an affine physical lift and free-coordinate elimination. Preserve
+  global spring rest positions at zero; independently recover physical reactions,
+  released-end motions and all-combination free/global equilibrium. Support exact
+  redundant constraints only when their prescribed motions agree. Shared shell
+  edge constraints remain active; incompatible prescriptions reject analysis.
+- Cover linear 2D/3D frames/trusses and supported releases, explicit shared surface
+  joints, support copying/collision identity, conversion, snapshot invalidation,
+  process-worker transport, definition reports and paginated unit-labelled MCP
+  movement metadata alongside normal/unused-rotation metadata.
+- Add **Beam - Support Settlement and Rotation**, with right DY -0.1 in and RZ
+  +0.001 rad. Its zero-load **Settlement only** case has N1 FY +16.433333 kip /
+  MZ +862.75 kip-in and N2 FY -16.433333 kip / MZ +1109.25 kip-in. Record a
+  reproducible native offscreen illustration and explicit load-factor semantics.
+- Advance planar saves to **v29** and spatial saves to **v36**. Current movement
+  fields are required; older files migrate zero motion without changing supports.
+  Reject malformed values, nonzero old-schema motion and free-direction prescriptions.
+- Nonzero support movements reject P-Delta pending independent second-order
+  recovery checks. No case-specific prescriptions, moving spring rest positions,
+  staged-construction or plastic/nonlinear connection method is introduced.
+
+Validation of the support-movement extension:
+
+- Full locked source suite with optional MCP: **1,022 tests**, no skips,
+  **254.851 s**; **156 classes / nine groups**. Focused model/editor/MCP/table
+  follow-up: **61 tests**, no skips, **3.345 s**.
+- The installed wheel, outside the checkout, passes **100 focused tests** on each
+  of PyNite **3.0.0** / Qt **6.11.2** (**7.302 s**) and PyNite **3.2.1** /
+  Qt **6.12.0** (**6.681 s**), without skips. Installed smoke passes all
+  **31 examples** through save/open/analysis/export and native initialization,
+  plus real authenticated MCP discovery/edit/undo.
+- The full suite includes an authenticated HTTP client that edits a settlement,
+  runs the real process worker, reads unchanged prescribed motion in the zero-load
+  combination, and verifies invalid-edit rollback without changing the revision.
+  Independent references cover fixed-ended beam stiffness/Hermite fields, 2D/3D
+  normal compliance, ground springs, rigid-body motions, trusses, detached
+  member-side translations and fully released joint rotations without false torques.
+- Strict documentation/local links pass across **55 HTML pages**; documentation
+  browser checks include the inspected native settlement illustration, search,
+  subpath, dark mode and layout. Offline viewport interaction/support/hover,
+  graphics-resource and context-loss checks pass. Wheel/source metadata, runtime
+  assets, notices and source-content audit pass. No public release or additional
+  human OS/hardware/signing validation is implied.
+
+The following sections record earlier development checkpoints and their historical
+scope/validation; the imposed-motion exclusions there are superseded by this
+linear-only extension.
+
 ## Post-RC4 General Inclined-Support Checkpoint
 
 Development **1.0.0rc5.dev0**, 2026-10-29; public RC4 assets remain unchanged.

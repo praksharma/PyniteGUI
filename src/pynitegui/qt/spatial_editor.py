@@ -239,6 +239,8 @@ def populate_inspector(window):
             fields[key].setChecked(fixed)
             fields[key].setObjectName(key)
             form.addRow(dof, fields[key])
+        from .support_movements import add_movement_controls
+        refresh_movements = add_movement_controls(form, fields, entity, project.units)
         def update_support():
             selected = fields["support"].currentText()
             custom = selected in ("custom", "inclined")
@@ -253,6 +255,7 @@ def populate_inspector(window):
                 form.labelForField(fields[key]).setText(("Additional " if selected == "inclined" else "")+DOFS[index])
                 if not custom:
                     fields[key].setChecked(replace(entity, support=fields["support"].currentText()).restraints[index])
+            refresh_movements()
         fields["support"].currentTextChanged.connect(update_support)
         update_support()
         for index, (key, dof) in enumerate(zip(SPRING_FIELDS, DOFS)):
@@ -327,6 +330,9 @@ def populate_inspector(window):
             values = {key: widget.currentText() if isinstance(widget, QComboBox) else widget.isChecked() if isinstance(widget, QCheckBox)
                       else unit_value(widget, project.units) if widget.property("quantity") else widget.value() for key, widget in fields.items()}
             if kind == "nodes":
+                for key, widget in fields.items():
+                    if key.startswith("settlement_") and not widget.isEnabled():
+                        values[key] = 0.
                 if values["support"] not in ("custom", "inclined"):
                     for key in RESTRAINT_FIELDS:
                         values.pop(key)

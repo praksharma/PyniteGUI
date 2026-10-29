@@ -23,15 +23,22 @@ def viewport_payload(window):
     window.canvas_results.sync()
     units = project.units
     def support_details(node):
+        from .support_movements import movement_fields
+        values = {key: getattr(node, key) for key in movement_fields(node)}
         rows = []
         for index, (dof, fixed, stiffness) in enumerate(zip(DOFS, node.restraints, node.springs)):
             quantity = "stiffness" if index < 3 else "rotational_stiffness"
             state = "Fixed" if fixed else (f"Bilateral spring: {units.to_display(stiffness, quantity):.6g} {getattr(units, quantity)}"
                                           if stiffness else "Free")
             rows.append({"dof": dof, "state": state})
+            imposed = values["settlement_"+dof.removeprefix("D").lower()] if index < 3 else values["settlement_"+dof.lower()]
+            if imposed:
+                unit = units.length if index < 3 else "rad"
+                state += f"; imposed {units.to_display(imposed, 'length' if index < 3 else 'rotation'):.8g} {unit} in every combination"
+                rows[-1]["state"] = state
         if node.support == "inclined":
             normal = ", ".join(f"{v:.6g}" for v in support_normal(node))
-            rows.append({"dof": "Normal", "state": f"Fixed translation; global normal ({normal}); az {node.support_angle:g}, el {node.support_elevation:g} deg"})
+            rows.append({"dof": "Normal", "state": f"Fixed translation; global normal ({normal}); az {node.support_angle:g}, el {node.support_elevation:g} deg; imposed {units.to_display(node.settlement_normal, 'length'):.8g} {units.length} in every combination"})
         return rows
     nodes = [{"name": n.name, "position": list(n.coords), "restraints": list(n.restraints), "springs": list(n.springs),
               "supportDetails": support_details(n),

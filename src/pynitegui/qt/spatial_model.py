@@ -24,6 +24,9 @@ class SpatialNode(Node):
     spring_rx: float = 0.0
     spring_ry: float = 0.0
     support_elevation: float = field(default=0.0, kw_only=True)
+    settlement_z: float = field(default=0.0, kw_only=True)
+    settlement_rx: float = field(default=0.0, kw_only=True)
+    settlement_ry: float = field(default=0.0, kw_only=True)
 
     @property
     def coords(self):
@@ -96,13 +99,13 @@ class SpatialProject(Project):
     surface_supports: dict = field(default_factory=dict)
 
     def to_dict(self):
-        data = {"version": 34, "units": "in-kip", **asdict(self),
+        data = {"version": 36, "units": "in-kip", **asdict(self),
                 "surfaces": {name: mesh.to_dict() for name, mesh in self.surfaces.items()}}
         return data
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22, 24, 26, 28, 30, 32, 34) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
+        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22, 24, 26, 28, 30, 32, 34, 36) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
             raise ValueError("Unsupported spatial project version, dimension, or units.")
         if data["version"] < 28 and data.get("surface_supports", {}):
             raise ValueError("Surface edge supports require spatial version 28.")
@@ -145,6 +148,12 @@ class SpatialProject(Project):
                 if not identifier(name) or not isinstance(value, dict):
                     raise ValueError(f"Invalid spatial {key} entry: {name!r}.")
                 if key == "nodes":
+                    from .support_movements import movement_fields
+                    movement_keys = set(movement_fields(SpatialNode("", 0., 0.)))
+                    if data["version"] < 36 and any(value.get(field, 0.) != 0. for field in movement_keys):
+                        raise ValueError("Imposed support movements require spatial version 36.")
+                    if data["version"] >= 36 and not movement_keys <= value.keys():
+                        raise ValueError(f"Invalid spatial nodes entry {name}: Missing imposed support movement fields.")
                     if data["version"] < 34 and (value.get("support") == "inclined" or
                             any(value.get(key, 0.) != 0. for key in ("support_angle", "support_elevation"))):
                         raise ValueError("Spatial inclined supports require project version 34.")
@@ -206,6 +215,8 @@ class SpatialProject(Project):
                 raise ValueError(f"Node {name}: spatial support angles require an inclined support.")
             if any(type(getattr(node, key)) is not bool for key in RESTRAINT_FIELDS):
                 raise ValueError("Support restraints must be boolean values.")
+            from .support_movements import validate_movements
+            validate_movements(node)
             from .support_axes import support_normal, translation_spaces
             free = None
             if node.support == "inclined":

@@ -1120,6 +1120,10 @@ class MainWindow(QMainWindow):
                         detail += (f" | normal az {entity.support_angle:g}, el {entity.support_elevation:g} deg" if hasattr(entity, "z") else f" | tangent {entity.support_angle:g} deg")
                     if any(entity.springs):
                         detail += " | springs: " + ", ".join(label for label, k in zip(dofs, entity.springs) if k)
+                    from .support_movements import movement_summary
+                    movement = movement_summary(entity, units)
+                    if movement != "None":
+                        detail += " | imposed: "+movement
                 elif kind == "members":
                     detail = f"{entity.start} - {entity.end}"
                     if entity.kind == "truss":
@@ -1275,6 +1279,8 @@ class MainWindow(QMainWindow):
                 fields[key].setObjectName(key)
                 fields[key].setChecked(fixed)
                 self.form.addRow(label, fields[key])
+            from .support_movements import add_movement_controls
+            refresh_movements = add_movement_controls(self.form, fields, entity, self.project.units)
             def update_support():
                 custom = fields["support"].currentText() == "custom"
                 self.form.setRowVisible(fields["support_angle"], fields["support"].currentText() == "inclined")
@@ -1282,6 +1288,7 @@ class MainWindow(QMainWindow):
                     self.form.setRowVisible(fields[key], custom)
                     if not custom:
                         fields[key].setChecked(replace(entity, support=fields["support"].currentText()).restraints[index])
+                refresh_movements()
             fields["support"].currentTextChanged.connect(update_support)
             update_support()
             for key, label, quantity in (("spring_x", "Spring DX", "stiffness"),
@@ -1431,7 +1438,7 @@ class MainWindow(QMainWindow):
                     quantity = widget.property("quantity")
                     if kind == "loads" and key == "magnitude" and entity.kind == "point":
                         quantity = "moment" if values["direction"] == "MZ" else "force"
-                    values[key] = unit_value(widget, self.project.units, quantity)
+                    values[key] = 0. if key.startswith("settlement_") and not widget.isEnabled() else unit_value(widget, self.project.units, quantity)
             def mutate(project):
                 target = getattr(project, kind)[name]
                 for key, value in values.items():
@@ -1704,6 +1711,8 @@ class MainWindow(QMainWindow):
                     node.support_angle = 0.
                     if hasattr(node, "support_elevation"):
                         node.support_elevation = 0.
+                from .support_movements import clear_inapplicable_movements
+                clear_inapplicable_movements(node)
             self.edit("Assign support", assign)
 
     def manage_materials(self):
