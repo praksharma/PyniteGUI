@@ -308,22 +308,29 @@ def analyze_plate(definition, progress=None):
         displacement = np.array([getattr(model.nodes[name], ("DX", "DY", "DZ")[normal_axis])[combination] * sign for name in names])
         reactions = np.array([getattr(model.nodes[name], ("RxnFX", "RxnFY", "RxnFZ")[normal_axis])[combination] * sign for name in names])
         if definition.element_type == "Rect":
-            from .plate_recovery import rectangular_resultants
+            from .plate_recovery import rectangular_resultants, rectangular_coefficients
             recovered = [rectangular_resultants(element, definition.material.E, definition.material.nu,
                                                definition.thickness, combination) for element in elements]
             moments = np.array([moment for moment, shear in recovered])
             shears = np.array([shear for moment, shear in recovered])
+            inspection = np.array([rectangular_coefficients(element, combination) for element in elements])
         else:
             moments = np.array([element.moment(*station, combo_name=combination).ravel() for element, station in zip(elements, stations)])
             # Raw DKMQ shear fails the independent Navier refinement check.
             shears = None
-        if any(not np.isfinite(values).all() for values in (displacement, reactions, moments, shears) if values is not None):
+            # Quad's public moment recovery is bilinear extrapolation of four
+            # Gauss-point values. Four corner values retain that exact field,
+            # without shipping a live solver or solving again on each probe.
+            inspection = np.array([[element.moment(xi, eta, combo_name=combination).ravel()
+                for xi, eta in ((-1., -1.), (1., -1.), (1., 1.), (-1., 1.))] for element in elements])
+        if any(not np.isfinite(values).all() for values in (displacement, reactions, moments, shears, inspection) if values is not None):
             raise ValueError(f"Plate analysis returned nonfinite results for {combination}.")
         pressure = math.fsum(definition.pressure_for_case(case)*factor for case, factor in factors.items())
         applied, equilibrium = plate_equilibrium(model, definition, combination, pressure)
         solutions[combination] = dict(displacement=displacement, reactions=reactions, moments=moments, shears=shears,
-                                      applied=applied, pressure=pressure, factors=dict(factors), equilibrium=equilibrium)
-    result = {"names": names, "points": points, "cells": cells, "solutions": solutions,
+                                      applied=applied, pressure=pressure, factors=dict(factors), equilibrium=equilibrium,
+                                      inspection=inspection)
+    result = {"names": names, "points": points, "cells": cells, "element_names": [element.name for element in elements], "solutions": solutions,
               "snapshot_id": uuid.uuid4().hex[:12], "analyzed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
               "model_signature": plate_signature(definition), "definition": definition.to_dict()}
     return select_plate_combination(result, "Plate")

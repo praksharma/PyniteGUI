@@ -196,6 +196,38 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 Plate Inspection Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-10-29. The published RC4 assets and
+plate input/file schemas remain unchanged; this does not publish RC5.
+
+- Add a modeless separate-plate inspector with element-centre table, explicit
+  element/natural-coordinate probes, material-face picking and linked outline/
+  cross marker. Opening holes and pan/zoom gestures do not change selection.
+  Read signed Mx/My/Mxy and corrected Rect Qx/Qy with units, global coordinates,
+  local axes and combination/snapshot identity. Quad shear remains unavailable;
+  no general membrane or combined face-stress analysis is enabled.
+- Accepted worker snapshots retain compact local recovery data, rather than a
+  live solver. Probes use the corrected Rect polynomial or the engine's exact
+  within-element bilinear Quad moment field without another solve. Compare
+  off-centre/corner probes against explicit polynomial derivatives and actual
+  solved elements, including non-square XY/XZ/YZ plates, origins, openings,
+  signed/zero combinations and process serialization. Corner peaks remain unverified.
+- Export all centres or one probe as CSV with xi/eta, local/global coordinates,
+  units, axes, family/recovery description, case factors, snapshot/time/signature.
+  Combination and display-unit changes retain the selection and snapshot;
+  engineering edits/re-analysis clear inspection and disable stale exports.
+- Focused surfaces: **116 tests**, **26.094 s**. Full locked suite with MCP:
+  **925 tests**, no skips, **243.636 s**. The independently installed development
+  wheel with PyNite 3.2 / Qt 6.12 passes **925 tests**, no skips, **270.692 s**.
+  Test ownership: 144 classes in 9 groups.
+- Automated native macOS checks use the independently installed wheel and actual
+  worker: face picking, off-centre inspection, selected combination, both CSVs,
+  unit retention and stale-result clearing pass. The guide includes an inspected
+  native screenshot. Strict documentation/link checks cover 55 HTML pages;
+  browser QA covers the new image, search, subpath and dark mode. Human platform
+  gates remain separate. This batch changes no Three.js viewport assets.
+
 ## Post-RC4 Coupled Validation Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-10-28. This source checkpoint does

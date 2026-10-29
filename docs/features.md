@@ -75,6 +75,7 @@ See [method limits and plasticity boundaries](analysis/solve.md).
 | Applied-traction membrane patches, coincident beam/slab strip refinement and quantified rejected drilling cases; corrected non-square YZ edge/probe axes | [Bounded coupled verification](surfaces/main-model.md) |
 | Rectangle fitting to selected corners/perimeters or complete frame levels | [Slab placement](surfaces/main-model.md) |
 | Separate Quad/Rect plate bending, multiple uniform cases/combinations, horizontal self-weight, edge supports, cached combination contours and provenance CSV | [Experimental plate-only analysis](surfaces/plates.md) |
+| Separate-plate element picking, local bending probes, linked marker, centre table and unit/snapshot-labelled centre/probe CSV; corrected Rect shear, Quad shear unavailable | [Local plate inspection](surfaces/plates.md) |
 | Independent centred-opening/Rect recovery benchmarks; corrected Rect resultants in post-RC4 development, with explicit limits | [Plate verification and RC4 limitation](surfaces/plates.md) |
 | Four display-unit presets and canonical inch/kip storage | [Units](reference/units.md) |
 | Versioned save/open, migrations, undo/redo, recent-file cleanup and autosave/recovery | [History](reference/saving.md), [formats](reference/formats.md), [recovery](reference/recovery.md) |

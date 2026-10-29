@@ -123,6 +123,7 @@ tests = [
   "test_plate_model",
   "test_plate_loads",
   "test_plate_recovery",
+  "test_plate_inspection",
   "test_qt_coupled_surfaces",
   "test_qt_mesh_workspace",
   "test_qt_plate_workspace",

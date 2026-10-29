@@ -16,6 +16,109 @@ from pynitegui.qt.model import Material
 
 
 class PlateWorkspaceTests(unittest.TestCase):
+    def test_local_inspection_clicks_holes_units_combinations_csv_and_stale_clear(self):
+        import numpy as np
+        from types import SimpleNamespace
+        window = self.window
+        for family in ("Rect", "Quad"):
+            definition = PlateDefinition(element_type=family, plane="YZ", width=120., height=80., mesh_size=20.,
+                origin=[17., -31., 49.], pressure=-1e-7, thickness=.6,
+                openings=[dict(name="Hole", x_left=40., y_bott=20., width=20., height=20.)],
+                combinations={"Reversed": {"Case 1": -2.}})
+            window.install(definition.to_dict())
+            self.assertFalse(window.inspect_action.isEnabled())
+            window.run_analysis()
+            self.wait_until(lambda: window.thread is None)
+            self.assertTrue(window.inspect_action.isEnabled())
+            window.component.setCurrentIndex(2)
+            window.inspect_results()
+            inspector = window.inspector
+            self.app.processEvents()
+            self.assertEqual(inspector.table.rowCount(), len(window.result["cells"]))
+            self.assertEqual(any(inspector.table.horizontalHeaderItem(i).text().startswith("Qx (")
+                for i in range(inspector.table.columnCount())), family == "Rect")
+            polygon = window.result["points"][window.result["cells"][3]]
+            point = polygon[0]+.7*(polygon[1]-polygon[0])+.2*(polygon[3]-polygon[0])
+            event = SimpleNamespace(inaxes=window.ax, button=1, xdata=point[0], ydata=point[1])
+            window.click_plot(event)
+            self.assertEqual(inspector.element.currentText(), window.result["element_names"][3])
+            self.assertAlmostEqual(inspector.xi.value(), .4)
+            self.assertAlmostEqual(inspector.eta.value(), -.6)
+            self.assertIn("Global XYZ", inspector.probe.text())
+            self.assertIsNotNone(window.probe_marker)
+            from PySide6.QtTest import QTest
+            from PySide6.QtCore import Qt
+            with patch("pynitegui.qt.plate_inspection_dialog.QFileDialog.getSaveFileName") as picker:
+                inspector.xi.setFocus()
+                QTest.keyClick(inspector.xi, Qt.Key.Key_Return)
+            picker.assert_not_called()
+            self.assertTrue(inspector.isVisible())
+            previous = dict(inspector.probe_data)
+            window.click_plot(SimpleNamespace(inaxes=window.ax, button=1, xdata=50., ydata=30.))
+            self.assertEqual(inspector.probe_data, previous)  # The opening is blank.
+            with patch.object(window.plot_toolbar, "mode", "pan/zoom"):
+                window.click_plot(SimpleNamespace(inaxes=window.ax, button=1, xdata=10., ydata=10.))
+            self.assertEqual(inspector.probe_data, previous)
+            moment = inspector.probe_data["Mx"]
+            snapshot = window.result["snapshot_id"]
+            window.combination.setCurrentText("Reversed")
+            self.assertAlmostEqual(inspector.probe_data["Mx"], -2*moment)
+            self.assertAlmostEqual(inspector.xi.value(), .4)
+            window.units_box.setCurrentIndex(window.units_box.findData("si"))
+            self.assertEqual(window.result["snapshot_id"], snapshot)
+            self.assertIn("kN-m/m", inspector.probe.text())
+            self.assertAlmostEqual(inspector.probe_data["Mx"], -2*moment)
+            np.testing.assert_allclose(window.probe_marker.get_xdata(), [point[0]*window.definition.units.length_factor])
+            with tempfile.TemporaryDirectory() as directory:
+                for single in (True, False):
+                    path = str(Path(directory)/"inspection.csv")
+                    with patch("pynitegui.qt.plate_inspection_dialog.QFileDialog.getSaveFileName", return_value=(path, "")):
+                        inspector.export_csv(single)
+                    with open(path, newline="") as stream:
+                        rows = list(csv.DictReader(stream))
+                    self.assertEqual(len(rows), 1 if single else len(window.result["cells"]))
+                    self.assertEqual(rows[0]["Snapshot"], snapshot)
+                    self.assertEqual(rows[0]["Combination"], "Reversed")
+                    if single:
+                        self.assertAlmostEqual(float(rows[0]["xi"]), .4)
+                        self.assertAlmostEqual(float(rows[0]["eta"]), -.6)
+            inspector.table.selectRow(0)
+            self.assertEqual(inspector.xi.value(), 0.)
+            self.assertEqual(inspector.eta.value(), 0.)
+            inspector.reject()
+            self.assertIsNone(window.probe_marker)
+            window.inspect_results()
+            self.assertIs(window.inspector, inspector)
+            window.fields["thickness"].setValue(.9*window.definition.units.length_factor)
+            self.assertIsNone(window.result)
+            self.assertIsNone(inspector.result)
+            self.assertIsNone(inspector.probe_data)
+            self.assertEqual(inspector.table.rowCount(), 0)
+            self.assertFalse(inspector.export_probe.isEnabled())
+            self.assertFalse(inspector.export_centres.isEnabled())
+            self.assertFalse(window.inspect_action.isEnabled())
+            self.assertIsNone(window.probe_marker)
+
+    def test_inspector_recovery_failure_clears_table_and_export_then_retries(self):
+        window = self.window
+        window.fields["mesh_size"].setValue(60.)
+        window.run_analysis()
+        self.wait_until(lambda: window.thread is None)
+        window.inspect_results()
+        inspector = window.inspector
+        with patch("pynitegui.qt.plate_inspection_dialog.plate_probe_table", side_effect=ValueError("Nonfinite recovery")):
+            inspector.key = object()
+            window.draw()
+        self.assertIsNone(inspector.result)
+        self.assertIsNone(inspector.probe_data)
+        self.assertEqual(inspector.table.rowCount(), 0)
+        self.assertFalse(inspector.export_probe.isEnabled())
+        self.assertFalse(inspector.export_centres.isEnabled())
+        self.assertIn("Nonfinite recovery", inspector.probe.text())
+        window.draw()
+        self.assertEqual(inspector.table.rowCount(), 4)
+        self.assertTrue(inspector.export_probe.isEnabled())
+
     def test_quad_shear_is_unavailable_and_rect_remains_enabled(self):
         from pynitegui.qt.surface_results import QUAD_SHEAR_LIMITATION
         for family in ("Quad", "Rect"):

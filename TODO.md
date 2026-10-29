@@ -302,8 +302,14 @@ Remaining 11 scripts are intentionally unchecked:
   independent global force/moment equilibrium; reject vertical membrane gravity.
   Plate v3 migrates v1/v2 without adding loads. Preserve results on display-unit
   changes; benchmark signed/zero superposition, Navier gravity and opening moments.
-- [ ] Extend the plate pilot to general membrane behaviour and detailed local
-  result inspection; validate new formulations before engineering claims.
+- [x] Add separate-plate local bending inspection: material-face picking, explicit
+  element ownership, natural-coordinate probes, linked marker/outline, centre
+  table, signed/zero combinations, units/axes/snapshot identity and centre/probe
+  CSV. Retain corrected Rect polynomial moments/shear and Quad's unsmoothed
+  within-element moment field; ship compact recovery data, never solve on a
+  probe. Clear inspection/exports on engineering edits and retain unit-only snapshots.
+- [ ] Extend the plate pilot to general membrane behaviour; validate new
+  formulations before engineering claims. Combined face stresses remain deferred.
   Quad transverse shear recovery remains a separate open validation task above.
 - [ ] Add annular/curved-shell boundary/load definitions, membrane behaviour,
   normal-pressure orientation, reaction/result inspection and independent shell

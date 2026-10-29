@@ -6,6 +6,8 @@ import numpy as np
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.collections import PolyCollection
 from matplotlib.figure import Figure
+from matplotlib.path import Path
+from matplotlib.patches import Polygon
 from PySide6.QtCore import QSaveFile, QIODevice, QThread, QTimer, Qt
 from PySide6.QtGui import QUndoCommand, QUndoStack
 from PySide6.QtWidgets import (QComboBox, QDialog, QFileDialog, QFormLayout, QFrame, QHBoxLayout,
@@ -49,6 +51,7 @@ class PlateWorkspace(QDialog):
         self.resize(1100, 760)
         self.definition = PlateDefinition.from_dict(definition.to_dict()) if definition else PlateDefinition(unit_system=unit_system)
         self.result, self.thread, self.worker, self.path = None, None, None, None
+        self.inspector, self.probe_marker, self.probe_outline = None, None, None
         self.pending, self.loading = False, False
         self.saved = self.definition.to_dict()
         self.undo = QUndoStack(self)
@@ -69,6 +72,8 @@ class PlateWorkspace(QDialog):
         self.export_action = toolbar.addAction("Export CSV", self.export_csv)
         self.export_action.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_DialogSaveButton))
         self.export_action.setEnabled(False)
+        self.inspect_action = toolbar.addAction("Inspect Results…", self.inspect_results)
+        self.inspect_action.setEnabled(False)
         mesh_action = toolbar.addAction(self.style().standardIcon(QStyle.StandardPixmap.SP_FileDialogDetailedView), "Mesh Options", self.configure_mesh)
         mesh_action.setToolTip("Element family, placement, control lines and openings")
         self.loads_action = toolbar.addAction("Load Cases / Combinations…", self.configure_loading)
@@ -151,8 +156,10 @@ class PlateWorkspace(QDialog):
         layout.addWidget(self.recovery_note)
         self.figure = Figure()
         self.canvas = FigureCanvasQTAgg(self.figure)
-        layout.addWidget(NavigationToolbar2QT(self.canvas, self))
+        self.plot_toolbar = NavigationToolbar2QT(self.canvas, self)
+        layout.addWidget(self.plot_toolbar)
         layout.addWidget(self.canvas, 1)
+        self.canvas.mpl_connect("button_press_event", self.click_plot)
         splitter.addWidget(display)
         splitter.setSizes([310, 790])
         self.status = QLabel()
@@ -281,6 +288,8 @@ class PlateWorkspace(QDialog):
         units = self.definition.units
         self.figure.clear()
         ax = self.figure.add_subplot(111)
+        self.ax = ax
+        self.probe_marker, self.probe_outline = None, None
         palette = colors()
         polygons = points[cells] * units.length_factor
         index = self.component.currentIndex()
@@ -325,6 +334,10 @@ class PlateWorkspace(QDialog):
         for axis in self.figure.axes:
             style_axes(axis)
         self.figure.tight_layout()
+        self.inspect_action.setEnabled(self.result is not None)
+        if self.inspector is not None:
+            self.inspector.set_snapshot(self.result, units)
+            self.draw_probe()
         self.canvas.draw_idle()
         if self.result is None:
             self.status.setText(f"{len(points)} nodes | {len(cells)} {self.definition.element_type} elements | Transverse bending only | In-plane motion restrained")
@@ -337,6 +350,50 @@ class PlateWorkspace(QDialog):
                                 + " | Force/moment equilibrium passed")
             if max(abs(self.result["displacement"])) > self.definition.thickness / 2:
                 self.status.setText(self.status.text() + " | Large deflection: linear plate assumptions may be invalid")
+
+    def inspect_results(self):
+        if self.result is None:
+            return
+        if self.inspector is None:
+            from .plate_inspection_dialog import PlateInspector
+            self.inspector = PlateInspector(self)
+            self.inspector.probe_changed.connect(self.draw_probe)
+            self.inspector.finished.connect(self.draw_probe)
+        self.inspector.set_snapshot(self.result, self.definition.units)
+        self.inspector.show()
+        self.inspector.raise_()
+        self.draw_probe()
+
+    def draw_probe(self, *_):
+        for artist in (self.probe_marker, self.probe_outline):
+            if artist is not None:
+                artist.remove()
+        self.probe_marker, self.probe_outline = None, None
+        if self.result is not None and self.inspector is not None and self.inspector.isVisible() and self.inspector.probe_data:
+            probe = self.inspector.probe_data
+            index = self.result["element_names"].index(probe["element"])
+            factor = self.definition.units.length_factor
+            polygon = self.result["points"][self.result["cells"][index]]*factor
+            self.probe_outline = Polygon(polygon, fill=False, edgecolor=colors()["highlight"], linewidth=2.)
+            self.ax.add_patch(self.probe_outline)
+            self.probe_marker, = self.ax.plot(*(np.array(probe["position"])*factor), marker="+", markersize=11,
+                                            markeredgewidth=2., color=colors()["highlight"], linestyle="none")
+        self.canvas.draw_idle()
+
+    def click_plot(self, event):
+        if self.result is None or event.inaxes is not self.ax or event.button != 1 or self.plot_toolbar.mode or event.xdata is None or event.ydata is None:
+            return
+        point = np.array((event.xdata, event.ydata))/self.definition.units.length_factor
+        # Deterministic first owner at an interface; the element selector lets
+        # the user explicitly inspect the other side. Holes have no owner.
+        for index, cell in enumerate(self.result["cells"]):
+            polygon = self.result["points"][cell]
+            if Path(polygon).contains_point(point, radius=1e-10):
+                self.inspect_results()
+                xi = 2*(point[0]-polygon[0, 0])/(polygon[1, 0]-polygon[0, 0])-1
+                eta = 2*(point[1]-polygon[0, 1])/(polygon[3, 1]-polygon[0, 1])-1
+                self.inspector.select_probe(self.result["element_names"][index], float(np.clip(xi, -1, 1)), float(np.clip(eta, -1, 1)))
+                break
 
     def configure_mesh(self):
         if self.thread is not None or not self.apply():
@@ -385,6 +442,7 @@ class PlateWorkspace(QDialog):
         self.export_action.setEnabled(False)
         self.update_combination_choices()
         self.component.setCurrentIndex(0)
+        self.draw()
         self.thread = QThread(self)
         self.worker = PlateWorker(PlateDefinition.from_dict(self.definition.to_dict()))
         self.worker.moveToThread(self.thread)

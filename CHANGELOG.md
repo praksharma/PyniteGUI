@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Add local bending inspection to the separate plate workspace: click a material
+  element or open Inspect Results, choose xi/eta, read signed moments (plus
+  corrected Rect shear), inspect the element-centre table and export centre or
+  probe CSV with units/axes/combination/snapshot provenance. Link an outline and
+  probe marker to the plot; ignore opening holes and pan/zoom gestures. Units
+  and combination changes retain selection; engineering edits clear stale data.
+- Retain compact per-combination recovery data in the isolated plate worker's
+  accepted snapshot, enabling off-centre probes without retaining a solver or
+  running analysis again. Quad moments preserve the engine's within-element
+  bilinear recovery; Quad shear, general membrane and combined face stresses
+  remain unavailable. Plate files and engineering input schemas are unchanged.
+
 - Independently validate solved uniform-traction membrane fields in all planes,
   including signed/zero combinations and refinement. Add coincident beam/slab
   strip pressure/member-load transfer benchmarks against a narrow-strip EI-sum

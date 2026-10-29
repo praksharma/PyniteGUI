@@ -431,6 +431,34 @@ case. Quad shear remains unavailable; corrected Rect shear remains separate.
 The separate plate tool still has no general membrane or combined face-stress
 inspection and is not connected to the main-model MCP server.
 
+**Local plate inspection (development after RC4):** choose **Inspect Results…**
+or click a material element in the solved plot. The modeless inspector has an
+element-centre table and a separate numerical probe. Choose an element and enter
+xi/eta from -1 to +1; (0,0) is its centre. The selected element is outlined on
+the plot and a cross marks the probe. Pan/zoom gestures do not pick elements,
+and clicking inside an opening leaves the current selection unchanged. At a
+shared edge, choose the element explicitly to inspect either side.
+
+Read Mx/My/Mxy as moment per unit width in the displayed local axes. Rect also
+shows Qx/Qy as force per unit length, recovered from its corrected displacement
+polynomial. Quad shows only its within-element bilinear moment recovery; its
+transverse shear remains unavailable. There is no averaging between elements,
+no new membrane or combined face-stress result, and no corner-peak certification.
+Moment/shear contours still show element-centre values when the probe is elsewhere.
+
+The inspector follows the workspace's combination and display units without
+another solve, retaining the element and natural coordinates for the same
+snapshot. It prints local x/y, global XYZ including the recipe origin, and all
+three local unit vectors. **Export Element Centres CSV…** writes every centre;
+**Export Probe CSV…** writes the selected point with its xi/eta. Both include
+units, axes, family/recovery description, case factors, combination, snapshot,
+UTC analysis time and model signature. The existing toolbar CSV remains nodal.
+Engineering edits and a new analysis clear the table, probe and exports;
+display-unit changes retain the accepted snapshot. Closing the inspector clears
+the plot marker, and **Inspect Results…** reopens it.
+
+![Separate plate inspector with an off-centre Rect probe, signed resultants and snapshot identity](docs/assets/screenshots/plate-local-inspection.png)
+
 For example, a horizontal plate can use Dead pressure plus self-weight, a Live
 pressure case, and Service = 1.0 Dead + 1.0 Live or Ultimate = 1.2 Dead + 1.6 Live.
 The primary Plate baseline still uses Dead and its main factor alone.
