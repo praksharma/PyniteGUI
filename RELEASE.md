@@ -197,6 +197,48 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 Native Windows/Linux Packaging Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-10-29. Source commit **15bbfa7**;
+[native validation run 40861868669](https://github.com/praksharma/PyniteGUI/actions/runs/40861868669)
+passes on all three operating systems. These temporary Actions artifacts do not
+publish a release, create a tag or upload to PyPI. RC4 remains unchanged.
+
+| Native host | Architecture | Portable archive | Size |
+| --- | --- | --- | --- |
+| Windows Server 2025, 10.0.26100 | x86_64 | ZIP containing `Brecon/Brecon.exe` and `_internal` | 281.1 MiB |
+| Ubuntu 22.04, Linux 6.8.0-1070-azure, glibc 2.35 | x86_64 | tar.gz containing `Brecon/Brecon` and `_internal` | 301.8 MiB |
+| macOS 15.7.9 | arm64 | ZIP containing `Brecon.app` | 228.3 MiB |
+
+- Build on each native host using Python **3.12.16**, locked Qt **6.11.2** /
+  PyNite **3.0.0**, PyInstaller **6.22.3** and hooks **2026.9**. Pin platform-specific
+  build dependencies, render the existing mark as Windows ICO/macOS ICNS/Linux
+  PNG, record host/architecture/libc and keep the reviewed wheel/source identity.
+  macOS/Linux archives preserve symlinks; Linux also preserves executable modes.
+- Verify wheel/source metadata, assets and recipe bytes before freezing. Verify
+  archive SHA-256 before extraction. Launch from a new directory with PYTHONHOME,
+  PYTHONPATH and VIRTUAL_ENV removed and PATH limited to system locations; audit
+  the exact reported executable, bundled imports, notices/source hash, WebEngine
+  helper and version metadata. Retain the macOS ad-hoc signature check.
+- All three frozen apps pass the six check stages: **27 examples** each through
+  save/open/analyze/export, spawned released-member analysis with hidden All tools
+  Results retained, offline WebEngine/PNG, Qt PDF output, spawned plate analysis/
+  local inspection/Matplotlib PNG and authenticated MCP schema/edit/solve/results.
+  Saved native-window, viewport and plate images were inspected; downloaded
+  archives match their SHA256SUMS. Retain JSON, images, PDF, dependency/build record and
+  corresponding source with the artifacts. Actions retention is **14 days**.
+- Native packaging/tooling tests: **27** on each host; Windows omits two explicitly
+  POSIX-only symlink/mode tests. Linux and macOS have no skips. The initial native
+  run caught a missing Linux XCB shape library and case-sensitive lookup after
+  copying the Windows environment; both are fixed, with a Windows regression test.
+  Local packaging/tooling/docs tests, strict documentation/link checks across
+  **55 HTML pages**, browser documentation QA and wheel/source audits pass.
+- CI uses software graphics, with Xvfb on Linux; it does not validate consumer
+  Windows versions, every Linux distribution, Wayland/GPU drivers, native file
+  pickers or printing to physical devices. Windows/Linux previews are unsigned;
+  macOS remains ad-hoc signed. Public installers, signing/notarization,
+  SmartScreen/Finder quarantine and human platform feedback remain release gates.
+
 ## Post-RC4 Desktop Packaging Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-10-29. This work creates local macOS
@@ -236,8 +278,8 @@ it does not create a release tag, publish a release or upload to PyPI.
   crash reproduction also passes with the repaired code under Qt 6.12.
   Strict documentation/link checks cover 55 HTML pages and browser QA passes.
   Wheel/source audits include all desktop recipes, scripts, tests and workflow.
-- Developer ID signing, notarization, Finder/quarantine handling, Intel and
-  Windows/Linux desktop artifacts remain unverified. The preview has an ad-hoc
+- At this earlier checkpoint, Developer ID signing, notarization, Finder/quarantine
+  handling, Intel and Windows/Linux artifacts were unverified. The preview has an ad-hoc
   signature and must not be presented as a notarized public installer.
 
 ## Post-RC4 Spatial Rotational Release Checkpoint

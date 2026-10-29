@@ -566,7 +566,12 @@ hold. Keep the analysis checklist's completed methods and pending scope intact.
   Actions build that produces temporary artifacts without publishing a release.
 - [ ] Complete Developer ID signing, notarization and Finder/quarantine checks
   before claiming a public macOS standalone release.
-- [ ] Package and natively validate Windows/Linux standalone desktop releases.
+- [x] Package and natively validate Windows/Linux standalone development previews,
+  alongside macOS, on target Actions runners. Check extracted archives without
+  build Python paths, all examples, spawned frame/plate workers, offline graphics,
+  PNG/PDF and authenticated MCP. Retain source/notices, provenance and hashes.
+  Native run 40861868669 passes on all three hosts; signing/installers and human
+  desktop/hardware coverage remain under the public-release/manual gates above.
 - [x] Fix native Chromium/MCP handover crashes by scoping input filters to the
   editor's known widgets/actions, refreshing them after edits and removing them
   on unlock. Preserve shortcut/input blocking and both manual unlock controls.

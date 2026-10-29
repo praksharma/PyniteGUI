@@ -2,12 +2,17 @@
 
 ## Unreleased
 
+- Extend standalone development packaging to native Windows portable ZIP and
+  Linux tar.gz builds, retaining macOS app bundles. Check archive hashes before
+  relocated frozen execution, record host/architecture and Linux libc, retain
+  corresponding source/notices, and build on all three native Actions runners.
+  Public installers, signing and broader platform coverage remain separate gates.
 - Add a macOS development app-bundle recipe with locked runtime verification,
   pinned separate build tools, corresponding-source/notices, dependency identity,
   a native icon and symlink-preserving ZIP/checksums. Verify a relocated frozen
   executable through examples, spawned frame/plate workers, offline WebEngine,
   PNG/PDF and authenticated MCP. Add a manual artifact-only Actions workflow;
-  signing/notarization and other platforms remain separate pending gates.
+  signing/notarization remain separate pending gates.
 - Fix a reproducible native macOS WebEngine/MCP handover crash in both Qt 6.11
   and 6.12: replace application-wide Python input filtering with filters on the
   editor's known widgets/actions, retaining manual-control and shortcut locks.
