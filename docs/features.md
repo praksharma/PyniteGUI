@@ -88,6 +88,7 @@ See [method limits and plasticity boundaries](analysis/solve.md).
 | Separate Quad/Rect plate bending, multiple uniform cases/combinations, horizontal self-weight, edge supports, cached combination contours and provenance CSV | [Experimental plate-only analysis](surfaces/plates.md) |
 | Separate-plate element picking, local bending probes, linked marker, centre table and unit/snapshot-labelled centre/probe CSV; corrected Rect shear, Quad shear unavailable | [Local plate inspection](surfaces/plates.md) |
 | Independent centred-opening/Rect recovery benchmarks; corrected Rect resultants in post-RC4 development, with explicit limits | [Plate verification and RC4 limitation](surfaces/plates.md) |
+| Test-only Quad shear comparison and convergent interior neighbouring-moment candidate; boundary/interface recovery unvalidated and shear output disabled | [Quad shear feasibility](surfaces/plates.md) |
 | Four display-unit presets and canonical inch/kip storage | [Units](reference/units.md) |
 | Versioned save/open, migrations, undo/redo, recent-file cleanup and autosave/recovery | [History](reference/saving.md), [formats](reference/formats.md), [recovery](reference/recovery.md) |
 | Native macOS/Windows/Linux development packages, locked wheel/source builds and relocated frozen checks; public installers/signing pending | [Installation/build workflow](start/install.md), [validation record](project/releases.md) |

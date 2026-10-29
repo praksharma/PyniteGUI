@@ -77,6 +77,7 @@ const server = http.createServer((request,response)=>{
       if(url==='surfaces/plates/'){
         const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));
         assert(figures.some(image=>image.src.endsWith('plate-recovery-benchmarks.png'))&&figures.every(image=>image.ok),'Missing plate benchmark figure');
+        assert(figures.some(image=>image.src.endsWith('quad-shear-benchmarks.png')),'Missing Quad shear feasibility figure');
         assert(figures.some(image=>image.src.endsWith('plate-load-combinations.png'))&&
           figures.some(image=>image.src.endsWith('plate-load-program.png')),'Missing plate loading workflow screenshots');
       }

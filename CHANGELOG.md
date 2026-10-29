@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add a test-only Quad transverse-shear feasibility study with independent Navier
+  and two-direction cantilever references, separate/coupled solves, refinement,
+  all planes and signed/zero combinations. Compare raw shear, own-element moment
+  derivatives and a complete neighbouring-centre moment fit; document convergent
+  interior recovery and remaining boundary/interface gaps. Quad shear remains
+  disabled in application results, exports and MCP; production code is unchanged.
+
 - Add model-level support settlements/rotations and inclined-normal movements to
   existing linear workflows. Keep prescriptions unchanged across every combination,
   including zero loads; preserve zero spring rest positions and reject incompatible

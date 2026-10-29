@@ -197,6 +197,54 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 Quad Shear Feasibility Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-10-29. Test/documentation changes
+only; production solver, snapshots, UI, file formats and published RC4 assets
+are unchanged. Quad transverse shear remains unavailable in results, CSV and MCP.
+
+- Add a reproducible comparison of raw Quad shear, the divergence of each
+  element's bilinear moment field, and a quadratic fit to neighbouring element-
+  centre moments. The fit uses only complete 3 × 3 rectangular patches and
+  reports no value at incomplete patches. Manufactured quadratic tensors check
+  derivatives, signed/zero scaling and coordinate conditioning. Missing-centre
+  tests prevent crossing a hole or extrapolating to an edge; nonuniform and
+  invalid grids are rejected.
+- Solve 120 × 180 × 0.6 in isotropic rectangles under -1e-7 kip/in², E=3600 ksi:
+  simply supported Navier plate and coupled slab with negligible-stiffness edge
+  beam (E=1e-6 ksi), plus nu=0 cantilevers clamped in either local direction.
+  Three meshes (24/96/384 Quads), XY/XZ/YZ and Service/-2 Reverse/Zero produce
+  **36 model solves / 108 reported combination records** per engine version.
+  Every combination passes the existing six-component global equilibrium gate;
+  no application guard or tolerance is relaxed.
+- Check the independent Navier shear series at 160 versus 320 terms over the
+  fine-mesh comparison region; component changes stay below **0.02%**. Compare
+  methods on identical complete interior patches, excluding centres within
+  20 in of the outer boundary. At the fine mesh, raw shear has **58.41%** vector
+  L2 error and own-element moment differentiation **22.73%**. The neighbouring
+  fit converges from **2.829% → 0.667% → 0.148%**; its largest fine component
+  error is **0.170%**. All three methods pass the simple cantilever cuts,
+  demonstrating why those cuts alone cannot validate general plate shear.
+- Locked PyNite **3.0.0** and installed **3.2.1** reproduce the same bounded
+  comparison and pass all 108 reported records. The fit remains a test-only
+  candidate: boundary/opening recovery, irregular meshes, material/stiffness
+  jumps, thick plates, curved shells, peaks and rotational interfaces remain
+  unvalidated. It smooths across neighbours and does not replace unsmoothed
+  production probes. Preserve the original unchecked exposure task and add
+  explicit integration prerequisites to TODO.md.
+- Reproduce JSON and the comparison figure with
+  `scripts/benchmark_quad_shear.py --output /tmp/quad-shear.json --figure /tmp/quad-shear.png`.
+  The report's `checks_passed` refers only to the bounded research checks;
+  individual raw/candidate error metrics remain explicit.
+- Validation: **143 surface/docs/tooling tests**, no skips, **115.815 s**.
+  An installed locked-engine wheel passes **six new tests**, **56.120 s**;
+  installed PyNite 3.2.1 / Qt 6.12 passes **26 recovery/surface/probe tests**,
+  **63.090 s**. Ownership covers **157 classes / nine groups**. Strict docs
+  and local links cover **55 HTML pages**; browser QA checks the new figure,
+  existing workflows, search, subpath, dark mode and layout. Distribution audit
+  passes; the full frame/MCP suite is not repeated for this test/documentation-
+  only change. The previous production checkpoint remains recorded below.
+
 ## Post-RC4 Imposed Support-Movement Checkpoint
 
 Development **1.0.0rc5.dev0**, 2026-10-29; public RC4 assets remain unchanged.

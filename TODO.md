@@ -265,6 +265,16 @@ Remaining 11 scripts are intentionally unchecked:
 - [ ] Independently validate coupled Quad transverse shear recovery before exposing
   it. PyNite 3.0/3.2 raw Qx/Qy fails the thin-plate Navier refinement benchmark;
   Quad shear plots/data remain disabled in both coupled and plate workspaces.
+- [x] Complete a test-only Quad shear recovery feasibility study: independently
+  check Navier reference truncation, raw shear, own-element moment divergence and
+  a complete 3 x 3 neighbouring-centre moment fit. Cover separate/coupled thin
+  plates, two cantilever directions, XY/XZ/YZ, refinement and signed/zero cases.
+  Publish the reproducible comparison figure/report. The interior fit converges;
+  raw/own-element fields do not. This does not complete the exposure task above.
+- [ ] Validate shear recovery at boundaries/openings, nonuniform meshes and
+  material/stiffness interfaces before integrating any neighbouring-moment fit.
+  Define missing-patch/error behaviour and distinguish smoothed recovered shear
+  from the existing unsmoothed element probes; do not bridge holes or jumps.
 - [x] Add solved traction-based affine membrane checks in every plane, signed/zero
   combinations and refinement; independently compare applied loads, displacement
   and stress without prescribing the solution. Add coincident nu=0 slender-strip

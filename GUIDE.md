@@ -584,6 +584,47 @@ manufactured twist/cubic/rigid fields and two-direction zero-Poisson strip check
 verify signs, units and mixed derivatives. XY/XZ/YZ, origins and signed pressure
 factors preserve the local resultants.
 
+**Quad shear feasibility (development):** a reproducible test-only comparison
+uses 120 × 180 × 0.6 in plates under -1e-7 kip/in², E=3600 ksi. Compare an
+independent simply supported Navier solution with separate-plate and coupled
+slab solves, plus nu=0 cantilever strips clamped in each local direction.
+The coupled case retains an edge beam with E=1e-6 ksi so its directional
+stiffness is negligible. Meshes have 24, 96 and 384 Quads in XY/XZ/YZ, with
+Service, -2 Reverse and Zero combinations: 36 solves and 108 result records.
+Every combination must pass the unchanged independent six-component equilibrium
+gate. Navier shear reference truncation is checked at 160 versus 320 terms.
+
+Three recoveries are compared at the same interior element centres: raw engine
+shear; `Qx=Mx,x+Mxy,y`, `Qy=Mxy,x+My,y` differentiated from each element's
+own bilinear moment field; and those derivatives from a quadratic least-squares
+fit to nine neighbouring centre moments. All require a complete 3 × 3 patch for
+comparison and exclude centres within 20 in of the outer boundary. The fitted
+candidate reduces interior vector L2 error from about 2.8% to below 0.2%; each
+finest-mesh component is below 0.3%. Raw shear stays near 58% vector error and
+the own-element derivative near 23%. Passing simple cantilever strip checks
+does not establish general plate-shear accuracy.
+
+The fitted field is a **research candidate**, with no production output. It
+smooths across neighbouring elements and differs from the current unsmoothed
+point probe. Missing patches return no value; tests explicitly prevent bridging
+a hole or extrapolating to an edge. Boundary/opening recovery, irregular meshes,
+stiffness/material jumps, thick plates, curved shells, shear peaks and rotational
+frame–shell interfaces still need validation. Quad Qx/Qy remain unavailable in
+snapshots, probes, CSV and MCP. This study does not change the solver-method hold.
+
+![Quad shear feasibility: raw and own-element recovery fail; an interior neighbouring-moment fit converges](docs/assets/screenshots/quad-shear-benchmarks.png)
+
+Reproduce the diagnostic JSON and optional figure with:
+
+```sh
+uv run --locked python -B scripts/benchmark_quad_shear.py --output /tmp/quad-shear.json --figure /tmp/quad-shear.png
+uv run --locked python -B scripts/test.py test_quad_shear_validation
+```
+
+The report's `checks_passed` approves only these bounded research checks;
+inspect the recorded error for each method. It does not approve raw shear or
+enable the candidate for engineering results.
+
 **Opening benchmark:** a 120 × 120 in plate, thickness 0.6 in, E=3600 ksi,
 nu=0.2, simply supported outer edges and a centred 40 × 40 in free opening,
 under -1e-7 kip/in². A separate Rayleigh–Ritz reference integrates the Kirchhoff
