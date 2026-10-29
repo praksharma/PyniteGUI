@@ -120,6 +120,7 @@ description = "Mesh/plate/coupled-slab geometry, native workspaces, placement an
 tests = [
   "test_coupled_surfaces",
   "test_coupled_validation",
+  "test_nonuniform_membrane",
   "test_surface_results",
   "test_example_benchmarks.SlabExampleTests",
   "test_mesh_model",

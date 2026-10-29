@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add independent nonuniform flat-membrane traction benchmarks for pure in-plane
+  bending and mixed normal/shear stress. Verify displacement/stress convergence,
+  strain energy, exact load resultants and signed/zero combinations in every
+  plane, with a reproducible numerical report and convergence figure. Separate
+  continuum spin from nodal drilling; general wall/diaphragm and rotational
+  frame–shell interfaces remain unvalidated. No production solver or UI changes.
 - Add local DX/DY/DZ spatial frame end releases with recovered member-side motion,
   separate joint results, unstable-release/mechanism rejection and local/whole-model
   equilibrium checks. Add staged inspector/table/bulk/MCP editing, member reports,

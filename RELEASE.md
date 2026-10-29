@@ -197,6 +197,46 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 Nonuniform Membrane Validation Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-10-29. This is a test/documentation
+checkpoint; no production solver, UI, file format, public tag or RC4 artifact changes.
+
+- Add two independent zero-body-force Airy plane-stress references: pure in-plane
+  bending and mixed nonuniform normal/shear stress on a 120 × 80 × 0.8 in rectangle.
+  Integrate edge tractions consistently, retaining the exact force/end-moment
+  resultants. Only three in-plane scalar restraints remove rigid motions;
+  normal-displacement edge supports suppress bending. An off-plane corner frame
+  anchor carries zero load; no solved displacement is prescribed.
+- Solve the unchanged application path on **6/24/96/384 Quad** meshes in **XY/XZ/YZ**,
+  with Service, -2 Reverse and Zero combinations: **24 solves / 72 result records**.
+  Every combination passes the existing independent six-component equilibrium
+  gate. Displacement and symmetric stress-tensor L2 errors use 3 × 3 Gauss
+  integration; compare external work/2 with independent closed-form strain energy.
+  All three errors decrease monotonically. Fine-mesh Service errors are:
+
+  | Field | Displacement L2 | Stress-tensor L2 | Strain energy |
+  | --- | --- | --- | --- |
+  | In-plane bending | 0.2804% | 3.9081% | 0.1785% |
+  | Mixed normal/shear | 0.3064% | 3.1585% | 0.1047% |
+
+- Independently check constitutive compatibility, stress divergence, energy and
+  rigid-mode gauges. Cover translated origins, alternate Poisson ratio, canonical
+  unit metadata, file round-trips and unchanged input definitions. Confirm that
+  nonzero continuum spin coexists with zero independent nodal drilling rotation;
+  these membrane checks do not validate frame–shell rotational interfaces.
+- Locked PyNite **3.0.0** / Qt **6.11.2**: **121 surface tests**, no skips,
+  **58.506 s**. Installed PyNite **3.2.1** / Qt **6.12.0**: the **five new tests**
+  pass without skips in **32.869 s**. Docs/tooling: **16 tests**, **0.474 s**;
+  ownership checks cover **149 classes / nine groups**. Strict docs/local links
+  cover **55 HTML pages**; browser checks pass for images, search, GitHub Pages
+  subpath, dark mode and desktop layout. Reproduce the report/figure with
+  `scripts/benchmark_nonuniform_membrane.py`; the guide includes the convergence plot.
+- General wall/diaphragm behaviour, corner stress peaks, drilling treatment and
+  rotational interface validation remain pending. The separate lateral drilling
+  case is still rejected under refinement. Quad shear stays withheld; no stiffness
+  or acceptance tolerance is changed. Solver-method implementation stays on hold.
+
 ## Post-RC4 Spatial Translational Release Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-10-29. Implementation commit

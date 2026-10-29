@@ -273,9 +273,16 @@ Remaining 11 scripts are intentionally unchecked:
   retain production rejection at every refinement; do not infer general membrane
   or wall certification from these bounded tests. Fix non-square YZ edge/probe
   axes and add notch/support/plot regressions using the upstream width-Z/height-Y convention.
-- [ ] Validate nonuniform membrane/diaphragm loads, general frame–shell rotational
-  interfaces and drilling treatment before broadening engineering claims. The
-  current lateral drilling benchmark still fails equilibrium under refinement.
+- [x] Independently validate two bounded nonuniform flat-membrane traction fields:
+  pure in-plane bending and mixed normal/shear stress. Compare solved displacement,
+  stress-tensor L2 norms and strain energy with compatible Airy references across
+  four meshes, XY/XZ/YZ and signed/zero combinations. Check exact edge resultants,
+  three rigid-mode restraints, translated origins, persistence and zero anchor load;
+  distinguish continuum spin from the engine's independent nodal drilling DOF.
+- [ ] Validate general diaphragm/wall action, frame–shell rotational interfaces
+  and drilling treatment before broadening engineering claims. The current
+  lateral drilling benchmark still fails equilibrium under refinement; passing
+  bounded flat-membrane fields does not resolve that limitation.
 - [ ] Add eccentric slab/beam offsets or explicit connectors with tested load
   transfer; current connections require coincident centreline/mid-surface nodes.
 - [x] Add surface-aware MCP edit schemas and atomic topology/assignment validation;

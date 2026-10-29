@@ -353,16 +353,44 @@ separate raw-engine drilling diagnostic. These are bounded verification cases:
 | Check | Independent reference and observed scope |
 | --- | --- |
 | Membrane extension, Poisson contraction and shear | Constant edge tractions on a 120 × 80 × 0.8 in rectangle; exact plane-stress affine displacement/stress, not prescribed solver displacements. Three scalar in-plane restraints remove rigid modes; outer edges restrain normal displacement. Three meshes in XY/XZ/YZ, translated origins, signed and zero combinations match to numerical precision. An off-plane frame anchor at the zero-motion corner carries no membrane load. |
+| Nonuniform in-plane bending and mixed normal/shear stress | Two independent Airy plane-stress fields on the same rectangle, loaded by consistent edge tractions. Four meshes (6/24/96/384 Quads) in XY/XZ/YZ and signed/zero combinations pass unchanged global force/moment equilibrium. Fine displacement L2 errors are below 0.31%, stress-tensor L2 errors below 4% and strain-energy errors below 0.18%, all decreasing under refinement. No solved displacement is prescribed; the corner frame anchor remains unloaded. |
 | Pressure or member load transferred between a beam and slab | A 240 × 12 × 0.6 in, nu=0 slab strip with a coincident centreline beam, simply supported ends and beam/slab EI ratios 0.25, 1 and 4. Compare both load paths against the independent narrow-strip rigidity sum `EI = Eb Ib + Es b t³/12`. Under refinement from 8 to 32 beam segments, fine displacement-field error is below 0.1% of reference peak, beam midspan moment error below 0.3% and slab Mx relative L2 error below 0.15%. This is a slender-strip limit, not an exact finite-width or eccentric/composite-section reference. |
 | Weak drilling under lateral loading | Raw engine diagnostic only: a loaded frame/slab's missing external MY moment matches its summed weak local drilling torque. On 12/48/192-element meshes the residual grows from about 0.296 to 0.604 to 1.046 kip-in, far above the existing approximately 0.000018 kip-in limits. The actual application rejects every case; refinement alone is not a remedy. |
 
 The raw drilling diagnostic is isolated in the benchmark; it does not bypass the
 application's acceptance gate or expose rejected engineering results to the UI/MCP.
-No drilling stiffness or equilibrium tolerance is changed. Nonuniform membrane
-loads, general diaphragm/wall action, rotational frame–shell interfaces and corner
-stress peaks still require independent validation. Quad shear remains unavailable.
+No drilling stiffness or equilibrium tolerance is changed. General diaphragm/wall
+action, rotational frame–shell interfaces and corner stress peaks still require
+independent validation. Quad shear remains unavailable.
 
 ![Beam–slab strip convergence and the separately rejected drilling case](docs/assets/screenshots/coupled-surface-validation.png)
+
+**Nonuniform reference details:** local coordinates are `0 <= x <= L`,
+`-H/2 <= y <= H/2`, with L=120 in, H=80 in, t=0.8 in, E=3600 ksi, nu=0.2
+and C=0.001 kip/in³. The independent references use Airy potentials
+`phi = -C*y³/6` and `phi = C*x*y²/2`, giving `(Sx, Sy, Txy) = (-C*y, 0, 0)`
+and `(C*x, 0, -C*y)`, respectively. Both satisfy zero-body-force equilibrium;
+compatible plane-stress displacements and closed-form strain energies are in
+`tests/nonuniform_reference.py`. The method follows
+[Bower, Applied Mechanics of Solids §5.2](https://solidmechanics.org/Text/Chapter5_2/Chapter5_2.htm).
+Exact integration of linear edge traction times edge shape functions preserves
+the applied end moments. Only `u(0,-H/2)`, `v(0,-H/2)` and `u(0,+H/2)` are
+restrained in-plane. Normal-displacement edge supports suppress out-of-plane motion.
+
+The report integrates displacement-vector and symmetric stress-tensor relative
+L2 errors with 3 × 3 Gauss quadrature, including both shear tensor entries;
+strain energy is external work/2 compared with the closed-form reference.
+Checks also cover translated origins, alternate Poisson ratio, unit metadata and
+file round-trips. The continuum spin `(dv/dx-du/dy)/2` is nonzero while PyNite's
+independent nodal drilling rotations stay zero. Passing these traction fields
+therefore does **not** validate moment-connected diaphragms or fix the rejected
+lateral drilling case. Reproduce the separate bounded report and figure with:
+
+```sh
+uv run python -B scripts/benchmark_nonuniform_membrane.py --output /tmp/nonuniform-membrane.json --figure /tmp/nonuniform-membrane.png
+```
+
+![Nonuniform flat-membrane displacement, stress-tensor and strain-energy convergence](docs/assets/screenshots/nonuniform-membrane-validation.png)
 
 Rectangle width/height axes are XY: X/Y, XZ: X/Z and **YZ: Z/Y**, following the
 mesh generator. Left/right mean minimum/maximum width coordinate; bottom/top mean

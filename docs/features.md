@@ -74,7 +74,7 @@ See [method limits and plasticity boundaries](analysis/solve.md).
 | Main-model surfaces, face and enclosed/crossing box selection, edit/delete, saved recipes and frame placement | [Surface geometry](surfaces/main-model.md) |
 | Opt-in rectangular Quad/frame coupling, pressure cases, self-weight, deformed mesh and geometry-owned global edge supports | [Experimental coupled slabs](surfaces/main-model.md) |
 | Snapshot-bound local moment/membrane-stress contours, natural-coordinate probes, CSV and MCP; Quad shear withheld pending validation | [Slab results](surfaces/main-model.md) |
-| Applied-traction membrane patches, coincident beam/slab strip refinement and quantified rejected drilling cases; corrected non-square YZ edge/probe axes | [Bounded coupled verification](surfaces/main-model.md) |
+| Affine/nonuniform applied-traction membrane convergence and strain energy, coincident beam/slab strip refinement and quantified rejected drilling cases; corrected non-square YZ edge/probe axes | [Bounded coupled verification](surfaces/main-model.md) |
 | Rectangle fitting to selected corners/perimeters or complete frame levels | [Slab placement](surfaces/main-model.md) |
 | Separate Quad/Rect plate bending, multiple uniform cases/combinations, horizontal self-weight, edge supports, cached combination contours and provenance CSV | [Experimental plate-only analysis](surfaces/plates.md) |
 | Separate-plate element picking, local bending probes, linked marker, centre table and unit/snapshot-labelled centre/probe CSV; corrected Rect shear, Quad shear unavailable | [Local plate inspection](surfaces/plates.md) |
