@@ -33,11 +33,11 @@ class ModelTablesDialog(QDialog):
         self.constructors = {"nodes": Node, "members": Member, "loads": Load}
         if self.spatial:
             from .spatial_model import SpatialNode, SpatialMember, SpatialLoad, RESTRAINT_FIELDS, SPRING_FIELDS
-            from .spatial_releases import ROTATION_FIELDS
+            from .spatial_releases import RELEASE_FIELDS
             self.fields = {"nodes": ("name", "x", "y", "z", "support", *RESTRAINT_FIELDS, *SPRING_FIELDS),
-                           "members": ("name", "start", "end", "material", "section", "roll", "kind", *ROTATION_FIELDS),
+                           "members": ("name", "start", "end", "material", "section", "roll", "kind", *RELEASE_FIELDS),
                            "loads": (*FIELDS["loads"][:-1], "elevation", "units")}
-            self.boolean_fields = {*RESTRAINT_FIELDS, *ROTATION_FIELDS}
+            self.boolean_fields = {*RESTRAINT_FIELDS, *RELEASE_FIELDS}
             self.numeric_fields = NUMERIC_FIELDS | {"z", "roll", "elevation", *SPRING_FIELDS}
             self.constructors = {"nodes": SpatialNode, "members": SpatialMember, "loads": SpatialLoad}
         self.original = project.clone()
@@ -190,15 +190,15 @@ class ModelTablesDialog(QDialog):
     def update_member_types(self):
         table = self.tables["members"]
         keys = self.fields["members"]
-        from .spatial_releases import ROTATION_FIELDS
-        releases = ROTATION_FIELDS if self.spatial else ("release_start", "release_end", "release_start_x", "release_end_x", "release_start_y", "release_end_y")
+        from .spatial_releases import RELEASE_FIELDS
+        releases = RELEASE_FIELDS if self.spatial else ("release_start", "release_end", "release_start_x", "release_end_x", "release_start_y", "release_end_y")
         for row in range(table.rowCount()):
             frame = table.cellWidget(row, keys.index("kind")).currentText() == "frame"
             for key in releases:
                 item = table.item(row, keys.index(key))
                 flags = item.flags()
                 item.setFlags(flags | Qt.ItemFlag.ItemIsEnabled if frame else flags & ~Qt.ItemFlag.ItemIsEnabled)
-                item.setToolTip("Member-local rotational release, including roll. Linear frame-only. Clear releases before changing to truss." if self.spatial else
+                item.setToolTip("Member-local end release, including roll. Linear frame-only. Released member motion can differ from joint motion. Clear releases before changing to truss." if self.spatial else
                                 "Member-local frame release. Truss ends are pinned; clear axial/shear releases before changing to truss.")
 
     def update_load_units(self):

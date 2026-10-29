@@ -6,6 +6,7 @@ from threading import Thread
 import time
 import unittest
 from unittest.mock import patch
+import numpy as np
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 os.environ.setdefault("PYNITEGUI_NO_WEBENGINE", "1")
@@ -18,6 +19,33 @@ from pynitegui.qt.examples import example_project
 
 
 class AutomationCoreTests(unittest.TestCase):
+    def test_translational_schema_paginated_recovery_and_invalid_batch_rollback(self):
+        self.window.load_project(example_project('3d_sliding_beam'))
+        schema = self.invoke('read_schema', session_id=self.window.project_session)['data']['schema']
+        for key in ('release_end_x','release_end_y','release_end_z'):
+            self.assertNotIn('const',schema['entities']['members']['properties'][key])
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = analyze(self.window.project)
+        self.window.analysis_revision = self.window.revision
+        self.window.analysis_finished(result,'')
+        accepted = self.window.result
+        response = self.invoke('read_results',session_id=self.window.project_session,kind='members',offset=1,limit=1,combination='Reversed')
+        self.assertTrue(response['ok'],response)
+        data = response['data']
+        self.assertEqual(len(data['rows']),1)
+        self.assertIn('can differ',data['translation_note'])
+        self.assertEqual(len(data['released_end_translations']['rows']),2)
+        self.assertIn('DX (in)',data['released_end_translations']['headers'])
+        from pynitegui.qt.spatial_results import member_end_translations
+        expected = member_end_translations(result.for_combination('Reversed'),'M1')[1]
+        np.testing.assert_allclose(data['released_end_translations']['rows'][1][3:],expected)
+        before,count = self.window.project.to_dict(),self.window.undo.count()
+        response = self.edits([{'op':'put','collection':'members','key':'M1','value':{'release_start_z':True}}])
+        self.assertFalse(response['ok'])
+        self.assertEqual(self.window.project.to_dict(),before)
+        self.assertEqual(self.window.undo.count(),count)
+        self.assertIs(self.window.result,accepted)
+
     def test_spatial_release_batch_schema_result_directions_and_atomic_failure(self):
         self.window.load_project(example_project("3d_cantilever"))
         operations = [{"op": "put", "collection": "members", "key": "M1", "value": {
@@ -26,7 +54,7 @@ class AutomationCoreTests(unittest.TestCase):
         self.assertTrue(response["ok"], response)
         schema = self.invoke("read_schema", session_id=self.window.project_session)["data"]["schema"]
         self.assertNotIn("const", schema["entities"]["members"]["properties"]["release_end_ry"])
-        self.assertFalse(schema["entities"]["members"]["properties"]["release_end_x"]["const"])
+        self.assertNotIn("const", schema["entities"]["members"]["properties"]["release_end_x"])
         # The existing cantilever has no nodal bending moments, so a released
         # free-tip rotation is allowed; its member slope remains recoverable.
         with contextlib.redirect_stdout(io.StringIO()):

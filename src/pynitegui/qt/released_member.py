@@ -26,6 +26,13 @@ class ReleasedMember(Member3D):
                 -fixed_end[released] - stiffness[np.ix_(released, connected)] @ displacement[connected])
             if not np.all(np.isfinite(displacement)):
                 raise ValueError(f"Member {self.name}: released-end displacement is not finite.")
+            from .equilibrium import FORCE_TOLERANCE, MOMENT_TOLERANCE, RELATIVE_TOLERANCE
+            residual = stiffness @ displacement + fixed_end
+            scale = abs(stiffness) @ abs(displacement) + abs(fixed_end)
+            for index in released:
+                tolerance = (FORCE_TOLERANCE if index % 6 < 3 else MOMENT_TOLERANCE)+RELATIVE_TOLERANCE*scale[index, 0]
+                if not np.isfinite(scale[index, 0]) or abs(residual[index, 0]) > tolerance:
+                    raise ValueError(f"Member {self.name}: released-end physical equilibrium failed in {combo_name}. No result was accepted.")
             self._released_displacements[combo_name] = displacement
         return self._released_displacements[combo_name].copy()
 

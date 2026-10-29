@@ -13,7 +13,8 @@ import zipfile
 
 REQUIRED_CHECKS = ('examples save/open/analyze/export', 'Frozen background worker',
                    'Bundled Qt WebEngine', 'Bundled Qt print support', 'Frozen plate worker',
-                   'Bundled authenticated MCP')
+                   'Bundled authenticated MCP', 'Frozen translational release worker')
+EVIDENCE_FILES = ('app.png', 'viewport.png', 'plate.png', 'results.pdf', 'sliding.png')
 
 
 def layout(app):
@@ -65,7 +66,7 @@ def audit(app, report):
     assert record['version']==provenance['version']
     assert Path(record['bundled_import']).resolve().is_relative_to(app), 'Report imported external code'
     assert all(any(value in check for check in record['checks']) for value in REQUIRED_CHECKS), record['checks']
-    for name in ('app.png', 'viewport.png', 'plate.png', 'results.pdf'):
+    for name in EVIDENCE_FILES:
         assert (report.parent/name).stat().st_size>1000, 'Missing or empty check artifact: '+name
     if target == 'macOS':
         subprocess.run(['codesign', '--verify', '--deep', '--strict', str(app)], check=True)

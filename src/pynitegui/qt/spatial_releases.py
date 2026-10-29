@@ -1,4 +1,4 @@
-"""Rotational spatial releases and exact gauges of unused joint coordinates.
+"""Spatial end releases and exact gauges of unused joint rotations.
 
 A joint's unused rotation need not be a global axis. G spans only rotational
 directions that none of the incident member ends, supports or springs use.
@@ -6,6 +6,8 @@ Verify K G=0 and G.T(P-FER)=0, then solve with K+G S G.T. This imposes G.T D=0
 as a numerical coordinate gauge, with zero physical energy/reaction. It is
 equivalent to eliminating those unused coordinates, not grounding a mechanism.
 Translations and connected rotational mechanisms are never included in G.
+Translational end releases use ordinary condensation/recovery; disconnected
+joint translations are rejected by the physical stiffness check, never gauged.
 """
 import numpy as np
 from scipy.sparse import coo_matrix, diags
@@ -17,6 +19,19 @@ from .released_member import ReleasedMember
 
 ROTATION_FIELDS = ("release_start_rx", "release_start_ry", "release_start",
                    "release_end_rx", "release_end_ry", "release_end")
+TRANSLATION_FIELDS = tuple(f"release_{end}_{axis}" for end in ("start", "end") for axis in ("x", "y", "z"))
+RELEASE_FIELDS = tuple(key for end in ("start", "end") for key in
+                      (*(f"release_{end}_{axis}" for axis in ("x", "y", "z", "rx", "ry")), f"release_{end}"))
+
+
+def release_axis(key):
+    suffix = key.rsplit("_", 1)[-1]
+    return "D"+suffix.upper() if suffix in ("x", "y", "z") else suffix.upper() if suffix in ("rx", "ry") else "RZ"
+
+
+def has_releases(project):
+    return any(member.kind == "frame" and any(getattr(member, key) for key in RELEASE_FIELDS)
+               for member in project.members.values())
 
 
 def has_rotational_releases(project):
@@ -108,7 +123,7 @@ class ReleasedSpatialSolver(FrameSolver):
         return force
 
 
-def recover_spatial_rotations(model):
+def recover_spatial_releases(model):
     # Check every free physical equation against the unaugmented engine matrix.
     # A global equilibrium sum alone could miss equal/opposite spurious torques.
     from .equilibrium import FORCE_TOLERANCE, MOMENT_TOLERANCE, RELATIVE_TOLERANCE
@@ -129,7 +144,7 @@ def recover_spatial_rotations(model):
         if getattr(physical, "_pynitegui_truss", False):
             continue
         for name, sub in list(physical.sub_members.items()):
-            if any(sub.Releases[index] for index in (3, 4, 5, 9, 10, 11)):
+            if any(sub.Releases):
                 recovered = ReleasedMember.from_member(sub)
                 for combination in model.load_combos:
                     recovered.d(combination)

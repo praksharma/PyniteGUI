@@ -38,11 +38,11 @@ workflows, plus the locked **PyniteFEA 3.0.0** source. The
 describes the engine, not features automatically available in this GUI.
 **Done** means usable in the stated application workflow; **Partial** identifies
 the exact missing part. Summary: **9 done, 4 partial, 5 pending**. P-Delta coverage rechecked 2026-10-26;
-spatial rotational-release scope rechecked 2026-10-29.
+spatial translational/rotational-release scope rechecked 2026-10-29.
 
 | Engine capability | GUI status | Coverage or remaining task |
 | --- | --- | --- |
-| Elastic 3D statics | Done | Linear spatial-frame and axial-only truss analysis, six DOFs, rolled frame members, materials/sections and validated results. Rotational frame end releases are validated for linear frame-only models; spatial translational releases remain pending. |
+| Elastic 3D statics | Done | Linear spatial-frame and axial-only truss analysis, six DOFs, rolled frame members, materials/sections and validated results. Local translational/rotational frame end releases and member-side motion are validated for linear frame-only models. |
 | Frame P-Delta | Done | Saved linear/P-Delta choice for 2D/3D frame-only models; independent combination solves, actual phase feedback, effective-stiffness rejection, method-labelled snapshots/reports/MCP and analytical compression/tension/refinement benchmarks. No coupled slabs, trusses, released translations or spatial rotational releases. |
 | Frame modal analysis | Pending | Add an explicit mass source, gravity/unit conversion, frequencies, mode shapes and a separate modal result workflow. |
 | Steel-frame pushover | Pending | Confirmed locked-engine steel I-section interaction model: needs fy, Zy/Zz, section/material binding, elastic preload, push increments, displacement stop, accepted-step histories and capacity curves. First-order only; no P-Delta integration or nonlinear shells. Benchmark before GUI exposure. |
@@ -654,8 +654,12 @@ and saves projects normally. A separate REST API is not part of the first scope.
   oblique/rolled unused-rotation coordinates, physical-equation and equilibrium
   checks, recovered member-end bending slopes, independent beam/torsion/internal-
   hinge and mechanism benchmarks, staged/bulk/table/MCP editing and an example.
-- [ ] 3D translational member end releases, with independent motion recovery and
-  mechanism benchmarks. Released frames with P-Delta or surfaces remain unvalidated.
+- [x] 3D local DX/DY/DZ member end releases, independent axial/beam-flexibility,
+  signed/zero/partial/point-load, oblique/roll, separate joint/spring motion,
+  mechanism and split benchmarks. Recover member-side motions, verify local/free-
+  joint/global equilibrium, stage inspector/table/bulk/MCP edits and report local
+  end translations. Add a sliding-beam example and strict spatial v32 migration.
+  No translational gauges; released P-Delta and frame/surface coupling remain rejected.
 - [x] 3D contained/crossing box selection, additive selection and cancellation;
   atomic bulk material/section/roll, six-DOF restraint/spring and load assignments.
 - [x] 3D node dragging behind an explicit Select-mode tool: XY/XZ/YZ plane through
@@ -672,8 +676,9 @@ and saves projects normally. A separate REST API is not part of the first scope.
   and in-plane response benchmarks. Unsupported releases are rejected, never stripped.
 - [x] Extend 2D-to-3D conversion to rotationally released frames, preserving local
   RZ hinges and in-plane response, including the Gerber beam and three-hinged arch.
-- [ ] Extend conversion to translationally released frames after spatial
-  translational releases and their end-motion recovery are benchmarked.
+- [x] Extend 2D-to-3D conversion to DX/DY-released frames, preserving end motion,
+  joint reactions, connection flags and source-window independence. Validate
+  axial/shear/bending fields and the converted fixed-guided example.
 - [x] Spatial point/distributed forces by magnitude, global azimuth/elevation,
   XYZ component previews, angled arrows, editable tables and versioned persistence.
 - [x] Dedicated global 3D rigid/spring symbols for all six DOFs, unit-aware

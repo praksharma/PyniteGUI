@@ -13,7 +13,7 @@ from pynitegui.qt.organization import level_selections, rename_entry, set_group,
 class OrganizationModelTests(unittest.TestCase):
     def test_both_formats_roundtrip_legacy_migration_and_conversion(self):
         from pynitegui.qt.spatial_conversion import to_spatial
-        for key, version, legacy in (("simple_beam", 25, 21), ("3d_space_frame", 30, 22)):
+        for key, version, legacy in (("simple_beam", 25, 21), ("3d_space_frame", 32, 22)):
             p = example_project(key)
             old = p.to_dict()
             old["version"] = legacy

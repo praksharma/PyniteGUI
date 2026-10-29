@@ -47,7 +47,8 @@ class SpatialConversionTests(unittest.TestCase):
                 self.assertEqual(converted.nodes[name].coords, (node.x, node.y, 18))
             for name, member in source.members.items():
                 self.assertEqual(asdict(converted.members[name]), {**asdict(member), "roll": 0,
-                    "release_start_rx": False, "release_end_rx": False, "release_start_ry": False, "release_end_ry": False})
+                    "release_start_rx": False, "release_end_rx": False, "release_start_ry": False, "release_end_ry": False,
+                    "release_start_z": False, "release_end_z": False})
             self.assertEqual(Project.from_dict(converted.to_dict()).to_dict(), converted.to_dict())
             converted.materials[converted.default_material].E *= 2
             converted.combinations["Combined"]["Wind"] = 10
@@ -60,11 +61,6 @@ class SpatialConversionTests(unittest.TestCase):
                 continue
             with self.subTest(example=key):
                 source = example_project(key)
-                if any(member.kind == "frame" and any((member.release_start_x, member.release_end_x, member.release_start_y, member.release_end_y))
-                       for member in source.members.values()):
-                    with self.assertRaisesRegex(ValueError, "released frame"):
-                        to_spatial(source, offset=-54)
-                    continue
                 converted = to_spatial(source, offset=-54)
                 planar, spatial = solve(source), solve(converted)
                 for combination in source.combinations:
@@ -136,8 +132,8 @@ class SpatialConversionTests(unittest.TestCase):
             source = example_project("cantilever")
             setattr(source.members["M1"], release, True)
             original = source.to_dict()
-            with self.assertRaisesRegex(ValueError, "released frame members: M1"):
-                to_spatial(source)
+            converted = to_spatial(source)
+            self.assertTrue(getattr(converted.members["M1"], release))
             self.assertEqual(source.to_dict(), original)
         source = example_project("truss")
         source.members["M1"].release_start = True
@@ -222,15 +218,22 @@ class SpatialConversionEditorTests(unittest.TestCase):
         self.app.processEvents()
         self.assertTrue(child.isVisible())
 
-    def test_cancel_and_unsupported_conversion_leave_source_unchanged(self):
+    def test_cancel_released_conversion_and_invalid_definition_preserve_source(self):
         self.source.load_project(example_project("shear_release"))
         before = self.source.project.to_dict()
         with patch.object(QDialog, "exec", return_value=0):
             self.assertIsNone(self.source.convert_spatial_project())
+        with patch.object(QDialog, "exec", return_value=1):
+            child = self.source.convert_spatial_project()
+        self.children.append(child)
+        self.assertTrue(child.project.members['M1'].release_end_y)
+        self.assertEqual(self.source.project.to_dict(),before)
+        self.source.project.members['M1'].release_start_y = True
+        invalid = self.source.project.to_dict()
         with patch.object(QDialog, "exec", return_value=1), patch.object(QMessageBox, "warning") as warning:
             self.assertIsNone(self.source.convert_spatial_project())
         self.assertIn("M1", warning.call_args.args[2])
-        self.assertEqual(self.source.project.to_dict(), before)
+        self.assertEqual(self.source.project.to_dict(), invalid)
         self.assertEqual(self.source.undo.count(), 0)
 
 

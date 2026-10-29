@@ -890,9 +890,8 @@ again. Closing the source window does not close the copy.
   member-local planar forces become global spatial azimuth/elevation forces with
   the same actual XY components, including on reversed/vertical members. Generated
   self-weight is regenerated, not duplicated; member roll starts at zero.
-- Frames, including local RZ hinges, and axial-only trusses can be converted.
-  Frame members with DX/DY end releases are rejected by name until spatial
-  translational releases are supported; conversion never drops releases. Redundant planar truss
+- Frames, including local RZ hinges and DX/DY end releases, and axial-only trusses
+  can be converted. Conversion preserves every connection release. Redundant planar truss
   moment flags become the spatial axial-only type. Conversion copies definitions,
   not analytical results, and does not infer new joints at crossings.
 
@@ -1014,11 +1013,13 @@ again. Closing the source window does not close the copy.
   linearly, without a bending curve. Splitting a truss introduces a joint that must
   be appropriately braced; an unbraced intermediate joint is a real mechanism.
 - **Frame end releases** are staged in Properties, Model Tables or bulk editing:
-  choose start/end local RX (torsion), RY and RZ (bending), then Apply. They are
+  choose start/end local DX (axial), DY/DZ (shear), RX (torsion), RY and RZ (bending), then Apply. They are
   connection properties, independent of global node restraints and member roll.
   Use Linear elastic with no surfaces. Only one end may release RX; releasing
   either end already disconnects torsion transfer. Clear manual flags before
-  changing to truss. Translational releases, released P-Delta and released
+  changing to truss. DX cannot be released at both ends. Each DY/RZ or DZ/RY
+  bending plane accepts at most two releases and cannot release both translations.
+  Released P-Delta and released
   frame/surface coupling are rejected. With IDs visible, endpoint labels list
   the released axes; reports include both end definitions.
   At a released joint an unused rotation may be oblique to all global axes.
@@ -1028,6 +1029,14 @@ again. Closing the source window does not close the copy.
   A completely free uniform torsional angle has no unique physical value.
   Try **3D Frames > 3D Inclined Beam - Rotational End Releases** for a rolled, oblique example with
   zero end bending moments, nonzero beam-end slopes and signed combinations.
+  **3D Frames > 3D Fixed-Guided Beam - Translational End Releases** releases end-j
+  DX/DY/DZ, retaining its rotational connection. Both joints are fixed, but the
+  member end slides. Properties and member reports show recovered local translations;
+  MCP member reads include a `released_end_translations` table for members on that
+  page. The deformed member line follows the member side of the connection.
+  Joint translations must still have support/spring or incident-member stiffness:
+  a free disconnected translation is rejected, even if it is unloaded. No
+  translational coordinate gauges or automatic restraints are added.
 
 [![Native inclined-beam example with local RY/RZ release controls and recovered member-end slopes](docs/assets/screenshots/spatial-rotational-releases.png)](docs/assets/screenshots/spatial-rotational-releases.png)
 
@@ -1138,9 +1147,9 @@ labels are reduced. Its curves and force values are unchanged.*
 
 Current spatial scope includes linear elastic frames/trusses and opt-in
 experimental rectangular Quad slabs, plus P-Delta elastic analysis of frame-only
-models. Spatial rotational releases are limited to linear frame-only models.
-General curved-shell analysis, solids, material plasticity and spatial translational
-releases are not implemented. Coupled slabs use solver-only frame segmentation at mesh nodes;
+models. Spatial translational/rotational releases are limited to linear frame-only models.
+General curved-shell analysis, solids and material plasticity are not implemented.
+Coupled slabs use solver-only frame segmentation at mesh nodes;
 user-defined frame intersections still require explicit shared endpoints.
 Multi-selection supports bulk assignments and
 deletion; use Model Tables for coordinated geometry editing. Geometry requires explicit shared endpoints;
@@ -2501,8 +2510,8 @@ member loads; it is not a separate axial-only truss element. Axial DX and shear 
 releases disconnect their corresponding member-end translations without changing
 joint supports or other members at that node. Released member ends can therefore
 move relative to the joint: node tables show joint displacement while member
-deflections show the member side of the release. These DX/DY controls are planar;
-spatial models expose only local rotational releases. Partial-stiffness connection
+deflections show the member side of the release. Spatial frames also expose
+local DX/DY/DZ, RX/RY/RZ releases for linear frame-only analysis. Partial-stiffness connection
 releases are not implemented.
 
 PyNite 3.0.0 condenses translational releases correctly for forces but its member
@@ -2545,8 +2554,36 @@ Independent benchmarks cover biaxial simply supported beams (closed-form moments
 deflections and slopes), internal hinges, released free-tip bending, point torque,
 reversed/vertical/oblique axes, roll, signed/zero combinations, mixed connections,
 rotational springs and genuine mechanisms. Converted planar Gerber/arch examples
-retain their in-plane response. This does not validate translational releases,
-P-Delta releases, slab coupling or nonlinear connections in 3D.
+retain their in-plane response. Released P-Delta, slab coupling and nonlinear
+connections remain unsupported.
+
+**Spatial translational releases (development after RC4).** End DX/DY/DZ use
+`release_start_x/y/z` and `release_end_x/y/z`. They share the same condensed
+linear stiffness/load vectors and the recovered member-side displacement path.
+Each axial/torsional channel requires at least one connected end. In each bending
+plane, at most two of its four end translation/rotation components can be released,
+and both transverse translations cannot be released. These conditions keep the
+eliminated local stiffness block invertible; global stability is checked separately.
+Every recovered released component must also satisfy its zero-force/moment equation.
+
+Independent axial-field and Euler–Bernoulli flexibility benchmarks cover either
+end, both bending planes, uniform/partial/varying/point loads, signed/zero factors,
+reversal, vertical/oblique members, roll, springs/other incident members and splitting.
+Only unused rotations enter the coordinate gauge above. Disconnected or otherwise
+unstable joint translations remain rejected. Node results retain the joint motion;
+Properties and member reports give **member-end translations in rolled local axes**.
+MCP `read_results(kind='members')` adds a unit-labelled `released_end_translations`
+table for the members present on that page, separate from global node results.
+Changing display units preserves the snapshot and converts the reported lengths.
+Released frames with P-Delta or surfaces remain unsupported.
+
+The sliding-beam example uses a 204 in inclined member, roll 31 degrees and uniform
+local qx = +0.002, qy = -0.001, qz = -0.0006 kip/in. Both joints are fixed; end-j
+DX/DY/DZ are released while rotations remain connected. Its member-side end motion
+is dx = qx L²/(2EA), dy = qy L⁴/(24EIz), dz = qz L⁴/(24EIy), even though joint
+translations remain zero. End-j axial/shear forces are zero; support moments
+remain. Reversed and Zero combinations show signed/zero superposition. This is
+an idealized connection, not a unilateral contact or partial-stiffness model.
 
 ### Axial-Only Trusses
 
@@ -2747,7 +2784,12 @@ Spatial version 30 adds required frame-end RX/RY/RZ booleans, retaining the lega
 RZ field names and adding the four RX/RY fields listed under Release Formulation.
 Older spatial files migrate with all new flags false. Nonempty rotational release
 flags in older formats and missing release fields in v30 are rejected, rather than
-silently changing connections. New saves use planar v25, spatial v30 and plate v3.
+silently changing connections.
+Spatial version 32 adds required DX/DY/DZ booleans at each frame end. It reuses
+the four previously false-only x/y fields and adds `release_start_z`/`release_end_z`.
+Older spatial formats migrate with all translational flags false; nonfalse flags
+in older versions, nonboolean flags and missing fields in v32 are rejected.
+New saves use planar v25, spatial v32 and plate v3.
 
 Spatial files retain XYZ, all six restraints/springs, and roll. Unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be

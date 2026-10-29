@@ -7,9 +7,9 @@ def analysis_method_issue(project):
     if project.analysis_method != "p_delta":
         return None
     if getattr(project, "dimension", "2D") == "3D":
-        from .spatial_releases import has_rotational_releases
-        if has_rotational_releases(project):
-            return "Spatial rotational end releases currently require Linear elastic analysis; P-Delta release recovery is not validated."
+        from .spatial_releases import has_releases
+        if has_releases(project):
+            return "Spatial end releases currently require Linear elastic analysis; P-Delta release recovery is not validated."
     if getattr(project, "surfaces", {}):
         return "P-Delta is available for frame-only models. PyNite does not include second-order shell effects; use Linear elastic for coupled slabs."
     if any(member.kind != "frame" for member in project.members.values()):

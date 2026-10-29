@@ -57,9 +57,9 @@ def analyze_spatial(project, progress=None):
     phase = progress or (lambda message: None)
     phase("Checking 3D model and supports")
     project.validate()
-    from .spatial_releases import (has_rotational_releases, ReleasedSpatialSolver, unused_rotation_axes,
-                                   inactive_components, recover_spatial_rotations)
-    released = has_rotational_releases(project)
+    from .spatial_releases import (has_releases, ReleasedSpatialSolver, unused_rotation_axes,
+                                   inactive_components, recover_spatial_releases)
+    released = has_releases(project)
     from .analysis_method import analysis_method_issue
     issue = analysis_method_issue(project)
     if issue:
@@ -95,9 +95,9 @@ def analyze_spatial(project, progress=None):
         if member.kind == "truss":
             model.def_releases(member.name, Rxi=True, Ryi=True, Rzi=True, Ryj=True, Rzj=True)
         elif released:
-            first, last = member.rotation_releases
-            model.def_releases(member.name, Rxi=first[0], Ryi=first[1], Rzi=first[2],
-                               Rxj=last[0], Ryj=last[1], Rzj=last[2])
+            first, last = member.spatial_releases
+            model.def_releases(member.name, **dict(zip(("Dxi", "Dyi", "Dzi", "Rxi", "Ryi", "Rzi",
+                                                      "Dxj", "Dyj", "Dzj", "Rxj", "Ryj", "Rzj"), (*first, *last))))
     if released:
         model.rotation_nullspaces = unused_rotation_axes(project, model)
         inactive = inactive_components(model.rotation_nullspaces)
@@ -153,7 +153,7 @@ def analyze_spatial(project, progress=None):
         raise ValueError("Spatial stiffness is singular or numerically ill-conditioned.\n" + issue)
     if released:
         phase("Checking physical joint equations and recovering released member-end motions")
-        recover_spatial_rotations(model)
+        recover_spatial_releases(model)
     phase("Collecting spatial result snapshot")
     result = AnalysisResult.from_solver(model, next(iter(project.combinations)), frozenset(inactive), spatial=True)
     result.model_signature = model_signature(project)

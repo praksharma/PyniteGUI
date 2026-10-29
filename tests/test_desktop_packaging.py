@@ -159,7 +159,7 @@ class DesktopPackagingTests(unittest.TestCase):
         record = dict(ok=True, frozen=True, executable=str(executable), version='1.0.0rc5.dev0',
                       bundled_import=str(resources/'pynitegui/__init__.py'), checks=list(self.checker.REQUIRED_CHECKS))
         report.write_text(json.dumps(record))
-        for name in ('app.png','viewport.png','plate.png','results.pdf'):
+        for name in self.checker.EVIDENCE_FILES:
             (report.parent/name).write_bytes(b'X'*1001)
         return app, report, record
 

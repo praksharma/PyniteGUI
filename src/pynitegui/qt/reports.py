@@ -371,6 +371,12 @@ def report_html(project, result, source="Untitled", options=None, *, image_urls=
         page = ' style="page-break-before: always"' if options.model or options.nodes else ""
         sections.append(f"<h2{page}>Member End Values and Extrema</h2>" +
                         "<p>Member values use local solver axes; N is positive in compression. Min/max columns are independent extrema, not forces at one shared station. Display amplification does not affect these results.</p>" + table("members"))
+        if spatial:
+            from .spatial_results import released_translation_table
+            headers, rows = released_translation_table(project, result)
+            if rows:
+                sections.append("<h3>Released Member-End Translations</h3><p>Member-side motions use rolled local axes. "
+                                "Released components can differ from the global joint displacements above.</p>"+html_table(headers, rows))
     if options.envelope_combinations:
         from .envelopes import HEADERS, display_rows, envelope_rows
         rows = list(display_rows(project, envelope_rows(project, result, options.envelope_combinations)))

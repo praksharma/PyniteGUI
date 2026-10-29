@@ -19,7 +19,7 @@ when comparing with the published rc1 wheel.
 | Per-member materials with optional independent frame/truss G, and sections, searchable libraries with dimensioned section sketches, defaults and provenance | [Assignments](modeling/properties.md), [materials](reference/materials.md), [sections](reference/sections.md) |
 | Free/pin/roller/fixed/custom supports and bilateral support springs | [2D supports](modeling/supports.md), [six-DOF spatial supports](modeling/3d.md) |
 | Planar axial/shear/moment end releases | [Release editing](modeling/releases.md), [formulation and limits](reference/releases.md) |
-| Spatial local RX/RY/RZ end releases, recovered bending slopes and rotationally released 2D conversion | [3D editing and scope](modeling/3d.md), [release formulation](reference/releases.md) |
+| Spatial local DX/DY/DZ/RX/RY/RZ end releases, recovered member-side motion and released 2D conversion | [3D editing and scope](modeling/3d.md), [release formulation](reference/releases.md) |
 | Bilateral axial-only trusses and mixed frame/truss models | [Trusses](modeling/trusses.md), [3D models](modeling/3d.md) |
 | 3D work planes, XYZ entry, member roll, gizmo, orbit, picking and visibility | [Spatial workflow](modeling/3d.md) |
 | Independent 2D-to-3D conversion and explicit support mapping | [Spatial conversion](modeling/3d.md) |

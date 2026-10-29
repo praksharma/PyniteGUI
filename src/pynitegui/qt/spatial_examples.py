@@ -47,7 +47,17 @@ def example_project(key, unit_system="imperial"):
     def load(target, direction, magnitude, **kwargs):
         name = project.next_name("L", project.loads)
         project.loads[name] = SpatialLoad(name, target, direction, magnitude, **kwargs)
-    if key == "3d_released_beam":
+    if key == "3d_sliding_beam":
+        member = project.add_member((0., 0., 0.), (144., 96., 108.))
+        project.nodes["N1"].support = project.nodes["N2"].support = "fixed"
+        beam = project.members[member]
+        beam.roll = 31.
+        beam.release_end_x = beam.release_end_y = beam.release_end_z = True
+        for direction, value in (("Fx", .002), ("Fy", -.001), ("Fz", -.0006)):
+            load(member, direction, value, position=0., kind="distributed", end_magnitude=value)
+        project.set_combination("Reversed", {"Case 1": -2.})
+        project.set_combination("Zero", {"Case 1": 0.})
+    elif key == "3d_released_beam":
         member = project.add_member((0., 0., 0.), (144., 96., 108.))
         project.nodes["N1"].support = "fixed"
         project.nodes["N2"].support = "pin"

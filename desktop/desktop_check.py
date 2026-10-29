@@ -4,6 +4,7 @@ from concurrent.futures import Future
 import contextlib
 import io
 import json
+import math
 from pathlib import Path
 import platform
 import sys
@@ -72,6 +73,32 @@ def run(output):
                 export_csv(root/(key+'.csv'), restored, result, 'nodes')
                 assert '<html' in report_html(restored, result).lower()
             passed(f'{len(EXAMPLES)} examples save/open/analyze/export with bundled dependencies')
+            window.load_project(example_project('3d_sliding_beam'))
+            window.run_analysis()
+            wait(lambda: window.thread is None)
+            assert window.result is not None
+            from pynitegui.qt.spatial_results import member_end_translations
+            member = window.result.solver.members['M1']
+            end = member_end_translations(window.result,'M1')[1]
+            expected = -.001*member.L()**4/(24*member.material.E*member.section.Iz)
+            assert math.isclose(float(end[1]),expected,rel_tol=1e-8)
+            assert window.result.displacements['N2'][:3]==(0.,0.,0.)
+            window.select(('members','M1'))
+            wait(lambda: window.view.ready)
+            window.view.diagram.setCurrentIndex(window.view.diagram.findData('moment_z'))
+            window.deformed_action.setChecked(True)
+            window.view.fit()
+            preview = Future()
+            window.view.web.page().runJavaScript('JSON.stringify(window.pyniteViewer.state())',preview.set_result)
+            wait(preview.done)
+            assert json.loads(preview.result())['objects']>5
+            app.processEvents()
+            scroll = window.inspector_scroll.verticalScrollBar()
+            scroll.setValue(scroll.maximum())
+            app.processEvents()
+            assert window.grab().save(str(output/'sliding.png'))
+            record['released_end_translations'] = [float(value) for value in end]
+            passed('Frozen translational release worker, member-side motion, controls and diagram')
             window.load_project(example_project('3d_released_beam'))
             window.results_dock.hide()
             window.run_analysis()

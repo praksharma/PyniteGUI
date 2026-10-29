@@ -56,6 +56,23 @@ def member_values(result, name, distance):
             member.deflection("dy", distance, combo), member.deflection("dz", distance, combo))
 
 
+def member_end_translations(result, name):
+    """Recovered member-side local translations, separate from the joint motion."""
+    parts = list(result.solver.members[name].sub_members.values())
+    return (parts[0].d(result.combination)[:3, 0], parts[-1].d(result.combination)[6:9, 0])
+
+
+def released_translation_table(project, result):
+    headers = ["Member", "End", "Releases (local)", *(f"{dof} ({project.units.length})" for dof in DOFS[:3])]
+    rows = []
+    for name, member in project.members.items():
+        if member.kind != "frame" or not any(any(flags[:3]) for flags in member.spatial_releases):
+            continue
+        for end, labels, values in zip(("Start", "End"), member.release_labels, member_end_translations(result, name)):
+            rows.append([name, end, labels, *(project.units.to_display(float(value), "length") for value in values)])
+    return headers, rows
+
+
 def truss_motion(result, name, distance):
     member = result.solver.members[name]
     a, b = (np.array(result.displacements[node.name][:3]) for node in (member.i_node, member.j_node))

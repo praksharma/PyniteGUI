@@ -127,6 +127,37 @@ window.close()
 
 @unittest.skipUnless(dependencies_available(), "Install the optional mcp extra for wire tests")
 class ServerWireTests(ServerWindowTests):
+    def test_wire_translational_release_edit_solve_and_member_side_motion(self):
+        self.window.load_project(example_project('3d_sliding_beam'))
+        self.window.automation_mode.set_enabled(True)
+        self.server.permissions.set_group('Model edits',True)
+        self.server.permissions.set_group('Analysis',True)
+        async def callback(client):
+            model = (await client.call_tool('read_model',{})).structured_content['data']
+            identity = {'session_id':model['session_id']}
+            edited = await client.call_tool('apply_batch',{**identity,'expected_revision':model['revision'],
+                'operations':[{'op':'put','collection':'members','key':'M1','value':{'roll':47.}}]})
+            self.assertFalse(edited.is_error,edited)
+            revision = edited.structured_content['data']['revision']
+            started = await client.call_tool('run_analysis',{**identity,'expected_revision':revision})
+            self.assertFalse(started.is_error,started)
+            job = started.structured_content['data']['job_id']
+            for _ in range(300):
+                status = (await client.call_tool('analysis_status',{**identity,'job_id':job})).structured_content['data']
+                if not status['running']:
+                    break
+                await asyncio.sleep(.02)
+            self.assertEqual(status['state'],'Current',status)
+            response = await client.call_tool('read_results',{**identity,'kind':'members','offset':1,'limit':1,'combination':'Reversed'})
+            self.assertFalse(response.is_error,response)
+            result = response.structured_content['data']
+            self.assertEqual(len(result['rows']),1)
+            rows = result['released_end_translations']['rows']
+            self.assertEqual([row[:3] for row in rows],[['M1','Start','None'],['M1','End','DX, DY, DZ']])
+            self.assertGreater(abs(rows[1][4]),0.)
+            self.assertIn('can differ',result['translation_note'])
+        self.with_client(callback)
+
     def test_wire_rotational_frame_releases_solve_and_explain_undefined_joint_angles(self):
         self.window.load_project(example_project("3d_released_beam"))
         self.window.automation_mode.set_enabled(True)
@@ -134,7 +165,7 @@ class ServerWireTests(ServerWindowTests):
         self.server.permissions.set_group("Analysis", True)
         async def callback(client):
             model = (await client.call_tool("read_model", {})).structured_content["data"]
-            self.assertEqual(model["model"]["version"], 30)
+            self.assertEqual(model["model"]["version"], 32)
             fields = model["schema"]["entities"]["members"]["properties"]
             self.assertNotIn("const", fields["release_end_ry"])
             edited = await client.call_tool("apply_batch", {"session_id": model["session_id"],

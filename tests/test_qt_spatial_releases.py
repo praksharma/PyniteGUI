@@ -8,7 +8,7 @@ from unittest.mock import patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 os.environ.setdefault("PYNITEGUI_NO_WEBENGINE", "1")
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication, QCheckBox, QPushButton, QMessageBox
+from PySide6.QtWidgets import QApplication, QCheckBox, QPushButton, QMessageBox, QLabel
 from pynitegui.qt.app import MainWindow
 from pynitegui.qt.examples import example_project
 from pynitegui.qt.model_tables import ModelTablesDialog
@@ -97,6 +97,51 @@ class SpatialReleaseEditorTests(unittest.TestCase):
         self.assertEqual(w.result.snapshot_id, snapshot)
         w.select(("members", "M1"))
         self.assertTrue(w.findChild(QCheckBox, "spatial_release_start_ry").isChecked())
+
+    def test_translational_controls_tables_bulk_rollback_worker_and_recovered_motion(self):
+        w = self.window
+        w.load_project(example_project('3d_sliding_beam'))
+        w.select(('members','M1'))
+        original = w.project.to_dict()
+        w.findChild(QCheckBox,'spatial_release_end_z').setChecked(False)
+        self.assertEqual(w.project.to_dict(),original)
+        w.findChild(QPushButton,'spatial_apply').click()
+        self.assertFalse(w.project.members['M1'].release_end_z)
+        w.undo.undo()
+        self.assertEqual(w.project.to_dict(),original)
+        w.findChild(QCheckBox,'spatial_release_start_y').setChecked(True)
+        with patch.object(QMessageBox,'warning') as warning:
+            w.findChild(QPushButton,'spatial_apply').click()
+        warning.assert_called_once()
+        self.assertEqual(w.project.to_dict(),original)
+        tables = ModelTablesDialog(w,w.project)
+        column = tables.fields['members'].index('release_end_z')
+        tables.tables['members'].item(0,column).setCheckState(Qt.CheckState.Unchecked)
+        tables.accept()
+        self.assertFalse(tables.definition.members['M1'].release_end_z)
+        self.assertEqual(w.project.to_dict(),original)
+        tables.deleteLater()
+        w.select_many([('nodes','N1'),('members','M1')])
+        w.findChild(QCheckBox,'bulk_release_end_z').setCheckState(Qt.CheckState.Unchecked)
+        w.findChild(QPushButton,'bulk_apply').click()
+        self.assertFalse(w.project.members['M1'].release_end_z)
+        w.undo.undo()
+        self.assertEqual(w.project.to_dict(),original)
+        w.run_analysis()
+        self.wait_finished()
+        self.assertIsNotNone(w.result)
+        w.select(('members','M1'))
+        labels = '\n'.join(item.text() for item in w.inspector.findChildren(QLabel))
+        self.assertIn('Member-end translations (local)',labels)
+        self.assertIn('can differ from the joint',labels)
+        self.assertEqual(viewport_payload(w)['members'][0]['releaseLabels'],['None','DX, DY, DZ'])
+        self.assertIn('Released Member-End Translations',report_html(w.project,w.result))
+        identity = w.result.snapshot_id
+        w.set_units('si')
+        self.assertEqual(w.result.snapshot_id,identity)
+        w.select(('members','M1'))
+        labels = '\n'.join(item.text() for item in w.inspector.findChildren(QLabel))
+        self.assertIn(f" {w.project.units.length}\nMember-side",labels)
 
 
 if __name__ == "__main__":

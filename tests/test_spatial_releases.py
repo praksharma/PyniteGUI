@@ -203,7 +203,7 @@ class SpatialReleaseTests(unittest.TestCase):
     def test_serialization_strict_legacy_defaults_split_and_unsupported_boundaries(self):
         p = beam()
         data = p.to_dict()
-        self.assertEqual(data["version"], 30)
+        self.assertEqual(data["version"], 32)
         self.assertEqual(Project.from_dict(data).to_dict(), data)
         old = deepcopy(data)
         old["version"] = 28
@@ -218,7 +218,7 @@ class SpatialReleaseTests(unittest.TestCase):
         self.assertEqual(old, before)
         self.assertTrue(all(getattr(migrated.members["M1"], key) is False for key in ROTATION_FIELDS))
         for override, message in (({"release_end_rx": True, "release_start_rx": True}, "both ends"),
-                                  ({"release_end_ry": 1}, "boolean"), ({"release_start_x": True}, "translational"),
+                                  ({"release_end_ry": 1}, "boolean"), ({"release_start_x": 1}, "boolean"),
                                   ({"kind": "truss"}, "clear manual")):
             bad = p.clone()
             for key, value in override.items():

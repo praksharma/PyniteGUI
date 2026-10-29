@@ -256,18 +256,19 @@ def populate_inspector(window):
         fields["roll"].setObjectName("spatial_roll")
         fields["roll"].setProperty("initial", fields["roll"].value())
         form.addRow("Roll (deg)", fields["roll"])
-        from .spatial_releases import ROTATION_FIELDS
-        for key in ROTATION_FIELDS:
-            axis = key.rsplit("_", 1)[-1].upper() if key.endswith(("_rx", "_ry")) else "RZ"
+        from .spatial_releases import RELEASE_FIELDS, release_axis
+        for key in RELEASE_FIELDS:
+            axis = release_axis(key)
             end = "Start" if "start" in key else "End"
             fields[key] = QCheckBox("Released")
             fields[key].setObjectName("spatial_"+key)
             fields[key].setChecked(getattr(entity, key))
-            fields[key].setToolTip("Member-local rotation, including roll. Linear frame-only analysis. "
-                "One RX release removes torsion transfer; do not release RX at both ends. Clear manual releases before changing to truss.")
+            fields[key].setToolTip("Member-local end release, including roll. Linear frame-only analysis. "
+                "Released member-side translations can differ from joint motion. Unrestrained joint translations remain mechanisms. "
+                "Do not release DX/RX at both ends or incompatible bending directions. Clear manual releases before changing to truss.")
             form.addRow(f"{end} local {axis}", fields[key])
         def update_releases():
-            for key in ROTATION_FIELDS:
+            for key in RELEASE_FIELDS:
                 fields[key].setEnabled(fields["kind"].currentText() == "frame")
         fields["kind"].currentTextChanged.connect(update_releases)
         update_releases()
@@ -276,6 +277,14 @@ def populate_inspector(window):
         label = QLabel("\n".join(f"{axis}: " + ", ".join(f"{value:.3g}" for value in row) for axis, row in zip(("x", "y", "z"), axes)))
         label.setWordWrap(True)
         form.addRow("Local axes (XYZ)", label)
+        if window.result is not None and entity.kind == "frame" and any(any(flags[:3]) for flags in entity.spatial_releases):
+            from .spatial_results import member_end_translations
+            parts = []
+            for end, values in zip(("Start", "End"), member_end_translations(window.result, name)):
+                parts.append(end+": "+", ".join(f"{axis} {project.units.to_display(float(value), 'length'):.6g}" for axis, value in zip(("DX", "DY", "DZ"), values)))
+            motion = QLabel("\n".join(parts)+f" {project.units.length}\nMember-side local motions; released values can differ from the joint.")
+            motion.setWordWrap(True)
+            form.addRow("Member-end translations (local)", motion)
         if window.result is not None and entity.kind == "frame" and any(any(flags) for flags in entity.rotation_releases):
             solver = window.result.solver.members[name]
             parts = list(solver.sub_members.values())

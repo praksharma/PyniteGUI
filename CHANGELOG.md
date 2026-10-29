@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add local DX/DY/DZ spatial frame end releases with recovered member-side motion,
+  separate joint results, unstable-release/mechanism rejection and local/whole-model
+  equilibrium checks. Add staged inspector/table/bulk/MCP editing, member reports,
+  paginated MCP motion metadata and a fixed-guided sliding-beam example. Spatial
+  files advance to v32; older files keep connected translations. Extend 2D-to-3D
+  conversion to planar axial/shear releases. Linear frame-only; released P-Delta,
+  frame/surface coupling and nonlinear connections remain unavailable.
 - Extend standalone development packaging to native Windows portable ZIP and
   Linux tar.gz builds, retaining macOS app bundles. Check archive hashes before
   relocated frozen execution, record host/architecture and Linux libc, retain

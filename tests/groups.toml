@@ -82,6 +82,7 @@ tests = [
 description = "Solver mechanics, analytical comparisons, equilibrium, stability and frame/truss benchmarks."
 tests = [
   "test_spatial_releases",
+  "test_spatial_translation_releases",
   "test_independent_g.OfficialSpaceFrameTests",
   "test_station_queries.StationQueryTests",
   "test_geometry_tools.GeometryEngineeringTests",

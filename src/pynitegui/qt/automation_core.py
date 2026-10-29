@@ -12,7 +12,7 @@ TOOLS = {
     "read_model": ("Model reads", "Read the current model, project/session revisions and exact entity schema, including empty collections. include_schema defaults true; set false after learning the schema to reduce response size. No session_id is needed for this discovery call. Read this before edits; do not guess node/support/load fields."),
     "read_schema": ("Model reads", "Read the exact 2D/3D entity fields, types, defaults, support presets/custom restraints, units, validation rules and valid batch examples for the current project. Call before constructing edits, especially for an empty model."),
     "read_units": ("Model reads", "Read display units and canonical conversion factors."),
-    "read_results": ("Result reads", "Read paginated snapshot-labelled results: kind=nodes|members|surface_elements. surface_elements requires surface_id from read_model.model.surfaces and returns unsmoothed local Quad element-centre Mx,My,Mxy (moment/length), Sx,Sy,Txy (membrane stresses, tension positive). Quad transverse shear is unavailable pending independent validation. Output units follow headers. Use analysis_status.available_combinations for solved names; omit combination to use the snapshot default. Only the active snapshot is retained."),
+    "read_results": ("Result reads", "Read paginated snapshot-labelled results: kind=nodes|members|surface_elements. Spatial members with translational releases include a released_end_translations table (member-side local DX/DY/DZ, distinct from joint motion) for members on the page. surface_elements requires surface_id from read_model.model.surfaces and returns unsmoothed local Quad element-centre Mx,My,Mxy (moment/length), Sx,Sy,Txy (membrane stresses, tension positive). Quad transverse shear is unavailable pending independent validation. Output units follow headers. Use analysis_status.available_combinations for solved names; omit combination to use the snapshot default. Only the active snapshot is retained."),
     "apply_batch": ("Model edits", "Apply a validated model batch as one undoable edit."),
     "run_analysis": ("Analysis", "Start background analysis using settings.analysis_method (linear|p_delta) and return a job_id immediately. Poll analysis_status with that job_id until running=false, then check state/error before read_results. phase is human-readable progress text, not a fixed enum."),
     "analysis_status": ("Analysis", "Read job progress, failures, the active snapshot and available_combinations (solved names). Poll after run_analysis until running=false; check state/error. Only one active result snapshot is retained; job_id rejects replaced jobs."),
@@ -275,6 +275,14 @@ class AutomationCommands:
                     names = {row[0] for row in rows[offset:offset+limit]}
                     local_metadata = {"inactive_rotation_directions": {name: basis.T.tolist() for name, basis in directions.items() if name in names},
                         "rotation_note": "Undefined global joint-rotation components are n/a, not measured zero. Listed global unit vectors span unused rotations. Recovered member-end bending slopes are separate from the shared joint rotation."}
+                if kind == "members" and result.spatial:
+                    from .spatial_results import released_translation_table
+                    motion_headers, motion_rows = released_translation_table(window.project, result.for_combination(combination))
+                    names = {row[0] for row in rows[offset:offset+limit]}
+                    motion_rows = [row for row in motion_rows if row[0] in names]
+                    if motion_rows:
+                        local_metadata = {"released_end_translations": {"headers": motion_headers, "rows": motion_rows},
+                            "translation_note": "Recovered member-side DX/DY/DZ use rolled local axes and the header length units; they can differ from the global joint motions. Includes only members present on this result page."}
             return {**self.identity(), **self.snapshot(), "combination": combination,
                     **local_metadata,
                     "unit_system": window.project.unit_system, "headers": headers, "rows": rows[offset:offset+limit],
