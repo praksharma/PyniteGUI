@@ -113,6 +113,7 @@ tests = [
   "test_qt_supports.SupportTests",
   "test_qt_truss.TrussTests",
   "test_spatial_sample_cache",
+  "test_inclined_constraints",
 ]
 
 [groups.surfaces]

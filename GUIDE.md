@@ -1793,6 +1793,50 @@ Intersections** to make the joint explicit, then check again before analysis.*
   same direction: explicitly free that direction or set its spring to zero.
   Springs and releases are also editable atomically through bulk properties and
   Model Tables, with normal undo/redo and result invalidation.
+
+**Inclined-support feasibility (development only):** the editor still supports
+global-axis restraints; no inclined-support control or file field is enabled.
+A separate dense test prototype verifies homogeneous constrained-coordinate
+elimination for unreleased planar linear frames. It uses `C d = 0`, finds a free
+basis `Z` with `C S Z = 0`, and solves
+`(Zᵀ S K S Z) q = Zᵀ S f`, with `d = S Z q`. The positive diagonal `S` scales
+translation/rotation coordinates by a reference length; it adds no stiffness.
+All remaining physical modes must have positive scaled stiffness resolved above
+a roundoff bound computed before cancellation in the original matrix projection,
+even under zero load. Reduced-diagonal normalization alone missed a near-mechanism
+in the initial prototype; a regression now covers it. This is a real support constraint, distinct from the unused-rotation
+gauges used for released spatial members. For background, see the
+[OpenSees transformation method](https://opensees.github.io/OpenSeesDocumentation/user/manual/analysis/constraint/TransformationMethod.html).
+
+The proposed convention measures a roller's **tangent angle** counterclockwise
+from global +X; its normal is `(-sin alpha, cos alpha)`. Thus 0°/180° restrain DY
+and 90° restrains DX. Reactions remain global; a rigid roller's force lies along
+its normal and displacement along its tangent. Existing bilateral springs keep
+their global axes: rigid reaction is `Ktotal d - f`, while each spring contributes
+the separate external reaction `-k d`.
+
+Independent axial/Euler–Bernoulli cantilever flexibility and pin/roller beam
+fields validate the prototype against the actual engine's unreduced stiffness
+and equivalent nodal loads, including fixed-end vectors. An all-clamped project
+copy prepares those matrices; its solved displacements are discarded. Checks
+cover inclined/reversed beams, uniform axial/transverse member loads, individual
+nodal forces/moments, nonuniform subdivisions, translated/rotated coordinates,
+signed/zero combinations, global spring axes and global-axis preset limits.
+The report covers 153 bounded cases plus six rejected unstable/dependent
+configurations. It never creates application result snapshots:
+
+```sh
+uv run python -B scripts/benchmark_inclined_supports.py --output /tmp/inclined-support-feasibility.json
+```
+
+This establishes planar feasibility, not a production solver or performance
+claim. Integration still needs sparse node-local transformations, constraint-aware
+rigid-body/stiffness diagnostics, physical member recovery, separate rigid/spring
+reaction metadata, file migration, staged editing, symbols/reports, MCP schemas
+and worker/snapshot checks. P-Delta, spatial/released frames, imposed movements
+and nonlinear constraints remain outside this checkpoint. The prototype's
+quadratic-energy identity concerns the equivalent nodal system; it does not
+validate total physical strain-energy recovery under distributed member loads.
 ### Moving Nodes
 
 - In Select mode, drag a node to move it with snapping. Dashed connected members

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Establish test-only inclined-support feasibility for unreleased planar linear
+  frames with exact constraint elimination. Independently verify beam fields,
+  rigid/spring reactions, signed/zero combinations, coordinate invariance and
+  unstable/duplicate-constraint rejection. Add a reproducible report and explicit
+  production integration gates; inclined supports remain unavailable in the app.
 - Add independent nonuniform flat-membrane traction benchmarks for pure in-plane
   bending and mixed normal/shear stress. Verify displacement/stress convergence,
   strain energy, exact load resultants and signed/zero combinations in every

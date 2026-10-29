@@ -39,6 +39,8 @@ when comparing with the published rc1 wheel.
 Modal analysis, steel pushover, reinforced-concrete plasticity, unilateral
 members/springs, node-to-node spring elements and inclined supports are **not implemented GUI workflows**. See the
 [audited roadmap](project/roadmap.md), not the upstream feature list alone.
+Development includes a [test-only planar inclined-support feasibility study](modeling/supports.md),
+with independent beam references and a separate pending production-integration task.
 
 P-Delta keeps materials elastic and excludes slabs/trusses/released translations
 and spatial rotational releases.

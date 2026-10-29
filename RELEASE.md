@@ -197,6 +197,53 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 Inclined-Support Feasibility Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-10-29. This is a test-only feasibility
+study. No production adapter, UI, file format, MCP schema, public tag or RC4 asset changes.
+
+- Demonstrate exact homogeneous planar support constraints through a free
+  coordinate basis, without penalties or artificial grounding. Scale translational
+  and rotational coordinates, reject dependent/nearly dependent constraints,
+  require positive stiffness on every physical free mode, and verify constraint
+  and free-equation residuals before recovering global rigid reactions.
+  Carry a pre-cancellation matrix-product roundoff bound through diagonal scaling;
+  reduced normalization alone initially missed a near-mechanism. Reject that
+  unresolved mode rather than accepting its small positive numerical stiffness.
+- Prepare actual engine member stiffness and equivalent nodal loads (including
+  fixed-end vectors) on a disposable all-clamped copy. Discard its displacements;
+  solve the test-only constrained system without creating AnalysisResults.
+  Compare with independent axial/Euler–Bernoulli cantilever flexibility and
+  statically determined pin/roller beam fields. No application guard is bypassed.
+- The reproducible report covers **153 cases**: four beam orientations, nine
+  roller angles, three subdivisions, three global-spring setups, signed/zero
+  combinations. Maximum reference errors: **1.01e-15 in** translation,
+  **3.94e-17 rad** rotation, **3.29e-13 kip** force and **1.80e-12 kip-in** moment.
+  Independent global balance residuals stay below **4.45e-14 kip / 2.66e-12 kip-in**.
+  Six unsupported/dependent configurations are rejected, including zero-load
+  mechanisms; on a horizontal beam, a pin plus a horizontal-normal roller does
+  not prevent rigid rotation.
+- Tests also compare a separate Lagrange-multiplier system, individual nodal and
+  uniform member load patterns, coordinate/normal-sign/scaling invariance and
+  existing global-axis production supports. Keep global bilateral spring axes
+  unchanged and separate their external `-k*d` reactions from rigid reactions.
+  Quadratic-energy identities refer only to the equivalent nodal system, not
+  total distributed-load strain-energy recovery.
+- Production integration remains a separate unchecked TODO: sparse node-local
+  transformations, constraint-aware stability/rigid-body checks, member recovery,
+  reaction metadata, persistence/migration, staged UI and MCP, drawing/reporting,
+  conversion/transform semantics and worker/snapshot validation. Proposed angle
+  convention: roller tangent counterclockwise from global +X, in degrees.
+  Inclined supports are still unavailable; P-Delta, spatial/released frames and
+  imposed movements are outside this checkpoint. Solver-method work stays on hold.
+- Locked PyNite **3.0.0** / Qt **6.11.2**: **256 focused engineering/support tests**,
+  no skips, **4.950 s**. Installed PyNite **3.2.1** / Qt **6.12.0**: **11 new tests**,
+  no skips, **0.187 s**. Docs/tooling: **16 tests**, **0.487 s**. Ownership checks
+  cover **150 classes / nine groups**. Strict docs/local links cover **55 HTML
+  pages**; browser checks pass for images, search, subpath, dark mode and layout.
+  Reproduce the bounded numeric report with
+  `scripts/benchmark_inclined_supports.py`.
+
 ## Post-RC4 Nonuniform Membrane Validation Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-10-29. This is a test/documentation

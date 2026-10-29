@@ -365,7 +365,20 @@ Remaining 11 scripts are intentionally unchecked:
 - [ ] Add imposed support settlements/rotations with explicit units, reaction
   and equilibrium benchmarks. These are model-level imposed displacements in
   the engine, not automatically case-specific loads. On hold with solver work.
-- [ ] Add inclined support orientation (separate constrained-coordinate feasibility work).
+- [x] Complete test-only planar inclined-support constrained-coordinate feasibility:
+  exact homogeneous constraint elimination, independent cantilever flexibility
+  and pin/roller beam fields, actual engine stiffness/equivalent loads, global
+  spring axes, signed/zero combinations, coordinate invariance, global-preset
+  limits, free-equation reactions and mechanism/dependent-constraint rejection.
+  Reproducible report: 153 bounded cases and six rejected configurations. This
+  dense prototype does not enable inclined supports in the editor or solver adapter.
+- [ ] Implement inclined supports after the feasibility checkpoint: start with
+  unreleased planar linear frames, sparse node-local constraint transformations,
+  constrained rigid-body/stiffness diagnostics, physical member recovery and
+  separate rigid/spring reaction checks. Add explicit tangent-angle units/sign,
+  persistence/migration, staged UI/table/bulk edits, symbols/tooltips/reports,
+  MCP schema, conversion/transform semantics and worker/snapshot regressions.
+  Keep P-Delta, spatial/released frames and settlements excluded until validated.
 
 ## Loads and Analysis
 
