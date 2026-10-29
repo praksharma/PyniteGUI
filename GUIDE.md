@@ -1496,6 +1496,11 @@ remain available for direct loading.
   amplification without material yielding. Gravity alone has zero lateral sway.
   See Analysis and Force Diagrams for the second-order force-recovery/equilibrium
   limits; the strict force-residual check is not relaxed for this example.
+- **P-Delta > Column - Imposed Base Motion** uses the same segmented column and
+  loads, with base **DX +0.03 in** and **RZ +0.0007 rad**. Every combination keeps
+  those movements. **Base motion only** has zero applied loads and a straight
+  rigid-motion field, with tip DX **-0.306 in** and no member forces. Gravity
+  amplifies the response to the base rotation; load factors do not scale it.
 - **2D Frames > Official PyNite - Beam with Point Loads / Uniform Load /
   Factored Envelope** adapts the three corresponding
   [official beam scripts](https://github.com/JWock82/Pynite/tree/e3a0bbd912b6cf13140f01ca0ed3a2ee55069f45/Examples)
@@ -1902,7 +1907,9 @@ must remain positive definite. Failure or nonconvergence rejects the snapshot.
 As for other P-Delta results, global equilibrium checks forces only; undeformed
 moment arms do not include second-order effects. P-Delta with trusses, released
 translations, spatial rotational releases or surfaces remains unsupported.
-Imposed support movements are available in linear analysis as described below; unilateral contact and plastic connections remain separate tasks.
+Imposed support movements are available in linear analysis and supported frame-only
+P-Delta as described below; unilateral contact and plastic connections remain
+separate tasks.
 
 Production uses sparse node-local free coordinates and unchanged engine member
 stiffness/fixed-end vectors. Global physical displacements drive ordinary member
@@ -1923,7 +1930,8 @@ uv run python -B scripts/benchmark_inclined_supports.py --output /tmp/inclined-s
 
 The prototype's quadratic-energy identity concerns equivalent nodal equations;
 it does not validate total distributed-load strain-energy recovery. Nonlinear
-connections and second-order support-movement validation remain separate work.
+connections remain separate work; production second-order support movements are
+covered below.
 
 **Imposed support settlements and rotations (development after RC4):** select a
 supported node and enter **Imposed DX/DY/RZ** in 2D, or **DX/DY/DZ/RX/RY/RZ** in
@@ -1971,8 +1979,10 @@ The native offscreen capture shows prescribed inputs and scaled solved deformati
 frame joints in the existing experimental coupled-surface workflow. Generated
 mesh-edge support motions remain zero unless the joint has an explicit compatible
 frame-node prescription. Existing surface/release, drilling and independent
-force/moment gates remain active. Nonzero imposed movements reject **P-Delta**
-until second-order prescribed-motion recovery is independently validated.
+force/moment gates remain active. **P-Delta** also supports rigid-support motions
+within its existing frame-only scope: no trusses, surfaces, released translations
+or spatial rotational releases. Planar moment releases retain zero member-end
+moments; a prescribed disconnected joint rotation does not rotate that member end.
 
 The constrained solver adds a particular physical motion to the free-coordinate
 solution and subtracts its stiffness contribution from the free load vector.
@@ -1980,6 +1990,35 @@ It checks physical joint equations and independent global equilibrium for every
 combination, including the zero-load state. Independent beam stiffness/Hermite
 fields, six-DOF compliance, zero-force rigid-body motion, ground-spring laws,
 released-end recovery, trusses and shared-node checks cover this workflow.
+
+For **P-Delta**, each geometric-stiffness update acts on both the free response
+and the prescribed motion. Support shortening can therefore create axial preload
+and second-order response even with no applied loads. Each complete combination
+is solved independently; neither load-response nor settlement-response
+superposition is valid in general. Springs retain their global zero rest positions.
+Physical free equations must converge and the effective stiffness must remain
+positive on every free mode; otherwise no snapshot is accepted. The usual P-Delta
+force-only global equilibrium convention remains, since undeformed moment arms
+omit second-order effects.
+
+Try **File > Examples > P-Delta > Column - Imposed Base Motion**. The native
+example shows the prescribed base inputs and amplified sampled deformation;
+read numerical nodal values in Results. **Combined** tip DX is about **3.51866 in**,
+**Gravity** about **-0.473713 in**, and **Base motion only** is **-0.306 in**.
+
+![P-Delta column with imposed base translation and rotation and amplified deformation](docs/assets/screenshots/pdelta-support-motion.png)
+
+Independent checks compare refined fields with the exact elastic beam-column
+equation `EI*w'''' + P*w'' = q`, including compression/tension, base translation/
+rotation, imposed shortening, uniform loads and ground springs. A separate spatial
+reference integrates Hermite strain energy and enforces affine constraints with
+Lagrange multipliers, closing axial compatibility through a scalar root. The
+engine's geometric matrix includes an axial `N/L` term: for force-controlled
+uniform axial response the strain-derived tension-positive preload satisfies
+`N + N^2/(EA) = applied axial force`. This is the engine's small-strain geometric-
+stiffness convention, not a finite-strain material law. Mesh refinement remains
+necessary; interior P-Delta member recovery remains approximate. Buckling,
+nonconvergence and unsupported entities still reject the analysis.
 
 Support tooltips, the model tree, 3D hover and printed definitions identify the
 imposed motions and their units. MCP node-result pages include
@@ -2075,14 +2114,18 @@ Analyze tooltip, result snapshot, diagram windows, CSV and printable result repo
 identify the solved method; changing combinations preserves it.
 
 P-Delta is available for 2D/3D **frame-only** models, including bilateral support
-springs and supported planar moment releases. Coupled/uncoupled surfaces, truss
-members, released member translations and spatial rotational releases are rejected for this method. The
+springs, imposed rigid-support motions and supported planar moment releases.
+Coupled/uncoupled surfaces, truss members, released member translations and
+spatial rotational releases are rejected for this method. The
 [PyNite procedure](https://pynite.readthedocs.io/en/latest/PDelta.html) preloads
 **each complete combination independently**, then adds its geometric stiffness;
 nonlinear combinations are never made by superposing solved cases. Progress names
 the combination and geometric-stiffness/second-order phases. This adapter exposes
 no artificial convergence percentage or displacement tolerance: the locked engine
-uses an elastic preload and a geometric-stiffness solve for bilateral frames.
+uses an elastic preload and a geometric-stiffness solve for ordinary bilateral frames.
+Inclined/prescribed support constraints additionally update geometric stiffness
+until their free physical equations close, with a maximum of 30 updates and
+unchanged instability/equilibrium rejection.
 Failure, nonfinite values or nonpositive effective stiffness reject the snapshot.
 The usual worker cancellation and stale-reply checks apply throughout.
 

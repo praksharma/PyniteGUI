@@ -4,7 +4,7 @@ import unittest
 from unittest.mock import patch
 
 import numpy as np
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import QApplication, QCheckBox, QComboBox, QDoubleSpinBox, QPushButton, QMessageBox
 from pynitegui.qt.app import MainWindow
 from pynitegui.qt.analysis_jobs import execute_analysis
@@ -109,3 +109,42 @@ class SupportMovementEditorTests(unittest.TestCase):
         self.assertEqual(sum(n.settlement_y==-.1 and n.settlement_rz==.001 for n in copy.nodes.values()),2)
         original=support_state(p.nodes['N2']);p.nodes['N2'].settlement_y=-.2
         self.assertNotEqual(support_state(p.nodes['N2']),original)
+
+    def test_pdelta_method_native_edit_worker_units_and_result_invalidation(self):
+        w = self.window
+        p = example_project('p_delta_support_motion')
+        p.analysis_method = 'linear'
+        w.load_project(p)
+        before = w.project.to_dict()
+        def choose():
+            dialog = self.app.activeModalWidget()
+            dialog.method.setCurrentIndex(dialog.method.findData('p_delta'))
+            dialog.accept()
+        QTimer.singleShot(0, choose)
+        w.manage_analysis_method()
+        self.assertEqual(w.project.analysis_method, 'p_delta')
+        w.undo.undo()
+        self.assertEqual(w.project.to_dict(), before)
+        w.undo.redo()
+        result = execute_analysis(w.project, lambda phase: None, Event())
+        w.analysis_revision = w.revision
+        w.analysis_finished(result, '')
+        self.assertEqual(w.result.analysis_method, 'p_delta')
+        tip = w.project.node_at(0., 480.)
+        self.assertAlmostEqual(result.for_combination('Base motion only').displacements[tip][0], .03-.0007*480., places=10)
+        snapshot = w.result.snapshot_id
+        w.set_units('si_mm')
+        self.assertEqual(w.result.snapshot_id, snapshot)
+        response = AutomationCommands(w).execute('read_results', dict(session_id=w.project_session,
+            kind='nodes', offset=0, limit=1, combination='Base motion only'))
+        self.assertEqual(response['analysis_method'], 'p_delta')
+        self.assertEqual(response['imposed_support_movements']['N1']['settlement_rz'], {'value': .0007, 'unit': 'rad'})
+        self.assertAlmostEqual(response['imposed_support_movements']['N1']['settlement_x']['value'], .762)
+        self.assertIn('force balance only', w.results_panel.equilibrium_summary.text())
+        w.select(('nodes', 'N1'))
+        w.inspector.findChild(QDoubleSpinBox, 'settlement_x').setValue(1.27)
+        self.apply_button().click()
+        self.assertAlmostEqual(w.project.nodes['N1'].settlement_x, .05)
+        self.assertIsNone(w.result)
+        w.undo.undo()
+        self.assertAlmostEqual(w.project.nodes['N1'].settlement_x, .03)

@@ -103,6 +103,7 @@ def solve_inclined(model, project, phase):
     from .analysis import AnalysisResult, model_signature
     spatial = getattr(project, "dimension", "2D") == "3D"
     second_order = project.analysis_method == "p_delta"
+    constraint_kind = "inclined/prescribed" if has_inclined(project) else "prescribed"
     Analysis._prepare_model(model)
     basis, labels, translations = free_basis(model, project)
     from .support_movements import movement_lift, movement_fields
@@ -121,20 +122,23 @@ def solve_inclined(model, project, phase):
     signature = model_signature(project)
     for combination in model.load_combos:
         method = "P-Delta" if second_order else "Linear elastic"
-        phase(f"{method} | {combination}: checking {'inclined' if has_inclined(project) else 'prescribed'} support constraints")
+        phase(f"{method} | {combination}: checking {constraint_kind} support constraints")
         elastic = model.Ke(combination, check_stability=False, sparse=True).tocsr()
         physical = FEModel3D.Ke(model, combination, check_stability=False, sparse=True).tocsr()
         force, fixed_end = model.P(combination), model.FER(combination)
         stiffness, actual = elastic, physical
         for step in range(31 if second_order else 1):
             if second_order and step:
-                phase(f"P-Delta | {combination}: solving second-order response (inclined supports, update {step}/30)")
+                phase(f"P-Delta | {combination}: solving second-order response ({constraint_kind} supports, update {step}/30)")
             transform, factor, scale = factor_stiffness(stiffness, basis, labels, translations, length)
+            # Every geometric update also acts on the prescribed physical motion.
+            # Keeping only elastic @ lift would lose settlement-induced P-Delta
+            # forces, even in a combination with no applied loads.
             rhs = np.asarray(transform.T @ (force-fixed_end-stiffness @ lift)).ravel()
             q = scale*factor.solve(scale*rhs) if factor is not None else np.empty(0)
             displacement = lift+np.asarray(transform @ q).reshape(-1, 1)
             if not np.isfinite(displacement).all():
-                raise ValueError(f"Nonfinite inclined-support displacement in {combination}.")
+                raise ValueError(f"Nonfinite support-constraint displacement in {combination}.")
             store_displacements(model, combination, displacement)
             if second_order:
                 # PyNite first preloads elastically, then adds geometric stiffness.
@@ -153,7 +157,7 @@ def solve_inclined(model, project, phase):
                     bound = np.asarray(abs(basis).T @ (abs(actual) @ abs(displacement)+abs(fixed_end)+abs(force))).ravel()
                     limit = np.array([1e-11 if translation else 1e-9 for translation in translations])+1e-10*bound
                     if np.any(abs(residual) > limit):
-                        raise FreeEquilibriumError(f"P-Delta inclined-support equilibrium did not converge in {combination} after {step} updates.")
+                        raise FreeEquilibriumError(f"P-Delta support-constraint equilibrium did not converge in {combination} after {step} updates.")
                     factor_stiffness(stiffness, basis, labels, translations, length)
                 break
             except FreeEquilibriumError:
@@ -182,7 +186,7 @@ def recover_reactions(model, project, combination, matrix, force, fixed_end, dis
     raw = np.asarray(matrix @ displacement+fixed_end-force).ravel()
     magnitude = np.asarray(abs(matrix) @ abs(displacement)+abs(fixed_end)+abs(force)).ravel()
     if not np.isfinite(raw).all() or not np.isfinite(magnitude).all():
-        raise ValueError(f"Nonfinite inclined-support reactions in {combination}.")
+        raise ValueError(f"Nonfinite support-constraint reactions in {combination}.")
     inactive = project.inactive_rotations()
     records = {}
     for name, node in model.nodes.items():

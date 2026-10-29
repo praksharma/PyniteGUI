@@ -138,7 +138,7 @@ class SupportMovementTests(unittest.TestCase):
             np.testing.assert_allclose(list(r.reactions.values()),0.,atol=1e-8)
             self.assertTrue(check_equilibrium(p,r).passed)
 
-    def test_persistence_migration_signatures_invalid_constraints_and_pdelta_gate(self):
+    def test_persistence_migration_signatures_invalid_constraints_and_zero_axial_pdelta_limit(self):
         from pynitegui.qt.automation_core import batch_candidate, AutomationError
         for p,old,current in ((beam(),27,29),(to_spatial(beam()),34,36)):
             self.assertEqual(p.to_dict()['version'],current)
@@ -160,8 +160,12 @@ class SupportMovementTests(unittest.TestCase):
             before=p.to_dict()
             with self.assertRaises(AutomationError):batch_candidate(p,[{'op':'put','collection':'nodes','key':'N2','value':{'support':'free'}}])
             self.assertEqual(before,p.to_dict())
+            linear=solve(p)
             p.analysis_method='p_delta'
-            with self.assertRaisesRegex(ValueError,'Linear elastic'):solve(p)
+            second_order=solve(p)
+            for name in p.nodes:
+                np.testing.assert_allclose(second_order.displacements[name],linear.displacements[name],atol=1e-12)
+                np.testing.assert_allclose(second_order.reactions[name],linear.reactions[name],atol=1e-8)
         p=cantilever((0.,90.));p.nodes['N2'].restraint_y=True;p.nodes['N2'].settlement_y=-.1
         with self.assertRaisesRegex(ValueError,'incompatible prescribed'):p.validate()
         p.nodes['N2'].settlement_normal=-.1

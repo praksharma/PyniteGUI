@@ -300,7 +300,7 @@ def solve_model(model, project, phase):
             solve_inclined(model, project, phase)
         except Exception as error:
             if project.analysis_method == "p_delta":
-                raise ValueError(f"P-Delta inclined-support analysis failed: {error}") from error
+                raise ValueError(f"P-Delta support-constraint analysis failed: {error}") from error
             raise
         return
     if project.analysis_method == "linear":

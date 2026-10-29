@@ -119,6 +119,7 @@ tests = [
   "test_inclined_supports",
   "test_spatial_inclined",
   "test_support_movements",
+  "test_pdelta_movements",
 ]
 
 [groups.surfaces]

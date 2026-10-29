@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Enable imposed rigid-support movements within existing 2D/3D frame-only P-Delta
+  analysis after independent continuum/energy checks. Preserve the same motion
+  in every combination, including zero loads and shortening-induced preload;
+  retain full geometric updates, free-equation/stability rejection and existing
+  entity restrictions. Add a base-motion column example, native worker/undo/unit
+  and MCP wire coverage. File formats and the solver-method hold are unchanged.
+
 - Add a test-only Quad transverse-shear feasibility study with independent Navier
   and two-direction cantilever references, separate/coupled solves, refinement,
   all planes and signed/zero combinations. Compare raw shear, own-element moment

@@ -24,6 +24,7 @@ EXAMPLES = {
     "3d_tripod": "3D Truss Tripod - Joint Load",
     "3d_multistorey_slabs": "Three-Storey Frame and Slabs (Experimental)",
     "p_delta_column": "Slender Column - Gravity and Lateral Load",
+    "p_delta_support_motion": "Column - Imposed Base Motion",
     "official_beam_point": "Official PyNite - Beam with Point Loads",
     "official_beam_uniform": "Official PyNite - Beam with Uniform Load",
     "official_beam_envelope": "Official PyNite - Beam with Factored Envelope",
@@ -47,7 +48,7 @@ EXAMPLE_GROUPS = {
     "3D Frames": ("3d_cantilever", "3d_space_frame", "3d_released_beam", "3d_sliding_beam", "3d_inclined_roller", "3d_official_space_frame_1", "3d_official_space_frame_2"),
     "Trusses": ("truss", "3d_tripod", "3d_official_truss"),
     "Slabs": ("3d_slab_frame", "3d_multistorey_slabs"),
-    "P-Delta": ("p_delta_column", "official_p_delta"),
+    "P-Delta": ("p_delta_column", "p_delta_support_motion", "official_p_delta"),
 }
 
 
@@ -116,7 +117,7 @@ def example_project(key, unit_system="imperial"):
             project.self_weight_case = "Self-weight"
         else:
             load(beam, "FY", -10)
-    elif key == "p_delta_column":
+    elif key in ("p_delta_column", "p_delta_support_motion"):
         project.analysis_method = "p_delta"
         project.set_load_case("Gravity", "Case 1")
         project.set_load_case("Lateral")
@@ -130,6 +131,10 @@ def example_project(key, unit_system="imperial"):
         tip = project.node_at(0., 480.)
         load(tip, "FY", -60., case="Gravity")
         load(tip, "FX", 1., case="Lateral")
+        if key == "p_delta_support_motion":
+            base = project.nodes[project.node_at(0., 0.)]
+            base.settlement_x, base.settlement_rz = .03, .0007
+            project.combinations["Base motion only"] = {"Gravity": 0., "Lateral": 0.}
     elif key == "elastic":
         member((0, 0), (120, 0))
         base = project.nodes[project.node_at(0, 0)]

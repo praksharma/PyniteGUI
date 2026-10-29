@@ -56,7 +56,7 @@ spatial translational/rotational-release scope rechecked 2026-10-29.
 | DKMQ quadrilaterals | Partial | Plate-only bending tool plus opt-in rectangular Quad/frame coupling with pressure cases, self-weight, shared joints, conformity checks, nodal results/deformation and equilibrium. Local moment/membrane-stress contours, probes and edge supports are implemented. Validated shear recovery and general membrane/drilling/curved-shell benchmarks remain pending. |
 | Polynomial rectangles | Partial | Quad/Rect choice for rectangular plate bending (including openings) with centre-coordinate recovery, deflection comparison and equilibrium regressions. General membrane/shell workflows and additional formulation-specific benchmarks remain pending. |
 | Shape/opening meshing | Done | All seven concrete PyNite generators with shape-specific/common options, bounded checks, control lines/openings, offline 3D geometry preview, recipes/undo and connectivity export. Curved-shell analysis and frame assembly remain distinct pending capabilities. |
-| Support reactions | Done | Unit-aware reactions, exports and six spatial components, including bilateral springs and model-level imposed support motions in linear analysis. |
+| Support reactions | Done | Unit-aware reactions, exports and six spatial components, including bilateral springs and model-level imposed support motions in linear analysis and supported frame-only P-Delta. |
 | Geometry/load/deformation rendering | Done | Frame/truss loads, supports and deformed shapes; plate-only contours, seven mesh previews, plus experimental coupled rectangular slab pressures and deformed meshes. |
 | Shear walls and mats | Pending | Add dedicated wall/foundation definitions, meshing, openings, soil/support input and specialized results; verify the locked engine before exposing workflows. |
 | Model/result PDF output | Done | Native printable model definitions/results with save-to-PDF; 2D diagrams and numerical envelopes; 3D six-component diagrams with selectable orthographic views and numerical envelopes. |
@@ -379,8 +379,18 @@ Remaining 11 scripts are intentionally unchecked:
   Include releases/trusses, prescribed shared frame/surface nodes, support copying,
   conversion, snapshot/worker/MCP metadata, reports and an editable beam example.
   Validate independent beam/compliance/rigid-body/spring/zero-load references and
-  strict planar v29/spatial v36 migration. P-Delta imposed-motion validation,
-  spring rest-position movement and case-specific prescriptions remain deferred.
+  strict planar v29/spatial v36 migration. P-Delta imposed-motion validation is
+  covered below; spring rest-position movement and case-specific prescriptions
+  remain deferred.
+- [x] Validate and enable imposed support motions in the existing 2D/3D frame
+  P-Delta workflow. Include the full prescribed displacement in every geometric-
+  stiffness update, independently solve each combination and preserve unfactored
+  motions at zero loads. Check exact continuum compression/tension fields under
+  base motion, axial-shortening preload, six-DOF energy/KKT normal constraints,
+  global springs, planar moment releases, refinement, instability and failed
+  iteration. Retain all existing truss/surface/spatial-release restrictions.
+  Add a categorized base-motion example, native worker/undo/unit tests and real
+  MCP edit/solve/result coverage; no new solver method or file format.
 - [x] Complete test-only planar inclined-support constrained-coordinate feasibility:
   exact homogeneous constraint elimination, independent cantilever flexibility
   and pin/roller beam fields, actual engine stiffness/equivalent loads, global
@@ -396,7 +406,8 @@ Remaining 11 scripts are intentionally unchecked:
   rotated native/report symbols, MCP schema/paginated reaction metadata, example
   and real worker/snapshot checks. Copied support orientations remain global;
   the initial planar checkpoint excluded other support workflows. The next checked
-  item records their extension; second-order imposed movements and nonlinear connections remain separate.
+  item records their extension. Imposed-motion P-Delta is recorded above;
+  nonlinear connections remain separate.
 
 - [x] Extend inclined rollers across supported workflows: 3D normal azimuth/elevation
   and optional global restraints (spatial v34), exact constraint unions, near-dependent
@@ -407,7 +418,8 @@ Remaining 11 scripts are intentionally unchecked:
   editable spatial example, independent 3D compliance/P-Delta references and actual
   worker/metadata checks. Existing frame P-Delta gains constrained geometric-stiffness
   convergence and instability rejection; its truss/surface/release restrictions
-  remain. Second-order imposed movements, unilateral behaviour and plastic connections remain separate.
+  remain. Imposed-motion P-Delta is recorded above; unilateral behaviour and
+  plastic connections remain separate.
 
 ## Loads and Analysis
 

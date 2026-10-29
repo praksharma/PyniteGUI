@@ -127,6 +127,41 @@ window.close()
 
 @unittest.skipUnless(dependencies_available(), "Install the optional mcp extra for wire tests")
 class ServerWireTests(ServerWindowTests):
+    def test_wire_pdelta_prescribed_motion_edit_worker_and_zero_load_state(self):
+        self.window.load_project(example_project('p_delta_support_motion'))
+        self.window.automation_mode.set_enabled(True)
+        self.server.permissions.set_group('Model edits', True)
+        self.server.permissions.set_group('Analysis', True)
+        async def callback(client):
+            model = (await client.call_tool('read_model', {})).structured_content['data']
+            identity = {'session_id': model['session_id']}
+            self.assertIn('P-Delta', model['schema']['entities']['nodes']['properties']['settlement_x']['description'])
+            edited = await client.call_tool('apply_batch', {**identity, 'expected_revision': model['revision'],
+                'operations': [{'op': 'put', 'collection': 'nodes', 'key': 'N1',
+                                'value': {'settlement_x': .05, 'settlement_rz': .001}}]})
+            self.assertFalse(edited.is_error, edited)
+            revision = edited.structured_content['data']['revision']
+            started = await client.call_tool('run_analysis', {**identity, 'expected_revision': revision})
+            self.assertFalse(started.is_error, started)
+            job = started.structured_content['data']['job_id']
+            for _ in range(300):
+                status = (await client.call_tool('analysis_status', {**identity, 'job_id': job})).structured_content['data']
+                if not status['running']:
+                    break
+                await asyncio.sleep(.02)
+            self.assertEqual(status['state'], 'Current', status)
+            self.assertEqual(status['snapshot']['analysis_method'], 'p_delta')
+            response = await client.call_tool('read_results', {**identity, 'kind': 'nodes',
+                'combination': 'Base motion only', 'offset': 0, 'limit': 50})
+            self.assertFalse(response.is_error, response)
+            result = response.structured_content['data']
+            tip = self.window.project.node_at(0., 480.)
+            row = next(row for row in result['rows'] if row[0] == tip)
+            self.assertAlmostEqual(row[1], .05-.001*480., places=9)
+            self.assertEqual(result['imposed_support_movements']['N1']['settlement_x'], {'value': .05, 'unit': 'in'})
+            self.assertEqual(result['analysis_method'], 'p_delta')
+        self.with_client(callback)
+
     def test_wire_imposed_motion_is_unfactored_and_reported_in_zero_combination(self):
         self.window.load_project(example_project('support_settlement'))
         self.window.automation_mode.set_enabled(True)

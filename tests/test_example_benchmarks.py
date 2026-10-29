@@ -16,6 +16,26 @@ def solve(project):
 
 
 class PDeltaExampleTests(unittest.TestCase):
+    def test_imposed_base_motion_example_has_independent_pdelta_and_zero_load_fields(self):
+        from pdelta_movement_reference import axial_strain_force, column_field
+        project = example_project('p_delta_support_motion')
+        before = project.to_dict()
+        result = solve(project)
+        for combo, factors in project.combinations.items():
+            axial = axial_strain_force(-60.*factors.get('Gravity', 0.), project.E*project.A)
+            reference = column_field(480., project.E*project.Iz, -axial,
+                factors.get('Lateral', 0.), base_translation=.03, base_rotation=.0007)
+            selected = result.for_combination(combo)
+            self.assertAlmostEqual(selected.displacements['N9'][0], reference['tip_translation'], delta=3e-6)
+            np.testing.assert_allclose(selected.displacements['N1'], [.03, 0., .0007], atol=1e-13)
+            self.assertTrue(check_equilibrium(project, selected).passed)
+        zero = result.for_combination('Base motion only')
+        np.testing.assert_allclose(list(zero.reactions.values()), 0., atol=1e-8)
+        gravity = result.for_combination('Gravity').displacements['N9'][0]
+        lateral = result.for_combination('Lateral').displacements['N9'][0]
+        self.assertGreater(result.displacements['N9'][0]-gravity, 1.5*(lateral-zero.displacements['N9'][0]))
+        self.assertEqual(before, project.to_dict())
+
     def test_public_column_matches_analytical_second_order_and_linear_limits(self):
         project = example_project("p_delta_column")
         original = project.to_dict()

@@ -274,7 +274,7 @@ def capture(output):
             app.processEvents()
 
 
-def capture_inclined(output, spatial=False, settlement=False):
+def capture_inclined(output, spatial=False, settlement=False, pdelta_motion=False):
     output.mkdir(parents=True, exist_ok=True)
     app = QApplication.instance() or QApplication([])
     configure_theme(app, "light")
@@ -284,19 +284,22 @@ def capture_inclined(output, spatial=False, settlement=False):
         window = MainWindow(root / "recovery", settings)
         try:
             window.resize(1280, 820)
-            window.load_project(example_project("support_settlement" if settlement else "3d_inclined_roller" if spatial else "inclined_roller"))
+            key = ("p_delta_support_motion" if pdelta_motion else "support_settlement" if settlement
+                   else "3d_inclined_roller" if spatial else "inclined_roller")
+            window.load_project(example_project(key))
             window.show()
             with redirect_stdout(StringIO()):
                 result = analyze(window.project)
             window.analysis_revision = window.revision
             window.analysis_finished(result, "")
-            window.select(("nodes", "N2"))
-            if settlement:
+            window.select(("nodes", "N1" if pdelta_motion else "N2"))
+            if settlement or pdelta_motion:
                 window.deformed_action.setChecked(True)
             app.processEvents()
             window.view.fit()
             app.processEvents()
-            filename = "support-settlement.png" if settlement else "spatial-inclined-properties.png" if spatial else "inclined-roller.png"
+            filename = ("pdelta-support-motion.png" if pdelta_motion else "support-settlement.png" if settlement
+                        else "spatial-inclined-properties.png" if spatial else "inclined-roller.png")
             widget = window.inspector if spatial else window
             if not widget.grab().save(str(output / filename)):
                 raise RuntimeError(f"Could not save {filename}")
@@ -315,8 +318,11 @@ if __name__ == "__main__":
     parser.add_argument("--inclined-only", action="store_true", help="Capture only the inclined-roller example and editor.")
     parser.add_argument("--spatial-inclined-only", action="store_true", help="Capture the spatial roller normal Properties controls.")
     parser.add_argument("--settlement-only", action="store_true", help="Capture the settled beam and prescribed motion controls.")
+    parser.add_argument("--pdelta-motion-only", action="store_true", help="Capture the P-Delta column with imposed base motion.")
     options = parser.parse_args()
-    if options.settlement_only:
+    if options.pdelta_motion_only:
+        capture_inclined(options.output, pdelta_motion=True)
+    elif options.settlement_only:
         capture_inclined(options.output, settlement=True)
     elif options.spatial_inclined_only:
         capture_inclined(options.output, spatial=True)

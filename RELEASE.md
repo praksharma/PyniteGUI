@@ -197,6 +197,60 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 P-Delta Support-Movement Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-10-29. Public RC4 assets and file
+formats (planar v29 / spatial v36) are unchanged. This extends an existing
+analysis method; the hold on new iterative/unilateral, modal and plastic solvers
+remains in place.
+
+- Remove the blanket nonzero-motion P-Delta guard after independently validating
+  the existing sparse affine solver. Every geometric update includes the full
+  prescribed displacement in its right-hand side. Retain geometric-stiffness
+  convergence, positive effective free stiffness, physical equation checks and
+  independent global force balance before publication. Update progress/error
+  context to cover prescribed as well as inclined support constraints.
+- Prescribed global translations/rotations and inclined-normal motions retain
+  their model-level values in every combination, including zero applied loads.
+  Support shortening can itself produce axial preload and second-order response.
+  Ground springs keep zero rest positions. Retain exclusions for trusses,
+  surfaces, released translations and spatial rotational releases; supported
+  planar moment releases still transfer zero released-end moment.
+- Independent references import neither application nor PyNite: solve the exact
+  elastic beam-column state-transfer equation for compression/tension, base
+  translation/rotation, differential support movement, imposed axial shortening,
+  biaxial bending, uniform loading and a ground spring. Check mesh convergence
+  at 1/4/24 segments, nodal/reaction fields and approximate interior deformation.
+  A separate six-DOF energy reference integrates cubic Hermite curvature/slope
+  products and uses KKT constraints plus a scalar axial root. Check arbitrary
+  spatial normals, additional rigid rotation, six base motions, springs, planar
+  conversion, signed/zero combinations, released chord response, rigid translation,
+  shortening-induced buckling and forced nonconvergence rejection.
+- Distinguish the strain-derived geometric preload from external axial force:
+  the engine's axial geometric term gives `N + N^2/(EA) = applied axial force`
+  for a uniform force-controlled axial state. This is the existing small-strain
+  geometric-stiffness convention, not a new finite-strain constitutive law.
+  P-Delta interior member recovery remains approximate; mesh refinement and the
+  existing force-only global equilibrium convention remain explicit in GUIDE.
+- Add **P-Delta > Column - Imposed Base Motion**, including Browse Examples:
+  480 in column in eight segments, base DX +0.03 in / RZ +0.0007 rad, gravity
+  -60 kip and lateral +1 kip. Combined nodal tip DX is **3.5186619 in** versus
+  continuum **3.5186638 in**; Gravity gives **-0.47371345 in**. Base motion only
+  gives **-0.306 in** and zero member forces. Add the actual native screenshot,
+  staged edit/method undo, spawned worker, unit conversion, snapshot invalidation
+  and authenticated MCP edit/solve/zero-state result coverage. MCP discovery
+  states the supported method scope and unchanged-per-combination motion rule.
+- Validation: **1,040 tests**, no skips, **295.656 s**, including the optional
+  MCP wire suite. The final installed wheel passes **63 focused tests** on
+  PyNite **3.0.0** / Qt **6.11.2** (**4.774 s**) and PyNite **3.2.1** / Qt
+  **6.12.0** (**4.823 s**). All **32 examples** save/reopen/analyze/export and
+  native windows initialize; authenticated installed MCP discovery/edit/undo
+  also passes. The installed Python files match the wheel bytes. Strict docs
+  and local links cover **55 HTML pages**; browser QA verifies the new native
+  screenshot, existing imagery, search, subpath, dark mode and layout. Distribution
+  metadata/assets/licenses/source audit passes. Test ownership covers **158
+  classes / nine groups**. Manual platform/signing gates remain unchanged.
+
 ## Post-RC4 Quad Shear Feasibility Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-10-29. Test/documentation changes

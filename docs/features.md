@@ -47,10 +47,11 @@ MCP reactions share the same conventions and independent mechanics checks.
 [Imposed support movements](modeling/supports.md) use length units/radians and
 apply unchanged across every combination, including zero applied loads. Native
 controls, tables/bulk edits, reports and MCP expose the prescribed quantities.
-This workflow is linear-only; spring rest positions remain zero.
+Supported frame-only P-Delta also accepts these motions, solves each combination
+independently and checks geometric-stiffness convergence. Spring rest positions remain zero.
 
-P-Delta keeps materials elastic and excludes slabs/trusses/released translations,
-spatial rotational releases and nonzero imposed support movements.
+P-Delta keeps materials elastic and excludes slabs/trusses/released translations
+and spatial rotational releases.
 See [method limits and plasticity boundaries](analysis/solve.md).
 
 ## Results

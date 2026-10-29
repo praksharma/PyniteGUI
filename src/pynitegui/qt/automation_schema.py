@@ -27,7 +27,7 @@ def model_reference(dimension="2D"):
             if field.name.startswith("spring_"):
                 schema.update(minimum=0, description="Bilateral stiffness: kip/in for translations, kip-in/rad for rotations; cannot coexist with a rigid restraint on that DOF.")
             if field.name.startswith("settlement_"):
-                schema["description"] = ("Signed model-level prescribed support motion: canonical inches for translations/normal, radians for rotations. Same value in every combination, including zero-factor combinations; do not scale with loads. Nonzero global fields require explicit rigid global restraints; settlement_normal requires inclined. Duplicate global/normal prescriptions must agree. Linear elastic only; springs keep zero rest positions.")
+                schema["description"] = ("Signed model-level prescribed support motion: canonical inches for translations/normal, radians for rotations. Same value in every combination, including zero-factor combinations; do not scale with loads. Nonzero global fields require explicit rigid global restraints; settlement_normal requires inclined. Duplicate global/normal prescriptions must agree. Linear elastic and supported frame-only P-Delta; solve P-Delta combinations independently, never superpose. Springs keep zero rest positions.")
             if field.name in ("position", "end_position"):
                 schema.update(minimum=0, maximum=1, description="Fraction of member length, not a coordinate or percentage.")
             properties[field.name] = schema
@@ -43,10 +43,10 @@ def model_reference(dimension="2D"):
         nodes["support_angle"].update(minimum=-180, maximum=180,
             description="Inclined support NORMAL azimuth, degrees from global +X toward +Z. Use with support_elevation; normal=(cos(el)cos(az),sin(el),cos(el)sin(az)). Other presets require both angles 0. Additional restraint_* flags constrain global DOFs; exact redundant normal is assigned zero separate normal force.")
         nodes["support_elevation"].update(minimum=-90, maximum=90,
-            description="Inclined support NORMAL elevation toward global +Y, degrees. Azimuth 0/elevation 90 equals the global-Y roller. Linear frames/trusses, released frames and existing frame P-Delta restrictions apply. Nonzero imposed support movements require linear analysis.")
+            description="Inclined support NORMAL elevation toward global +Y, degrees. Azimuth 0/elevation 90 equals the global-Y roller. Linear frames/trusses, released frames and existing frame P-Delta restrictions apply. Imposed rigid-support movements stay unchanged in every combination.")
     else:
         nodes["support_angle"].update(minimum=-180, maximum=180,
-            description="For support='inclined': roller TANGENT angle in degrees CCW from global +X. Normal (-sin a, cos a) translation fixed; tangent and RZ free. Other support presets require 0. Linear frames/trusses/releases and existing frame P-Delta restrictions apply. Springs retain global axes. Reactions are global total rigid+spring forces. Nonzero imposed support movements require linear analysis.")
+            description="For support='inclined': roller TANGENT angle in degrees CCW from global +X. Normal (-sin a, cos a) translation fixed; tangent and RZ free. Other support presets require 0. Linear frames/trusses/releases and existing frame P-Delta restrictions apply. Springs retain global axes. Reactions are global total rigid+spring forces. Imposed rigid-support movements stay unchanged in every combination.")
     members = entities["members"]["properties"]
     members["kind"]["enum"] = ["frame", "truss"]
     members["start"]["description"] = members["end"]["description"] = "Existing node identifier; start/end, not i_node/j_node."
