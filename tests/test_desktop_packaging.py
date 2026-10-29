@@ -131,25 +131,26 @@ class DesktopPackagingTests(unittest.TestCase):
                     runpy.run_path(str(entry), run_name='__main__')
                 self.assertEqual(stopped.exception.code,37)
 
-    def fixture(self):
-        app = self.root/'Relocated/Brecon.app'
+    def fixture(self, target='macOS'):
+        app = self.root/'Relocated'/('Brecon.app' if target=='macOS' else 'Brecon')
         contents = app/'Contents'
-        resources = contents/'Resources'
+        resources = contents/'Resources' if target=='macOS' else app/'_internal'
         resources.mkdir(parents=True)
-        (contents/'Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier':'io.github.praksharma.brecon','CFBundleExecutable':'Brecon','LSMinimumSystemVersion':'14.0'}))
-        executable = contents/'MacOS/Brecon'
-        executable.parent.mkdir()
+        if target=='macOS':
+            (contents/'Info.plist').write_bytes(plistlib.dumps({'CFBundleIdentifier':'io.github.praksharma.brecon','CFBundleExecutable':'Brecon','LSMinimumSystemVersion':'14.0'}))
+        executable = contents/'MacOS/Brecon' if target=='macOS' else app/('Brecon.exe' if target=='Windows' else 'Brecon')
+        executable.parent.mkdir(exist_ok=True)
         executable.write_bytes(b'executable')
         required = ['notices/LICENSE','notices/CITATION.md','notices/CITATION.cff',
                     'pynitegui/qt/viewport3d/vendor/LICENSE','pynitegui/qt/viewport3d/viewer.js',
-                    'brecon-1.0.0rc5.dev0.dist-info/METADATA', 'QtWebEngineProcess']
+                    'brecon-1.0.0rc5.dev0.dist-info/METADATA', 'QtWebEngineProcess.exe' if target=='Windows' else 'QtWebEngineProcess']
         for name in required:
             path = resources/name
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text('bundled')
         source = resources/'notices/source.tar.gz'
         source.write_bytes(b'source archive')
-        (resources/'notices/build-info.json').write_text(json.dumps({'version':'1.0.0rc5.dev0',
+        (resources/'notices/build-info.json').write_text(json.dumps({'version':'1.0.0rc5.dev0','target':target,
             'minimum_macos_from_wheel_tags':'14.0',
             'source_archive':source.name,'source_sha256':hashlib.sha256(source.read_bytes()).hexdigest()}))
         report = self.root/'report/desktop-check.json'
@@ -170,11 +171,70 @@ class DesktopPackagingTests(unittest.TestCase):
             report.write_text(json.dumps(record))
             with self.assertRaisesRegex(AssertionError,'different app location'):
                 self.checker.audit(app,report)
-            outside = self.root/'outside.txt'
-            outside.write_text('outside bundle')
-            (app/'Contents/Resources/escape').symlink_to(outside)
-            with self.assertRaisesRegex(AssertionError,'Invalid bundle symlink'):
-                self.checker.audit(app,report)
+
+    @unittest.skipIf(sys.platform=='win32', 'Windows portable bundles contain no symlinks')
+    def test_bundle_audit_rejects_escaping_symlinks(self):
+        app, report, _ = self.fixture()
+        outside = self.root/'outside.txt'
+        outside.write_text('outside bundle')
+        (app/'Contents/Resources/escape').symlink_to(outside)
+        with self.assertRaisesRegex(AssertionError,'Invalid bundle symlink'):
+            self.checker.audit(app,report)
+
+    def test_portable_layouts_require_native_helpers_and_matching_target_without_codesign(self):
+        for target in ('Windows','Linux'):
+            with self.subTest(target=target), TemporaryDirectory() as directory:
+                self.root = Path(directory)
+                app, report, record = self.fixture(target)
+                with patch.object(self.checker.subprocess, 'run') as command, redirect_stdout(io.StringIO()):
+                    self.checker.audit(app, report)
+                    command.assert_not_called()
+                    resources = app/'_internal'
+                    (resources/('QtWebEngineProcess.exe' if target=='Windows' else 'QtWebEngineProcess')).unlink()
+                    with self.assertRaisesRegex(AssertionError,'Missing browser helper'):
+                        self.checker.audit(app,report)
+
+    def test_host_names_and_windows_archive_round_trip(self):
+        for machine, expected in [('AMD64','x86_64'),('aarch64','arm64'),('arm64','arm64')]:
+            with patch.object(self.builder.platform,'machine',return_value=machine):
+                self.assertEqual(self.builder.architecture(),expected)
+        app = self.root/'Brecon'
+        (app/'_internal').mkdir(parents=True)
+        (app/'Brecon.exe').write_bytes(b'program')
+        (app/'_internal/library.dll').write_bytes(b'library')
+        with patch.object(self.builder.sys,'platform','win32'), patch.object(self.builder.platform,'machine',return_value='AMD64'):
+            archive = self.builder.archive_app(app,self.root,'1.2.3')
+        self.assertEqual(archive.name,'Brecon-1.2.3-Windows-x86_64.zip')
+        with zipfile.ZipFile(archive) as bundle:
+            self.assertEqual(bundle.read('Brecon/Brecon.exe'),b'program')
+            self.assertEqual(bundle.read('Brecon/_internal/library.dll'),b'library')
+
+    @unittest.skipIf(sys.platform=='win32', 'POSIX executable bits and links')
+    def test_linux_archive_preserves_executable_and_symlink_after_relocation(self):
+        app = self.root/'Brecon'
+        app.mkdir()
+        executable = app/'Brecon'
+        executable.write_bytes(b'program')
+        executable.chmod(0o755)
+        (app/'linked').symlink_to('Brecon')
+        with patch.object(self.builder.sys,'platform','linux'):
+            archive = self.builder.archive_app(app,self.root,'1.2.3')
+        with tarfile.open(archive) as bundle:
+            bundle.extractall(self.root/'relocated',filter='data')
+        relocated = self.root/'relocated/Brecon'
+        self.assertTrue((relocated/'Brecon').stat().st_mode & 0o111)
+        self.assertTrue((relocated/'linked').is_symlink())
+        self.assertEqual((relocated/'linked').resolve(),(relocated/'Brecon').resolve())
+
+    def test_archive_check_rejects_bad_checksum_before_extraction_or_execution(self):
+        archive = self.root/'Brecon.zip'
+        archive.write_bytes(b'tampered archive')
+        (self.root/'SHA256SUMS').write_text('wrong  Brecon.zip\n')
+        with patch.object(self.checker.subprocess,'run') as command:
+            with self.assertRaisesRegex(AssertionError,'checksum mismatch'):
+                self.checker.check_archive(archive,self.root/'output')
+            command.assert_not_called()
+        self.assertFalse((self.root/'output').exists())
 
     def test_bundle_audit_rejects_failed_checks_missing_evidence_and_wrong_source(self):
         app, report, record = self.fixture()

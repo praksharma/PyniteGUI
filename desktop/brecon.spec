@@ -1,7 +1,8 @@
-"""One-folder macOS application built from an installed, verified wheel."""
+"""Native one-folder application built from an installed, verified wheel."""
 from importlib.metadata import distributions, version
 from pathlib import Path
 import os
+import sys
 from packaging.version import Version
 
 from PyInstaller.utils.hooks import collect_data_files, collect_submodules, copy_metadata
@@ -13,6 +14,8 @@ for distribution in distributions():
 data += [(str(root/name), 'notices') for name in ('LICENSE', 'CITATION.md', 'CITATION.cff')]
 data += [(os.environ['BRECON_DESKTOP_PROVENANCE'], 'notices')]
 data += [(os.environ['BRECON_DESKTOP_SOURCE'], 'notices')]
+if sys.platform == 'linux':
+    data += [(os.environ['BRECON_DESKTOP_ICON'], '.')]
 a = Analysis([str(root/'desktop/entry.py')], pathex=[str(root/'desktop')],
     binaries=[], datas=data,
     hiddenimports=collect_submodules('pynitegui') + collect_submodules('uvicorn') +
@@ -24,12 +27,14 @@ a = Analysis([str(root/'desktop/entry.py')], pathex=[str(root/'desktop')],
 pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='Brecon', debug=False,
     bootloader_ignore_signals=False, strip=False, upx=False, console=False,
-    argv_emulation=False, target_arch=None, codesign_identity=None, entitlements_file=None)
+    argv_emulation=False, target_arch=None, codesign_identity=None, entitlements_file=None,
+    icon=os.environ.get('BRECON_DESKTOP_ICON') if sys.platform == 'win32' else None)
 collection = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name='Brecon')
-release = '.'.join(str(part) for part in Version(version('brecon')).release)
-app = BUNDLE(collection, name='Brecon.app', icon=os.environ.get('BRECON_DESKTOP_ICON'),
-    bundle_identifier='io.github.praksharma.brecon',
-    info_plist={'CFBundleShortVersionString': release, 'CFBundleVersion': release,
-                'CFBundleGetInfoString': 'Brecon '+version('brecon'),
-                'LSMinimumSystemVersion': os.environ['BRECON_DESKTOP_MIN_MACOS'],
-                'NSHighResolutionCapable': True})
+if sys.platform == 'darwin':
+    release = '.'.join(str(part) for part in Version(version('brecon')).release)
+    app = BUNDLE(collection, name='Brecon.app', icon=os.environ.get('BRECON_DESKTOP_ICON'),
+        bundle_identifier='io.github.praksharma.brecon',
+        info_plist={'CFBundleShortVersionString': release, 'CFBundleVersion': release,
+                    'CFBundleGetInfoString': 'Brecon '+version('brecon'),
+                    'LSMinimumSystemVersion': os.environ['BRECON_DESKTOP_MIN_MACOS'],
+                    'NSHighResolutionCapable': True})

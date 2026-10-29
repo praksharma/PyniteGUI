@@ -6,8 +6,8 @@ GitHub publication and approved the PyPI environment on **2026-10-28**. The prev
 [GitHub Releases](https://github.com/praksharma/PyniteGUI/releases) for published
 assets; source tags and unpublished drafts do not imply a public binary release.
 Stable 1.0 promotion follows a feature freeze and verification of the actual
-release artifacts. A macOS development app-bundle workflow is available in source;
-public signed installers and Windows/Linux packaging remain later steps.
+release artifacts. Native macOS/Windows/Linux development packaging is available
+in source; public signed installers and broader platform coverage remain later steps.
 
 **Known RC4 plate limitation:** independent post-release checks found raw Rect
 moment/shear recovery inconsistent with verified plate laws in PyNite 3.0/3.2.

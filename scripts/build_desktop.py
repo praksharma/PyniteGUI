@@ -1,4 +1,4 @@
-"""Build an unsigned macOS app from a reviewed installed wheel, without publishing."""
+"""Build a native desktop preview from a reviewed installed wheel, without publishing."""
 import argparse
 import hashlib
 from importlib import metadata
@@ -15,6 +15,15 @@ import tomllib
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def target_name():
+    return {'darwin': 'macOS', 'win32': 'Windows', 'linux': 'Linux'}[sys.platform]
+
+
+def architecture():
+    machine = platform.machine().lower()
+    return {'amd64': 'x86_64', 'aarch64': 'arm64'}.get(machine, machine)
 
 
 def minimum_macos():
@@ -37,7 +46,7 @@ def verify_locked_runtime():
         locked.setdefault(canonicalize_name(package['name']), set()).add(package['version'])
     for distribution in metadata.distributions():
         name = canonicalize_name(distribution.metadata['Name'])
-        if name not in locked and name not in {'pyinstaller', 'pyinstaller-hooks-contrib', 'altgraph', 'macholib', 'setuptools', 'pip', 'wheel'}:
+        if name not in locked and name not in {'pyinstaller', 'pyinstaller-hooks-contrib', 'altgraph', 'macholib', 'setuptools', 'pip', 'wheel', 'pefile', 'pywin32-ctypes'}:
             raise ValueError('Unreviewed distribution in desktop environment: '+name+'. Start with a fresh build environment.')
         if name in locked and distribution.version not in locked[name]:
             raise ValueError('Standalone runtime differs from uv.lock: '+name+'. Install a fresh environment from uv export --locked.')
@@ -84,8 +93,16 @@ def icon(work):
             painter.end()
             suffix = '@2x' if scale == 2 else ''
             assert image.save(str(target/f'icon_{size}x{size}{suffix}.png'))
-    destination = work/'Brecon.icns'
-    subprocess.run(['iconutil', '-c', 'icns', str(target), '-o', str(destination)], check=True)
+    if sys.platform == 'darwin':
+        destination = work/'Brecon.icns'
+        subprocess.run(['iconutil', '-c', 'icns', str(target), '-o', str(destination)], check=True)
+    elif sys.platform == 'win32':
+        from PIL import Image
+        destination = work/'Brecon.ico'
+        with Image.open(target/'icon_512x512.png') as image:
+            image.save(destination, sizes=[(size, size) for size in (16, 32, 48, 64, 128, 256)])
+    else:
+        destination = target/'icon_256x256@2x.png'
     return destination
 
 
@@ -102,9 +119,27 @@ def verify_source(source, wheel):
                 raise ValueError('Source archive has a stale desktop recipe: '+path.name)
 
 
+def archive_app(app, output, version):
+    """Preserve native permissions/symlinks; Windows one-folder builds use ZIP."""
+    target = target_name()
+    extension = '.tar.gz' if target == 'Linux' else '.zip'
+    archive = output/f'Brecon-{version}-{target}-{architecture()}{extension}'
+    if target == 'macOS':
+        subprocess.run(['ditto', '-c', '-k', '--sequesterRsrc', '--keepParent', str(app), str(archive)], check=True)
+    elif target == 'Linux':
+        with tarfile.open(archive, 'w:gz', dereference=False) as bundle:
+            bundle.add(app, arcname=app.name)
+    else:
+        with zipfile.ZipFile(archive, 'w', compression=zipfile.ZIP_DEFLATED) as bundle:
+            for path in sorted(app.rglob('*')):
+                if path.is_symlink():
+                    raise ValueError('Windows portable ZIP cannot contain symlinks: '+str(path))
+                bundle.write(path, path.relative_to(app.parent))
+    return archive
+
+
 def build(wheel, source, output):
-    if sys.platform != 'darwin':
-        raise ValueError('This first desktop target is macOS only; build on a Mac. Windows/Linux packaging remains pending.')
+    target = target_name()  # PyInstaller builds only for the current host.
     if sys.version_info[:2] != (3, 12):
         raise ValueError('The validated standalone profile uses Python 3.12; create the build environment with --python 3.12.')
     version = verify_wheel(wheel)
@@ -114,40 +149,44 @@ def build(wheel, source, output):
     for line in (ROOT/'desktop/requirements.txt').read_text().splitlines():
         if line.strip() and not line.startswith('#'):
             required = Requirement(line)
+            if required.marker and not required.marker.evaluate():
+                continue
             if metadata.version(required.name) not in required.specifier:
                 raise ValueError('Install the pinned desktop/requirements.txt build tools: '+required.name)
     metadata.distribution('mcp')  # The supported standalone profile includes MCP.
     output.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='brecon-desktop-build-') as directory:
         work = Path(directory)
-        record = {'application': 'Brecon', 'version': version, 'target': 'macOS',
-            'architecture': platform.machine(), 'verified_os': platform.mac_ver()[0],
-            'minimum_macos_from_wheel_tags': minimum_macos(),
+        record = {'application': 'Brecon', 'version': version, 'target': target,
+            'architecture': architecture(), 'verified_os': platform.platform(),
             'python': platform.python_version(), 'wheel': wheel.name,
             'wheel_sha256': hashlib.sha256(wheel.read_bytes()).hexdigest(),
             'source_archive': source.name,
             'source_sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
             'source': 'https://github.com/praksharma/PyniteGUI',
-            'signing': 'ad-hoc only; no Developer ID or notarization',
+            'signing': 'ad-hoc only; no Developer ID or notarization' if target == 'macOS' else 'unsigned',
             'build_environment': dict(sorted((d.metadata['Name'], d.version) for d in metadata.distributions()))}
+        if target == 'macOS':
+            record['minimum_macos_from_wheel_tags'] = minimum_macos()
+        elif target == 'Linux':
+            record['libc'] = list(platform.libc_ver())
         provenance = work/'build-info.json'
         provenance.write_text(json.dumps(record, indent=2)+'\n')
         import os
         environment = dict(os.environ, BRECON_DESKTOP_PROVENANCE=str(provenance),
                            BRECON_DESKTOP_SOURCE=str(source),
-                           BRECON_DESKTOP_MIN_MACOS=record['minimum_macos_from_wheel_tags'],
+                           BRECON_DESKTOP_MIN_MACOS=record.get('minimum_macos_from_wheel_tags', ''),
                            BRECON_DESKTOP_ICON=str(icon(work)))
         subprocess.run([sys.executable, '-m', 'PyInstaller', '--noconfirm', '--clean',
             '--distpath', str(output), '--workpath', str(work/'analysis'), str(ROOT/'desktop/brecon.spec')],
             cwd=work, env=environment, check=True)
-    app = output/'Brecon.app'
-    archive = output/f'Brecon-{version}-macOS-{platform.machine()}.zip'
-    subprocess.run(['ditto', '-c', '-k', '--sequesterRsrc', '--keepParent', str(app), str(archive)], check=True)
+    app = output/('Brecon.app' if target == 'macOS' else 'Brecon')
+    archive = archive_app(app, output, version)
     (output/'build-info.json').write_text(json.dumps(record, indent=2)+'\n')
     (output/'SHA256SUMS').write_text(hashlib.sha256(archive.read_bytes()).hexdigest()+'  '+archive.name+'\n')
     print('Built:', app)
     print('Archive (preserves bundle symlinks):', archive)
-    print('Run Contents/MacOS/Brecon --desktop-check OUTPUT_DIRECTORY before distributing.')
+    print('Extract and validate using scripts/check_desktop.py --archive ARCHIVE --output NEW_DIRECTORY before distributing.')
 
 
 if __name__ == '__main__':

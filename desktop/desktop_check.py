@@ -37,7 +37,8 @@ def run(output):
         from pynitegui.qt.reports import export_csv, report_html
         from pynitegui.qt.theme import configure_theme
         record.update(version=pynitegui.__version__, bundled_import=pynitegui.__file__)
-        assert Path(pynitegui.__file__).resolve().is_relative_to(Path(sys.executable).parents[2].resolve()), 'Application code is outside the app bundle'
+        bundle = Path(sys.executable).parents[2] if sys.platform == 'darwin' else Path(sys.executable).parent
+        assert Path(pynitegui.__file__).resolve().is_relative_to(bundle.resolve()), 'Application code is outside the app bundle'
         configure_graphics('auto')
         app = QApplication.instance() or QApplication(['Brecon desktop check'])
         app.setApplicationName('Brecon Desktop Check')

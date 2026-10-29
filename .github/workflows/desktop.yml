@@ -1,4 +1,4 @@
-name: Build macOS Desktop Preview
+name: Build Desktop Previews
 
 on:
   workflow_dispatch:
@@ -6,10 +6,32 @@ on:
 permissions:
   contents: read
 
+env:
+  PYTHONUTF8: "1"
+
 jobs:
   build:
-    runs-on: macos-15
-    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            target: macos
+            python: build/desktop-env/bin/python
+            qt: cocoa
+          - runner: windows-2025
+            target: windows
+            python: build/desktop-env/Scripts/python.exe
+            qt: windows
+          - runner: ubuntu-22.04
+            target: linux
+            python: build/desktop-env/bin/python
+            qt: xcb
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
@@ -21,29 +43,43 @@ jobs:
           uv build --no-sources
           uv export --locked --no-dev --extra mcp --no-emit-project --format requirements-txt --output-file desktop-runtime.txt
           uv venv --python 3.12 build/desktop-env
-          uv pip install --python build/desktop-env/bin/python -r desktop-runtime.txt -r desktop/requirements.txt dist/*.whl
+          uv pip install --python "${{ matrix.python }}" -r desktop-runtime.txt -r desktop/requirements.txt dist/*.whl
+      - name: Install Linux display libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libegl1 libopengl0 libxcb-cursor0 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 libxcb-randr0 libnss3 libasound2
       - name: Run packaging checks
+        env:
+          QT_QPA_PLATFORM: offscreen
+          PYNITEGUI_NO_WEBENGINE: "1"
         run: |
-          build/desktop-env/bin/python -B scripts/test.py release tooling
+          "${{ matrix.python }}" -B scripts/test.py release tooling
       - name: Freeze the reviewed installed wheel
+        env:
+          QT_QPA_PLATFORM: offscreen
         run: |
-          build/desktop-env/bin/python -B scripts/build_desktop.py --wheel dist/*.whl --source dist/*.tar.gz --output dist/desktop
+          "${{ matrix.python }}" -B scripts/build_desktop.py --wheel dist/*.whl --source dist/*.tar.gz --output dist/desktop
       - name: Extract and check the app without external Python paths
         env:
           PYNITEGUI_NO_WEBENGINE: "0"
-          QT_QPA_PLATFORM: cocoa
+          QT_QPA_PLATFORM: ${{ matrix.qt }}
+          QTWEBENGINE_CHROMIUM_FLAGS: --use-gl=angle --use-angle=swiftshader --disable-gpu-compositing
         run: |
-          mkdir -p build/relocated
-          ditto -x -k dist/desktop/Brecon-*.zip build/relocated
-          env -u PYTHONHOME -u PYTHONPATH PATH=/usr/bin:/bin:/usr/sbin:/sbin build/relocated/Brecon.app/Contents/MacOS/Brecon --desktop-check "$PWD/build/desktop-check"
-          build/desktop-env/bin/python -B scripts/check_desktop.py build/relocated/Brecon.app build/desktop-check/desktop-check.json
+          if [ "${{ runner.os }}" = Linux ]; then
+            xvfb-run -a "${{ matrix.python }}" -B scripts/check_desktop.py --archive dist/desktop/Brecon-*.tar.gz --output build/desktop-check
+          else
+            "${{ matrix.python }}" -B scripts/check_desktop.py --archive dist/desktop/Brecon-*.zip --output build/desktop-check
+          fi
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
         with:
-          name: brecon-macos-desktop-preview
+          name: brecon-${{ matrix.target }}-desktop-preview
           path: |
             dist/desktop/*.zip
+            dist/desktop/*.tar.gz
             dist/desktop/SHA256SUMS
             dist/desktop/build-info.json
-            build/desktop-check/
+            build/desktop-check/evidence/
           if-no-files-found: error
           retention-days: 14
