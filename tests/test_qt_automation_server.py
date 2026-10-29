@@ -127,6 +127,42 @@ window.close()
 
 @unittest.skipUnless(dependencies_available(), "Install the optional mcp extra for wire tests")
 class ServerWireTests(ServerWindowTests):
+    def test_wire_rotational_frame_releases_solve_and_explain_undefined_joint_angles(self):
+        self.window.load_project(example_project("3d_released_beam"))
+        self.window.automation_mode.set_enabled(True)
+        self.server.permissions.set_group("Model edits", True)
+        self.server.permissions.set_group("Analysis", True)
+        async def callback(client):
+            model = (await client.call_tool("read_model", {})).structured_content["data"]
+            self.assertEqual(model["model"]["version"], 30)
+            fields = model["schema"]["entities"]["members"]["properties"]
+            self.assertNotIn("const", fields["release_end_ry"])
+            edited = await client.call_tool("apply_batch", {"session_id": model["session_id"],
+                "expected_revision": model["revision"], "operations": [
+                    {"op":"put", "collection":"members", "key":"M1", "value":{"roll": 47.}}]})
+            self.assertFalse(edited.is_error, edited)
+            revision = edited.structured_content["data"]["revision"]
+            started = await client.call_tool("run_analysis", {"session_id":model["session_id"], "expected_revision":revision})
+            self.assertFalse(started.is_error, started)
+            job = started.structured_content["data"]["job_id"]
+            for _ in range(300):
+                status = (await client.call_tool("analysis_status", {"session_id":model["session_id"], "job_id":job})).structured_content["data"]
+                if not status["running"]:
+                    break
+                await asyncio.sleep(.02)
+            self.assertEqual(status["state"], "Current", status)
+            response = await client.call_tool("read_results", {"session_id":model["session_id"],
+                "combination":"Reversed", "kind":"nodes", "offset":1, "limit":1})
+            self.assertFalse(response.is_error, response)
+            result = response.structured_content["data"]
+            self.assertIn("N2", result["inactive_rotation_directions"])
+            self.assertEqual(result["rows"][0][4:7], ["n/a"]*3)
+            self.assertIn("n/a", result["rotation_note"])
+            bad = await client.call_tool("apply_batch", {"session_id":model["session_id"], "expected_revision":revision,
+                "operations":[{"op":"put", "collection":"members", "key":"M1", "value":{"release_start_rx":True,"release_end_rx":True}}]})
+            self.assertTrue(bad.is_error)
+        self.with_client(callback)
+
     # Keep the base window helpers but avoid duplicating its standalone tests.
     test_missing_extra_is_explained_without_installing = None
     test_desktop_import_and_panel_work_when_all_optional_packages_are_blocked = None

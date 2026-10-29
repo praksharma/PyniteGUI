@@ -6,6 +6,10 @@ METHODS = {"linear": "Linear elastic", "p_delta": "P-Delta elastic"}
 def analysis_method_issue(project):
     if project.analysis_method != "p_delta":
         return None
+    if getattr(project, "dimension", "2D") == "3D":
+        from .spatial_releases import has_rotational_releases
+        if has_rotational_releases(project):
+            return "Spatial rotational end releases currently require Linear elastic analysis; P-Delta release recovery is not validated."
     if getattr(project, "surfaces", {}):
         return "P-Delta is available for frame-only models. PyNite does not include second-order shell effects; use Linear elastic for coupled slabs."
     if any(member.kind != "frame" for member in project.members.values()):
@@ -29,7 +33,7 @@ def settings_dialog(parent, project):
     method.setCurrentIndex(method.findData(project.analysis_method))
     form.addRow("Method", method)
     help_text = QLabel("P-Delta includes geometric stiffness from axial loads and solves each combination separately. "
-                       "Materials remain elastic. Frame-only models; no coupled slabs, trusses or released translations. "
+                       "Materials remain elastic. Frame-only models; no coupled slabs, trusses, released translations or spatial rotational releases. "
                        "Add intermediate joints to resolve member curvature and compare mesh refinement. "
                        "Steel plastic pushover and reinforced-concrete plasticity are separate capabilities and are not enabled here.")
     help_text.setWordWrap(True)

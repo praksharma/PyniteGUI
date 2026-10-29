@@ -16,10 +16,10 @@ def to_spatial(project, support_mode="planar", offset=0.0):
         raise ValueError("The global Z offset must be finite.")
     project.validate()
     released = [member.name for member in project.members.values() if member.kind == "frame"
-                and any(flag for end in member.end_releases for flag in end)]
+                and any((member.release_start_x, member.release_end_x, member.release_start_y, member.release_end_y))]
     if released:
-        raise ValueError("Cannot convert released frame members: " + ", ".join(released) +
-                         ". General 3D frame releases are not supported yet; no releases were removed.")
+        raise ValueError("Cannot convert translationally released frame members: " + ", ".join(released) +
+                         ". 3D translational releases are not supported; no releases were removed.")
     result = SpatialProject(**{field.name: deepcopy(getattr(project, field.name))
                               for field in fields(Project) if field.name not in ("nodes", "members", "loads")})
     for name, node in project.nodes.items():

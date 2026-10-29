@@ -270,6 +270,11 @@ class AutomationCommands:
                                   "convention": "Local x=i->j, y=i->n, z=x cross y. Membrane tension positive. Quad transverse shear unavailable pending validation; no combined face stresses or design checks."}
             else:
                 headers, rows = result_table(window.project, result.for_combination(combination), kind)
+                directions = getattr(result.solver, "rotation_nullspaces", None)
+                if kind == "nodes" and directions is not None:
+                    names = {row[0] for row in rows[offset:offset+limit]}
+                    local_metadata = {"inactive_rotation_directions": {name: basis.T.tolist() for name, basis in directions.items() if name in names},
+                        "rotation_note": "Undefined global joint-rotation components are n/a, not measured zero. Listed global unit vectors span unused rotations. Recovered member-end bending slopes are separate from the shared joint rotation."}
             return {**self.identity(), **self.snapshot(), "combination": combination,
                     **local_metadata,
                     "unit_system": window.project.unit_system, "headers": headers, "rows": rows[offset:offset+limit],

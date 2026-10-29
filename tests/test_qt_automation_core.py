@@ -18,6 +18,36 @@ from pynitegui.qt.examples import example_project
 
 
 class AutomationCoreTests(unittest.TestCase):
+    def test_spatial_release_batch_schema_result_directions_and_atomic_failure(self):
+        self.window.load_project(example_project("3d_cantilever"))
+        operations = [{"op": "put", "collection": "members", "key": "M1", "value": {
+            "release_end": True, "release_end_ry": True}}]
+        response = self.edits(operations)
+        self.assertTrue(response["ok"], response)
+        schema = self.invoke("read_schema", session_id=self.window.project_session)["data"]["schema"]
+        self.assertNotIn("const", schema["entities"]["members"]["properties"]["release_end_ry"])
+        self.assertFalse(schema["entities"]["members"]["properties"]["release_end_x"]["const"])
+        # The existing cantilever has no nodal bending moments, so a released
+        # free-tip rotation is allowed; its member slope remains recoverable.
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = analyze(self.window.project)
+        self.window.analysis_revision = self.window.revision
+        self.window.analysis_finished(result, "")
+        accepted = self.window.result
+        response = self.invoke("read_results", session_id=self.window.project_session, kind="nodes", offset=1, limit=1)
+        self.assertTrue(response["ok"], response)
+        self.assertIn("N2", response["data"]["inactive_rotation_directions"])
+        self.assertNotIn("N1", response["data"]["inactive_rotation_directions"])
+        self.assertIn("n/a", response["data"]["rotation_note"])
+        self.assertEqual(response["data"]["rows"][0][6], "n/a")
+        before, count = self.window.project.to_dict(), self.window.undo.count()
+        response = self.edits([{"op":"put", "collection":"members", "key":"M1", "value":{
+            "release_start_rx":True, "release_end_rx":True}}])
+        self.assertFalse(response["ok"])
+        self.assertEqual(self.window.project.to_dict(), before)
+        self.assertEqual(self.window.undo.count(), count)
+        self.assertIs(self.window.result, accepted)
+
     @classmethod
     def setUpClass(cls):
         cls.app = QApplication.instance() or QApplication([])

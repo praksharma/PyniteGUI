@@ -18,6 +18,9 @@ MAX_PROJECT_SURFACE_ELEMENTS = 4096
 def surface_analysis_issue(project):
     if not getattr(project, "surfaces", {}):
         return None
+    from .spatial_releases import has_rotational_releases
+    if has_rotational_releases(project):
+        return "Spatial rotational releases are frame-only. Released frame/shell interfaces are not validated."
     if not project.surface_analysis_enabled:
         return SURFACE_ANALYSIS_LIMIT
     if any(mesh.generator != "rectangle" or mesh.element_type != "Quad" for mesh in project.surfaces.values()):

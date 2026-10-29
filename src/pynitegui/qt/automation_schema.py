@@ -43,9 +43,13 @@ def model_reference(dimension="2D"):
     for field in ("material", "section"):
         members[field]["description"] = "Existing identifier in the corresponding model collection; specify explicitly using read_model's defaults."
     if spatial:
+        from .spatial_releases import ROTATION_FIELDS
         for field in members:
             if field.startswith("release_"):
-                members[field]["const"] = False
+                if field in ROTATION_FIELDS:
+                    members[field]["description"] = "Member-local rotational release, including roll; release_start/end mean RZ, *_rx/ry mean RX/RY. Linear frame-only; no surfaces or P-Delta. Manual flags must be false for trusses. RX cannot be released at both ends."
+                else:
+                    members[field]["const"] = False
     loads = entities["loads"]["properties"]
     loads["kind"]["enum"] = ["point", "distributed"]
     loads["target"]["description"] = "Existing node or member identifier. Node loads must be point loads; truss members accept joint loads only."
@@ -72,7 +76,7 @@ def model_reference(dimension="2D"):
             "description": "Key is a rectangular Quad surface ID. put replaces its entire outer-edge -> global rigid DOF list map. Omit free edges. Geometry-owned, reapplied on remesh. Shared joints use the union of restraints; spring conflicts are rejected. Remove explicitly when deleting a surface. Opening rims are excluded."}
         settings["surface_analysis_enabled"] = {"type": "boolean", "default": False,
             "description": "Experimental coupled analysis opt-in. When true, the complete candidate must contain only conforming, connected rectangular Quad surfaces. No solve occurs during editing."}
-        surface_info = "Spatial v28: surfaces, surface_pressures and surface_supports are editable via put/delete; surface_analysis_enabled via settings/set. Recipes use canonical inches/kip, pressure kip/in2. Geometry-only surfaces block analysis. Coupled candidate topology is checked once after all operations; stability and independent equilibrium remain analysis gates."
+        surface_info = "Spatial v30: surfaces, surface_pressures and surface_supports are editable via put/delete; surface_analysis_enabled via settings/set. Recipes use canonical inches/kip, pressure kip/in2. Geometry-only surfaces block analysis. Rotational frame releases cannot be combined with surfaces. Coupled candidate topology is checked once after all operations; stability and independent equilibrium remain analysis gates."
     return {
         "dimension": dimension, "input_units": "Canonical inch-kip regardless of display units; angles in degrees, rotations in radians.",
         "entities": entities,

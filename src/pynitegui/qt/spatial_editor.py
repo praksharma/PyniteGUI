@@ -256,11 +256,36 @@ def populate_inspector(window):
         fields["roll"].setObjectName("spatial_roll")
         fields["roll"].setProperty("initial", fields["roll"].value())
         form.addRow("Roll (deg)", fields["roll"])
+        from .spatial_releases import ROTATION_FIELDS
+        for key in ROTATION_FIELDS:
+            axis = key.rsplit("_", 1)[-1].upper() if key.endswith(("_rx", "_ry")) else "RZ"
+            end = "Start" if "start" in key else "End"
+            fields[key] = QCheckBox("Released")
+            fields[key].setObjectName("spatial_"+key)
+            fields[key].setChecked(getattr(entity, key))
+            fields[key].setToolTip("Member-local rotation, including roll. Linear frame-only analysis. "
+                "One RX release removes torsion transfer; do not release RX at both ends. Clear manual releases before changing to truss.")
+            form.addRow(f"{end} local {axis}", fields[key])
+        def update_releases():
+            for key in ROTATION_FIELDS:
+                fields[key].setEnabled(fields["kind"].currentText() == "frame")
+        fields["kind"].currentTextChanged.connect(update_releases)
+        update_releases()
         from .spatial_results import member_axes
         axes = member_axes(project, name)
         label = QLabel("\n".join(f"{axis}: " + ", ".join(f"{value:.3g}" for value in row) for axis, row in zip(("x", "y", "z"), axes)))
         label.setWordWrap(True)
         form.addRow("Local axes (XYZ)", label)
+        if window.result is not None and entity.kind == "frame" and any(any(flags) for flags in entity.rotation_releases):
+            solver = window.result.solver.members[name]
+            parts = list(solver.sub_members.values())
+            rotations = (parts[0].d(window.result.combination)[3:6, 0], parts[-1].d(window.result.combination)[9:12, 0])
+            # Bending slopes are uniquely recovered even if the shared nodal
+            # rotation is undefined. Uniform twist can remain a free gauge.
+            text = "\n".join(f"{end}: RY {r[1]:.6g}, RZ {r[2]:.6g} rad" for end, r in zip(("Start", "End"), rotations))
+            motion = QLabel(text)
+            motion.setWordWrap(True)
+            form.addRow("Member-end bending rotations", motion)
     else:
         form.addRow("Type", QLabel(entity.kind.capitalize()))
         fields, custom_values = load_fields(form, project, entity)

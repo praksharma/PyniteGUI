@@ -40,7 +40,8 @@ def viewport_payload(window):
         if not window.entity_visible("members", member.name):
             continue
         axes[member.name] = member_axes(project, member.name, result)
-        definition = {"name": member.name, "start": member.start, "end": member.end, "kind": member.kind, "axes": axes[member.name].tolist()}
+        definition = {"name": member.name, "start": member.start, "end": member.end, "kind": member.kind, "axes": axes[member.name].tolist(),
+                      "releaseLabels": list(member.release_labels) if member.kind == "frame" else ["None", "None"]}
         if result is not None:
             a, b = np.array(project.nodes[member.start].coords), np.array(project.nodes[member.end].coords)
             length = math.dist(a, b)

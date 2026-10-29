@@ -47,7 +47,18 @@ def example_project(key, unit_system="imperial"):
     def load(target, direction, magnitude, **kwargs):
         name = project.next_name("L", project.loads)
         project.loads[name] = SpatialLoad(name, target, direction, magnitude, **kwargs)
-    if key == "3d_cantilever":
+    if key == "3d_released_beam":
+        member = project.add_member((0., 0., 0.), (144., 96., 108.))
+        project.nodes["N1"].support = "fixed"
+        project.nodes["N2"].support = "pin"
+        beam = project.members[member]
+        beam.roll = 31.
+        beam.release_start = beam.release_end = True
+        beam.release_start_ry = beam.release_end_ry = True
+        load(member, "Fy", -.001, position=0., kind="distributed", end_magnitude=-.001)
+        load(member, "Fz", -.0006, position=0., kind="distributed", end_magnitude=-.0006)
+        project.set_combination("Reversed", {"Case 1": -2.})
+    elif key == "3d_cantilever":
         member = project.add_member((0, 0, 0), (120, 0, 0))
         project.nodes["N1"].support = "fixed"
         load("N2", "FY", -1)

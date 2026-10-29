@@ -36,6 +36,7 @@ tests = [
 [groups.model]
 description = "Geometry/editing, units, assignments, libraries, validation, persistence and native model editors."
 tests = [
+  "test_qt_spatial_releases",
   "test_independent_g.IndependentGModelTests",
   "test_geometry_tools.GeometryPlanTests",
   "test_organization.OrganizationModelTests",
@@ -80,6 +81,7 @@ tests = [
 [groups.engineering]
 description = "Solver mechanics, analytical comparisons, equilibrium, stability and frame/truss benchmarks."
 tests = [
+  "test_spatial_releases",
   "test_independent_g.OfficialSpaceFrameTests",
   "test_station_queries.StationQueryTests",
   "test_geometry_tools.GeometryEngineeringTests",

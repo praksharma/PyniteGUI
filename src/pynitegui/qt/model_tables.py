@@ -33,10 +33,11 @@ class ModelTablesDialog(QDialog):
         self.constructors = {"nodes": Node, "members": Member, "loads": Load}
         if self.spatial:
             from .spatial_model import SpatialNode, SpatialMember, SpatialLoad, RESTRAINT_FIELDS, SPRING_FIELDS
+            from .spatial_releases import ROTATION_FIELDS
             self.fields = {"nodes": ("name", "x", "y", "z", "support", *RESTRAINT_FIELDS, *SPRING_FIELDS),
-                           "members": ("name", "start", "end", "material", "section", "roll", "kind"),
+                           "members": ("name", "start", "end", "material", "section", "roll", "kind", *ROTATION_FIELDS),
                            "loads": (*FIELDS["loads"][:-1], "elevation", "units")}
-            self.boolean_fields = set(RESTRAINT_FIELDS)
+            self.boolean_fields = {*RESTRAINT_FIELDS, *ROTATION_FIELDS}
             self.numeric_fields = NUMERIC_FIELDS | {"z", "roll", "elevation", *SPRING_FIELDS}
             self.constructors = {"nodes": SpatialNode, "members": SpatialMember, "loads": SpatialLoad}
         self.original = project.clone()
@@ -62,7 +63,8 @@ class ModelTablesDialog(QDialog):
             headers["nodes"] = ["ID", *(f"{axis} ({project.units.length})" for axis in ("X", "Y", "Z")), "Support",
                                 *("Restrain " + dof for dof in DOFS),
                                 *(f"Spring {dof} ({project.units.stiffness if index < 3 else project.units.rotational_stiffness})" for index, dof in enumerate(DOFS))]
-            headers["members"] = ["ID", "Start", "End", "Material", "Section", "Roll (deg)", "Type"]
+            headers["members"] = ["ID", "Start", "End", "Material", "Section", "Roll (deg)", "Type",
+                                   "Start RX", "Start RY", "Start RZ", "End RX", "End RY", "End RZ"]
             headers["loads"] = [*headers["loads"][:-2], "Azimuth (deg)", "Elevation (deg)", "Magnitude units"]
         for kind, fields in self.fields.items():
             panel = QWidget()
@@ -180,20 +182,24 @@ class ModelTablesDialog(QDialog):
             widget = table.cellWidget(row, self.fields[kind].index("support"))
             widget.currentTextChanged.connect(self.update_supports)
             self.update_supports()
-        if kind == "members" and not self.spatial:
+        if kind == "members":
             widget = table.cellWidget(row, self.fields[kind].index("kind"))
             widget.currentTextChanged.connect(self.update_member_types)
             self.update_member_types()
 
     def update_member_types(self):
         table = self.tables["members"]
+        keys = self.fields["members"]
+        from .spatial_releases import ROTATION_FIELDS
+        releases = ROTATION_FIELDS if self.spatial else ("release_start", "release_end", "release_start_x", "release_end_x", "release_start_y", "release_end_y")
         for row in range(table.rowCount()):
-            frame = table.cellWidget(row, FIELDS["members"].index("kind")).currentText() == "frame"
-            for key in ("release_start", "release_end", "release_start_x", "release_end_x", "release_start_y", "release_end_y"):
-                item = table.item(row, FIELDS["members"].index(key))
+            frame = table.cellWidget(row, keys.index("kind")).currentText() == "frame"
+            for key in releases:
+                item = table.item(row, keys.index(key))
                 flags = item.flags()
                 item.setFlags(flags | Qt.ItemFlag.ItemIsEnabled if frame else flags & ~Qt.ItemFlag.ItemIsEnabled)
-                item.setToolTip("Member-local frame release. Truss ends are pinned; clear axial/shear releases before changing to truss.")
+                item.setToolTip("Member-local rotational release, including roll. Linear frame-only. Clear releases before changing to truss." if self.spatial else
+                                "Member-local frame release. Truss ends are pinned; clear axial/shear releases before changing to truss.")
 
     def update_load_units(self):
         table = self.tables["loads"]

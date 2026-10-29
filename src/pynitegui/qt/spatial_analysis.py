@@ -57,6 +57,9 @@ def analyze_spatial(project, progress=None):
     phase = progress or (lambda message: None)
     phase("Checking 3D model and supports")
     project.validate()
+    from .spatial_releases import (has_rotational_releases, ReleasedSpatialSolver, unused_rotation_axes,
+                                   inactive_components, recover_spatial_rotations)
+    released = has_rotational_releases(project)
     from .analysis_method import analysis_method_issue
     issue = analysis_method_issue(project)
     if issue:
@@ -74,7 +77,7 @@ def analyze_spatial(project, progress=None):
     if issue:
         raise ValueError(issue)
     phase("Building spatial solver model")
-    model = FrameSolver()
+    model = ReleasedSpatialSolver() if released else FrameSolver()
     inactive = project.inactive_rotations()
     for material in project.materials.values():
         model.add_material(material.name, material.E, material.G, material.nu, material.rho)
@@ -82,7 +85,7 @@ def analyze_spatial(project, progress=None):
         model.add_section(section.name, section.A, section.Iy, section.Iz, section.J)
     for node in project.nodes.values():
         model.add_node(node.name, *node.coords)
-        model.def_support(node.name, **{"support_" + dof: fixed or (node.name, dof) in inactive for dof, fixed in zip(DOFS, node.restraints)})
+        model.def_support(node.name, **{"support_" + dof: fixed or (not released and (node.name, dof) in inactive) for dof, fixed in zip(DOFS, node.restraints)})
         for dof, stiffness in zip(DOFS, node.springs):
             if stiffness:
                 model.def_support_spring(node.name, dof, stiffness)
@@ -91,6 +94,13 @@ def analyze_spatial(project, progress=None):
         model.members[member.name]._pynitegui_truss = member.kind == "truss"
         if member.kind == "truss":
             model.def_releases(member.name, Rxi=True, Ryi=True, Rzi=True, Ryj=True, Rzj=True)
+        elif released:
+            first, last = member.rotation_releases
+            model.def_releases(member.name, Rxi=first[0], Ryi=first[1], Rzi=first[2],
+                               Rxj=last[0], Ryj=last[1], Rzj=last[2])
+    if released:
+        model.rotation_nullspaces = unused_rotation_axes(project, model)
+        inactive = inactive_components(model.rotation_nullspaces)
     if project.surfaces:
         from .surface_solver import attach_surfaces
         phase("Connecting rectangular shells and physical frame members")
@@ -141,11 +151,14 @@ def analyze_spatial(project, progress=None):
     issue = stiffness_issue(model, spatial=True)
     if issue:
         raise ValueError("Spatial stiffness is singular or numerically ill-conditioned.\n" + issue)
+    if released:
+        phase("Checking physical joint equations and recovering released member-end motions")
+        recover_spatial_rotations(model)
     phase("Collecting spatial result snapshot")
     result = AnalysisResult.from_solver(model, next(iter(project.combinations)), frozenset(inactive), spatial=True)
     result.model_signature = model_signature(project)
     result.analysis_method = project.analysis_method
-    if project.surfaces:
+    if project.surfaces or released:
         from .equilibrium import check_equilibrium
         phase("Verifying coupled force and moment equilibrium")
         for combination in project.combinations:
@@ -153,7 +166,9 @@ def analyze_spatial(project, progress=None):
             failed = [row for row in check.rows if not row.passed]
             if failed:
                 details = "; ".join(f"{row.component}: residual {row.residual:.6g} (limit {row.tolerance:.6g})" for row in failed)
-                raise ValueError(f"Coupled surface equilibrium failed for {combination}: {details}. Canonical kip/in units. "
-                                 "PyNite's weak drilling-rotation approximation can cause moment imbalance under lateral/membrane loading. "
-                                 "No coupled results were accepted; review the loading, mesh and element formulation.")
+                if project.surfaces:
+                    raise ValueError(f"Coupled surface equilibrium failed for {combination}: {details}. Canonical kip/in units. "
+                                     "PyNite's weak drilling-rotation approximation can cause moment imbalance under lateral/membrane loading. "
+                                     "No coupled results were accepted; review the loading, mesh and element formulation.")
+                raise ValueError(f"Released frame equilibrium failed for {combination}: {details}. No results were accepted.")
     return result

@@ -1,4 +1,4 @@
-"""Linear-result recovery for PyNite's released member translations."""
+"""Linear-result recovery for PyNite's statically condensed member-end motions."""
 import numpy as np
 from Pynite.Member3D import Member3D
 
@@ -14,7 +14,7 @@ class ReleasedMember(Member3D):
 
     def d(self, combo_name="Combo 1"):
         if self.model.solution != "Linear":
-            raise ValueError("Released-translation recovery is supported for linear analysis only.")
+            raise ValueError("Released-end recovery is supported for linear analysis only.")
         if combo_name not in self._released_displacements:
             displacement = super().d(combo_name)
             connected, released = self._partition_D()

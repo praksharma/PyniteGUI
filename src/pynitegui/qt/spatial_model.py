@@ -43,6 +43,22 @@ class SpatialNode(Node):
 @dataclass
 class SpatialMember(Member):
     roll: float = 0.0
+    release_start_rx: bool = False
+    release_end_rx: bool = False
+    release_start_ry: bool = False
+    release_end_ry: bool = False
+
+    @property
+    def rotation_releases(self):
+        return ((self.release_start_rx, self.release_start_ry, self.release_start),
+                (self.release_end_rx, self.release_end_ry, self.release_end))
+
+    @property
+    def release_labels(self):
+        if self.kind == "truss":
+            return ("Axial-only", "Axial-only")
+        return tuple(", ".join(axis for axis, value in zip(("RX", "RY", "RZ"), flags) if value) or "None"
+                     for flags in self.rotation_releases)
 
 
 @dataclass
@@ -72,12 +88,12 @@ class SpatialProject(Project):
     surface_supports: dict = field(default_factory=dict)
 
     def to_dict(self):
-        return {"version": 28, "units": "in-kip", **asdict(self),
+        return {"version": 30, "units": "in-kip", **asdict(self),
                 "surfaces": {name: mesh.to_dict() for name, mesh in self.surfaces.items()}}
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22, 24, 26, 28) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
+        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22, 24, 26, 28, 30) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
             raise ValueError("Unsupported spatial project version, dimension, or units.")
         if data["version"] < 28 and data.get("surface_supports", {}):
             raise ValueError("Surface edge supports require spatial version 28.")
@@ -123,6 +139,12 @@ class SpatialProject(Project):
                     raise ValueError("Spatial angle forces require project version 17.")
                 if key == "members" and data["version"] < 18 and value.get("kind", "frame") != "frame":
                     raise ValueError("Spatial trusses require project version 18.")
+                if key == "members":
+                    from .spatial_releases import ROTATION_FIELDS
+                    if data["version"] < 30 and any(value.get(field, False) is not False for field in ROTATION_FIELDS):
+                        raise ValueError("Spatial rotational releases require project version 30.")
+                    if data["version"] >= 30 and not set(ROTATION_FIELDS) <= value.keys():
+                        raise ValueError("Missing spatial rotational release fields.")
                 try:
                     entities[name] = constructor(**value)
                 except TypeError as error:
@@ -175,9 +197,15 @@ class SpatialProject(Project):
                 raise ValueError(f"Member {name}: length must be finite and endpoints must be distinct.")
             if not identifier(member.material) or not identifier(member.section) or member.material not in self.materials or member.section not in self.sections:
                 raise ValueError(f"Member {name}: invalid material or section reference.")
-            release_fields = ("release_start", "release_end", "release_start_x", "release_end_x", "release_start_y", "release_end_y")
-            if member.kind not in ("frame", "truss") or any(getattr(member, key) is not False for key in release_fields):
-                raise ValueError(f"Member {name}: choose an unreleased frame or axial-only truss; manual 3D releases are not supported yet.")
+            from .spatial_releases import ROTATION_FIELDS
+            if member.kind not in ("frame", "truss") or any(type(getattr(member, key)) is not bool for key in ROTATION_FIELDS):
+                raise ValueError(f"Member {name}: rotational release flags must be boolean; choose frame or truss.")
+            if any(getattr(member, key) is not False for key in ("release_start_x", "release_end_x", "release_start_y", "release_end_y")):
+                raise ValueError(f"Member {name}: translational 3D releases are not supported.")
+            if member.kind == "truss" and any(getattr(member, key) for key in ROTATION_FIELDS):
+                raise ValueError(f"Member {name}: trusses are axial-only; clear manual frame releases before changing type.")
+            if member.release_start_rx and member.release_end_rx:
+                raise ValueError(f"Member {name}: RX cannot be released at both ends. One RX release already removes torsion transfer.")
             if not finite_number(member.roll) or not -360 <= member.roll <= 360:
                 raise ValueError(f"Member {name}: roll must be between -360 and 360 degrees.")
             if self.self_weight_case is not None and not finite_number(self.materials[member.material].rho * self.sections[member.section].A * self.self_weight_factor):
@@ -255,6 +283,9 @@ class SpatialProject(Project):
         return total
 
     def inactive_rotations(self):
+        from .spatial_releases import has_rotational_releases, unused_rotation_axes, inactive_components
+        if has_rotational_releases(self):
+            return inactive_components(unused_rotation_axes(self))
         frame_nodes = {node for member in self.members.values() if member.kind == "frame" for node in (member.start, member.end)}
         if self.surfaces and self.surface_analysis_enabled:
             from .spatial_surfaces import surface_geometry
@@ -266,6 +297,12 @@ class SpatialProject(Project):
                 if not self.nodes[name].restraints[index] and not self.nodes[name].springs[index]}
 
     def analysis_release_issues(self):
+        from .spatial_releases import has_rotational_releases
+        if has_rotational_releases(self):
+            # Oblique moments can be several global component loads. Check the
+            # assembled P-FER for each combination, including member moments,
+            # rather than incorrectly rejecting individual vector components.
+            return []
         inactive = self.inactive_rotations()
         return [f"Load {load.name}: {load.direction} has no rotational stiffness at truss-only joint {load.target}."
                 for load in self.loads.values() if load.target in self.nodes and load.is_moment
@@ -319,6 +356,16 @@ class SpatialProject(Project):
         segments = candidate._split_member(name, [fraction])
         candidate.validate()
         self.nodes, self.members, self.loads, self.groups = candidate.nodes, candidate.members, candidate.loads, candidate.groups
+        return segments
+
+    def _split_member(self, name, fractions):
+        original = self.members[name]
+        segments = super()._split_member(name, fractions)
+        for index, segment in enumerate(segments):
+            for end, keep in (("start", index == 0), ("end", index == len(segments)-1)):
+                for axis in ("rx", "ry"):
+                    key = f"release_{end}_{axis}"
+                    setattr(self.members[segment], key, getattr(original, key) if keep else False)
         return segments
 
     def connect_intersections(self):

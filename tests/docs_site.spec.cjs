@@ -56,10 +56,17 @@ const server = http.createServer((request,response)=>{
     for(const [url,title] of [['features/','Feature Index'],['start/first-model/','Your First Model'],
       ['analysis/loads/','Point, Angled and Distributed Loads'],['automation/mcp/','Optional MCP Server'],
       ['reference/units/','Units and Conversions'],['project/roadmap/','Brecon Roadmap'],
+      ['modeling/3d/','3D Frames and Trusses'],
       ['surfaces/plates/','Rectangular Plate Analysis']]){
       await page.goto(origin+prefix+url);
       await page.locator('article h1').filter({hasText:title}).waitFor();
       assert((await page.locator('article').innerText()).length>250,`Empty ${url}`);
+      if(url==='modeling/3d/'){
+        const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));
+        assert(figures.some(image=>image.src.endsWith('spatial-rotational-releases.png'))&&figures.every(image=>image.ok),'Missing spatial release screenshot');
+        assert((await page.locator('article').innerText()).includes('Member-end bending') ||
+          (await page.locator('article').innerText()).includes('member-end slopes'),'Missing released-end motion explanation');
+      }
       if(url==='surfaces/plates/'){
         const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));
         assert(figures.some(image=>image.src.endsWith('plate-recovery-benchmarks.png'))&&figures.every(image=>image.ok),'Missing plate benchmark figure');

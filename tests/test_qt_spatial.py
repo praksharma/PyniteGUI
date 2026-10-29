@@ -113,7 +113,7 @@ class SpatialModelTests(unittest.TestCase):
         for kind, name, key, value in (("nodes", "N2", "z", float("nan")), ("nodes", "N2", "restraint_z", 1),
                                       ("nodes", "N2", "spring_rx", -1), ("members", "M1", "start", []),
                                       ("members", "M1", "material", []), ("members", "M1", "roll", 361),
-                                      ("members", "M1", "release_end", True), ("members", "M1", "kind", "unsupported")):
+                                      ("members", "M1", "release_end", 1), ("members", "M1", "kind", "unsupported")):
             project = beam()
             setattr(getattr(project, kind)[name], key, value)
             with self.subTest(key=key), self.assertRaises(ValueError):

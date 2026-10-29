@@ -222,8 +222,8 @@ def definition_tables(project):
                ", ".join(dof for dof, fixed in zip(DOFS, node.restraints) if fixed) or "None",
                "; ".join(f"{dof}: {units.to_display(k, 'stiffness' if i < 3 else 'rotational_stiffness'):.6g} {units.stiffness if i < 3 else units.rotational_stiffness}"
                          for i, (dof, k) in enumerate(zip(DOFS, node.springs)) if k) or "None"] for node in project.nodes.values()])
-    members = (["Member", "Start", "End", "Material", "Section", "Roll (deg)", "Type"],
-               [[member.name, member.start, member.end, member.material, member.section, member.roll, member.kind] for member in project.members.values()])
+    members = (["Member", "Start", "End", "Material", "Section", "Roll (deg)", "Type", "Start releases (local)", "End releases (local)"],
+               [[member.name, member.start, member.end, member.material, member.section, member.roll, member.kind, *member.release_labels] for member in project.members.values()])
     def loads(definitions):
         rows = []
         for load in definitions:

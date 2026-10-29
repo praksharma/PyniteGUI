@@ -46,20 +46,21 @@ class SpatialConversionTests(unittest.TestCase):
             for name, node in source.nodes.items():
                 self.assertEqual(converted.nodes[name].coords, (node.x, node.y, 18))
             for name, member in source.members.items():
-                self.assertEqual(asdict(converted.members[name]), {**asdict(member), "roll": 0})
+                self.assertEqual(asdict(converted.members[name]), {**asdict(member), "roll": 0,
+                    "release_start_rx": False, "release_end_rx": False, "release_start_ry": False, "release_end_ry": False})
             self.assertEqual(Project.from_dict(converted.to_dict()).to_dict(), converted.to_dict())
             converted.materials[converted.default_material].E *= 2
             converted.combinations["Combined"]["Wind"] = 10
             converted.nodes["N1"].x = 99
             self.assertEqual(source.to_dict(), original)
 
-    def test_all_unreleased_planar_examples_retain_in_plane_results(self):
+    def test_all_supported_planar_examples_retain_in_plane_results(self):
         for key in EXAMPLES:
             if key.startswith("3d_"):
                 continue
             with self.subTest(example=key):
                 source = example_project(key)
-                if any(member.kind == "frame" and any(any(end) for end in member.end_releases)
+                if any(member.kind == "frame" and any((member.release_start_x, member.release_end_x, member.release_start_y, member.release_end_y))
                        for member in source.members.values()):
                     with self.assertRaisesRegex(ValueError, "released frame"):
                         to_spatial(source, offset=-54)
@@ -131,7 +132,7 @@ class SpatialConversionTests(unittest.TestCase):
                     self.assertEqual(converted.loads[name].end_position, load.end_position)
 
     def test_validation_does_not_remove_frame_releases(self):
-        for release in ("release_start", "release_end", "release_start_x", "release_end_y"):
+        for release in ("release_start_x", "release_end_y"):
             source = example_project("cantilever")
             setattr(source.members["M1"], release, True)
             original = source.to_dict()

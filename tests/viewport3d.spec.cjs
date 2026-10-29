@@ -396,6 +396,14 @@ const server = http.createServer((request,response)=>{
       }
       await page.screenshot({path:path.join(output,`desktop-converted-cantilever-${name}.png`)});
     }
+    const released=payload.qaReleases;
+    assert.deepEqual(released.members[0].releaseLabels,['RY, RZ','RY, RZ']);
+    const releasedMoments=released.members[0].diagramValues;
+    assert(Math.abs(releasedMoments[0])<1e-7&&Math.abs(releasedMoments.at(-1))<1e-7,'Released beam retained end bending moments');
+    await page.evaluate(data=>{window.pyniteViewer.update(data);window.pyniteViewer.orient(1);},released);
+    await page.waitForTimeout(200);
+    assert((await page.evaluate(()=>window.pyniteViewer.state())).drawCalls>10,'Released beam viewport is empty');
+    await page.screenshot({path:path.join(output,'desktop-released-beam.png')});
     for(const [number,example] of Object.entries(payload.qaOfficialSpaceFrames)){
       assert.equal(example.nodes.length,4);assert.equal(example.members.length,3);
       assert(example.members.every(member=>member.points.length>2&&member.displacements.length===member.points.length));

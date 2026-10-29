@@ -196,6 +196,49 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 Spatial Rotational Release Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-10-29. This checkpoint does not
+publish RC5 or alter the immutable RC4 artifacts.
+
+- Add local RX/RY/RZ start/end frame releases for Linear elastic spatial models
+  without surfaces, with staged inspector/table/bulk/MCP editing, definition
+  reports, endpoint labels and an inclined biaxial beam example. One RX end may
+  release torsion; releasing both is rejected. Translational releases, released
+  P-Delta and released frame/surface interfaces remain unsupported.
+- Compute oblique/rolled unused joint-rotation bases, verify K G = 0 and
+  Gᵀ(P − FER) = 0, and use a numerical coordinate gauge equivalent to eliminating
+  those coordinates. Physical supports/springs are unchanged. Real connection
+  mechanisms, nearly dependent axes and unresisted moments are rejected.
+  Verify every free physical equation and whole-model equilibrium for every
+  combination before accepting a snapshot.
+- Recover local member-side end motion from PyNite's uncondensed matrices.
+  Properties shows local RY/RZ end slopes separately from undefined global joint
+  components, which remain n/a in tables/CSV/MCP. MCP exposes page-scoped global
+  unused-rotation directions. Free uniform torsional angles are not unique.
+- Spatial files advance to v30 with strict release fields and legacy migration.
+  Explicit 2D-to-3D conversion now preserves rotationally released frames,
+  including Gerber/three-hinged arch response; translational releases still block
+  conversion. There are 27 built-in examples; upstream coverage stays nine of 20.
+- Independent references cover biaxial beam moments/deflections/end slopes,
+  fixed-pinned internal hinges, free-tip releases, point torque, signed/zero
+  combinations, roll and oblique/reversed/vertical axes, springs, mixed incident
+  connections and actual mechanisms. Fault injection verifies rejection of an
+  entire snapshot when only a later combination has bad physical equations or
+  reactions. Native installed-wheel checks use the actual background worker and
+  preserve hidden Results in All tools. A visually inspected native screenshot
+  documents the new controls and recovered slopes.
+- Full locked suite with MCP: **939 tests**, no skips, **249.353 s**. The
+  independently installed wheel with PyNite 3.2 / Qt 6.12 passes **939 tests**,
+  no skips, **277.210 s**. After adding the later-combination fault-injection
+  regression, all **11 release benchmarks** pass in both environments. Test
+  ownership: 146 classes in nine groups. Offline frame viewport QA and strict
+  documentation/link/browser checks pass, including the new native screenshot;
+  the site contains 55 HTML pages. Installed smoke checks pass all 27 examples
+  through save/open/analyze/export plus authenticated MCP discovery/edit/undo.
+  Final wheel/source audits pass and all packaged runtime bytes match the tested
+  independent installation. Human platform gates remain open.
+
 ## Post-RC4 Plate Inspection Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-10-29. The published RC4 assets and

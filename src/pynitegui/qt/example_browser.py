@@ -46,6 +46,8 @@ NOTES = {
     "three_hinged_arch": ("Polygonal arch with pinned bases and a shared crown moment hinge.", "Service: each FY 7.5 kip; left FX +6.25 kip, right FX -6.25 kip; crown moments zero."),
 }
 NOTES.update(PLATE_NOTES)
+NOTES["3d_released_beam"] = ("Inclined, rolled beam with local RY/RZ released at both ends. N1 anchors torsion; its released bending rotations do not clamp the member.",
+    "Local end My/Mz are zero; both uniform-load reactions balance. Recovered member-end bending slopes are nonzero even when shared nodal rotations are undefined.")
 
 
 def loading_summary(project):

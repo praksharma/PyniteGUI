@@ -88,6 +88,13 @@ if __name__ == "__main__":
     window.view.diagram.setCurrentIndex(window.view.diagram.findData("moment_z"))
     payload["qaConversion"] = viewport_payload(window)
     payload["qaConversion"].update(plane="XY", offset=24, labels=True)
+    window.load_project(example_project("3d_released_beam"))
+    with contextlib.redirect_stdout(io.StringIO()):
+        window.result = analyze(window.project)
+    window.deformed_action.setChecked(True)
+    window.view.diagram.setCurrentIndex(window.view.diagram.findData("moment_z"))
+    payload["qaReleases"] = viewport_payload(window)
+    payload["qaReleases"].update(plane="XY", offset=0, labels=True)
     payload["qaOfficialSpaceFrames"] = {}
     for number in (1, 2):
         window.load_project(example_project(f"3d_official_space_frame_{number}"))

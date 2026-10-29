@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Add local RX/RY/RZ end releases to linear, frame-only spatial analysis, with
+  staged inspector/table/bulk/MCP editing, viewport labels and recovered member-
+  end bending rotations. Handle oblique unused joint rotations through verified
+  coordinate gauges; reject unresisted moments and real connection mechanisms.
+  Check every free physical equation and whole-model equilibrium before accepting
+  results. Undefined nodal rotation components remain n/a; MCP explains their
+  global directional basis. Spatial files advance to v30 with strict migration.
+- Add an oblique, rolled, biaxially loaded released-beam example. Permit explicit
+  2D-to-3D conversion of rotationally released frames, including Gerber and arch
+  examples. Spatial translations, releases at both torsion ends, released P-Delta
+  frames and released frame/surface coupling remain rejected.
+
 - Add local bending inspection to the separate plate workspace: click a material
   element or open Inspect Results, choose xi/eta, read signed moments (plus
   corrected Rect shear), inspect the element-centre table and export centre or

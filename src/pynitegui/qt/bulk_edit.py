@@ -15,6 +15,7 @@ def populate_bulk_inspector(window):
     dofs = ("DX", "DY", "RZ")
     if spatial:
         from .spatial_model import DOFS, RESTRAINT_FIELDS, SPRING_FIELDS
+        from .spatial_releases import ROTATION_FIELDS
         dofs, restraint_fields, spring_fields = DOFS, RESTRAINT_FIELDS, SPRING_FIELDS
     window.form.addRow("Selection", QLabel(f"{len(selections)} items"))
 
@@ -71,6 +72,8 @@ def populate_bulk_inspector(window):
             roll.setEnabled(False)
             roll_enabled.toggled.connect(roll.setEnabled)
             window.form.addRow(roll_enabled, roll)
+            for key, label in zip(ROTATION_FIELDS, ("Start RX", "Start RY", "Start RZ", "End RX", "End RY", "End RZ")):
+                boolean(key, label+" (local release)")
         else:
             choice("kind", "Type", ("frame", "truss"))
             boolean("release_start", "Start hinge")
@@ -113,7 +116,7 @@ def populate_bulk_inspector(window):
                     for key, fixed in zip(restraint_fields, entity.restraints):
                         setattr(entity, key, fixed)
                 keys = {"nodes": ("support", *restraint_fields, *spring_fields),
-                        "members": ("material", "section", "roll", "kind") if spatial else ("material", "section", "kind", "release_start", "release_end",
+                        "members": ("material", "section", "roll", "kind", *ROTATION_FIELDS) if spatial else ("material", "section", "kind", "release_start", "release_end",
                                     "release_start_x", "release_end_x", "release_start_y", "release_end_y"),
                         "loads": ("case",)}[kind]
                 for key in keys:
