@@ -12,7 +12,7 @@ from .model import Load, Member, Node
 
 
 FIELDS = {
-    "nodes": ("name", "x", "y", "support", "restraint_x", "restraint_y", "restraint_rz", "spring_x", "spring_y", "spring_rz"),
+    "nodes": ("name", "x", "y", "support", "restraint_x", "restraint_y", "restraint_rz", "spring_x", "spring_y", "spring_rz", "support_angle"),
     "members": ("name", "start", "end", "material", "section", "release_start", "release_end", "kind",
                 "release_start_x", "release_end_x", "release_start_y", "release_end_y"),
     "loads": ("name", "target", "case", "kind", "direction", "magnitude", "position",
@@ -20,7 +20,7 @@ FIELDS = {
 }
 BOOLEAN_FIELDS = {"restraint_x", "restraint_y", "restraint_rz", "release_start", "release_end",
                   "release_start_x", "release_end_x", "release_start_y", "release_end_y"}
-NUMERIC_FIELDS = {"x", "y", "magnitude", "position", "end_magnitude", "end_position", "angle", "spring_x", "spring_y", "spring_rz"}
+NUMERIC_FIELDS = {"x", "y", "magnitude", "position", "end_magnitude", "end_position", "angle", "spring_x", "spring_y", "spring_rz", "support_angle"}
 
 
 class ModelTablesDialog(QDialog):
@@ -52,7 +52,7 @@ class ModelTablesDialog(QDialog):
             "nodes": ["ID", f"X ({project.units.length})", f"Y ({project.units.length})",
                       "Support", "Restrain DX", "Restrain DY", "Restrain RZ",
                       f"Spring DX ({project.units.stiffness})", f"Spring DY ({project.units.stiffness})",
-                      f"Spring RZ ({project.units.rotational_stiffness})"],
+                      f"Spring RZ ({project.units.rotational_stiffness})", "Roller tangent (deg)"],
             "members": ["ID", "Start", "End", "Material", "Section", "Start hinge", "End hinge", "Type",
                         "Start axial DX", "End axial DX", "Start shear DY", "End shear DY"],
             "loads": ["ID", "Target", "Case", "Type", "Direction", "Magnitude / start intensity",
@@ -119,7 +119,7 @@ class ModelTablesDialog(QDialog):
             return list(self.original.sections)
         if key == "case":
             return self.original.load_cases
-        return {"support": ["free", "pin", "roller", "fixed", "custom"],
+        return {"support": ["free", "pin", "roller", "fixed", "custom"]+([] if self.spatial else ["inclined"]),
                 "kind": ["point", "distributed"],
                 "direction": ["FX", "FY", "MZ", "Angle", "Local x", "Local y", "Local angle"]}.get(key)
 
@@ -214,6 +214,10 @@ class ModelTablesDialog(QDialog):
         table = self.tables["nodes"]
         for row in range(table.rowCount()):
             support = table.cellWidget(row, self.fields["nodes"].index("support")).currentText()
+            if not self.spatial:
+                item = table.item(row, self.fields["nodes"].index("support_angle"))
+                item.setFlags(item.flags() | Qt.ItemFlag.ItemIsEnabled if support == "inclined" else item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
+                item.setToolTip("Inclined roller tangent in degrees, counterclockwise from global +X; used only for inclined supports.")
             keys = tuple(key for key in self.fields["nodes"] if key.startswith("restraint_"))
             for index, key in enumerate(keys):
                 item = table.item(row, self.fields["nodes"].index(key))
@@ -273,7 +277,9 @@ class ModelTablesDialog(QDialog):
                     if key == "units":
                         continue
                     widget, item = table.cellWidget(row, column), table.item(row, column)
-                    if widget is not None:
+                    if kind == "nodes" and key == "support_angle" and values.get("support") != "inclined":
+                        value = 0.
+                    elif widget is not None:
                         value = widget.currentText()
                     elif key in self.boolean_fields:
                         value = item.checkState() == Qt.CheckState.Checked
@@ -296,6 +302,8 @@ class ModelTablesDialog(QDialog):
                     else:
                         value = item.text()
                     values[key] = value
+                if kind == "nodes" and not self.spatial and values["support"] != "inclined":
+                    values["support_angle"] = 0.
                 entities[values["name"]] = constructor(**values)
             setattr(candidate, kind, entities)
         candidate.validate()

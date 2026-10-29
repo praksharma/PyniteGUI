@@ -57,10 +57,15 @@ const server = http.createServer((request,response)=>{
       ['analysis/loads/','Point, Angled and Distributed Loads'],['automation/mcp/','Optional MCP Server'],
       ['reference/units/','Units and Conversions'],['project/roadmap/','Brecon Roadmap'],
       ['modeling/3d/','3D Frames and Trusses'],
+      ['modeling/supports/','Supports and Springs'],
       ['surfaces/plates/','Rectangular Plate Analysis']]){
       await page.goto(origin+prefix+url);
       await page.locator('article h1').filter({hasText:title}).waitFor();
       assert((await page.locator('article').innerText()).length>250,`Empty ${url}`);
+      if(url==='modeling/supports/'){
+        const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));
+        assert(figures.some(image=>image.src.endsWith('inclined-roller.png'))&&figures.every(image=>image.ok),'Missing inclined roller screenshot');
+      }
       if(url==='modeling/3d/'){
         const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));
         assert(figures.some(image=>image.src.endsWith('spatial-rotational-releases.png'))&&figures.every(image=>image.ok),'Missing spatial release screenshot');

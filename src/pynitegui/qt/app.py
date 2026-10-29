@@ -130,7 +130,8 @@ class EngineeringSymbol(QGraphicsItem):
         if self.kind in ("support", "spring", "release"):
             if self.kind == "support":
                 support = self.value[0] if isinstance(self.value, tuple) else self.value
-                geometry = support_geometry(support, self.value[1:] if isinstance(self.value, tuple) else ())
+                geometry = support_geometry(support, self.value[1:] if isinstance(self.value, tuple) else (),
+                                            self.value[1] if support == "inclined" else 0.)
             elif self.kind == "spring":
                 geometry = spring_geometry(self.value)
             else:
@@ -418,8 +419,8 @@ class StructureView(QGraphicsView):
             dot.setFlag(dot.GraphicsItemFlag.ItemIgnoresTransformations)
             dot.setPos(node.x, -node.y)
             self.label(name, node.x, node.y, offset=(-30, -25) if node.spring_rz else (8, -22))
-            if any(node.restraints):
-                symbol = EngineeringSymbol("support", ("custom", *node.restraints) if node.support == "custom" else node.support)
+            if node.support == "inclined" or any(node.restraints):
+                symbol = EngineeringSymbol("support", ("inclined", node.support_angle) if node.support == "inclined" else ("custom", *node.restraints) if node.support == "custom" else node.support)
                 symbol.setToolTip(support_label(project, node))
                 scene.addItem(symbol)
                 symbol.setPos(node.x, -node.y)
@@ -1115,6 +1116,8 @@ class MainWindow(QMainWindow):
                     dofs = ("DX", "DY", "DZ", "RX", "RY", "RZ") if spatial else ("DX", "DY", "RZ")
                     if entity.support == "custom":
                         detail += " " + ",".join(label for label, fixed in zip(dofs, entity.restraints) if fixed)
+                    if entity.support == "inclined":
+                        detail += f" | tangent {entity.support_angle:g} deg"
                     if any(entity.springs):
                         detail += " | springs: " + ", ".join(label for label, k in zip(dofs, entity.springs) if k)
                 elif kind == "members":
@@ -1257,9 +1260,15 @@ class MainWindow(QMainWindow):
                 fields[key] = unit_number(getattr(entity, key), self.project.units, "length")
                 self.form.addRow(f"{key.upper()} ({self.project.units.length})", fields[key])
             fields["support"] = QComboBox()
-            fields["support"].addItems(["free", "pin", "roller", "fixed", "custom"])
+            fields["support"].addItems(["free", "pin", "roller", "fixed", "custom", "inclined"])
             fields["support"].setCurrentText(entity.support)
             self.form.addRow("Support", fields["support"])
+            fields["support_angle"] = number(entity.support_angle, -180, 180, 8)
+            fields["support_angle"].setObjectName("support_angle")
+            fields["support_angle"].setProperty("original_angle", entity.support_angle)
+            fields["support_angle"].setProperty("initial_angle", fields["support_angle"].value())
+            fields["support_angle"].setToolTip("Roller tangent, degrees counterclockwise from global +X. 0: vertical reaction; 90: horizontal reaction. Linear unreleased frames only.")
+            self.form.addRow("Roller tangent (deg)", fields["support_angle"])
             for key, label, fixed in zip(("restraint_x", "restraint_y", "restraint_rz"),
                                          ("Horizontal DX", "Vertical DY", "Rotation RZ"), entity.restraints):
                 fields[key] = QCheckBox("Restrained")
@@ -1268,6 +1277,7 @@ class MainWindow(QMainWindow):
                 self.form.addRow(label, fields[key])
             def update_support():
                 custom = fields["support"].currentText() == "custom"
+                self.form.setRowVisible(fields["support_angle"], fields["support"].currentText() == "inclined")
                 for index, key in enumerate(("restraint_x", "restraint_y", "restraint_rz")):
                     self.form.setRowVisible(fields[key], custom)
                     if not custom:
@@ -1281,6 +1291,12 @@ class MainWindow(QMainWindow):
                 fields[key].setObjectName(key)
                 fields[key].setToolTip("Global bilateral support spring. Zero means no spring; free this direction before assigning a positive stiffness.")
                 self.form.addRow(f"{label} ({getattr(self.project.units, quantity)})", fields[key])
+            if entity.support == "inclined":
+                reaction = QLabel("Analyze to inspect")
+                reaction.setObjectName("inclined_normal_reaction")
+                reaction.setProperty("node_id", name)
+                self.form.addRow("Rigid normal reaction", reaction)
+                self.update_support_reaction_label()
         elif kind == "members":
             for key in ("start", "end"):
                 fields[key] = QComboBox()
@@ -1406,6 +1422,10 @@ class MainWindow(QMainWindow):
             if kind == "nodes" and values["support"] != "custom":
                 for key in ("restraint_x", "restraint_y", "restraint_rz"):
                     values.pop(key)
+            if kind == "nodes" and values["support"] != "inclined":
+                values["support_angle"] = 0.
+            elif kind == "nodes" and fields["support_angle"].value() == fields["support_angle"].property("initial_angle"):
+                values["support_angle"] = fields["support_angle"].property("original_angle")
             for key, widget in fields.items():
                 if isinstance(widget, QDoubleSpinBox) and widget.property("quantity"):
                     quantity = widget.property("quantity")
@@ -1663,7 +1683,7 @@ class MainWindow(QMainWindow):
         from PySide6.QtWidgets import QInputDialog
         name = self.selected[1]
         current = self.project.nodes[name].support
-        choices = ["free", "pin", "roller", "fixed", "custom"]
+        choices = ["free", "pin", "roller", "fixed", "custom"]+([] if getattr(self.project, "dimension", "2D") == "3D" else ["inclined"])
         value, accepted = QInputDialog.getItem(self, f"Support on {name}", "Type", choices, choices.index(current), False)
         if accepted:
             def assign(project):
@@ -1676,6 +1696,8 @@ class MainWindow(QMainWindow):
                     else:
                         node.restraint_x, node.restraint_y, node.restraint_rz = node.restraints
                 node.support = value
+                if value != "inclined":
+                    node.support_angle = 0.
             self.edit("Assign support", assign)
 
     def manage_materials(self):
@@ -2047,6 +2069,19 @@ class MainWindow(QMainWindow):
         for dialog in self.findChildren(SpatialDiagramDialog):
             dialog.update_snapshot_status()
 
+    def update_support_reaction_label(self):
+        label = self.inspector.findChild(QLabel, "inclined_normal_reaction")
+        if label is None:
+            return
+        row = (getattr(self.result.solver, "_pynitegui_support_reactions", {}).get(self.result.combination, {}).get(label.property("node_id"))
+               if self.result is not None else None)
+        if row:
+            label.setText(f"{self.project.units.to_display(row['normal_reaction_kip'], 'force'):.6g} {self.project.units.force}")
+            label.setToolTip(f"{self.result.combination} | Snapshot {self.result.snapshot_id} | Solved tangent {row['tangent_angle_deg']:g} deg")
+        else:
+            label.setText("Analyze to inspect")
+            label.setToolTip("")
+
     def select_result_combination(self, name):
         if self.result is None or not name:
             return
@@ -2055,6 +2090,7 @@ class MainWindow(QMainWindow):
         self.results_panel.update_results(self.project, result)
         self.results_dock.setWindowTitle(f"Results - {result.combination}")
         self.view.redraw()
+        self.update_support_reaction_label()
         if self.results_panel.analysis_state == "Current":
             self.statusBar().showMessage(f"Analysis complete | {result.combination} | {self.project.units.summary}")
         else:

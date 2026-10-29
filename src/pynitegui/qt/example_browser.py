@@ -27,6 +27,7 @@ NOTES = {
     "self_weight": ("Beam loaded only by automatic member self-weight.", "Each support carries half the member weight; no extra applied load."),
     "truss": ("Planar triangular, bilateral axial-only truss.", "Service: 5 kip vertical reaction at each support; joint rotations are n/a."),
     "elastic": ("Cantilever with bilateral translational and rotational base springs.", "Service: base DY -0.01 in; total FY reaction 10 kip."),
+    "inclined_roller": ("Pin and frictionless roller with a 30-degree global tangent; linear unreleased frame.", "Service: N2 FX -0.346410 kip, FY +0.6 kip; N1 FX +0.346410 kip, FY +0.6 kip. Roller motion follows its tangent."),
     "shear_release": ("Fixed-guided beam with a released member-end transverse translation.", "Released end transfers zero member shear; fixed nodal translations stay zero."),
     "3d_cantilever": ("Spatial cantilever with biaxial bending and torsion.", "Service: base FY 1.9 kip, FZ -0.5 kip and MX -5 kip-in."),
     "3d_space_frame": ("Four-column spatial frame with gravity and wind cases.", "Gravity: total FY 12.6 kip. Wind: total FX -1 kip and FZ -1.5 kip."),
@@ -125,10 +126,18 @@ class ExamplePreview(QWidget):
             painter.drawLine(screen(points[member.start]), screen(points[member.end]))
         for name, node in project.nodes.items():
             point = screen(points[name])
-            painter.setPen(QPen(QColor(c["support"] if any(node.restraints) else c["member"]), 1.5))
+            painter.setPen(QPen(QColor(c["support"] if node.support == "inclined" or any(node.restraints) else c["member"]), 1.5))
             painter.setBrush(QColor(c["canvas"]))
             painter.drawEllipse(point, 3., 3.)
-            if any(node.restraints):
+            if node.support == "inclined":
+                from .annotations import support_geometry
+                paths, circles = support_geometry('inclined', (), node.support_angle)
+                for path in paths:
+                    for a, b in zip(path, path[1:]):
+                        painter.drawLine(point+QPointF(*a)*.65, point+QPointF(*b)*.65)
+                for x, y, radius in circles:
+                    painter.drawEllipse(point+QPointF(x, y)*.65, radius*.65, radius*.65)
+            elif any(node.restraints):
                 if node.support == "fixed":
                     painter.drawLine(point+QPointF(-7, 5), point+QPointF(7, 5))
                     for x in (-6, -1, 4):

@@ -42,7 +42,16 @@ def populate_bulk_inspector(window):
     kinds = {kind for kind, name in selections}
     if "nodes" in kinds:
         window.form.addRow(QLabel(f"Nodes ({sum(kind == 'nodes' for kind, name in selections)})"))
-        support = choice("support", "Support", ("free", "pin", "roller", "fixed", "custom"))
+        support = choice("support", "Support", ("free", "pin", "roller", "fixed", "custom")+(() if spatial else ("inclined",)))
+        if not spatial:
+            angle_enabled = QCheckBox("Set roller tangent (deg)")
+            angle_enabled.setObjectName("bulk_change_support_angle")
+            angle = number(0., -180, 180, 8)
+            angle.setObjectName("bulk_support_angle")
+            angle.setEnabled(False)
+            angle_enabled.toggled.connect(angle.setEnabled)
+            angle.setToolTip("Absolute tangent angle CCW from global +X; selected nodes must be inclined rollers.")
+            window.form.addRow(angle_enabled, angle)
         restraints = [boolean(key, "Restrain " + dof) for key, dof in zip(restraint_fields, dofs)]
         def update_support():
             for widget in restraints:
@@ -109,19 +118,25 @@ def populate_bulk_inspector(window):
                 values[key] = unit_value(widget, window.project.units)
         if spatial and "members" in kinds and roll_enabled.isChecked():
             values["roll"] = roll.value()
+        if not spatial and "nodes" in kinds and angle_enabled.isChecked():
+            values["support_angle"] = angle.value()
         def mutate(project):
             for kind, name in selections:
                 entity = getattr(project, kind)[name]
+                if kind == "nodes" and "support_angle" in values and "support" not in values and entity.support != "inclined":
+                    raise ValueError("Choose Support inclined before applying a roller tangent angle to these nodes.")
                 if kind == "nodes" and values.get("support") == "custom":
                     for key, fixed in zip(restraint_fields, entity.restraints):
                         setattr(entity, key, fixed)
-                keys = {"nodes": ("support", *restraint_fields, *spring_fields),
+                keys = {"nodes": ("support", "support_angle", *restraint_fields, *spring_fields),
                         "members": ("material", "section", "roll", "kind", *RELEASE_FIELDS) if spatial else ("material", "section", "kind", "release_start", "release_end",
                                     "release_start_x", "release_end_x", "release_start_y", "release_end_y"),
                         "loads": ("case",)}[kind]
                 for key in keys:
                     if key in values:
                         setattr(entity, key, values[key])
+                if kind == "nodes" and entity.support != "inclined":
+                    entity.support_angle = 0.
                 if kind == "loads" and factor is not None:
                     entity.magnitude *= factor
                     if entity.kind == "distributed":

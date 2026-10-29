@@ -12,6 +12,7 @@ EXAMPLES = {
     "self_weight": "Simply Supported Beam - Self-Weight",
     "truss": "Triangular Truss - Joint Loads",
     "elastic": "Cantilever - Elastic Base",
+    "inclined_roller": "Beam - Inclined Roller",
     "shear_release": "Fixed-Guided Beam - Shear Release",
     "3d_cantilever": "3D Cantilever - Biaxial Bending and Torsion",
     "3d_space_frame": "3D Space Frame - Gravity and Wind",
@@ -38,7 +39,7 @@ EXAMPLES = {
 # The native menu uses this ordered grouping; each example belongs exactly once.
 EXAMPLE_GROUPS = {
     "2D Frames": ("simple_beam", "portal", "cantilever", "continuous", "pitched",
-                  "multistorey", "self_weight", "elastic", "shear_release",
+                  "multistorey", "self_weight", "elastic", "inclined_roller", "shear_release",
                   "official_beam_point", "official_beam_uniform", "official_beam_envelope", "official_moment_frame",
                   "gerber", "three_hinged_arch"),
     "3D Frames": ("3d_cantilever", "3d_space_frame", "3d_released_beam", "3d_sliding_beam", "3d_official_space_frame_1", "3d_official_space_frame_2"),
@@ -69,7 +70,14 @@ def example_project(key, unit_system="imperial"):
         name = project.next_name("L", project.loads)
         project.loads[name] = Load(name, target, direction, magnitude, **kwargs)
 
-    if key == "gerber":
+    if key == "inclined_roller":
+        beam = member((0., 0.), (120., 0.))
+        support((0., 0.), "pin")
+        support((120., 0.), "inclined")
+        project.nodes["N2"].support_angle = 30.
+        load(beam, "FY", -.01, position=0., kind="distributed", end_magnitude=-.01)
+        project.set_combination("Reverse", {"Case 1": -1.})
+    elif key == "gerber":
         for a, b in (((0., 0.), (120., 0.)), ((120., 0.), (180., 0.)), ((180., 0.), (300., 0.))):
             beam = member(a, b)
             load(beam, "FY", -.01, position=0., kind="distributed", end_magnitude=-.01)

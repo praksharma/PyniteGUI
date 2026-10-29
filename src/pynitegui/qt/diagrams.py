@@ -151,7 +151,7 @@ def draw_context(ax, project, result, palette, supports=True, loads=True):
     if supports:
         for node in project.nodes.values():
             location = point(node.x, node.y)
-            add_symbol(ax, location, support_geometry(node.support, node.restraints), c["support"], c["canvas"], "support-" + node.name)
+            add_symbol(ax, location, support_geometry(node.support, node.restraints, node.support_angle), c["support"], c["canvas"], "support-" + node.name)
             add_symbol(ax, location, spring_geometry(node.springs), c["support"], c["canvas"], "spring-" + node.name)
             if any(node.springs):
                 text = "\n".join(support_label(project, node).split(" | ")[1:])

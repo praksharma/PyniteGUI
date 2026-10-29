@@ -274,8 +274,40 @@ def capture(output):
             app.processEvents()
 
 
+def capture_inclined(output):
+    output.mkdir(parents=True, exist_ok=True)
+    app = QApplication.instance() or QApplication([])
+    configure_theme(app, "light")
+    with tempfile.TemporaryDirectory(prefix="brecon-inclined-docs-") as directory:
+        root = Path(directory)
+        settings = QSettings(str(root / "settings.ini"), QSettings.Format.IniFormat)
+        window = MainWindow(root / "recovery", settings)
+        try:
+            window.resize(1280, 820)
+            window.load_project(example_project("inclined_roller"))
+            window.show()
+            with redirect_stdout(StringIO()):
+                result = analyze(window.project)
+            window.analysis_revision = window.revision
+            window.analysis_finished(result, "")
+            window.select(("nodes", "N2"))
+            app.processEvents()
+            window.view.fit()
+            app.processEvents()
+            if not window.grab().save(str(output / "inclined-roller.png")):
+                raise RuntimeError("Could not save inclined-roller.png")
+            print("Captured inclined-roller.png")
+        finally:
+            window.saved = window.project.to_dict()
+            window.close()
+            window.deleteLater()
+            app.processEvents()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path,
                         default=Path(__file__).resolve().parents[1] / "docs/assets/screenshots")
-    capture(parser.parse_args().output)
+    parser.add_argument("--inclined-only", action="store_true", help="Capture only the inclined-roller example and editor.")
+    options = parser.parse_args()
+    (capture_inclined if options.inclined_only else capture)(options.output)

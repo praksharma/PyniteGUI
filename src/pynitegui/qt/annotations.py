@@ -26,6 +26,8 @@ def load_label(project, load):
 def support_label(project, node):
     fixed = ", ".join(label for label, value in zip(("DX", "DY", "RZ"), node.restraints) if value)
     pieces = [f"{node.name}: {node.support}" + (f" ({fixed})" if fixed else "")]
+    if node.support == "inclined":
+        pieces[0] += f" roller | tangent {node.support_angle:g} deg CCW from +X; normal translation restrained"
     for label, k, quantity in zip(("DX", "DY", "RZ"), node.springs,
                                   ("stiffness", "stiffness", "rotational_stiffness")):
         if k:
@@ -33,8 +35,15 @@ def support_label(project, node):
     return " | ".join(pieces)
 
 
-def support_geometry(support, restraints):
+def support_geometry(support, restraints, angle=0.):
     """Polylines/circles in pixels, with screen Y pointing down."""
+    if support == "inclined":
+        paths, circles = support_geometry("roller", ())
+        c, s = math.cos(math.radians(angle)), math.sin(math.radians(angle))
+        def rotate(x, y):
+            return (c*x+s*y, -s*x+c*y)
+        return ([[rotate(x, y) for x, y in path] for path in paths],
+                [(*rotate(x, y), r) for x, y, r in circles])
     paths, circles = [], []
     if support == "custom":
         rx, ry, rz = restraints

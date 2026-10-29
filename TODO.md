@@ -372,13 +372,15 @@ Remaining 11 scripts are intentionally unchecked:
   limits, free-equation reactions and mechanism/dependent-constraint rejection.
   Reproducible report: 153 bounded cases and six rejected configurations. This
   dense prototype does not enable inclined supports in the editor or solver adapter.
-- [ ] Implement inclined supports after the feasibility checkpoint: start with
-  unreleased planar linear frames, sparse node-local constraint transformations,
-  constrained rigid-body/stiffness diagnostics, physical member recovery and
-  separate rigid/spring reaction checks. Add explicit tangent-angle units/sign,
-  persistence/migration, staged UI/table/bulk edits, symbols/tooltips/reports,
-  MCP schema, conversion/transform semantics and worker/snapshot regressions.
-  Keep P-Delta, spatial/released frames and settlements excluded until validated.
+- [x] Implement inclined rollers for unreleased planar linear frames: sparse
+  node-local free coordinates, constrained rigid-body/stiffness diagnostics,
+  pre-cancellation roundoff bounds, physical global member recovery and separate
+  rigid/spring reactions with all-combination equilibrium rejection. Add explicit
+  tangent angles, planar v27 migration, staged inspector/table/bulk editing,
+  rotated native/report symbols, MCP schema/paginated reaction metadata, example
+  and real worker/snapshot checks. Copied support orientations remain global;
+  spatial conversion is explicitly rejected. P-Delta, trusses, released/spatial
+  frames, settlements and nonlinear connections remain excluded.
 
 ## Loads and Analysis
 

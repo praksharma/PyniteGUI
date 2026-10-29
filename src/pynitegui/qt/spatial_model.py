@@ -95,8 +95,12 @@ class SpatialProject(Project):
     surface_supports: dict = field(default_factory=dict)
 
     def to_dict(self):
-        return {"version": 32, "units": "in-kip", **asdict(self),
+        data = {"version": 32, "units": "in-kip", **asdict(self),
                 "surfaces": {name: mesh.to_dict() for name, mesh in self.surfaces.items()}}
+        for node in data["nodes"].values():
+            if finite_number(node["support_angle"]) and node["support_angle"] == 0.:
+                node.pop("support_angle")
+        return data
 
     @classmethod
     def from_dict(cls, data):
@@ -191,6 +195,8 @@ class SpatialProject(Project):
             coordinates.add(node.coords)
             if node.support not in ("free", "pin", "roller", "fixed", "custom"):
                 raise ValueError("Unknown spatial support type.")
+            if not finite_number(node.support_angle) or node.support_angle != 0.:
+                raise ValueError("Inclined support angles are not supported in spatial projects.")
             if any(type(getattr(node, key)) is not bool for key in RESTRAINT_FIELDS):
                 raise ValueError("Support restraints must be boolean values.")
             for dof, stiffness, fixed in zip(DOFS, node.springs, node.restraints):

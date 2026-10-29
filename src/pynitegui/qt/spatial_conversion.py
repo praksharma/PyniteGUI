@@ -15,6 +15,8 @@ def to_spatial(project, support_mode="planar", offset=0.0):
     if not finite_number(offset):
         raise ValueError("The global Z offset must be finite.")
     project.validate()
+    if any(node.support == "inclined" for node in project.nodes.values()):
+        raise ValueError("Inclined rollers cannot be converted to spatial supports yet. Revise their constraints explicitly before creating a 3D copy.")
     result = SpatialProject(**{field.name: deepcopy(getattr(project, field.name))
                               for field in fields(Project) if field.name not in ("nodes", "members", "loads")})
     for name, node in project.nodes.items():

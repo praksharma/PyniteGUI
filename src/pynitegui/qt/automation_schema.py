@@ -35,8 +35,13 @@ def model_reference(dimension="2D"):
     entities["materials"]["properties"]["shear_modulus"].update(type=["number", "null"], exclusiveMinimum=0,
         description="Optional independent frame/truss G in ksi. null (default) derives E/[2(1+nu)]. Positive finite numbers only; independent G requires custom provenance.")
     nodes = entities["nodes"]["properties"]
-    nodes["support"]["enum"] = ["free", "pin", "roller", "fixed", "custom"]
+    nodes["support"]["enum"] = ["free", "pin", "roller", "fixed", "custom"]+([] if spatial else ["inclined"])
     nodes["support"]["description"] = "Supports are node fields, not a supports collection/object. restraint_* flags are used only when support='custom'."
+    if spatial:
+        nodes.pop("support_angle", None)
+    else:
+        nodes["support_angle"].update(minimum=-180, maximum=180,
+            description="For support='inclined': roller tangent angle in degrees CCW from global +X. Normal (-sin a, cos a) translation fixed; tangent and RZ free. Other support presets require 0. Linear unreleased planar frame-only; no P-Delta, trusses or spatial conversion. Springs retain global axes. Reactions are global total rigid+spring forces.")
     members = entities["members"]["properties"]
     members["kind"]["enum"] = ["frame", "truss"]
     members["start"]["description"] = members["end"]["description"] = "Existing node identifier; start/end, not i_node/j_node."

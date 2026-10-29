@@ -17,7 +17,7 @@ when comparing with the published rc1 wheel.
 | Previewed move/repeat/rotate/mirror, planar beam/frame generators and controlled two-node merging (development after RC2) | [Modelling tools](modeling/tools.md) |
 | Perpendicular and midpoint construction connections | [Construction connections](modeling/construction.md) |
 | Per-member materials with optional independent frame/truss G, and sections, searchable libraries with dimensioned section sketches, defaults and provenance | [Assignments](modeling/properties.md), [materials](reference/materials.md), [sections](reference/sections.md) |
-| Free/pin/roller/fixed/custom supports and bilateral support springs | [2D supports](modeling/supports.md), [six-DOF spatial supports](modeling/3d.md) |
+| Free/pin/roller/fixed/custom supports, planar linear inclined rollers and bilateral support springs | [2D supports](modeling/supports.md), [six-DOF spatial supports](modeling/3d.md) |
 | Planar axial/shear/moment end releases | [Release editing](modeling/releases.md), [formulation and limits](reference/releases.md) |
 | Spatial local DX/DY/DZ/RX/RY/RZ end releases, recovered member-side motion and released 2D conversion | [3D editing and scope](modeling/3d.md), [release formulation](reference/releases.md) |
 | Bilateral axial-only trusses and mixed frame/truss models | [Trusses](modeling/trusses.md), [3D models](modeling/3d.md) |
@@ -37,10 +37,11 @@ when comparing with the published rc1 wheel.
 | Rigid-body/mechanism/stiffness checks and affected-node findings | [Diagnostics](analysis/stability.md), [topology](modeling/topology.md) |
 
 Modal analysis, steel pushover, reinforced-concrete plasticity, unilateral
-members/springs, node-to-node spring elements and inclined supports are **not implemented GUI workflows**. See the
+members/springs and node-to-node spring elements are **not implemented GUI workflows**. See the
 [audited roadmap](project/roadmap.md), not the upstream feature list alone.
-Development includes a [test-only planar inclined-support feasibility study](modeling/supports.md),
-with independent beam references and a separate pending production-integration task.
+Development adds [inclined rollers](modeling/supports.md) for unreleased planar
+linear frames, with independent beam checks. P-Delta, trusses and spatial/released
+frames remain outside this support workflow.
 
 P-Delta keeps materials elastic and excludes slabs/trusses/released translations
 and spatial rotational releases.

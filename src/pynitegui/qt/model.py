@@ -121,6 +121,7 @@ class Node:
     spring_x: float = 0.0
     spring_y: float = 0.0
     spring_rz: float = 0.0
+    support_angle: float = field(default=0.0, kw_only=True)
 
     @property
     def springs(self):
@@ -130,7 +131,7 @@ class Node:
     def restraints(self):
         if self.support == "custom":
             return self.restraint_x, self.restraint_y, self.restraint_rz
-        return {"free": (False, False, False), "pin": (True, True, False),
+        return {"free": (False, False, False), "inclined": (False, False, False), "pin": (True, True, False),
                 "roller": (False, True, False), "fixed": (True, True, True)}[self.support]
 
 
@@ -389,7 +390,7 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 25, "units": "in-kip", **asdict(self)}
+        return {"version": 27, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
@@ -401,7 +402,7 @@ class Project:
         if "dimension" in data:
             raise ValueError("Unsupported project dimension.")
         version = data.get("version")
-        if type(version) is not int or version not in (*range(1, 16), 21, 23, 25) or data.get("units") != "in-kip":
+        if type(version) is not int or version not in (*range(1, 16), 21, 23, 25, 27) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         required = {"grid", "nodes", "members", "loads"}
         required.update({"E", "nu", "rho"} if version == 1 else {"materials", "default_material"})
@@ -433,6 +434,11 @@ class Project:
                     raise ValueError(f"Invalid {key} entry: {name!r}. Expected an identifier and an object.")
                 if key == "materials" and version < 25 and value.get("shear_modulus") is not None:
                     raise ValueError("Independent G requires planar version 25 or spatial version 26.")
+                if key == "nodes":
+                    if version < 27 and (value.get("support") == "inclined" or value.get("support_angle", 0.) != 0.):
+                        raise ValueError("Inclined supports require planar version 27.")
+                    if version >= 27 and "support_angle" not in value:
+                        raise ValueError(f"Invalid nodes entry {name}: Missing support_angle field.")
                 try:
                     result[name] = kind(**value)
                 except TypeError as error:
@@ -541,11 +547,19 @@ class Project:
             if (node.x, node.y) in coords:
                 raise ValueError("Two nodes cannot occupy the same coordinates.")
             coords.add((node.x, node.y))
-            if node.support not in ("free", "pin", "roller", "fixed", "custom"):
+            if node.support not in ("free", "pin", "roller", "fixed", "custom", "inclined"):
                 raise ValueError("Unknown support type.")
+            if not finite_number(node.support_angle) or not -180 <= node.support_angle <= 180:
+                raise ValueError(f"Node {name}: support tangent angle must be finite, from -180 to 180 degrees.")
+            if node.support != "inclined" and node.support_angle != 0.:
+                raise ValueError(f"Node {name}: a nonzero support angle requires an inclined support.")
             if any(type(value) is not bool for value in (node.restraint_x, node.restraint_y, node.restraint_rz)):
                 raise ValueError("Support restraints must be boolean values.")
             for label, stiffness, fixed in zip(("DX", "DY", "RZ"), node.springs, node.restraints):
+                if node.support == "inclined" and label != "RZ":
+                    a = math.radians(node.support_angle)
+                    tangent = (math.cos(a), math.sin(a))
+                    fixed = abs(tangent[0 if label == "DX" else 1]) < 1e-12
                 if not finite_number(stiffness) or stiffness < 0:
                     raise ValueError(f"Node {name}: {label} spring stiffness must be finite and nonnegative; zero means no spring.")
                 if stiffness and fixed:

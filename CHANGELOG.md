@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add native inclined rollers to unreleased planar linear frames, with explicit
+  global tangent angles, sparse constrained coordinates, physical member recovery,
+  separate rigid/spring reactions and stability/equilibrium rejection. Add staged
+  inspector/table/bulk edits, rotated symbols/reports, MCP reaction metadata and
+  an editable example. Planar files advance to v27; spatial stays v32. P-Delta,
+  trusses, released/spatial frames, settlements and nonlinear connections remain excluded.
 - Establish test-only inclined-support feasibility for unreleased planar linear
   frames with exact constraint elimination. Independently verify beam fields,
   rigid/spring reactions, signed/zero combinations, coordinate invariance and

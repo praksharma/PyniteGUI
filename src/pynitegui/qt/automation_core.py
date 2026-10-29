@@ -270,6 +270,19 @@ class AutomationCommands:
                                   "convention": "Local x=i->j, y=i->n, z=x cross y. Membrane tension positive. Quad transverse shear unavailable pending validation; no combined face stresses or design checks."}
             else:
                 headers, rows = result_table(window.project, result.for_combination(combination), kind)
+                inclined = getattr(result.solver, "_pynitegui_support_reactions", {}).get(combination, {})
+                if kind == "nodes" and inclined:
+                    names = {row[0] for row in rows[offset:offset+limit]}
+                    units = window.project.units
+                    def reaction_units(values):
+                        return [units.to_display(value, quantity) for value, quantity in zip(values, ("force", "force", "moment"))]
+                    local_metadata = {"inclined_supports": {key: {
+                        "tangent_angle_deg": row["tangent_angle_deg"], "normal_global_xy": row["normal"],
+                        "normal_reaction": units.to_display(row["normal_reaction_kip"], "force"),
+                        "rigid_reaction": reaction_units(row["rigid_reaction"]), "spring_reaction": reaction_units(row["spring_reaction"])}
+                        for key, row in inclined.items() if key in names},
+                        "support_reaction_units": [units.force, units.force, units.moment],
+                        "support_reaction_note": "Rigid/spring vectors are global FX/FY/MZ; normal_reaction uses force units and the listed normal sign. Node rows contain their total. Springs retain global axes."}
                 directions = getattr(result.solver, "rotation_nullspaces", None)
                 if kind == "nodes" and directions is not None:
                     names = {row[0] for row in rows[offset:offset+limit]}

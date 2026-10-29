@@ -197,6 +197,58 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 Planar Inclined-Roller Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-10-29. This extends the existing
+linear frame adapter; new solver methods remain on hold and public RC4 assets
+are unchanged.
+
+- Add an `inclined` node support with a signed global tangent angle in degrees.
+  Its normal translation is fixed; tangent translation and RZ stay free. Assemble
+  sparse node-local free coordinates without penalty stiffness or artificial
+  grounding. Verify constrained rigid-body/stiffness stability (including the
+  sparse spectral branch and pre-cancellation roundoff bound), free physical
+  equations and all-combination independent global force/moment equilibrium.
+- Store physical global displacements for ordinary engine member recovery.
+  Independently recover rigid normal force and global bilateral spring reactions;
+  ordinary node tables retain their global totals. Native Properties shows the
+  signed rigid normal force; paginated MCP node reads provide separate rigid/spring
+  vectors, normal force, explicit units and chosen normal direction.
+- Add staged Properties, Model Tables and bulk edits, rotated native/report
+  symbols, tree/tooltips, definition reports and an editable **Beam - Inclined
+  Roller** example. Its 120 in pin/30-degree roller beam under -0.01 kip/in gives
+  Service N2 **FX -0.346410 / FY +0.6 kip**, rigid normal force **+0.692820 kip**;
+  N1 balances FX and carries **FY +0.6 kip**. Reversed combinations flip signs.
+  The guide includes an inspected native offscreen capture; it is not a human
+  OS-dialog/hardware validation claim.
+- Planar saves advance to **v27**, with required node `support_angle`. Older
+  versions migrate to zero angle and retain their original supports. Reject
+  malformed angles, old-version inclined inputs and missing current fields.
+  Spatial stays **v32** and omits the inactive inherited angle field; nonzero
+  spatial angles are rejected. Plate files remain v3.
+- Require unreleased planar linear frame members. Reject P-Delta, trusses,
+  released/spatial frames and spatial conversion before solving or changing the
+  source. Copied support orientations remain global, with explicit collision
+  handling; changing inclination invalidates snapshots while unit-only changes
+  retain them. Real process-worker, metadata pagination/unit conversion, undo,
+  input precision and invalid-batch rollback regressions are included.
+- Independent axial/Euler–Bernoulli cantilever and pin/roller references cover
+  oblique/reversed beams, member fields, signed/zero combinations, global springs,
+  nonuniform subdivisions and deliberately corrupted recovery. Sparse failure and
+  near-mechanism cases reject results. No nonlinear connection, imposed movement
+  or additional solver method is enabled.
+- Full locked source suite with MCP: **994 tests**, no skips, **247.393 s**;
+  **152 classes / nine groups**. Installed locked PyNite **3.0.0** / Qt **6.11.2**:
+  **52 focused tests**, no skips, **4.095 s**. A second installed wheel runtime
+  using PyNite **3.2.1** / Qt **6.12.0** passes the same **52 tests**, no skips,
+  **5.160 s**. The final smoke/UI/inclined-support follow-up passes **192 tests**,
+  no skips, **72.793 s**, including reaction-label updates after solving/combination
+  changes without losing unapplied edits. Installed smoke verifies **29 examples** through save/open/analysis/
+  export and native initialization, plus real authenticated MCP discovery/edit/undo.
+  Strict documentation/local links cover **55 HTML pages**; browser QA verifies
+  support-page imagery, search, subpath, dark mode and layout. Public releases and
+  the manual platform/signing gates remain unchanged.
+
 ## Post-RC4 Inclined-Support Feasibility Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-10-29. This is a test-only feasibility

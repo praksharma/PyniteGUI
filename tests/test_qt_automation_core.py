@@ -161,7 +161,10 @@ class AutomationCoreTests(unittest.TestCase):
                 docs = self.invoke("read_schema", session_id=self.window.project_session)
                 self.assertTrue(docs["ok"], docs)
                 schema = docs["data"]["schema"]
-                self.assertEqual(set(schema["entities"]["nodes"]["properties"]), {field.name for field in fields(node_type)})
+                expected_fields = {field.name for field in fields(node_type)}
+                if node_type is SpatialNode:
+                    expected_fields.remove("support_angle")  # Planar-only field; spatial files omit it.
+                self.assertEqual(set(schema["entities"]["nodes"]["properties"]), expected_fields)
                 example = batch_candidate(project, docs["data"]["examples"]["create_cantilever"])
                 self.assertTrue(all(example.nodes["ExampleA"].restraints))
                 self.assertEqual(example.members["ExampleBeam"].start, "ExampleA")
