@@ -197,6 +197,51 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 Spatial Translational Release Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-10-29. Implementation commit
+**5bef8ad**. This extends the existing linear adapter; solver-method work stays
+on hold and RC4 release artifacts are unchanged.
+
+- Add start/end local DX/DY/DZ releases alongside RX/RY/RZ. Validate boolean flags,
+  forbid releasing axial DX or torsional RX at both ends and internally singular bending patterns,
+  and retain global mechanism checks. Translations never enter the unused-rotation
+  coordinate gauge; unsupported disconnected joint translations remain rejected.
+- Recover eliminated member-side motions from the uncondensed linear stiffness
+  and fixed-end vector. Check every recovered released-end force/moment equation,
+  every free physical joint equation and all six global balances for each combination.
+  Independent axial/Euler–Bernoulli flexibility checks cover either end, both
+  planes, partial/varying/point loads, oblique/vertical/reversed axes, roll,
+  signed/zero combinations, springs/other incident members, splitting and transport.
+  Deliberately corrupted recovery must fail before its result is used.
+- Expose staged Properties, Model Tables, bulk and atomic MCP editing, viewport
+  labels/deformed member paths, local end translations in Properties/reports and
+  paginated `released_end_translations` metadata in MCP member reads. Preserve unit-
+  only snapshots, undo and invalid-batch rollback. Extend 2D-to-3D conversion to
+  axial/shear releases with independent source windows and field/reaction parity.
+- Spatial files advance to **v32**; older versions retain connected translations.
+  Reject old-version nonfalse flags, missing required fields and malformed flags.
+  Planar files stay v25 and plate files stay v3. Add **3D Fixed-Guided Beam -
+  Translational End Releases**, with an independently checked 204 in sliding-end
+  beam. Recovered Service end DX/DY/DZ are **+0.000139324 / -0.00487912 /
+  -0.0975823 in**, while both joints have zero translation.
+- Full source suite with MCP: **966 tests**, no skips, **215.315 s**; 148 classes
+  belong to nine groups. Independently installed locked wheel: **58 focused tests**,
+  no skips, **3.892 s**. Strict docs/local links cover **55 HTML pages**; documentation
+  browser QA, offline spatial viewport QA and wheel/source audits pass.
+  A second installed runtime using PyNite **3.2.1** / Qt **6.12.0** passes **23**
+  focused numerical/connection/UI checks, no skips, **2.934 s**.
+- [Native standalone run 40909523162](https://github.com/praksharma/PyniteGUI/actions/runs/40909523162)
+  passes on Windows Server 2025 x86_64, Ubuntu 22.04/glibc 2.35 x86_64 and macOS
+  15.8.2 arm64, with Python 3.12.16 / Qt 6.11.2 / PyNite 3.0.0. Each relocated app
+  passes seven native check stages covering **28 examples**, including actual
+  translational-release worker/control/diagram checks, plate worker, PDF and
+  authenticated MCP. Native screenshots were inspected; downloaded archives match
+  their SHA256SUMS. The guide includes the actual Linux release-control screenshot.
+- Released P-Delta, frame/surface coupling, nonlinear connections and translational
+  coordinate gauges remain unavailable. Standalone signing/installers and human
+  platform gates remain open; no new public release or PyPI upload was made.
+
 ## Post-RC4 Native Windows/Linux Packaging Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-10-29. Source commit **15bbfa7**;

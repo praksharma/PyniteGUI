@@ -1038,6 +1038,11 @@ again. Closing the source window does not close the copy.
   a free disconnected translation is rejected, even if it is unloaded. No
   translational coordinate gauges or automatic restraints are added.
 
+[![Native standalone sliding-beam example with local end-release controls and recovered member-side translations](docs/assets/screenshots/spatial-translational-releases.png)](docs/assets/screenshots/spatial-translational-releases.png)
+
+*The native Linux standalone check shows zero joint translations while the
+released member end has nonzero local DX/DY/DZ. Deformation is amplified for display.*
+
 [![Native inclined-beam example with local RY/RZ release controls and recovered member-end slopes](docs/assets/screenshots/spatial-rotational-releases.png)](docs/assets/screenshots/spatial-rotational-releases.png)
 
 *The installed development app shows the solved front projection. The shared
@@ -2581,7 +2586,8 @@ The sliding-beam example uses a 204 in inclined member, roll 31 degrees and unif
 local qx = +0.002, qy = -0.001, qz = -0.0006 kip/in. Both joints are fixed; end-j
 DX/DY/DZ are released while rotations remain connected. Its member-side end motion
 is dx = qx L²/(2EA), dy = qy L⁴/(24EIz), dz = qz L⁴/(24EIy), even though joint
-translations remain zero. End-j axial/shear forces are zero; support moments
+translations remain zero. Service gives dx = +0.000139324 in, dy = -0.00487912 in
+and dz = -0.0975823 in with the example's section/material. End-j axial/shear forces are zero; support moments
 remain. Reversed and Zero combinations show signed/zero superposition. This is
 an idealized connection, not a unilateral contact or partial-stiffness model.
 
