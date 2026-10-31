@@ -327,7 +327,7 @@ def capture_iterative(output):
             window.analysis_revision = window.revision
             window.analysis_finished(result, "")
             window.results_dock.show()
-            window.view.show_loads.setChecked(False)
+            window.load_filter.setCurrentIndex(window.load_filter.findData(False))
             window.select(("members", "Brace2"))
             window.results_panel.tabs.setCurrentIndex(window.results_panel.active_tab)
             window.resizeDocks([window.results_dock], [300], Qt.Orientation.Vertical)
