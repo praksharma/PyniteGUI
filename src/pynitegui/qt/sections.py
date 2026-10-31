@@ -1,7 +1,7 @@
 """Reusable section definitions and per-member assignments."""
 from PySide6.QtWidgets import (
     QAbstractItemView, QDialog, QDialogButtonBox, QFormLayout, QHBoxLayout,
-    QComboBox, QSplitter, QWidget, QLabel, QLineEdit, QMessageBox, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout,
+    QComboBox, QCheckBox, QSplitter, QWidget, QLabel, QLineEdit, QMessageBox, QPushButton, QTableWidget, QTableWidgetItem, QVBoxLayout,
 )
 
 from .app import unit_number, unit_value
@@ -152,6 +152,34 @@ class SectionEditor(QDialog):
             self.fields[key] = unit_number(getattr(section, key), project.units, "area" if key == "A" else "inertia", 0, 1e12, 8)
             form.addRow(label, self.fields[key])
         self.initial_values = {key: widget.value() for key, widget in self.fields.items()}
+        self.plastic_enabled = QCheckBox('Steel I-section plastic interaction model')
+        self.plastic_enabled.setObjectName('steel_profile_enabled')
+        self.plastic_enabled.setChecked(section.steel_material is not None)
+        form.addRow(self.plastic_enabled)
+        self.plastic_material = QComboBox()
+        self.plastic_material.setObjectName('steel_profile_material')
+        self.plastic_material.addItem('Choose material with assigned fy', None)
+        for name, material in project.materials.items():
+            if material.fy is not None:self.plastic_material.addItem(name, name)
+        self.plastic_material.setCurrentIndex(self.plastic_material.findData(section.steel_material))
+        form.addRow('Steel material binding', self.plastic_material)
+        self.plastic_fields = {}
+        for key in ('Zy', 'Zz'):
+            widget = unit_number(getattr(section,key) or 0., project.units, 'section_modulus', 0., 1e12, 8)
+            widget.setObjectName('steel_profile_'+key)
+            self.plastic_fields[key] = widget
+            form.addRow(f'Plastic {key} ({project.units.section_modulus})', widget)
+            widget.valueChanged.connect(self.update_source)
+        plastic_note = QLabel('Enter both plastic moduli and select a material with positive fy. The law is for steel I-sections at member ends, without shear/torsional yielding, hardening or reinforced-concrete plasticity. Supplied plastic data makes the section custom; linear/P-Delta/modal analysis remains elastic.')
+        plastic_note.setWordWrap(True)
+        form.addRow(plastic_note)
+        def update_plastic():
+            for widget in (self.plastic_material,*self.plastic_fields.values(),plastic_note):
+                form.setRowVisible(widget,self.plastic_enabled.isChecked())
+            self.update_source()
+        self.plastic_enabled.toggled.connect(update_plastic)
+        self.plastic_material.currentIndexChanged.connect(self.update_source)
+        update_plastic()
         for widget in self.fields.values():
             widget.valueChanged.connect(self.update_source)
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -160,12 +188,19 @@ class SectionEditor(QDialog):
         form.addRow(buttons)
 
     def update_source(self, *_):
-        modified = any(widget.value() != self.initial_values[key] for key, widget in self.fields.items())
+        modified = (any(widget.value() != self.initial_values[key] for key, widget in self.fields.items()) or
+                    self.plastic_values() != {key:getattr(self.original,key) for key in ('Zy','Zz','steel_material')})
         self.source.setText("Custom" if modified else self.original.source_label)
+
+    def plastic_values(self):
+        if not self.plastic_enabled.isChecked():return {'Zy':None,'Zz':None,'steel_material':None}
+        return {**{key:unit_value(widget,self.project.units) for key,widget in self.plastic_fields.items()},
+                'steel_material':self.plastic_material.currentData()}
 
     def accept(self):
         values = {key: getattr(self.original, key) if widget.value() == self.initial_values[key] else unit_value(widget, self.project.units)
                   for key, widget in self.fields.items()}
+        values.update(self.plastic_values())
         section = Section(self.name.text().strip(), **values)
         if all(getattr(self.original, key) == value for key, value in values.items()):
             section.catalog, section.designation, section.weak_axis = self.original.catalog, self.original.designation, self.original.weak_axis
@@ -187,7 +222,7 @@ class SectionDialog(QDialog):
         self.setWindowTitle("Sections")
         self.resize(960, 440)
         layout = QVBoxLayout(self)
-        self.table = QTableWidget(0, 8)
+        self.table = QTableWidget(0, 11)
 
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
@@ -223,7 +258,7 @@ class SectionDialog(QDialog):
         selected = selected or self.selected_name() or self.window.project.default_section
         project = self.window.project
         units = project.units
-        self.table.setHorizontalHeaderLabels(["Section", f"Area ({units.area})", f"Iy ({units.inertia})", f"Iz ({units.inertia})", f"J ({units.inertia})", "Members", "Default", "Source"])
+        self.table.setHorizontalHeaderLabels(["Section", f"Area ({units.area})", f"Iy ({units.inertia})", f"Iz ({units.inertia})", f"J ({units.inertia})", "Members", "Default", "Source", f'Plastic Zy ({units.section_modulus})', f'Plastic Zz ({units.section_modulus})', 'Steel material'])
         if selected not in project.sections:
             selected = project.default_section
         self.table.blockSignals(True)
@@ -232,6 +267,7 @@ class SectionDialog(QDialog):
             count = sum(member.section == section.name for member in project.members.values())
             source = "Custom" if section.catalog is None else f"{section.catalog} ({'weak' if section.weak_axis else 'strong'})"
             values = (section.name, f"{units.to_display(section.A, 'area'):g}", f"{units.to_display(section.Iy, 'inertia'):g}", f"{units.to_display(section.Iz, 'inertia'):g}", f"{units.to_display(section.J, 'inertia'):g}", str(count), "Yes" if section.name == project.default_section else "", source)
+            values = (*values, *('' if getattr(section,key) is None else f'{units.to_display(getattr(section,key),"section_modulus"):.8g}' for key in ('Zy','Zz')), section.steel_material or '')
             for column, value in enumerate(values):
                 self.table.setItem(row, column, QTableWidgetItem(value))
             self.table.item(row, 7).setToolTip(section.source_label)

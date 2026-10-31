@@ -90,7 +90,7 @@ class IndependentGModelTests(unittest.TestCase):
 
     def test_versioned_roundtrips_legacy_migration_and_conversion(self):
         from pynitegui.qt.spatial_conversion import to_spatial
-        for cls, version, legacy in ((Project, 31, 23), (SpatialProject, 38, 24)):
+        for cls, version, legacy in ((Project, 33, 23), (SpatialProject, 40, 24)):
             p = cls()
             old = p.to_dict()
             old["version"] = legacy

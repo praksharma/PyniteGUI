@@ -155,6 +155,7 @@ class PlateDefinition:
     def to_dict(self):
         self.validate()
         data = {"format": "pynitegui-rectangular-plate", "version": 3, "units": "in-kip", **asdict(self)}
+        data["material"].pop("fy")  # Steel yield data belongs to frame profiles.
         data["material"].pop("shear_modulus")  # Plate formulation derives G.
         return data
 

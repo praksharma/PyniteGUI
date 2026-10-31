@@ -134,7 +134,7 @@ class SpatialInclinedTests(unittest.TestCase):
             self.assertIsNotNone(pickle.loads(pickle.dumps(result)))
 
     def test_spatial_schema_strict_migration_and_orientation_signature(self):
-        p=cantilever();data=p.to_dict();self.assertEqual(data['version'],38)
+        p=cantilever();data=p.to_dict();self.assertEqual(data['version'],40)
         self.assertEqual(Project.from_dict(data).to_dict(),data)
         for field,values in (('support_angle',(True,None,float('nan'),181.)),('support_elevation',(True,None,float('inf'),91.))):
             for value in values:

@@ -766,7 +766,9 @@ mutation whose response was lost.
 | `read_units` | Display unit definitions and conversion factors. Requires the current session. |
 | `apply_batch` | Validate the complete batch, update the GUI and create one undo step. Requires session and expected automation revision. |
 | `run_analysis` | Start the existing background solver and immediately return its job ID. Poll `analysis_status` until `running: false`, then check state/error before reading results. Requires session and expected revision. |
-| `analysis_status` | Read running state, free-form progress phase, failure, job identity, snapshot metadata and `available_combinations` (names solved in the active snapshot; empty when none). Optional job ID rejects replaced jobs. |
+| `run_modal_analysis` / `read_modal_results` | Separate explicit-mass frame vibration job and paginated frequency/shape/mass-source results; see Vibration Modes. |
+| `run_pushover_analysis` / `read_pushover_results` | Separate first-order steel job and checked accepted-step results; inspect complete/termination and distinguish Partial from Current. See Steel Pushover. |
+| `analysis_status` | Read the latest job's state, phase, identity and snapshot. Static jobs expose `available_combinations`, modal jobs `available_modes`, and steel jobs `step_range`. Optional job ID rejects replaced jobs. |
 | `cancel_analysis` | Cancel the identified running job through the existing cancellation workflow. |
 | `read_results` | Read node/member report rows with snapshot ID, units and current/stale analysis state. Supports solved combination, offset and limit (1–1000). |
 
@@ -798,8 +800,11 @@ Analysis starts asynchronously. Retain the returned `job_id` and poll
 progress text, not a fixed enumeration. A replaced job returns `unknown_job`.
 Select a result combination from `available_combinations` in status; omit the
 combination to use the snapshot default. Model-defined combination names/factors
-are also available in `read_model.model.combinations`. Only one active result
-snapshot is retained; there is no historical snapshot store or enumeration.
+are also available in `read_model.model.combinations`. Static, modal and steel
+workflows retain their own latest snapshot; status identifies the latest job.
+There is no historical snapshot store or enumeration. Steel Partial histories
+are readable checked prefixes, with `complete=false`; they do not establish the
+full planned response. See the separate Steel Pushover contract below.
 
 Batch inputs use canonical inch-kip units, degrees for angles and member fractions
 for load positions. Ordinary supports are fields on nodes. Spatial `surface_supports` is a separate
@@ -1224,7 +1229,9 @@ labels are reduced. Its curves and force values are unchanged.*
 Current spatial scope includes linear elastic frames/trusses and opt-in
 experimental rectangular Quad slabs, plus P-Delta elastic analysis of frame-only
 models. Spatial translational/rotational releases are limited to linear frame-only models.
-General curved-shell analysis, solids and material plasticity are not implemented.
+Separate Vibration Modes and first-order Steel Pushover workspaces cover their
+stated frame-only scope. General curved-shell analysis, solids and RC plasticity
+remain unimplemented.
 Coupled slabs use solver-only frame segmentation at mesh nodes;
 user-defined frame intersections still require explicit shared endpoints.
 Multi-selection supports bulk assignments and
@@ -1619,7 +1626,7 @@ presented as a completed official adaptation.
 | Shear Wall - Advanced | Shear-wall/story/pier/coupling-beam APIs and modifiers, plus validated membrane/drilling response. |
 | Mat Foundation | Mat/soil contact API, compression-only soil springs, foundation point force/moment assignment. |
 | Circular Bin with Conical Hopper | Curved-shell assembly, merged interfaces, varying pressure and shell support/results. |
-| Moment Frame - Pushover / Pushover Analysis | Plastic section definitions, incremental pushover controls, hinge-state results. |
+| Moment Frame - Pushover / Pushover Analysis | Combined P-Delta/plastic validation: both pinned scripts request P_Delta=True. The separate first-order steel workflow does not preserve that source assumption. |
 
 **3D Frames > Official PyNite - Space Frame with Nodal Loads 1 / 2** now
 preserves both original models at the same pinned revision, including independent
@@ -2185,18 +2192,10 @@ those strict numerical tolerances; these remain visible rather than being hidden
 by relaxed tolerances. Inspect them and refine the model. Numerical envelopes
 compare independently solved combinations, never combine their responses.
 
-**Plastic behaviour remains a separate pending workflow.** The locked engine has
-`add_steel_section` and `analyze_pushover`, requiring yield strength and plastic
-section moduli for its steel interaction surface. A usable GUI must also define
-preload/push patterns, load increments, displacement stop conditions, accepted-step
-histories and capacity curves with benchmarks. Its public pushover uses first-order
-preload and push steps; combining it with P-Delta is not supported. Plasticity acts
-at member nodes and its interaction equation targets steel I sections. It is not
-a reinforced-concrete constitutive model. Nonlinear plate/Quad behaviour is excluded
-by [upstream pushover limitations](https://pynite.readthedocs.io/en/latest/pushover.html).
-Concrete cracking, reinforcement layouts, yielding and slab plasticity need a
-separate validated formulation/solver; concrete material presets alone do not
-supply these capabilities.
+Steel plasticity uses the separate **Tools > Steel Pushover** workspace documented
+below. Its accepted first-order steel I-section scope does not combine with
+P-Delta or supply reinforced-concrete/plate plasticity. Concrete cracking,
+reinforcement yielding and slab plasticity require a separate validated formulation.
 
 - Use Pan (P) to drag the view, the mouse wheel to zoom, and Fit (F) to frame it.
 - Analyze (F5) runs PyNite in an isolated worker process supervised off the GUI
@@ -2364,6 +2363,136 @@ analysis. This exports a still frame, not a movie. Playback and export do not
 edit model definitions or numerical results.
 
 [![Native static deformation animation with fixed reference and amplified displacement field](docs/assets/screenshots/static-deformation-animation.png)](docs/assets/screenshots/static-deformation-animation.png)
+
+### Steel Pushover
+
+Development adds **Tools > Steel Pushover**, a separate native workspace for
+first-order plastic response of unreleased bilateral 2D/3D frames. F5 and the
+saved linear/P-Delta/Iterative elastic choice retain their existing meanings.
+Static snapshots, modal results and pushover histories have independent identities.
+This implements PyNite's steel I-section axial/biaxial-bending interaction surface
+at explicit member ends. It does not supply reinforced-concrete plasticity,
+P-Delta/plastic interaction, hardening, shear or torsional yielding, connection
+failure, fracture or a post-mechanism path. A section label alone does not certify
+that the interaction law is appropriate for that section or connection.
+
+**Define the plastic sections**
+
+In **Materials**, enable **Assign steel yield stress for I-section pushover** and enter positive `fy` in the
+displayed stress unit. In **Sections**, enable the steel plastic profile, enter
+positive plastic section moduli `Zy` and `Zz` about the member's local axes, and
+select a material with explicit yield strength. Moduli display in cubic section
+length units, for example in³ or mm³. Members assigned this profile must use its
+bound material. Renaming a material updates bindings; deleting a bound material
+is blocked. Supplied plastic properties have custom provenance: elastic material/
+section catalogs do not certify yield strength or plastic moduli automatically.
+
+Material `fy` alone does not enable plasticity. Sections without a plastic profile
+remain elastic in a mixed frame. All profiles remain elastic under static and
+modal analysis. Standalone surface/plate materials remain elastic-only.
+
+**Configure the path**
+
+Choose an elastic **preload combination** and a separate **full push pattern**.
+The path is `preload + λ × push`, with λ increasing from zero to one. Combination
+factors retain their full signed values; the step count divides the entire push
+pattern uniformly. The preload must remain strictly inside the yield surface,
+including conservative interior section checks. Member loads, generated self-weight
+and nodal loads may form the preload.
+
+Push increments accept joint forces/moments and member-end point loads. Member-end
+loads transfer exactly to the same joint with their defined global/local direction
+and roll. Interior point loads and distributed member loads in the push pattern
+are rejected: their incremental fixed-end-force/plastic recovery is not validated.
+Define an explicit nodal push pattern; do not replace distributed loads without
+checking the intended physical loading and discretization.
+
+Select a free control node/DOF and a positive **absolute stop limit** in length
+units or radians. Motions include preload. If the preload already reaches the
+limit, the history contains step zero only. Select the supported nodes and global
+reaction component to sum for the capacity curve. Force reactions retain global
+signs. Reaction moments include force lever arms about the first model node; that
+origin is recorded in snapshot metadata. The curve includes total preload effects,
+not just the increment. **Plot magnitudes** changes the plot only; tables and
+archives always preserve signed quantities.
+
+Use 1–2000 load steps, bounded step retries and dimensionless yield-surface
+overshoot tolerance (default 0.01; maximum 0.02). Increasing the tolerance does not
+establish accuracy. Compare refinements of both increments and explicit member
+nodes at potential hinge locations. A conservative interior interaction bound
+can require more nodes even when no endpoint has reached yield. Model/history
+size is bounded; reduce steps or model size if the request exceeds that limit.
+Inclined/imposed supports, unilateral entities, trusses, surfaces and frame-end
+releases are excluded from this initial plastic workflow.
+
+**Inspect checked steps**
+
+The workspace contains Capacity, Joint motions, Reactions, Member-end actions and
+Equilibrium tables. Select any accepted step, including zero for preload. The
+capacity plot shows the full checked history and selected step. The adjacent
+**undeformed end-yield map** marks member ends at the interaction surface; it is
+not a plastic-rotation or deformed-member plot. Member forces are **local
+node-on-member end actions**: the two ends do not share the usual internal-force
+cut convention. `Φ` is dimensionless and blank for elastic-only sections. An end
+at Φ ≥ 1 reaches the yield surface; that alone does not quantify ductility.
+
+Every recorded increment passes finite-value, free-joint equilibrium, independent
+global force/moment balance, end/interior interaction and tangent checks. The
+plastic tangent is checked against the physical elastic stiffness scale, avoiding
+false stability from cancellation roundoff. Failed increments are not recorded.
+A newly formed mechanism may end the history at its last checked limit point.
+
+**Current** means the full pattern or configured displacement stop was reached.
+**Partial** means only the checked prefix is available: inspect `termination`,
+`message`, `accepted_factor`, and `complete=false`. It does not establish the full
+requested response. Reasons include a mechanism/limit state, excessive yield
+overshoot, unresolved interior yielding or nonconvergence. If no push step can be
+accepted, the job fails. Cancellation and model changes cannot create a current
+snapshot. A previous native snapshot stays visible with an explicit previous/
+outdated label; MCP rejects stale reads. Jobs share the usual busy, cancellation
+and session/revision lifecycle.
+
+Export the selected table as CSV, a stamped PNG/SVG of the capacity/end-yield map,
+or a JSON snapshot containing source model, configuration, engine version,
+termination and every canonical accepted-step array. Pushover settings/results
+live in this workspace and archive; frame project files retain the profile inputs.
+
+**Hand-check examples**
+
+**File > Examples > Steel pushover** provides three editable checks and opens the
+workspace with matching settings:
+
+- **Plastic Redistribution:** a 240 in propped beam, two explicit members, fixed
+  left end, pinned right end, central downward 24 kip push. E = 29000 ksi,
+  Iz = 100 in⁴, fy = 50 ksi and Zz = 20 in³ give Mp = 1000 kip-in. First yield
+  occurs at `16 Mp/(3 L) = 22.222222 kip`; the ideal mechanism load is
+  `6 Mp/L = 25 kip`. Before yield, central flexibility is `7 L³/(768 EI)`;
+  after the fixed-end hinge forms it is `L³/(48 EI)`. The independent final
+  displacement is **−1.142068966 in**. With 500 increments the checked response
+  is approximately **−1.141969655 in**; compare 100, 500 and finer steps.
+- **Mechanism Limit:** the same beam with a requested 26 kip push and 1000 steps.
+  Expect **Partial / limit_state** near 25 kip. This deliberately requests a
+  response beyond the ideal mechanism; the application does not continue it.
+- **Weak-Axis Plasticity:** spatial planar constraints and a 90° member roll put
+  bending about local y, with Iy = 30 in⁴ and Mp = fy Zy = 500 kip-in. A 12 kip
+  push gives first yield at 11.111111 kip and collapse at 12.5 kip. The independent
+  final displacement is **−1.903448276 in**. Inspect local My and global reactions.
+
+![Steel redistribution capacity curve, checked steps and end-yield locations](docs/assets/screenshots/steel-pushover.png)
+
+The two pinned official pushover scripts additionally request P-Delta. They remain
+pending until that combined formulation is independently validated; the three
+examples above are explicit first-order checks, not substitutes claiming identical
+source assumptions. See [PyNite's pushover description](https://pynite.readthedocs.io/en/latest/pushover.html)
+for its interaction/increment concepts; Brecon's accepted scope is the one above.
+
+MCP exposes `run_pushover_analysis` with session/revision, preload/push, control
+node/DOF, canonical stop limit (in or rad), reaction nodes/component and numerical
+controls. Poll `analysis_status` until `running=false`. Inspect Current/Partial
+and snapshot `complete`/`termination` before calling
+`read_pushover_results(kind="capacity"|"nodes"|"member_ends"|"equilibrium", step=...)`.
+Step defaults to the last accepted; pagination and snapshot guards apply. The
+existing `cancel_analysis` cancels this job. No arbitrary code execution is added.
 
 ### Vibration Modes
 
@@ -3216,7 +3345,11 @@ Planar **v31** and spatial **v38** add required member `behavior`, per-spring
 migrate to bilateral behaviour and default controls. Nondefault new fields in
 old versions, missing current fields, invalid direction/type combinations and
 nonpositive one-way spring stiffnesses are rejected.
-New saves use planar v31, spatial v38 and plate v3.
+Planar **v33** and spatial **v40** add required material `fy` and section
+`Zy`/`Zz`/`steel_material` fields. Nullable defaults keep legacy definitions elastic.
+Nondefault plastic properties in older versions, missing current fields and
+inconsistent profile/material bindings are rejected. New saves use planar v33,
+spatial v40 and plate v3; standalone plate/mesh definitions omit steel properties.
 
 Spatial files retain XYZ, all six restraints/springs, and roll. Unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be

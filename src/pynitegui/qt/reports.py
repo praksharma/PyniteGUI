@@ -212,11 +212,12 @@ def model_definition_tables(project):
     members = (["Member", "Start", "End", "Type", "Material", "Section", "Start hinge", "End hinge", "Start releases (local)", "End releases (local)", "Axial behaviour"],
                [[m.name, m.start, m.end, m.kind, m.material, m.section,
                  *("Yes" if release else "No" for release in m.moment_releases), *m.release_labels, MEMBER_BEHAVIORS[m.behavior]] for m in project.members.values()])
-    materials = (["Material", f"E ({units.stress})", "Poisson ratio", f"G ({units.stress})", f"Weight ({units.density})", "Source", "G input"],
-                 [[m.name, show(m.E, "stress"), m.nu, show(m.G, "stress"), show(m.rho, "density"), m.source_label, "Derived" if m.shear_modulus is None else "Independent"]
+    materials = (["Material", f"E ({units.stress})", "Poisson ratio", f"G ({units.stress})", f"Weight ({units.density})", "Source", "G input", f'Steel fy ({units.stress})'],
+                 [[m.name, show(m.E, "stress"), m.nu, show(m.G, "stress"), show(m.rho, "density"), m.source_label, "Derived" if m.shear_modulus is None else "Independent", '' if m.fy is None else show(m.fy,'stress')]
                   for m in project.materials.values()])
-    sections = (["Section", f"Area ({units.area})", f"Iy ({units.inertia})", f"Iz ({units.inertia})", f"J ({units.inertia})", "Source"],
-                [[s.name, show(s.A, "area"), *(show(getattr(s, key), "inertia") for key in ("Iy", "Iz", "J")), s.source_label]
+    sections = (["Section", f"Area ({units.area})", f"Iy ({units.inertia})", f"Iz ({units.inertia})", f"J ({units.inertia})", "Source", f'Plastic Zy ({units.section_modulus})', f'Plastic Zz ({units.section_modulus})', 'Steel material binding'],
+                [[s.name, show(s.A, "area"), *(show(getattr(s, key), "inertia") for key in ("Iy", "Iz", "J")), s.source_label,
+                  *('' if getattr(s,key) is None else show(getattr(s,key),'section_modulus') for key in ('Zy','Zz')), s.steel_material or '']
                  for s in project.sections.values()])
     def load_rows(loads):
         rows = []

@@ -137,7 +137,19 @@ class MaterialEditor(QDialog):
         note = QLabel("Default: G = E / [2(1+nu)]. Independent G supplies frame torsion stiffness directly; it does not define general anisotropic elasticity. Plate/surface recipes use derived G.")
         note.setWordWrap(True)
         form.addRow(note)
+        self.yield_enabled = QCheckBox('Assign steel yield stress for I-section pushover')
+        self.yield_enabled.setObjectName('steel_fy_enabled')
+        self.yield_enabled.setChecked(material.fy is not None)
+        self.fy = unit_number(material.fy or 0., project.units, 'stress', 0., 1e12, 8)
+        self.fy.setObjectName('steel_fy')
+        self.fy.setEnabled(self.yield_enabled.isChecked())
+        self.yield_enabled.toggled.connect(self.fy.setEnabled)
+        form.addRow(self.yield_enabled)
+        form.addRow(f'Assigned fy ({project.units.stress})', self.fy)
+        self.fy.setToolTip('Explicit steel yield stress. Used by a bound steel I-section plastic profile; this does not turn on yielding in linear, P-Delta or modal analysis, or define reinforced-concrete plasticity.')
         form.addRow("Source", self.source)
+        self.yield_enabled.toggled.connect(self.update_G)
+        self.fy.valueChanged.connect(self.update_G)
         self.independent_G.toggled.connect(self.G_input.setEnabled)
         self.independent_G.toggled.connect(self.update_G)
         self.G_input.valueChanged.connect(self.update_G)
@@ -154,7 +166,8 @@ class MaterialEditor(QDialog):
         value = self.G_input.value() if self.independent_G.isChecked() else self.E.value() / (2 * (1 + self.nu.value()))
         self.G.setText(f"{value:.6g} | {'Independent' if self.independent_G.isChecked() else 'Derived'}")
         modulus = unit_value(self.G_input, self.project.units) if self.independent_G.isChecked() else None
-        modified = (self.E.value(), self.nu.value(), self.rho.value()) != self.initial_values or modulus != self.original.shear_modulus
+        strength = unit_value(self.fy, self.project.units) if self.yield_enabled.isChecked() else None
+        modified = (self.E.value(), self.nu.value(), self.rho.value()) != self.initial_values or modulus != self.original.shear_modulus or strength != self.original.fy
         self.source.setText("Custom" if modified else self.original.source_label)
 
     def accept(self):
@@ -163,8 +176,9 @@ class MaterialEditor(QDialog):
                            (self.E, self.nu, self.rho), self.initial_values,
                            (self.original.E, self.original.nu, self.original.rho)))
         material = Material(self.name.text().strip(), unit_value(self.E, self.project.units), values[1], unit_value(self.rho, self.project.units),
-                            shear_modulus=unit_value(self.G_input, self.project.units) if self.independent_G.isChecked() else None)
-        if all(getattr(material, key) == getattr(self.original, key) for key in ("E", "nu", "rho", "shear_modulus")):
+                            shear_modulus=unit_value(self.G_input, self.project.units) if self.independent_G.isChecked() else None,
+                            fy=unit_value(self.fy, self.project.units) if self.yield_enabled.isChecked() else None)
+        if all(getattr(material, key) == getattr(self.original, key) for key in ("E", "nu", "rho", "shear_modulus", "fy")):
             material.preset = self.original.preset
         try:
             material.validate()
@@ -184,7 +198,7 @@ class MaterialDialog(QDialog):
         self.setWindowTitle("Materials")
         self.resize(900, 400)
         layout = QVBoxLayout(self)
-        self.table = QTableWidget(0, 9)
+        self.table = QTableWidget(0, 10)
 
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
@@ -220,7 +234,7 @@ class MaterialDialog(QDialog):
         selected = selected or self.selected_name() or self.window.project.default_material
         project = self.window.project
         units = project.units
-        self.table.setHorizontalHeaderLabels(["Material", f"E ({units.stress})", "Poisson ratio", f"Weight density ({units.density})", "Members", "Default", "Source", f"G ({units.stress})", "G input"])
+        self.table.setHorizontalHeaderLabels(["Material", f"E ({units.stress})", "Poisson ratio", f"Weight density ({units.density})", "Members", "Default", "Source", f"G ({units.stress})", "G input", f"Steel fy ({units.stress})"])
         if selected not in project.materials:
             selected = project.default_material
         self.table.blockSignals(True)
@@ -228,6 +242,7 @@ class MaterialDialog(QDialog):
         for row, material in enumerate(project.materials.values()):
             count = sum(member.material == material.name for member in project.members.values())
             values = (material.name, f"{units.to_display(material.E, 'stress'):g}", f"{material.nu:g}", f"{units.to_display(material.rho, 'density'):.8g}", str(count), "Yes" if material.name == project.default_material else "", "Library" if material.preset else "Custom", f"{units.to_display(material.G, 'stress'):.8g}", "Derived" if material.shear_modulus is None else "Independent")
+            values = (*values, '' if material.fy is None else f'{units.to_display(material.fy,"stress"):.8g}')
             for column, value in enumerate(values):
                 self.table.setItem(row, column, QTableWidgetItem(value))
             self.table.item(row, 6).setToolTip(material.source_label)

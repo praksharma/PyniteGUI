@@ -102,13 +102,13 @@ class SpatialProject(Project):
     surface_supports: dict = field(default_factory=dict)
 
     def to_dict(self):
-        data = {"version": 38, "units": "in-kip", **asdict(self),
+        data = {"version": 40, "units": "in-kip", **asdict(self),
                 "surfaces": {name: mesh.to_dict() for name, mesh in self.surfaces.items()}}
         return data
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
+        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
             raise ValueError("Unsupported spatial project version, dimension, or units.")
         from .unilateral import check_schema, ITERATIVE_DEFAULTS, spring_mode_fields
         check_schema(data, data['version'], 38, ITERATIVE_DEFAULTS, "analysis settings")
@@ -136,7 +136,12 @@ class SpatialProject(Project):
             raise ValueError("Groups and levels require spatial version 24.")
         if data["version"] >= 24 and not {"groups", "levels", "snap_levels"} <= data.keys():
             raise ValueError("Missing groups or levels metadata.")
-        metadata = {**data, "version": 31 if data["version"] >= 38 else 25 if data["version"] >= 26 else 23, "analysis_method": data.get("analysis_method", "linear"), "nodes": {}, "members": {}, "loads": {},
+        from .plasticity import check_schema as check_steel_schema, MATERIAL_DEFAULTS, SECTION_DEFAULTS
+        for collection,defaults in (('materials',MATERIAL_DEFAULTS),('sections',SECTION_DEFAULTS)):
+            if isinstance(data.get(collection),dict):
+                for value in data[collection].values():
+                    if isinstance(value,dict):check_steel_schema(value,data['version'],40,defaults,collection)
+        metadata = {**data, "version": 33 if data["version"] >= 40 else 31 if data["version"] >= 38 else 25 if data["version"] >= 26 else 23, "analysis_method": data.get("analysis_method", "linear"), "nodes": {}, "members": {}, "loads": {},
                     "groups": {}, "levels": data.get("levels", {}), "snap_levels": data.get("snap_levels", False)}
         metadata.pop("dimension")
         metadata.pop("surfaces", None)
@@ -274,6 +279,8 @@ class SpatialProject(Project):
             if pair in connections:
                 raise ValueError("Duplicate members connect the same nodes.")
             connections.add(pair)
+        from .plasticity import validate_bindings
+        validate_bindings(self)
         for name, load in self.loads.items():
             if not isinstance(load, SpatialLoad) or name != load.name or not identifier(name) or not identifier(load.target) or load.target not in {*self.nodes, *self.members}:
                 raise ValueError("Invalid spatial load identifier or target.")

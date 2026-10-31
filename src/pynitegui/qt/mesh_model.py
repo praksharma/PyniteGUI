@@ -137,6 +137,8 @@ class MeshDefinition:
         if not isinstance(self.material, Material):
             raise ValueError("Invalid mesh material.")
         self.material.validate()
+        if self.material.fy is not None:
+            raise ValueError("Surface/plate recipes are elastic; steel fy belongs to explicit frame plastic profiles.")
         if self.material.shear_modulus is not None:
             raise ValueError("Surface/plate materials require G derived from E and nu; the shell formulation does not use independent G.")
         for key in ("mesh_size", "thickness", "kx_mod", "ky_mod"):
@@ -182,6 +184,7 @@ class MeshDefinition:
     def to_dict(self):
         self.validate()
         data = {"format": "pynitegui-mesh", "version": 1, "units": "in-kip", **asdict(self)}
+        data["material"].pop("fy")  # Steel yield data belongs to frame profiles.
         data["material"].pop("shear_modulus")  # Always derived for surface recipes.
         return data
 

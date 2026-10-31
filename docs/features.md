@@ -36,7 +36,7 @@ when comparing with the published rc1 wheel.
 | Opt-in debounced live recalculation | [Live recalculation](analysis/live.md) |
 | Rigid-body/mechanism/stiffness checks and affected-node findings | [Diagnostics](analysis/stability.md), [topology](modeling/topology.md) |
 
-Steel pushover, reinforced-concrete plasticity and node-to-node spring elements are **not implemented GUI workflows**. See the
+Reinforced-concrete plasticity and node-to-node spring elements remain pending. See the
 [audited roadmap](project/roadmap.md), not the upstream feature list alone.
 Development adds [inclined rollers](modeling/supports.md) for 2D/3D linear frames,
 trusses and supported releases, plus inclined supports in the existing frame
@@ -120,3 +120,9 @@ the shared-node/interface checks.
 For contributors, [focused test groups](development/testing.md) separate native
 UI checks from engineering, surface and MCP suites. Combine affected groups;
 full-suite and release verification remain available.
+
+Development [Steel Pushover](analysis/pushover.md) adds explicit steel profiles,
+elastic preload plus nodal push increments, checked histories/capacity curves,
+unit-labelled tables, CSV/PNG/SVG/JSON and MCP jobs. Partial results are labelled;
+no P-Delta/plastic combination, nonlinear slabs or RC plasticity is claimed.
+Three editable examples have independent hand references and refinement checks.

@@ -36,6 +36,7 @@ class Material:
     rho: float = 0.49 / 12**3
     preset: str | None = None
     shear_modulus: float | None = None
+    fy: float | None = field(default=None, kw_only=True)
 
     @property
     def source_label(self):
@@ -62,11 +63,13 @@ class Material:
             raise ValueError(f"Material {self.name}: effective G must be positive and finite.")
         if not finite_number(self.rho) or self.rho < 0:
             raise ValueError(f"Material {self.name}: density must be finite and nonnegative.")
+        from .plasticity import validate_material
+        validate_material(self)
         if self.preset is not None:
             from .material_library import BY_KEY
             if not isinstance(self.preset, str) or self.preset not in BY_KEY:
                 raise ValueError(f"Material {self.name}: unknown library preset.")
-            if self.shear_modulus is not None or any(getattr(self, key) != value for key, value in BY_KEY[self.preset].properties().items()):
+            if self.fy is not None or self.shear_modulus is not None or any(getattr(self, key) != value for key, value in BY_KEY[self.preset].properties().items()):
                 raise ValueError(f"Material {self.name}: library properties differ; save as a custom material.")
 
 
@@ -80,6 +83,9 @@ class Section:
     catalog: str | None = None
     designation: str | None = None
     weak_axis: bool = False
+    Zy: float | None = field(default=None, kw_only=True)
+    Zz: float | None = field(default=None, kw_only=True)
+    steel_material: str | None = field(default=None, kw_only=True)
 
     @property
     def source_label(self):
@@ -95,6 +101,8 @@ class Section:
             value = getattr(self, key)
             if not finite_number(value) or value <= 0:
                 raise ValueError(f"Section {self.name}: {key} must be a positive finite number.")
+        from .plasticity import validate_section
+        validate_section(self)
         if type(self.weak_axis) is not bool:
             raise ValueError(f"Section {self.name}: weak_axis must be a boolean.")
         if self.catalog is None:
@@ -347,6 +355,9 @@ class Project:
         if previous is not None and previous not in self.materials:
             raise ValueError(f"Material {previous} does not exist.")
         if previous and previous != material.name:
+            for section in self.sections.values():
+                if section.steel_material == previous:
+                    section.steel_material = material.name
             for member in self.members.values():
                 if member.material == previous:
                     member.material = material.name
@@ -356,6 +367,8 @@ class Project:
         self.materials[material.name] = material
 
     def delete_material(self, name):
+        bound=[section.name for section in self.sections.values() if section.steel_material==name]
+        if bound:raise ValueError('Material is bound to plastic sections: '+', '.join(bound)+'. Reassign those sections first.')
         used = [member.name for member in self.members.values() if member.material == name]
         if used:
             raise ValueError(f"Material {name} is assigned to: {', '.join(used)}. Reassign those members first.")
@@ -403,7 +416,7 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 31, "units": "in-kip", **asdict(self)}
+        return {"version": 33, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
@@ -415,7 +428,7 @@ class Project:
         if "dimension" in data:
             raise ValueError("Unsupported project dimension.")
         version = data.get("version")
-        if type(version) is not int or version not in (*range(1, 16), 21, 23, 25, 27, 29, 31) or data.get("units") != "in-kip":
+        if type(version) is not int or version not in (*range(1, 16), 21, 23, 25, 27, 29, 31, 33) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         from .unilateral import check_schema, ITERATIVE_DEFAULTS
         check_schema(data, version, 31, ITERATIVE_DEFAULTS, "analysis settings")
@@ -449,6 +462,9 @@ class Project:
             for name, value in data[key].items():
                 if not identifier(name) or not isinstance(value, dict):
                     raise ValueError(f"Invalid {key} entry: {name!r}. Expected an identifier and an object.")
+                from .plasticity import check_schema as check_steel_schema, MATERIAL_DEFAULTS, SECTION_DEFAULTS
+                if key in ('materials','sections'):
+                    check_steel_schema(value,version,33,MATERIAL_DEFAULTS if key=='materials' else SECTION_DEFAULTS,key)
                 if key == "materials" and version < 25 and value.get("shear_modulus") is not None:
                     raise ValueError("Independent G requires planar version 25 or spatial version 26.")
                 if key == "nodes":
@@ -629,6 +645,8 @@ class Project:
             if connection in connections:
                 raise ValueError("Duplicate members connect the same nodes.")
             connections.add(connection)
+        from .plasticity import validate_bindings
+        validate_bindings(self)
         for name, load in self.loads.items():
             if (name != load.name or not identifier(name) or not identifier(load.target)
                     or load.target not in {*self.nodes, *self.members}):

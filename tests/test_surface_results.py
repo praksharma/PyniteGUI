@@ -87,7 +87,7 @@ class SurfaceSupportModelTests(unittest.TestCase):
         self.assertEqual(legacy, before)
         p.surface_supports = {"Floor": {"left": ["DY", "RZ"]}}
         data = p.to_dict()
-        self.assertEqual(data["version"], 38)
+        self.assertEqual(data["version"], 40)
         self.assertEqual(Project.from_dict(data).to_dict(), data)
         for change in ({"version": 26}, {"surface_supports": None},
                        {"surface_supports": {"missing": {"left": ["DY"]}}},

@@ -2,10 +2,12 @@
 from .model import Load, Project
 from .official_unilateral import NAMES as UNILATERAL_EXAMPLES
 from .official_modal import KEY as MODAL_KEY, NAME as MODAL_NAME
+from .steel_examples import NAMES as STEEL_EXAMPLES
 
 
 EXAMPLES = {
     **UNILATERAL_EXAMPLES,
+    **STEEL_EXAMPLES,
     MODAL_KEY: MODAL_NAME,
     "simple_beam": "Simply Supported Beam",
     "portal": "Portal Frame - Distributed Load",
@@ -55,12 +57,16 @@ EXAMPLE_GROUPS = {
     "P-Delta": ("p_delta_column", "p_delta_support_motion", "official_p_delta"),
     'Iterative elastic': tuple(UNILATERAL_EXAMPLES),
     'Modal': (MODAL_KEY,),
+    'Steel pushover': tuple(STEEL_EXAMPLES),
 }
 
 
 def example_project(key, unit_system="imperial"):
     if key not in EXAMPLES:
         raise ValueError(f"Unknown example: {key}")
+    if key in STEEL_EXAMPLES:
+        from .steel_examples import example_project as steel_example
+        return steel_example(key,unit_system)
     if key == MODAL_KEY:
         from .official_modal import example_project as modal_example
         return modal_example(unit_system)

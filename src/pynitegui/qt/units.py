@@ -27,14 +27,18 @@ class UnitSystem:
     inertia_factor: float = 1.0
 
     def factor(self, quantity):
-        if quantity not in ("length", "force", "moment", "intensity", "pressure", "stress", "density", "area", "inertia", "rotation", "stiffness", "rotational_stiffness"):
+        if quantity not in ("length", "force", "moment", "intensity", "pressure", "stress", "density", "area", "inertia", "rotation", "stiffness", "rotational_stiffness", "section_modulus"):
             raise ValueError(f"Unknown physical quantity: {quantity}")
         length, force = self.length_factor, self.force_factor
         return {"length": length, "force": force, "moment": force * length,
                 "intensity": force / length, "pressure": force / length**2, "stress": self.stress_factor,
                 "density": force / length**3, "area": self.area_factor,
-                "inertia": self.inertia_factor, "rotation": 1.0,
+                "inertia": self.inertia_factor, "section_modulus": self.area_factor**1.5, "rotation": 1.0,
                 "stiffness": force / length, "rotational_stiffness": force * length}[quantity]
+
+    @property
+    def section_modulus(self):
+        return self.area.removesuffix('2')+'3'
 
     @property
     def pressure(self):

@@ -54,7 +54,7 @@ const server = http.createServer((request,response)=>{
     await page.waitForFunction(()=>document.body.dataset.mdColorScheme==='slate');
     await page.screenshot({path:path.join(output,'surfaces-dark.png')});
     for(const [url,title] of [['features/','Feature Index'],['start/first-model/','Your First Model'],
-      ['analysis/loads/','Point, Angled and Distributed Loads'],['automation/mcp/','Optional MCP Server'],
+      ['analysis/loads/','Point, Angled and Distributed Loads'],['analysis/pushover/','Steel Pushover'],['automation/mcp/','Optional MCP Server'],
       ['reference/units/','Units and Conversions'],['project/roadmap/','Brecon Roadmap'],
       ['modeling/3d/','3D Frames and Trusses'],
       ['modeling/supports/','Supports and Springs'],
@@ -62,6 +62,11 @@ const server = http.createServer((request,response)=>{
       await page.goto(origin+prefix+url);
       await page.locator('article h1').filter({hasText:title}).waitFor();
       assert((await page.locator('article').innerText()).length>250,`Empty ${url}`);
+      if(url==='analysis/pushover/'){
+        const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));
+        assert(figures.some(image=>image.src.endsWith('steel-pushover.png'))&&figures.every(image=>image.ok),'Missing steel pushover screenshot');
+        assert((await page.locator('article').innerText()).includes('Partial'),'Missing partial-history contract');
+      }
       if(url==='modeling/supports/'){
         const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));
         assert(figures.some(image=>image.src.endsWith('inclined-roller.png'))&&figures.every(image=>image.ok),'Missing inclined roller screenshot');

@@ -127,6 +127,60 @@ window.close()
 
 @unittest.skipUnless(dependencies_available(), "Install the optional mcp extra for wire tests")
 class ServerWireTests(ServerWindowTests):
+    def test_wire_pushover_checked_partial_typed_inputs_units_and_drift(self):
+        self.window.load_project(example_project('steel_redistribution'))
+        self.window.automation_mode.set_enabled(True)
+        self.server.permissions.set_group('Analysis',True);self.server.permissions.set_group('Model edits',True)
+        async def callback(client):
+            model=(await client.call_tool('read_model',{})).structured_content['data']
+            identity={'session_id':model['session_id']}
+            args={**identity,'expected_revision':model['revision'],'preload':'Primary','push':'Push','control_node':'N2',
+                  'control_direction':'DY','stop_limit':3.,'base_nodes':['N1','N3'],'resultant':'FY','steps':20}
+            for field in ('steps','stop_limit','yield_tolerance'):
+                bad=await client.call_tool('run_pushover_analysis',{**args,field:True});self.assertTrue(bad.is_error)
+            started=await client.call_tool('run_pushover_analysis',args);self.assertFalse(started.is_error,started)
+            job=started.structured_content['data']['job_id']
+            for _ in range(300):
+                status=(await client.call_tool('analysis_status',{**identity,'job_id':job})).structured_content['data']
+                if not status['running']:break
+                await asyncio.sleep(.02)
+            self.assertEqual(status['state'],'Partial',status);self.assertEqual(status['analysis_kind'],'steel_pushover')
+            snapshot=status['snapshot'];self.assertFalse(snapshot['complete']);self.assertEqual(snapshot['termination'],'yield_overshoot')
+            response=await client.call_tool('read_pushover_results',{**identity,'snapshot_id':snapshot['snapshot_id'],'offset':1,'limit':1})
+            self.assertFalse(response.is_error,response);data=response.structured_content['data']
+            self.assertFalse(data['complete']);self.assertEqual(data['rows'][0][0],1);dy=data['rows'][0][2]
+            response=await client.call_tool('read_pushover_results',{**identity,'kind':'member_ends','step':0,'limit':1})
+            self.assertFalse(response.is_error,response);self.assertEqual(response.structured_content['data']['rows'][0][-1],'Elastic')
+            edited=await client.call_tool('apply_batch',{**identity,'expected_revision':model['revision'],
+                'operations':[{'op':'set','collection':'settings','value':{'unit_system':'si_mm'}}]})
+            self.assertFalse(edited.is_error,edited);revision=edited.structured_content['data']['revision']
+            response=await client.call_tool('read_pushover_results',{**identity,'offset':1,'limit':1})
+            self.assertAlmostEqual(response.structured_content['data']['rows'][0][2],dy*25.4)
+            edited=await client.call_tool('apply_batch',{**identity,'expected_revision':revision,
+                'operations':[{'op':'put','collection':'materials','key':'Steel','value':{'fy':55.}},
+                              {'op':'put','collection':'sections','key':'Steel I','value':{'Zy':11.,'Zz':22.,'steel_material':'Steel'}}]})
+            self.assertFalse(edited.is_error,edited)
+            stale=await client.call_tool('read_pushover_results',identity)
+            self.assertTrue(stale.is_error);self.assertEqual(stale.structured_content['error']['code'],'no_pushover_results')
+        self.with_client(callback)
+
+    def test_wire_pushover_cancel_uses_shared_job_contract(self):
+        self.window.load_project(example_project('steel_redistribution'));self.window.automation_mode.set_enabled(True)
+        self.server.permissions.set_group('Analysis',True)
+        async def callback(client):
+            model=(await client.call_tool('read_model',{})).structured_content['data'];identity={'session_id':model['session_id']}
+            started=await client.call_tool('run_pushover_analysis',{**identity,'expected_revision':model['revision'],
+                'preload':'Primary','push':'Push','control_node':'N2','control_direction':'DY','stop_limit':3.,'base_nodes':['N1','N3'],'resultant':'FY'})
+            self.assertFalse(started.is_error,started);job=started.structured_content['data']['job_id']
+            response=await client.call_tool('cancel_analysis',{**identity,'job_id':job});self.assertFalse(response.is_error,response)
+            for _ in range(300):
+                status=(await client.call_tool('analysis_status',{**identity,'job_id':job})).structured_content['data']
+                if not status['running']:break
+                await asyncio.sleep(.02)
+            self.assertEqual(status['state'],'Cancelled',status);self.assertIsNone(status['snapshot'])
+            result=await client.call_tool('read_pushover_results',identity);self.assertTrue(result.is_error)
+        with patch('pynitegui.qt.pushover_jobs.pushover_child',slow_automation_child):self.with_client(callback)
+
     def test_wire_modal_job_shapes_units_and_model_drift(self):
         self.window.load_project(example_project('official_modal'))
         self.window.automation_mode.set_enabled(True)
@@ -297,7 +351,7 @@ class ServerWireTests(ServerWindowTests):
         self.server.permissions.set_group("Analysis", True)
         async def callback(client):
             model = (await client.call_tool("read_model", {})).structured_content["data"]
-            self.assertEqual(model["model"]["version"], 38)
+            self.assertEqual(model["model"]["version"], 40)
             fields = model["schema"]["entities"]["members"]["properties"]
             self.assertNotIn("const", fields["release_end_ry"])
             edited = await client.call_tool("apply_batch", {"session_id": model["session_id"],
@@ -403,7 +457,7 @@ class ServerWireTests(ServerWindowTests):
     def test_official_client_discovers_reads_model_units_and_snapshot_results(self):
         async def callback(client):
             listed = await client.list_tools()
-            self.assertEqual({tool.name for tool in listed.tools}, {"read_model","read_schema","read_units","read_results","read_modal_results"})
+            self.assertEqual({tool.name for tool in listed.tools}, {"read_model","read_schema","read_units","read_results","read_modal_results","read_pushover_results"})
             response = await client.call_tool("read_model", {})
             self.assertFalse(response.is_error, response)
             model = response.structured_content["data"]

@@ -17,7 +17,9 @@ TOOLS = {
     "run_analysis": ("Analysis", "Start background analysis using settings.analysis_method (linear|p_delta|iterative) and return a job_id immediately. Poll analysis_status with that job_id until running=false, then check state/error before read_results. phase is human-readable progress text, not a fixed enum."),
     "run_modal_analysis": ("Analysis", "Start an independent first-order frame vibration job. Explicit combination supplies weight; nonnegative factors only. Convert absolute individual global X/Y/Z force components to positive mass using gravity in canonical in/s² (default standard gravity 386.08858267716533). Density contributes only through selected generated self-weight. Unreleased bilateral frames only; no surfaces, trusses, one-way contacts or imposed motions. modes=1..50. Returns job_id; poll analysis_status until running=false and state=Current, then read_modal_results. Never interpret mode shapes as static displacements/forces or earthquake response."),
     "read_modal_results": ("Result reads", "Read the current accepted modal snapshot: frequencies (Hz/seconds), normalized node shapes for a 1-based mode, or mass_sources, with offset/limit pagination. Use snapshot_id and available_modes from analysis_status after a modal job reaches Current. Translation-normalized shapes use displacement ratios and rotations rad per displayed length; rotation-only modes use translations length/rad and rotation ratios. No static forces/reactions. Model edits require reanalysis; changing display units only changes shape/source headers."),
-    "analysis_status": ("Analysis", "Read job progress, failures, the active snapshot and available_combinations (solved names). Poll after run_analysis until running=false; check state/error. Only one active result snapshot is retained; job_id rejects replaced jobs."),
+    "run_pushover_analysis": ("Analysis", "Start first-order steel I-section pushover with explicit preload/full-push combinations, control node/DOF, positive absolute stop limit (in or rad), selected reaction/base nodes, reaction component, step count and yield-surface overshoot tolerance. Requires assigned custom steel profiles: positive material fy (ksi), section Zy/Zz (in3) and matching steel_material binding. Other unreleased frame sections remain elastic. Push uses nodal loads or member-end point loads; interior/distributed loads may be in the elastic preload only. No P-Delta, inclined/imposed supports, unilateral entities, trusses or nonlinear slabs/RC. Poll analysis_status until running=false: Current means the configured target/full pattern was met; Partial contains only checked accepted steps and is NOT a complete planned response. Read termination/complete before using results. cancel_analysis serves this job too."),
+    "read_pushover_results": ("Result reads", "Read paginated, snapshot-labelled accepted steel-pushover history. kind=capacity|nodes|member_ends|equilibrium; step is a recorded zero-based step (0 is elastic preload), omitted uses last accepted. Capacity includes signed total control motion and selected support reaction sum, push factor, max END steel Phi and equilibrium ratios. Node motions/reactions are global; member_ends are local NODE-ON-MEMBER actions, not a common internal-force sign at both ends. Phi is null for elastic-only sections. Reaction moments are about the first model node. Partial snapshots contain a checked prefix only; inspect complete, termination and accepted_factor. Stale model revisions and incomplete/cancelled jobs cannot supply current data."),
+    "analysis_status": ("Analysis", "Read the latest analysis job: progress, failure and snapshot metadata. Discovery fields depend on the job: available_combinations for static results, available_modes for modal, step_range for steel pushover. Poll until running=false; inspect state/error and steel complete/termination. Each workflow retains its own latest snapshot; there is no historical archive. job_id rejects replaced jobs."),
     "cancel_analysis": ("Analysis", "Cancel the identified running analysis job."),
 }
 
@@ -100,7 +102,7 @@ def batch_candidate(project, operations):
                         material = value["material"]
                         values["material"] = {**previous["material"], **material}
                         if "preset" not in material and any(field in material and material[field] != previous["material"].get(field)
-                                                            for field in ("E", "nu", "rho", "shear_modulus")):
+                                                            for field in ("E", "nu", "rho", "shear_modulus", "fy")):
                             values["material"]["preset"] = None
                     entities[key] = values
                 elif action == "delete" and value is None and key in entities:
@@ -122,10 +124,10 @@ def batch_candidate(project, operations):
                         raise AutomationError("invalid_batch", "Unsupported entity field or inconsistent name.")
                     values = {**entities.get(key, {}), **value, "name": key}
                     if collection == "materials" and "preset" not in value and any(
-                            field in value and value[field] != entities.get(key, {}).get(field) for field in ("E", "nu", "rho", "shear_modulus")):
+                            field in value and value[field] != entities.get(key, {}).get(field) for field in ("E", "nu", "rho", "shear_modulus", "fy")):
                         values["preset"] = None
                     if collection == "sections" and "catalog" not in value and any(
-                            field in value and value[field] != entities.get(key, {}).get(field) for field in ("A", "Iy", "Iz", "J")):
+                            field in value and value[field] != entities.get(key, {}).get(field) for field in ("A", "Iy", "Iz", "J", "Zy", "Zz", "steel_material")):
                         values.update(catalog=None, designation=None, weak_axis=False)
                     entities[key] = asdict(constructors[collection](**values))
                 elif action == "delete" and value is None:
@@ -199,7 +201,7 @@ class AutomationCommands:
             if include_schema:
                 response["schema"] = model_reference(getattr(window.project, "dimension", "2D"))
             return response
-        self.guard(arguments, revision=name in ("apply_batch", "run_analysis", "run_modal_analysis"))
+        self.guard(arguments, revision=name in ("apply_batch", "run_analysis", "run_modal_analysis", "run_pushover_analysis"))
         if name == "read_schema":
             from .automation_schema import model_reference, batch_examples
             return {**self.identity(), "schema": model_reference(getattr(window.project, "dimension", "2D")), "examples": batch_examples(window.project)}
@@ -242,6 +244,32 @@ class AutomationCommands:
             settings=ModalSettings(arguments['combination'],arguments.get('modes',3),arguments.get('direction','Y'),arguments.get('gravity',386.08858267716533))
             controller(window).start(settings,automation=True)
             return self.status()
+        if name == 'run_pushover_analysis':
+            self.require_idle_editor()
+            if window.thread is not None:raise AutomationError('analysis_busy','An analysis is already running.')
+            if cancelled():raise AutomationError('request_cancelled','The request was cancelled before starting.')
+            from .pushover import PushoverSettings
+            from .pushover_jobs import controller
+            settings=PushoverSettings(arguments['preload'],arguments['push'],arguments['control_node'],arguments['control_direction'],arguments['stop_limit'],
+                tuple(arguments['base_nodes']),arguments.get('resultant','FX'),arguments.get('steps',500),arguments.get('iteration_limit',30),arguments.get('yield_tolerance',.01))
+            controller(window).start(settings,automation=True)
+            return self.status()
+        if name == 'read_pushover_results':
+            from .pushover_jobs import controller
+            from .pushover_results import pushover_table,step_index
+            job=controller(window);status=job.status()
+            if job.result is None or status['state'] not in ('Current','Partial'):
+                raise AutomationError('no_pushover_results','Complete or stop steel pushover of the current model before reading accepted steps.')
+            result=job.result
+            if arguments.get('snapshot_id') and arguments['snapshot_id']!=result.snapshot_id:
+                raise AutomationError('stale_snapshot','The pushover snapshot changed; read analysis_status again.')
+            offset,limit=arguments.get('offset',0),arguments.get('limit',100)
+            if type(offset) is not int or offset<0 or type(limit) is not int or not 1<=limit<=1000:
+                raise AutomationError('invalid_query','Use nonnegative offset and a limit from 1 to 1000.')
+            step=step_index(result,arguments.get('step'))
+            headers,rows=pushover_table(result,window.project.units,arguments.get('kind','capacity'),step)
+            return {**self.identity(),**result.metadata(),'headers':headers,'rows':rows[offset:offset+limit],
+                'total_rows':len(rows),'offset':offset,'step':step,'unit_system':window.project.unit_system,'analysis_state':status['state']}
         if name == 'read_modal_results':
             from .modal_jobs import controller
             from .modal_results import modal_table
@@ -360,6 +388,9 @@ class AutomationCommands:
 
     def status(self):
         window = self.window
+        if getattr(window,'analysis_kind','static')=='steel_pushover':
+            from .pushover_jobs import controller
+            return {**self.identity(),**controller(window).status()}
         if getattr(window,'analysis_kind','static')=='modal':
             from .modal_jobs import controller
             return {**self.identity(),**controller(window).status()}

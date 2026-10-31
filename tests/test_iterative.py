@@ -151,7 +151,7 @@ class IterativeEngineeringTests(unittest.TestCase):
 
 class IterativeModelTests(unittest.TestCase):
     def test_strict_current_schema_legacy_defaults_and_setting_validation(self):
-        for p,current,legacy in ((opposing(),31,29),(to_spatial(opposing()),38,36)):
+        for p,current,legacy in ((opposing(),33,29),(to_spatial(opposing()),40,36)):
             data=p.to_dict();self.assertEqual(data['version'],current)
             self.assertEqual(Project.from_dict(data).to_dict(),data)
             for key in ITERATIVE_DEFAULTS:

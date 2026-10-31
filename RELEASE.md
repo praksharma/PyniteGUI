@@ -199,6 +199,61 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 Steel Pushover Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-10-31. Public RC4 artifacts remain
+unchanged. New frame saves use planar **v33** and spatial **v40** for explicit
+steel profile data; older definitions migrate to nullable elastic defaults.
+Standalone mesh/plate formats remain unchanged and elastic-only.
+
+- Add optional custom material fy and steel I-section Zy/Zz/material binding,
+  native staged editors, cubic section units, material rename/delete guards,
+  definition reports and typed MCP schema/batch edits. Binding checks apply in
+  2D/3D; static and modal workflows remain elastic.
+- Add Tools > Steel Pushover with elastic preload/full signed push combinations,
+  control node/DOF and absolute stop limit, explicit reaction-node/component sum,
+  bounded load steps/retries/yield overshoot and native material/section access.
+  Support unreleased bilateral frames, including mixed elastic/plastic sections
+  and bilateral ground springs. Push uses nodal forces/moments or member-end
+  point loads; distributed/interior push loads are rejected, while member loads
+  may form the strictly elastic preload.
+- Independently check physical-scale plastic tangent, finite values, free-joint
+  equilibrium, global force/moment balance, end yield overshoot and conservative
+  interior interaction before recording increments. Retain only checked prefixes
+  when a mechanism, overshoot, interior hinge or nonconvergence stops the run.
+  Current/Partial and complete/termination/accepted_factor are explicit; no
+  post-mechanism response, hidden residual stiffness or plastic rotation is supplied.
+- Add signed capacity and undeformed end-yield plots, accepted-step motion,
+  reaction, local node-on-member action and equilibrium tables; stamped PNG/SVG,
+  CSV and full source/settings/canonical-history JSON. Reuse isolated workers,
+  shared cancellation/busy lifecycle and revision/session guards. MCP adds
+  run_pushover_analysis/read_pushover_results, guarded pagination and partial-state
+  semantics; the native previous snapshot remains clearly labelled.
+- Add three independent hand-check examples: redistribution below collapse,
+  mechanism termination and rolled spatial weak-axis bending. The 240 in propped
+  beam yields first at 22.222222 kip and collapses ideally at 25 kip. At 24 kip,
+  the hand displacement is **−1.142068966 in**; 500 increments give
+  **−1.141969655 in**, with substantially reduced error versus 100 increments.
+  Also verify a true spatial axial/biaxial yield root, interior axial/bending
+  interaction, signed compound push factors, member-end transfer, distributed
+  preload and exact preload-only stopping.
+- This is explicitly **first-order steel I-section plasticity**. No RC, nonlinear
+  surfaces, hardening, shear/torsional yielding, releases, imposed/inclined supports,
+  unilateral contacts or combined P-Delta/plastic response is claimed. Both pinned
+  official pushover scripts request P_Delta=True and remain pending that validation.
+  The catalog has **39 frame/truss/coupled/modal/steel definitions**, plus the plate
+  example; **13 of 20** official examples are adapted.
+
+- Validation: **1,093 full-suite tests**, no skips, **345.845 s**, including
+  authenticated MCP wire tests. The installed wheel passes **21 focused tests**
+  on PyNite 3.0.0 / Qt 6.11.2 (**28.263 s**) and PyNite 3.2.1 / Qt 6.12.0
+  (**25.132 s**), including actual workers, cancellation, exports and MCP.
+  Both installed environments pass all **39 examples** through save/open/static
+  solve/export/native initialization and authenticated discovery/edit/undo.
+  Strict documentation checks cover **57 HTML pages**; browser QA verifies the
+  new steel page/image, search/navigation, GitHub Pages subpath and theme/layout.
+  Wheel/source metadata, runtime assets, source contents and hashes are audited.
+
 ## Post-RC4 Modal Analysis Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-10-31. Frame/plate formats and public

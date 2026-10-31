@@ -37,7 +37,7 @@ workflows, plus the locked **PyniteFEA 3.0.0** source. The
 [upstream capability list](https://github.com/JWock82/Pynite#current-capabilities)
 describes the engine, not features automatically available in this GUI.
 **Done** means usable in the stated application workflow; **Partial** identifies
-the exact missing part. Summary: **12 done, 3 partial, 3 pending**. P-Delta coverage rechecked 2026-10-26;
+the exact missing part. Summary: **13 done, 3 partial, 2 pending**. P-Delta coverage rechecked 2026-10-26;
 spatial translational/rotational-release scope rechecked 2026-10-29; unilateral scope rechecked 2026-10-31.
 
 | Engine capability | GUI status | Coverage or remaining task |
@@ -45,7 +45,7 @@ spatial translational/rotational-release scope rechecked 2026-10-29; unilateral 
 | Elastic 3D statics | Done | Linear spatial-frame and axial-only truss analysis, six DOFs, rolled frame members, materials/sections and validated results. Local translational/rotational frame end releases and member-side motion are validated for linear frame-only models. |
 | Frame P-Delta | Done | Saved linear/P-Delta choice for 2D/3D frame-only models; independent combination solves, actual phase feedback, effective-stiffness rejection, method-labelled snapshots/reports/MCP and analytical compression/tension/refinement benchmarks. No coupled slabs, trusses, released translations or spatial rotational releases. |
 | Frame modal analysis | Done | Separate native/MCP modal workspace; explicit combination/direction/gravity, physical consistent mass, frequencies/periods, normalized 2D/3D mode plots/tables, mass sources and stamped CSV/PNG/SVG/JSON. Unreleased bilateral frames only; no surfaces/trusses/imposed motions or geometric preload. Independent sparse/dense mechanics and pinned official checks. |
-| Steel-frame pushover | Pending | Confirmed locked-engine steel I-section interaction model: needs fy, Zy/Zz, section/material binding, elastic preload, push increments, displacement stop, accepted-step histories and capacity curves. First-order only; no P-Delta integration or nonlinear shells. Benchmark before GUI exposure. |
+| Steel-frame pushover | Done | Separate native/MCP first-order steel I-section workflow: explicit fy/Zy/Zz/material binding, elastic preload and nodal push, control stop, checked accepted-step histories, capacity/end-yield plots, exports and independent redistribution/mechanism/refinement benchmarks. Partial histories explicit; no P-Delta/plastic, RC or nonlinear shells. |
 | Member point/distributed and nodal loading | Done | Nodal/member forces and moments, uniform/linear-varying distributed forces and partial spans in 2D/3D. Distributed member moments are excluded. |
 | Cases and factored combinations | Done | Named cases, combination editing, selected-combination results and visible factored loads in 2D/3D. |
 | Member shear, moment and deflection output | Done | Member detail curves in 2D/3D; spatial biaxial shear/bending, torsion and deformation; whole-frame force/moment overlays. |
@@ -86,12 +86,14 @@ table above in sync as methods are implemented.
   neutral-mechanism and pinned official-example checks. Frame-only, no surfaces or
   spatial frame releases. Materials remain elastic. Unresolved neutral mechanisms
   above 600 free coordinates are rejected, never assumed stable.
-- [ ] **Steel plastic pushover** (`analyze_pushover`):
-  validated yield strength and plastic section moduli (`fy`, `Zy`, `Zz`), section/
-  material binding, elastic preload and push patterns, load increments,
-  displacement stop conditions, accepted-step histories and base-shear/roof-
-  displacement capacity curves. Benchmark the steel I-section interaction model.
-  The public engine method is first-order; no P-Delta integration or nonlinear slabs.
+- [x] **Steel plastic pushover** (`analyze_pushover`): first-order steel I-section
+  profiles, elastic preload, full signed nodal push patterns, bounded increments/
+  retries and displacement stop. Separate native/MCP jobs, checked accepted
+  histories, capacity/end-yield plots, table/image/archive exports and explicit
+  partial termination. Independent redistribution, mechanism, interior interaction,
+  weak-axis and increment-refinement checks. No RC, surfaces or end releases.
+- [ ] Validate combined P-Delta/plastic response before adapting the two official
+  pushover scripts, both of which request `P_Delta=True` in the pinned source.
 - [x] **Modal analysis:** explicit mass-source combination, global load-to-mass
   direction and gravity; separate native mode workspace, frequencies/periods,
   normalized shapes and mass-source tables, image/table/archive exports and
@@ -218,7 +220,8 @@ Remaining seven scripts are unchecked:
   spatially varying pressure and shell supports/results. Its geometry generators
   being available does not establish analysis support.
 - Moment Frame - Pushover / Pushover Analysis: plastic section definitions,
-  incremental pushover controls, hinge states and results.
+  combined P-Delta/plastic formulation and source-result parity; first-order
+  controls/profiles/history now exist separately.
 
 **Additional solver workflows — authorized, pending validation:**
 

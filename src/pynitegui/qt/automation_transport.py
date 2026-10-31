@@ -128,6 +128,20 @@ def build_application(bridge, permissions, token, port, network_event, *, requir
         return await call("read_modal_results", dict(session_id=session_id, kind=kind, mode=mode,
             snapshot_id=snapshot_id, offset=offset, limit=limit))
 
+    @server.tool(description=TOOLS["run_pushover_analysis"][1])
+    async def run_pushover_analysis(session_id: str, expected_revision: StrictInt, preload: str, push: str,
+        control_node: str, control_direction: Literal["DX","DY","DZ","RX","RY","RZ"], stop_limit: StrictFloat,
+        base_nodes: list[str], resultant: Literal["FX","FY","FZ","MX","MY","MZ"] = "FX", steps: StrictInt = 500,
+        iteration_limit: StrictInt = 30, yield_tolerance: StrictFloat = .01) -> dict[str, Any]:
+        return await call("run_pushover_analysis", dict(session_id=session_id, expected_revision=expected_revision,
+            preload=preload,push=push,control_node=control_node,control_direction=control_direction,stop_limit=stop_limit,
+            base_nodes=base_nodes,resultant=resultant,steps=steps,iteration_limit=iteration_limit,yield_tolerance=yield_tolerance))
+
+    @server.tool(description=TOOLS["read_pushover_results"][1], annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False))
+    async def read_pushover_results(session_id: str, kind: Literal["capacity","nodes","member_ends","equilibrium"] = "capacity",
+        step: StrictInt | None = None, snapshot_id: str | None = None, offset: StrictInt = 0, limit: StrictInt = 100) -> dict[str, Any]:
+        return await call("read_pushover_results",dict(session_id=session_id,kind=kind,step=step,snapshot_id=snapshot_id,offset=offset,limit=limit))
+
     @server.tool(description=TOOLS["analysis_status"][1], annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False))
     async def analysis_status(session_id: str, job_id: str | None = None) -> dict[str, Any]:
         return await call("analysis_status", dict(session_id=session_id, job_id=job_id))

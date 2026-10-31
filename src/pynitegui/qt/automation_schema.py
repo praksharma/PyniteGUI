@@ -36,6 +36,12 @@ def model_reference(dimension="2D"):
                                 "update": "Existing put merges fields; omit unchanged fields. Required-on-create fields need not be repeated for updates."}
     entities["materials"]["properties"]["shear_modulus"].update(type=["number", "null"], exclusiveMinimum=0,
         description="Optional independent frame/truss G in ksi. null (default) derives E/[2(1+nu)]. Positive finite numbers only; independent G requires custom provenance.")
+    entities['materials']['properties']['fy'].update(type=['number','null'],exclusiveMinimum=0,
+        description='Optional assigned steel yield stress, canonical ksi. null keeps elastic-only material data. Positive finite values; custom provenance. Used only by an explicitly bound steel I-section plastic model, not by linear/P-Delta/modal analysis or concrete plasticity.')
+    for key in ('Zy','Zz'):
+        entities['sections']['properties'][key].update(type=['number','null'],exclusiveMinimum=0,
+            description='Optional steel I-section plastic modulus, canonical in3, about the local '+key[-1]+' axis. Both Zy/Zz and steel_material are required together; supplied plastic properties require custom provenance.')
+    entities['sections']['properties']['steel_material'].update(description='Optional material ID binding for the steel I-section interaction model. Must exist with positive fy; assigned members must use the same material. null requires Zy/Zz=null. Not an RC, shear/torsional-yield or hardening model.')
     nodes = entities["nodes"]["properties"]
     from .unilateral import MEMBER_BEHAVIORS, SPRING_BEHAVIORS, ITERATIVE_DEFAULTS
     for name, schema in nodes.items():
@@ -97,7 +103,7 @@ def model_reference(dimension="2D"):
             "description": "Key is a rectangular Quad surface ID. put replaces its entire outer-edge -> global rigid DOF list map. Omit free edges. Geometry-owned, reapplied on remesh. Shared joints use the union of restraints; spring conflicts are rejected. Remove explicitly when deleting a surface. Opening rims are excluded."}
         settings["surface_analysis_enabled"] = {"type": "boolean", "default": False,
             "description": "Experimental coupled analysis opt-in. When true, the complete candidate must contain only conforming, connected rectangular Quad surfaces. No solve occurs during editing."}
-        surface_info = "Spatial v38: surfaces, surface_pressures and surface_supports are editable via put/delete; surface_analysis_enabled via settings/set. Recipes use canonical inches/kip, pressure kip/in2. Geometry-only surfaces block analysis. Frame releases cannot be combined with surfaces. Coupled candidate topology is checked once after all operations; stability and independent equilibrium remain analysis gates."
+        surface_info = "Spatial v40: surfaces, surface_pressures and surface_supports are editable via put/delete; surface_analysis_enabled via settings/set. Recipes use canonical inches/kip, pressure kip/in2. Geometry-only surfaces block analysis. Frame releases cannot be combined with surfaces. Coupled candidate topology is checked once after all operations; stability and independent equilibrium remain analysis gates."
     return {
         "dimension": dimension, "input_units": "Canonical inch-kip regardless of display units; angles in degrees, rotations in radians.",
         "entities": entities,
@@ -163,6 +169,8 @@ def surface_reference(material_schema):
     material["properties"]["name"]["description"] = "Recipe-local material name; independent of the surface ID and project material library."
     material["update"] = "Nested material fields merge during a surface put."
     material["description"] = "Recipe-local material object, not a project-material ID. put merges its fields; numeric changes clear preset provenance unless explicitly supplied."
+    material['properties']['fy']={'type':'null','default':None,
+        'description':'Surface recipes remain elastic; steel yield data belongs to frame I-section profiles.'}
     material["properties"]["shear_modulus"] = {"type":"null", "default":None,
         "description":"Surface/plate formulations derive G from E and nu; independent G is not supported in recipes."}
     properties["material"].update(material)

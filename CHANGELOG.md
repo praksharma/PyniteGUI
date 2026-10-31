@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Add a separate native/MCP first-order Steel Pushover workflow with explicit
+  material fy and section Zy/Zz/material binding, elastic preload and nodal push,
+  bounded step/retry/control limits, physically checked accepted histories,
+  signed capacity and end-yield plots, tables and CSV/PNG/SVG/JSON exports.
+  Keep partial prefixes explicit and reject stale/cancelled results. Verify
+  plastic redistribution, mechanism limits, yield overshoot, interior interaction,
+  weak-axis bending, pattern factors and refinement against independent mechanics.
+  Add three editable hand-check examples. Save planar v33/spatial v40, with
+  legacy elastic defaults. Combined P-Delta/plastic and RC/surface plasticity remain
+  pending; the two official second-order pushover examples are not claimed.
+
+
 - Add a separate native/MCP Vibration Modes workflow for unreleased bilateral
   elastic frames. Use explicit weight combinations/directions/gravity, verified
   consistent mass and finite eigenmodes without artificial inertia. Add frequency,
@@ -17,8 +29,7 @@
   iteration histories, unit-aware CSV/print/MCP, inactive-bar rendering and three
   official examples with pinned upstream parity and independent mechanics checks.
   Save planar v31/spatial v38; migrate legacy definitions to bilateral defaults.
-  The user lifted the new-solver hold on 2026-10-31; steel pushover remains
-  a separate pending workflow.
+  The user lifted the new-solver hold on 2026-10-31; steel pushover was subsequently added as a separate bounded workflow.
 
 - Enable imposed rigid-support movements within existing 2D/3D frame-only P-Delta
   analysis after independent continuum/energy checks. Preserve the same motion

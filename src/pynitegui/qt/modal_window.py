@@ -205,6 +205,6 @@ class ModalWindow(QWidget):
             with tempfile.NamedTemporaryFile(mode='w',encoding='utf-8',newline='',dir=Path(path).parent,delete=False) as stream:
                 temporary=Path(stream.name);write(stream);stream.flush();os.fsync(stream.fileno())
             temporary.replace(path)
-        except (OSError,ValueError) as error:QMessageBox.warning(self,'Modal Export',str(error))
+        except (OSError,ValueError) as error:QMessageBox.warning(self,self.windowTitle()+' Export',str(error))
         finally:
             if temporary is not None:temporary.unlink(missing_ok=True)

@@ -190,8 +190,8 @@ to **P-Delta elastic**, then analyze again. The result label records the method.
 P-Delta solves each load combination independently; compare lateral response under
 combined gravity/wind with wind alone. Add intermediate joints along slender
 columns and check refinement. Keep coupled slab examples on Linear elastic.
-P-Delta keeps materials elastic. Steel plastic pushover and reinforced-concrete
-plastic behaviour are separate pending workflows; read the
+P-Delta keeps materials elastic. First-order [Steel Pushover](../analysis/pushover.md) uses a separate development
+workspace. Reinforced-concrete plasticity remains pending; read the
 [analysis scope](../analysis/solve.md) before using a method.
 
 ## Build Your Own

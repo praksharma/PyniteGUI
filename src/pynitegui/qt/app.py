@@ -746,6 +746,7 @@ class MainWindow(QMainWindow):
         tools_menu.addAction(self.action("Surface Meshing (Experimental)...", lambda: self.show_mesh_workspace()))
         tools_menu.addAction(self.action("Rectangular Plate (Experimental)...", self.show_plate_workspace))
         tools_menu.addAction(self.action("Vibration Modes...", self.show_modal_workspace))
+        tools_menu.addAction(self.action("Steel Pushover...", self.show_pushover_workspace))
         tools_menu.addAction(self.action("Automation Server...", self.show_automation_server))
         from .toolbar_icons import tool_icon
         def icon_action(action, name, tooltip):
@@ -1175,6 +1176,8 @@ class MainWindow(QMainWindow):
         self.automation_mode.sync_filters()
         if hasattr(self, "_modal_controller"):
             self._modal_controller.changed.emit()
+        if hasattr(self, "_pushover_controller"):
+            self._pushover_controller.changed.emit()
 
     def load_visible(self, load):
         case = self.load_filter.currentData()
@@ -1920,6 +1923,11 @@ class MainWindow(QMainWindow):
         self.saved = Project().to_dict()
         self.update_title()
         self.statusBar().showMessage(f"Example: {EXAMPLES[key]} | {project.units.summary}")
+        from .steel_examples import NAMES as STEEL_EXAMPLES,example_settings
+        if key in STEEL_EXAMPLES:
+            from .pushover_jobs import controller
+            steel=controller(self);steel.last_settings=example_settings(key)
+            steel.show();steel.panel.set_inputs(steel.last_settings)
         if key == 'official_modal':
             from .modal_jobs import controller
             from .modal import ModalSettings
@@ -1957,6 +1965,11 @@ class MainWindow(QMainWindow):
     def show_plate_workspace(self):
         from .plate_workspace import PlateWorkspace
         PlateWorkspace(self, self.project.unit_system).exec()
+
+    def show_pushover_workspace(self):
+        if not self.mcp_mode:
+            from .pushover_jobs import controller
+            controller(self).show()
 
     def show_modal_workspace(self):
         if not self.mcp_mode:
@@ -2025,6 +2038,10 @@ class MainWindow(QMainWindow):
             from .modal_jobs import controller
             controller(self).cancel()
             return
+        if getattr(self,'analysis_kind','static')=='steel_pushover' and self.thread is not None:
+            from .pushover_jobs import controller
+            controller(self).cancel()
+            return
         pending = self.live_analysis.pending or self.live_analysis.deferred is not None
         if user_requested:
             self.live_analysis.discard()
@@ -2052,6 +2069,8 @@ class MainWindow(QMainWindow):
         self.worker = None
         if hasattr(self, "_modal_controller"):
             self._modal_controller.changed.emit()
+        if hasattr(self, "_pushover_controller"):
+            self._pushover_controller.changed.emit()
         self.analyze_action.setEnabled(True)
         self.cancel_analysis_action.setEnabled(self.live_analysis.pending or self.live_analysis.deferred is not None)
         for widget in (self.analysis_phase, self.analysis_progress, self.analysis_cancel_button):
