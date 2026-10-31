@@ -28,8 +28,16 @@ def viewport_payload(window):
         rows = []
         for index, (dof, fixed, stiffness) in enumerate(zip(DOFS, node.restraints, node.springs)):
             quantity = "stiffness" if index < 3 else "rotational_stiffness"
-            state = "Fixed" if fixed else (f"Bilateral spring: {units.to_display(stiffness, quantity):.6g} {getattr(units, quantity)}"
+            from .unilateral import SPRING_BEHAVIORS, spring_mode_fields
+            mode = getattr(node, spring_mode_fields(node)[index])
+            label = 'Bilateral' if mode == 'bilateral' else SPRING_BEHAVIORS[mode]
+            state = "Fixed" if fixed else (f"{label} spring: {units.to_display(stiffness, quantity):.6g} {getattr(units, quantity)}"
                                           if stiffness else "Free")
+            if stiffness and mode != 'bilateral' and result is not None:
+                contact = next((item for item in getattr(result.solver, '_brecon_iterations', {}).get(result.combination, {}).get('contacts', [])
+                                if item['kind'] == 'springs' and item['name'] == node.name and item['dof'] == dof), None)
+                if contact is not None:
+                    state += '; active' if contact['active'] else '; inactive'
             rows.append({"dof": dof, "state": state})
             imposed = values["settlement_"+dof.removeprefix("D").lower()] if index < 3 else values["settlement_"+dof.lower()]
             if imposed:
@@ -53,7 +61,7 @@ def viewport_payload(window):
             continue
         axes[member.name] = member_axes(project, member.name, result)
         definition = {"name": member.name, "start": member.start, "end": member.end, "kind": member.kind, "axes": axes[member.name].tolist(),
-                      "releaseLabels": list(member.release_labels) if member.kind == "frame" else ["None", "None"]}
+                      "releaseLabels": list(member.release_labels) if member.kind == "frame" else ["None", "None"], "active": True if result is None else bool(result.solver.members[member.name].active[result.combination])}
         if result is not None:
             a, b = np.array(project.nodes[member.start].coords), np.array(project.nodes[member.end].coords)
             length = math.dist(a, b)

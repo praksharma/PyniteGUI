@@ -1,8 +1,10 @@
 """Fresh, editable demonstration models stored in canonical inch-kip units."""
 from .model import Load, Project
+from .official_unilateral import NAMES as UNILATERAL_EXAMPLES
 
 
 EXAMPLES = {
+    **UNILATERAL_EXAMPLES,
     "simple_beam": "Simply Supported Beam",
     "portal": "Portal Frame - Distributed Load",
     "cantilever": "Cantilever - Mixed Loads",
@@ -49,12 +51,16 @@ EXAMPLE_GROUPS = {
     "Trusses": ("truss", "3d_tripod", "3d_official_truss"),
     "Slabs": ("3d_slab_frame", "3d_multistorey_slabs"),
     "P-Delta": ("p_delta_column", "p_delta_support_motion", "official_p_delta"),
+    'Iterative elastic': tuple(UNILATERAL_EXAMPLES),
 }
 
 
 def example_project(key, unit_system="imperial"):
     if key not in EXAMPLES:
         raise ValueError(f"Unknown example: {key}")
+    if key in UNILATERAL_EXAMPLES:
+        from .official_unilateral import example_project as unilateral_example
+        return unilateral_example(key, unit_system)
     if key.startswith("official_"):
         from .official_examples import example_project as official_example
         return official_example(key, unit_system)

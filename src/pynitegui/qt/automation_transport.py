@@ -86,7 +86,7 @@ def build_application(bridge, permissions, token, port, network_event, *, requir
         return await call("read_units", {"session_id": session_id})
 
     @server.tool(description=TOOLS["read_results"][1], annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False))
-    async def read_results(session_id: str, kind: Literal["nodes", "members", "surface_elements"] = "nodes", combination: str | None = None,
+    async def read_results(session_id: str, kind: Literal["nodes", "members", "surface_elements", "active_states", "iterations"] = "nodes", combination: str | None = None,
                            snapshot_id: str | None = None, offset: StrictInt = 0, limit: StrictInt = 100, surface_id: str | None = None) -> dict[str, Any]:
         return await call("read_results", dict(session_id=session_id, kind=kind, combination=combination,
                                                snapshot_id=snapshot_id, offset=offset, limit=limit, surface_id=surface_id))

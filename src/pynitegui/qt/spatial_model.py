@@ -27,6 +27,9 @@ class SpatialNode(Node):
     settlement_z: float = field(default=0.0, kw_only=True)
     settlement_rx: float = field(default=0.0, kw_only=True)
     settlement_ry: float = field(default=0.0, kw_only=True)
+    spring_z_mode: str = field(default="bilateral", kw_only=True)
+    spring_rx_mode: str = field(default="bilateral", kw_only=True)
+    spring_ry_mode: str = field(default="bilateral", kw_only=True)
 
     @property
     def coords(self):
@@ -99,14 +102,18 @@ class SpatialProject(Project):
     surface_supports: dict = field(default_factory=dict)
 
     def to_dict(self):
-        data = {"version": 36, "units": "in-kip", **asdict(self),
+        data = {"version": 38, "units": "in-kip", **asdict(self),
                 "surfaces": {name: mesh.to_dict() for name, mesh in self.surfaces.items()}}
         return data
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22, 24, 26, 28, 30, 32, 34, 36) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
+        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
             raise ValueError("Unsupported spatial project version, dimension, or units.")
+        from .unilateral import check_schema, ITERATIVE_DEFAULTS, spring_mode_fields
+        check_schema(data, data['version'], 38, ITERATIVE_DEFAULTS, "analysis settings")
+        if data['version'] < 38 and data.get('analysis_method') == 'iterative':
+            raise ValueError("Iterative analysis requires spatial version 38.")
         if data["version"] < 28 and data.get("surface_supports", {}):
             raise ValueError("Surface edge supports require spatial version 28.")
         if data["version"] >= 28 and "surface_supports" not in data:
@@ -129,7 +136,7 @@ class SpatialProject(Project):
             raise ValueError("Groups and levels require spatial version 24.")
         if data["version"] >= 24 and not {"groups", "levels", "snap_levels"} <= data.keys():
             raise ValueError("Missing groups or levels metadata.")
-        metadata = {**data, "version": 25 if data["version"] >= 26 else 23, "analysis_method": data.get("analysis_method", "linear"), "nodes": {}, "members": {}, "loads": {},
+        metadata = {**data, "version": 31 if data["version"] >= 38 else 25 if data["version"] >= 26 else 23, "analysis_method": data.get("analysis_method", "linear"), "nodes": {}, "members": {}, "loads": {},
                     "groups": {}, "levels": data.get("levels", {}), "snap_levels": data.get("snap_levels", False)}
         metadata.pop("dimension")
         metadata.pop("surfaces", None)
@@ -148,6 +155,7 @@ class SpatialProject(Project):
                 if not identifier(name) or not isinstance(value, dict):
                     raise ValueError(f"Invalid spatial {key} entry: {name!r}.")
                 if key == "nodes":
+                    check_schema(value, data['version'], 38, dict.fromkeys(spring_mode_fields(SpatialNode("", 0., 0.)), "bilateral"), "nodes spring")
                     from .support_movements import movement_fields
                     movement_keys = set(movement_fields(SpatialNode("", 0., 0.)))
                     if data["version"] < 36 and any(value.get(field, 0.) != 0. for field in movement_keys):
@@ -164,6 +172,7 @@ class SpatialProject(Project):
                 if key == "members" and data["version"] < 18 and value.get("kind", "frame") != "frame":
                     raise ValueError("Spatial trusses require project version 18.")
                 if key == "members":
+                    check_schema(value, data['version'], 38, {"behavior": "bilateral"}, "members")
                     from .spatial_releases import ROTATION_FIELDS, TRANSLATION_FIELDS
                     if data["version"] < 30 and any(value.get(field, False) is not False for field in ROTATION_FIELDS):
                         raise ValueError("Spatial rotational releases require project version 30.")
@@ -217,6 +226,8 @@ class SpatialProject(Project):
                 raise ValueError("Support restraints must be boolean values.")
             from .support_movements import validate_movements
             validate_movements(node)
+            from .unilateral import validate_node
+            validate_node(node)
             from .support_axes import support_normal, translation_spaces
             free = None
             if node.support == "inclined":
@@ -241,6 +252,8 @@ class SpatialProject(Project):
             from .spatial_releases import RELEASE_FIELDS
             if member.kind not in ("frame", "truss") or any(type(getattr(member, key)) is not bool for key in RELEASE_FIELDS):
                 raise ValueError(f"Member {name}: release flags must be boolean; choose frame or truss.")
+            from .unilateral import validate_member
+            validate_member(member)
             if member.kind == "truss" and any(getattr(member, key) for key in RELEASE_FIELDS):
                 raise ValueError(f"Member {name}: trusses are axial-only; clear manual frame releases before changing type.")
             if member.release_start_rx and member.release_end_rx:

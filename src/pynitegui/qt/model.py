@@ -126,6 +126,9 @@ class Node:
     settlement_y: float = field(default=0.0, kw_only=True)
     settlement_rz: float = field(default=0.0, kw_only=True)
     settlement_normal: float = field(default=0.0, kw_only=True)
+    spring_x_mode: str = field(default="bilateral", kw_only=True)
+    spring_y_mode: str = field(default="bilateral", kw_only=True)
+    spring_rz_mode: str = field(default="bilateral", kw_only=True)
 
     @property
     def springs(self):
@@ -153,6 +156,7 @@ class Member:
     release_end_x: bool = False
     release_start_y: bool = False
     release_end_y: bool = False
+    behavior: str = field(default="bilateral", kw_only=True)
 
     @property
     def end_releases(self):
@@ -223,6 +227,11 @@ class Project:
     groups: dict = field(default_factory=dict)
     levels: dict = field(default_factory=dict)
     snap_levels: bool = False
+    iteration_limit: int = field(default=30, kw_only=True)
+    load_steps: int = field(default=1, kw_only=True)
+    member_tolerance: float = field(default=1e-9, kw_only=True)
+    translation_tolerance: float = field(default=1e-10, kw_only=True)
+    rotation_tolerance: float = field(default=1e-12, kw_only=True)
 
     @property
     def units(self):
@@ -394,7 +403,7 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 29, "units": "in-kip", **asdict(self)}
+        return {"version": 31, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
@@ -406,8 +415,12 @@ class Project:
         if "dimension" in data:
             raise ValueError("Unsupported project dimension.")
         version = data.get("version")
-        if type(version) is not int or version not in (*range(1, 16), 21, 23, 25, 27, 29) or data.get("units") != "in-kip":
+        if type(version) is not int or version not in (*range(1, 16), 21, 23, 25, 27, 29, 31) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
+        from .unilateral import check_schema, ITERATIVE_DEFAULTS
+        check_schema(data, version, 31, ITERATIVE_DEFAULTS, "analysis settings")
+        if version < 31 and data.get("analysis_method") == "iterative":
+            raise ValueError("Iterative analysis requires planar version 31.")
         required = {"grid", "nodes", "members", "loads"}
         required.update({"E", "nu", "rho"} if version == 1 else {"materials", "default_material"})
         required.update({"A", "Iy", "Iz", "J"} if version < 3 else {"sections", "default_section"})
@@ -439,6 +452,8 @@ class Project:
                 if key == "materials" and version < 25 and value.get("shear_modulus") is not None:
                     raise ValueError("Independent G requires planar version 25 or spatial version 26.")
                 if key == "nodes":
+                    from .unilateral import spring_mode_fields
+                    check_schema(value, version, 31, dict.fromkeys(spring_mode_fields(Node("", 0., 0.)), "bilateral"), "nodes spring")
                     movement_keys = {"settlement_x", "settlement_y", "settlement_rz", "settlement_normal"}
                     if version < 29 and any(value.get(field, 0.) != 0. for field in movement_keys):
                         raise ValueError("Imposed support movements require planar version 29.")
@@ -448,6 +463,8 @@ class Project:
                         raise ValueError("Inclined supports require planar version 27.")
                     if version >= 27 and "support_angle" not in value:
                         raise ValueError(f"Invalid nodes entry {name}: Missing support_angle field.")
+                if key == "members":
+                    check_schema(value, version, 31, {"behavior": "bilateral"}, "members")
                 try:
                     result[name] = kind(**value)
                 except TypeError as error:
@@ -455,6 +472,8 @@ class Project:
             return result
 
         result = cls(grid=data["grid"], analysis_method=data.get("analysis_method", "linear"))
+        for key, default in ITERATIVE_DEFAULTS.items():
+            setattr(result, key, data.get(key, default))
         from copy import deepcopy
         for key in ("groups", "levels", "snap_levels"):
             setattr(result, key, deepcopy(data.get(key, getattr(result, key))))
@@ -504,7 +523,9 @@ class Project:
         validate_organization(self)
         from .analysis_method import METHODS
         if not isinstance(self.analysis_method, str) or self.analysis_method not in METHODS:
-            raise ValueError("Analysis method must be linear or p_delta.")
+            raise ValueError("Analysis method must be linear, p_delta or iterative.")
+        from .unilateral import validate_settings, validate_node, validate_member
+        validate_settings(self)
         for key in ("nodes", "members", "loads", "materials", "sections", "combinations"):
             if not isinstance(getattr(self, key), dict):
                 raise ValueError(f"Project {key} must be an object keyed by identifiers.")
@@ -566,6 +587,7 @@ class Project:
                 raise ValueError("Support restraints must be boolean values.")
             from .support_movements import validate_movements
             validate_movements(node)
+            validate_node(node)
             for label, stiffness, fixed in zip(("DX", "DY", "RZ"), node.springs, node.restraints):
                 if node.support == "inclined" and label != "RZ":
                     a = math.radians(node.support_angle)
@@ -588,6 +610,7 @@ class Project:
                 raise ValueError(f"Member {name}: end releases must be true or false.")
             if member.kind not in ("frame", "truss"):
                 raise ValueError(f"Member {name}: type must be frame or truss.")
+            validate_member(member)
             if member.kind == "truss" and any((member.release_start_x, member.release_end_x, member.release_start_y, member.release_end_y)):
                 raise ValueError(f"Member {name}: truss bars cannot have axial/shear releases. Clear these frame releases before changing type.")
             if member.release_start_x and member.release_end_x:

@@ -65,6 +65,17 @@ class ResultsPanel(QWidget):
             self.tabs.addTab(table, title)
         self.tables["members"].itemDoubleClicked.connect(self.activate_member)
         self.tables["members"].setToolTip("Select rows to highlight members. Double-click for Member Detail. Minimum/Maximum columns are independent extrema, not one common station.")
+        self.active_states = QTableWidget(0,1)
+        self.active_states.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.active_states.setObjectName('result_active_states')
+        self.active_states.setToolTip('Trial axial force is tension-positive. Inactive bars carry zero force; trial force indicates whether they should reactivate. Neutral means within the switch tolerance. One-way spring trials are global displacement, not reaction.')
+        self.active_tab = self.tabs.addTab(self.active_states, 'Active state')
+        self.tabs.setTabVisible(self.active_tab, False)
+        self.iterations = QTableWidget(0, 1)
+        self.iterations.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.iterations.setObjectName('result_iterations')
+        self.iteration_tab = self.tabs.addTab(self.iterations, 'Iterations')
+        self.tabs.setTabVisible(self.iteration_tab, False)
         equilibrium_page = QWidget()
         equilibrium_layout = QVBoxLayout(equilibrium_page)
         equilibrium_layout.setContentsMargins(0, 0, 0, 0)
@@ -83,6 +94,10 @@ class ResultsPanel(QWidget):
         self.surfaces = SurfaceResultsPanel(self)
         self.surface_tab = self.tabs.addTab(self.surfaces, "Slabs")
         self.tabs.setTabVisible(self.surface_tab, False)
+        self.active_states.setRowCount(0)
+        self.iterations.setRowCount(0)
+        self.tabs.setTabVisible(self.iteration_tab, False)
+        self.tabs.setTabVisible(self.active_tab, False)
         self.tabs.currentChanged.connect(self.tab_changed)
         self.tabs.setEnabled(False)
         layout.addWidget(self.tabs)
@@ -128,6 +143,19 @@ class ResultsPanel(QWidget):
         if self.result is None or self.result.snapshot_id != result.snapshot_id:
             self.analysis_state, self.state_detail = "Current", ""
         self.project, self.result = project, result
+        iterative = getattr(result.solver, '_brecon_iterations', {}).get(result.combination)
+        self.tabs.setTabVisible(self.active_tab, iterative is not None)
+        self.tabs.setTabVisible(self.iteration_tab, iterative is not None)
+        if iterative is not None:
+            from .unilateral import active_state_table
+            active_headers, active_rows = active_state_table(project,result)
+            self.active_states.setColumnCount(len(active_headers))
+            self.active_states.setHorizontalHeaderLabels(active_headers)
+            self.populate(self.active_states, active_headers, active_rows)
+            iteration_headers, iteration_rows = result_table(project, result, 'iterations')
+            self.iterations.setColumnCount(len(iteration_headers))
+            self.iterations.setHorizontalHeaderLabels(iteration_headers)
+            self.populate(self.iterations, iteration_headers, iteration_rows)
         has_surfaces = bool(getattr(result.solver, "_pynitegui_surfaces", {}))
         self.tabs.setTabVisible(self.surface_tab, has_surfaces)
         self.surfaces.set_snapshot(project, result if has_surfaces else None)
@@ -261,6 +289,9 @@ class ResultsPanel(QWidget):
         result = self.result
         qualifier = "Analysis" if state == "Current" else "Showing previous analysis"
         self.snapshot.setText(f"{state} | {qualifier} {result.snapshot_id} | {result.combination} | {result.method_label} | {self.project.units.summary}")
+        iteration = getattr(result.solver, '_brecon_iterations', {}).get(result.combination)
+        if iteration is not None:
+            self.snapshot.setText(self.snapshot.text()+f" | Converged: {iteration['iterations']} iterations / {iteration['load_steps']} load steps")
         self.snapshot.setToolTip(f"{detail}\nAnalyzed (UTC): {result.analyzed_at}\nModel signature: {result.model_signature}".strip())
 
     def update_equilibrium(self):

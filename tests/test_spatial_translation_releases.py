@@ -177,7 +177,7 @@ class SpatialTranslationReleaseTests(unittest.TestCase):
     def test_validation_migration_unit_persistence_and_signatures(self):
         p = beam()
         data = p.to_dict()
-        self.assertEqual(data['version'],36)
+        self.assertEqual(data['version'],38)
         for field in TRANSLATION_FIELDS:
             bad = deepcopy(data)
             bad['members']['M1'].pop(field)

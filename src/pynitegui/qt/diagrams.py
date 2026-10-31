@@ -51,7 +51,8 @@ def member_values(project, result, name, distance, side="right"):
             break
     solver, combo = result.solver.members[name], result.combination
     if project.members[name].kind == "truss":
-        return (solver.axial(query, combo), 0.0, 0.0, solver.deflection("dy", query, combo))
+        from .unilateral import planar_bar_motion
+        return (solver.axial(query, combo), 0.0, 0.0, planar_bar_motion(result,name,query)[1])
     return (solver.axial(query, combo), solver.shear("Fy", query, combo),
             solver.moment("Mz", query, combo), solver.deflection("dy", query, combo))
 
@@ -66,10 +67,13 @@ def member_result_rows(project, result):
             rows.append((name, label, distance, *member_values(project, result, name, distance)))
         for label, prefix in (("Minimum", "min"), ("Maximum", "max")):
             truss = project.members[name].kind == "truss"
+            if truss:
+                from .unilateral import planar_bar_motion
+                motions = [planar_bar_motion(result,name,x)[1] for x in (0.,length)]
             rows.append((name, label, None, getattr(solver, prefix + "_axial")(combo),
                          0.0 if truss else getattr(solver, prefix + "_shear")("Fy", combo),
                          0.0 if truss else getattr(solver, prefix + "_moment")("Mz", combo),
-                         getattr(solver, prefix + "_deflection")("dy", combo)))
+                         (min(motions) if prefix == 'min' else max(motions)) if truss else getattr(solver, prefix + "_deflection")("dy", combo)))
     return rows
 
 
@@ -93,7 +97,8 @@ def sample_member(project, result, name):
         "axial": np.array([solver.axial(x, result.combination) for x in locations]),
         "shear": np.zeros(len(locations)) if truss else np.array([solver.shear("Fy", x, result.combination) for x in locations]),
         "moment": np.zeros(len(locations)) if truss else np.array([solver.moment("Mz", x, result.combination) for x in locations]),
-        "deflection": np.array([solver.deflection("dy", x, result.combination) for x in locations]),
+        "deflection": (np.array([member_values(project,result,name,x)[3] for x in locations]) if truss else
+                       np.array([solver.deflection('dy',x,result.combination) for x in locations])),
     }
 
 

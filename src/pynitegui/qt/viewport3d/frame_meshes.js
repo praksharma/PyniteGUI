@@ -11,6 +11,7 @@ export function recolorFrame(data,group){
     if(!mesh.isInstancedMesh||!mesh.userData.identities)return;
     mesh.userData.identities.forEach(([kind,name],index)=>{
       const color=selected.has(`${kind}:${name}`)?data.colors.accent:
+        kind==='members'&&members.get(name).active===false?data.colors.muted:
         kind==='members'&&members.get(name).kind==='truss'?data.colors.axial:data.colors.member;
       mesh.setColorAt(index,new THREE.Color(color));
     });
@@ -40,7 +41,7 @@ export function drawFrame(data,radius,group,picks){
     const r=radius*(member.kind==='truss'?.7:1);
     scale.set(r,delta.length(),r);rotation.setFromUnitVectors(up,delta.normalize());
     return matrix.compose(a.clone().add(b).multiplyScalar(.5),rotation,scale);
-  },member=>member.kind==='truss'?data.colors.axial:data.colors.member);
+  },member=>member.active===false?data.colors.muted:member.kind==='truss'?data.colors.axial:data.colors.member);
   batch(data.nodes,new THREE.SphereGeometry(1,12,8),'nodes',node=>{
     scale.setScalar(radius*1.8);rotation.identity();
     return matrix.compose(nodes.get(node.name),rotation,scale);

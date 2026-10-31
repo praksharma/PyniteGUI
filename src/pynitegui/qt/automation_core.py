@@ -12,9 +12,9 @@ TOOLS = {
     "read_model": ("Model reads", "Read the current model, project/session revisions and exact entity schema, including empty collections. include_schema defaults true; set false after learning the schema to reduce response size. No session_id is needed for this discovery call. Read this before edits; do not guess node/support/load fields."),
     "read_schema": ("Model reads", "Read the exact 2D/3D entity fields, types, defaults, support presets/custom restraints, units, validation rules and valid batch examples for the current project. Call before constructing edits, especially for an empty model."),
     "read_units": ("Model reads", "Read display units and canonical conversion factors."),
-    "read_results": ("Result reads", "Read paginated snapshot-labelled results: kind=nodes|members|surface_elements. Spatial members with translational releases include a released_end_translations table (member-side local DX/DY/DZ, distinct from joint motion) for members on the page. surface_elements requires surface_id from read_model.model.surfaces and returns unsmoothed local Quad element-centre Mx,My,Mxy (moment/length), Sx,Sy,Txy (membrane stresses, tension positive). Quad transverse shear is unavailable pending independent validation. Output units follow headers. Use analysis_status.available_combinations for solved names; omit combination to use the snapshot default. Only the active snapshot is retained."),
+    "read_results": ("Result reads", "Read paginated snapshot-labelled results: kind=nodes|members|surface_elements|active_states|iterations. active_states reports converged unilateral contact activity with trial values/units; iterations returns paginated per-step convergence history; iteration_summary is compact. Spatial members with translational releases include a released_end_translations table (member-side local DX/DY/DZ, distinct from joint motion) for members on the page. surface_elements requires surface_id from read_model.model.surfaces and returns unsmoothed local Quad element-centre Mx,My,Mxy (moment/length), Sx,Sy,Txy (membrane stresses, tension positive). Quad transverse shear is unavailable pending independent validation. Output units follow headers. Use analysis_status.available_combinations for solved names; omit combination to use the snapshot default. Only the active snapshot is retained."),
     "apply_batch": ("Model edits", "Apply a validated model batch as one undoable edit."),
-    "run_analysis": ("Analysis", "Start background analysis using settings.analysis_method (linear|p_delta) and return a job_id immediately. Poll analysis_status with that job_id until running=false, then check state/error before read_results. phase is human-readable progress text, not a fixed enum."),
+    "run_analysis": ("Analysis", "Start background analysis using settings.analysis_method (linear|p_delta|iterative) and return a job_id immediately. Poll analysis_status with that job_id until running=false, then check state/error before read_results. phase is human-readable progress text, not a fixed enum."),
     "analysis_status": ("Analysis", "Read job progress, failures, the active snapshot and available_combinations (solved names). Poll after run_analysis until running=false; check state/error. Only one active result snapshot is retained; job_id rejects replaced jobs."),
     "cancel_analysis": ("Analysis", "Cancel the identified running analysis job."),
 }
@@ -69,6 +69,8 @@ def batch_candidate(project, operations):
         constructors.update(nodes=SpatialNode, members=SpatialMember, loads=SpatialLoad)
     settings = {"unit_system", "grid", "default_material", "default_section", "default_load_case",
                 "self_weight_case", "self_weight_factor", "analysis_method"}
+    from .unilateral import ITERATIVE_DEFAULTS
+    settings.update(ITERATIVE_DEFAULTS)
     if spatial:
         settings.add("surface_analysis_enabled")
     for index, operation in enumerate(operations):
@@ -251,13 +253,17 @@ class AutomationCommands:
             if combination not in result.solver.load_combos:
                 raise AutomationError("invalid_combination", "Unknown solved combination.")
             kind = arguments.get("kind", "nodes")
-            if kind not in ("nodes", "members", "surface_elements"):
-                raise AutomationError("invalid_query", "Choose nodes, members or surface_elements.")
+            if kind not in ("nodes", "members", "surface_elements", "active_states", "iterations"):
+                raise AutomationError("invalid_query", "Choose nodes, members, surface_elements, active_states or iterations.")
             offset, limit = arguments.get("offset", 0), arguments.get("limit", 100)
             if type(offset) is not int or offset < 0 or type(limit) is not int or not 1 <= limit <= 1000:
                 raise AutomationError("invalid_query", "Use a nonnegative offset and a limit from 1 to 1000.")
             from .reports import result_table
             local_metadata = {}
+            iteration = getattr(result.solver,'_brecon_iterations',{}).get(combination)
+            if iteration is not None:
+                local_metadata['iteration_summary'] = {key:iteration[key] for key in ('converged','load_steps','iterations')}
+                local_metadata['active_state_note'] = 'Use kind=active_states for per-contact activity. Trial bar force is tension-positive; inactive bar force is zero. Ground spring trial is global displacement. Neutral contacts retain their state at the switch tolerance; directional stability is independently checked.'
             if kind == "surface_elements":
                 from .surface_results import surface_table, centre_results
                 surface = arguments.get("surface_id")

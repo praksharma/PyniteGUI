@@ -43,6 +43,10 @@ class ModelTablesDialog(QDialog):
         from .support_movements import movement_fields, movement_label
         self.movement_keys = movement_fields(self.constructors["nodes"]("", 0., 0.))
         self.fields = {**self.fields, "nodes": (*self.fields["nodes"], *self.movement_keys)}
+        from .unilateral import spring_mode_fields
+        self.spring_modes = spring_mode_fields(self.constructors['nodes']('',0.,0.))
+        self.fields = {**self.fields, 'nodes': (*self.fields['nodes'], *self.spring_modes),
+                       'members': (*self.fields['members'], 'behavior')}
         self.numeric_fields = {*self.numeric_fields, *self.movement_keys}
         self.original = project.clone()
         self.definition = None
@@ -71,6 +75,8 @@ class ModelTablesDialog(QDialog):
                                    "Start RX", "Start RY", "Start RZ", "End RX", "End RY", "End RZ"]
             headers["loads"] = [*headers["loads"][:-2], "Azimuth (deg)", "Elevation (deg)", "Magnitude units"]
         headers["nodes"].extend(f"Imposed {movement_label(key)} ({'rad' if key.startswith('settlement_r') else project.units.length})" for key in self.movement_keys)
+        headers['nodes'].extend(key.removeprefix('spring_').removesuffix('_mode').upper()+' spring action' for key in self.spring_modes)
+        headers['members'].append('Axial behaviour')
         for kind, fields in self.fields.items():
             panel = QWidget()
             panel_layout = QVBoxLayout(panel)
@@ -110,6 +116,11 @@ class ModelTablesDialog(QDialog):
         return [table.item(row, 0).text() for row in range(table.rowCount())]
 
     def choices(self, kind, key):
+        from .unilateral import MEMBER_BEHAVIORS, SPRING_BEHAVIORS
+        if key == 'behavior':
+            return list(MEMBER_BEHAVIORS)
+        if key in self.spring_modes:
+            return list(SPRING_BEHAVIORS)
         if self.spatial and key == "direction":
             from .spatial_model import MEMBER_DIRECTIONS
             return [*MEMBER_DIRECTIONS, "Angle"]
@@ -158,9 +169,13 @@ class ModelTablesDialog(QDialog):
             value = getattr(entity, key)
             choices = self.choices(kind, key)
             if choices is not None:
-                widget = QComboBox()
-                widget.addItems(choices if value in choices else [*choices, value])
-                widget.setCurrentText(value)
+                if key == 'behavior' or key in self.spring_modes:
+                    from .unilateral import MEMBER_BEHAVIORS, SPRING_BEHAVIORS, enum_widget
+                    widget = enum_widget(MEMBER_BEHAVIORS if key == 'behavior' else SPRING_BEHAVIORS, value, key)
+                else:
+                    widget = QComboBox()
+                    widget.addItems(choices if value in choices else [*choices, value])
+                    widget.setCurrentText(value)
                 if kind == "loads" and key in ("kind", "direction"):
                     widget.setToolTip("Changing type or direction reinterprets the entered magnitude in the row's displayed units.")
                 if self.spatial and key == "direction":
@@ -203,6 +218,10 @@ class ModelTablesDialog(QDialog):
         releases = RELEASE_FIELDS if self.spatial else ("release_start", "release_end", "release_start_x", "release_end_x", "release_start_y", "release_end_y")
         for row in range(table.rowCount()):
             frame = table.cellWidget(row, keys.index("kind")).currentText() == "frame"
+            behavior = table.cellWidget(row, keys.index('behavior'))
+            behavior.setEnabled(not frame)
+            if frame:
+                behavior.setCurrentIndex(behavior.findData('bilateral'))
             for key in releases:
                 item = table.item(row, keys.index(key))
                 flags = item.flags()
@@ -304,7 +323,7 @@ class ModelTablesDialog(QDialog):
                     elif kind == "nodes" and key in ("support_angle", "support_elevation") and values.get("support") != "inclined":
                         value = 0.
                     elif widget is not None:
-                        value = widget.currentText()
+                        value = widget.currentData() if widget.property('enum_data') else widget.currentText()
                     elif key in self.boolean_fields:
                         value = item.checkState() == Qt.CheckState.Checked
                         if kind == "nodes" and values["support"] != "custom" and not (self.spatial and values["support"] == "inclined"):
@@ -330,6 +349,12 @@ class ModelTablesDialog(QDialog):
                     values["support_angle"] = 0.
                     if self.spatial:
                         values["support_elevation"] = 0.
+                if kind == 'nodes':
+                    for key in self.spring_modes:
+                        if values[key.removesuffix('_mode')] == 0:
+                            values[key] = 'bilateral'
+                if kind == 'members' and values['kind'] == 'frame':
+                    values['behavior'] = 'bilateral'
                 entities[values["name"]] = constructor(**values)
             setattr(candidate, kind, entities)
         candidate.validate()

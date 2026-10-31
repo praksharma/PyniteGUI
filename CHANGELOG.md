@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Add Iterative elastic with tension/compression-only axial trusses and one-way
+  global support springs, activation/reactivation, independent combinations,
+  prescribed motions and configurable load steps/tolerances. Reject convergence,
+  stability and equilibrium failures. Add staged editing, snapshot activity and
+  iteration histories, unit-aware CSV/print/MCP, inactive-bar rendering and three
+  official examples with pinned upstream parity and independent mechanics checks.
+  Save planar v31/spatial v38; migrate legacy definitions to bilateral defaults.
+  The user lifted the new-solver hold on 2026-10-31; modal and steel pushover remain
+  separate pending workflows.
+
 - Enable imposed rigid-support movements within existing 2D/3D frame-only P-Delta
   analysis after independent continuum/energy checks. Preserve the same motion
   in every combination, including zero loads and shortening-induced preload;

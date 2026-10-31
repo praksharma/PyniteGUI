@@ -279,6 +279,20 @@ class FrameSolver(FEModel3D):
     _analysis_progress = None
     _spatial = False
 
+    def Ke(self, combo_name="Combo 1", log=False, check_stability=True, sparse=True):
+        states = ({} if getattr(self, '_brecon_iterating', False) else
+                  getattr(self, '_brecon_spring_states', {}).get(combo_name, {}))
+        saved = []
+        try:
+            for (name, dof), active in states.items():
+                spring = getattr(self.nodes[name], 'spring_'+dof)
+                saved.append((spring, spring[2]))
+                spring[2] = active
+            return super().Ke(combo_name, log, check_stability, sparse)
+        finally:
+            for spring, active in saved:
+                spring[2] = active
+
     def Kg(self, combo_name="Combo 1", log=False, sparse=True, first_step=True):
         geometric = super().Kg(combo_name, log, sparse, first_step)
         if self._analysis_progress is not None and not first_step:
@@ -293,6 +307,13 @@ class FrameSolver(FEModel3D):
 
 
 def solve_model(model, project, phase):
+    if project.analysis_method == 'iterative':
+        from .iterative_solver import solve_iterative
+        try:
+            solve_iterative(model, project, phase)
+        except Exception as error:
+            raise ValueError(f'Iterative elastic analysis failed: {error}') from error
+        return
     from .inclined_supports import has_inclined, solve_inclined
     from .support_movements import has_movements
     if has_inclined(project) or has_movements(project):

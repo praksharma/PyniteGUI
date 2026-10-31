@@ -62,6 +62,11 @@ class SpatialConversionTests(unittest.TestCase):
             with self.subTest(example=key):
                 source = example_project(key)
                 converted = to_spatial(source, offset=-54)
+                if source.analysis_method == 'iterative' and any(m.kind == 'frame' and any(m.moment_releases) for m in source.members.values()):
+                    self.assertEqual(converted.members['Brace1'].behavior, source.members['Brace1'].behavior)
+                    with self.assertRaisesRegex(ValueError, 'Spatial frame end releases'):
+                        solve(converted)
+                    continue
                 planar, spatial = solve(source), solve(converted)
                 for combination in source.combinations:
                     a, b = planar.for_combination(combination), spatial.for_combination(combination)

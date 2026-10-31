@@ -311,6 +311,41 @@ def capture_inclined(output, spatial=False, settlement=False, pdelta_motion=Fals
             app.processEvents()
 
 
+def capture_iterative(output):
+    output.mkdir(parents=True, exist_ok=True)
+    app = QApplication.instance() or QApplication([])
+    configure_theme(app, "light")
+    with tempfile.TemporaryDirectory(prefix="brecon-iterative-docs-") as directory:
+        root = Path(directory)
+        window = MainWindow(root / "recovery", QSettings(str(root / "settings.ini"), QSettings.Format.IniFormat))
+        try:
+            window.resize(1440, 1000)
+            window.load_project(example_project("official_tension_braced"))
+            window.show()
+            with redirect_stdout(StringIO()):
+                result = analyze(window.project)
+            window.analysis_revision = window.revision
+            window.analysis_finished(result, "")
+            window.results_dock.show()
+            window.view.show_loads.setChecked(False)
+            window.select(("members", "Brace2"))
+            window.results_panel.tabs.setCurrentIndex(window.results_panel.active_tab)
+            window.resizeDocks([window.results_dock], [300], Qt.Orientation.Vertical)
+            app.processEvents()
+            window.view.fit()
+            window.results_panel.active_states.resizeColumnsToContents()
+            window.resizeDocks([window.results_dock], [350], Qt.Orientation.Vertical)
+            app.processEvents()
+            if not window.grab().save(str(output / "iterative-braced.png")):
+                raise RuntimeError("Could not save iterative example")
+            print("Captured iterative-braced.png")
+        finally:
+            window.saved = window.project.to_dict()
+            window.close()
+            window.deleteLater()
+            app.processEvents()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path,
@@ -319,8 +354,11 @@ if __name__ == "__main__":
     parser.add_argument("--spatial-inclined-only", action="store_true", help="Capture the spatial roller normal Properties controls.")
     parser.add_argument("--settlement-only", action="store_true", help="Capture the settled beam and prescribed motion controls.")
     parser.add_argument("--pdelta-motion-only", action="store_true", help="Capture the P-Delta column with imposed base motion.")
+    parser.add_argument("--iterative-only", action="store_true", help="Capture unilateral braces and active-state results.")
     options = parser.parse_args()
-    if options.pdelta_motion_only:
+    if options.iterative_only:
+        capture_iterative(options.output)
+    elif options.pdelta_motion_only:
         capture_inclined(options.output, pdelta_motion=True)
     elif options.settlement_only:
         capture_inclined(options.output, settlement=True)

@@ -31,7 +31,8 @@ def unique_name(project, prefix):
 
 def support_state(node):
     from .support_movements import movement_fields
-    return node.restraints, node.springs, ((node.support_angle, getattr(node, "support_elevation", 0.)) if node.support == "inclined" else None), tuple(getattr(node, key) for key in movement_fields(node))
+    from .unilateral import spring_mode_fields
+    return node.restraints, node.springs, ((node.support_angle, getattr(node, "support_elevation", 0.)) if node.support == "inclined" else None), tuple(getattr(node, key) for key in movement_fields(node)), tuple(getattr(node, key) for key in spring_mode_fields(node))
 
 
 def clear_support(node):
@@ -42,6 +43,8 @@ def clear_support(node):
     for field in fields(node):
         if field.name.startswith("restraint_"):
             setattr(node, field.name, False)
+        elif field.name.startswith("spring_") and field.name.endswith("_mode"):
+            setattr(node, field.name, "bilateral")
         elif field.name.startswith(("spring_", "settlement_")):
             setattr(node, field.name, 0.)
 

@@ -234,7 +234,7 @@ class ServerWireTests(ServerWindowTests):
         self.server.permissions.set_group("Analysis", True)
         async def callback(client):
             model = (await client.call_tool("read_model", {})).structured_content["data"]
-            self.assertEqual(model["model"]["version"], 36)
+            self.assertEqual(model["model"]["version"], 38)
             fields = model["schema"]["entities"]["members"]["properties"]
             self.assertNotIn("const", fields["release_end_ry"])
             edited = await client.call_tool("apply_batch", {"session_id": model["session_id"],
@@ -302,6 +302,41 @@ class ServerWireTests(ServerWindowTests):
                         return await callback(client)
         return self.run_async(run)
 
+    def test_wire_unilateral_edit_solve_and_paginated_contact_history(self):
+        self.window.load_project(example_project('official_foundation'))
+        self.window.automation_mode.set_enabled(True)
+        self.server.permissions.set_group('Model edits', True)
+        self.server.permissions.set_group('Analysis', True)
+        async def callback(client):
+            model=(await client.call_tool('read_model',{})).structured_content['data']
+            identity={'session_id':model['session_id']}
+            edit=await client.call_tool('apply_batch',{**identity,'expected_revision':model['revision'],
+                'operations':[{'op':'set','collection':'settings','value':{'load_steps':2}},
+                              {'op':'put','collection':'loads','key':'P','value':{'magnitude':40.}}]})
+            self.assertFalse(edit.is_error,edit)
+            revision=edit.structured_content['data']['revision']
+            started=await client.call_tool('run_analysis',{**identity,'expected_revision':revision})
+            self.assertFalse(started.is_error,started)
+            job=started.structured_content['data']['job_id']
+            for _ in range(300):
+                status=(await client.call_tool('analysis_status',{**identity,'job_id':job})).structured_content['data']
+                if not status['running']:break
+                await asyncio.sleep(.02)
+            self.assertEqual(status['state'],'Current',status)
+            response=await client.call_tool('read_results',{**identity,'kind':'active_states','offset':1,'limit':1})
+            self.assertFalse(response.is_error,response)
+            data=response.structured_content['data']
+            self.assertEqual(data['total_rows'],24)
+            self.assertEqual(data['rows'][0][4],'No')
+            self.assertEqual(data['analysis_method'],'iterative')
+            self.assertEqual(data['iteration_summary']['load_steps'],2)
+            response=await client.call_tool('read_results',{**identity,'kind':'iterations','offset':1,'limit':1})
+            self.assertFalse(response.is_error,response)
+            history=response.structured_content['data']
+            self.assertEqual(len(history['rows']),1)
+            self.assertGreater(history['total_rows'],2)
+        self.with_client(callback)
+
     def test_official_client_discovers_reads_model_units_and_snapshot_results(self):
         async def callback(client):
             listed = await client.list_tools()
@@ -325,7 +360,7 @@ class ServerWireTests(ServerWindowTests):
         before, count = self.window.project.to_dict(), self.window.undo.count()
         async def callback(client):
             tools = {tool.name:tool for tool in (await client.list_tools()).tools}
-            self.assertEqual(tools["read_results"].input_schema["properties"]["kind"]["enum"], ["nodes", "members", "surface_elements"])
+            self.assertEqual(tools["read_results"].input_schema["properties"]["kind"]["enum"], ["nodes", "members", "surface_elements", "active_states", "iterations"])
             self.assertIn("Poll analysis_status", tools["run_analysis"].description)
             compact = (await client.call_tool("read_model", {"include_schema":False})).structured_content["data"]
             self.assertNotIn("schema", compact)

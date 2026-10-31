@@ -13,7 +13,7 @@ class ReleasedMember(Member3D):
         return recovered
 
     def d(self, combo_name="Combo 1"):
-        if self.model.solution != "Linear":
+        if self.model.solution not in ("Linear", "Nonlinear TC"):
             raise ValueError("Released-end recovery is supported for linear analysis only.")
         if combo_name not in self._released_displacements:
             displacement = super().d(combo_name)

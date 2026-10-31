@@ -126,7 +126,7 @@ class AutomationCoreTests(unittest.TestCase):
         response = self.edits([{"op": "set", "collection": "settings", "value": {"analysis_method": "p_delta"}}])
         self.assertTrue(response["ok"], response)
         schema = self.invoke("read_schema", session_id=self.window.project_session)["data"]["schema"]
-        self.assertEqual(schema["settings"]["analysis_method"]["enum"], ["linear", "p_delta"])
+        self.assertEqual(schema["settings"]["analysis_method"]["enum"], ["linear", "p_delta", "iterative"])
         self.permissions.set_group("Analysis", True)
         started = self.invoke("run_analysis", **self.identity())
         self.assertTrue(started["ok"], started)

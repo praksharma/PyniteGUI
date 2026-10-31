@@ -16,6 +16,7 @@ from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QDialogButtonBox, Q
 from .analysis import model_signature
 from .diagrams import draw_structure, member_result_rows
 from .theme import LIGHT
+from .unilateral import MEMBER_BEHAVIORS, spring_mode_text
 
 
 @dataclass(frozen=True)
@@ -202,15 +203,15 @@ def model_definition_tables(project):
     show = units.to_display
     from .support_movements import movement_summary
     nodes = (["Node", f"X ({units.length})", f"Y ({units.length})", "Support", "DX", "DY", "RZ",
-              f"Spring DX ({units.stiffness})", f"Spring DY ({units.stiffness})", f"Spring RZ ({units.rotational_stiffness})", "Imposed motion (all combinations)"],
+              f"Spring DX ({units.stiffness})", f"Spring DY ({units.stiffness})", f"Spring RZ ({units.rotational_stiffness})", "Imposed motion (all combinations)", "One-way spring action"],
              [[node.name, show(node.x, "length"), show(node.y, "length"),
                f"Inclined roller, tangent {node.support_angle:g} deg" if node.support == "inclined" else node.support,
                *(("Coupled normal" if i < 2 else "Free") if node.support == "inclined" else "Fixed" if fixed else "Free" for i, fixed in enumerate(node.restraints)),
-               show(node.spring_x, "stiffness"), show(node.spring_y, "stiffness"), show(node.spring_rz, "rotational_stiffness"), movement_summary(node, units)]
+               show(node.spring_x, "stiffness"), show(node.spring_y, "stiffness"), show(node.spring_rz, "rotational_stiffness"), movement_summary(node, units), spring_mode_text(node) or 'Bilateral']
               for node in project.nodes.values()])
-    members = (["Member", "Start", "End", "Type", "Material", "Section", "Start hinge", "End hinge", "Start releases (local)", "End releases (local)"],
+    members = (["Member", "Start", "End", "Type", "Material", "Section", "Start hinge", "End hinge", "Start releases (local)", "End releases (local)", "Axial behaviour"],
                [[m.name, m.start, m.end, m.kind, m.material, m.section,
-                 *("Yes" if release else "No" for release in m.moment_releases), *m.release_labels] for m in project.members.values()])
+                 *("Yes" if release else "No" for release in m.moment_releases), *m.release_labels, MEMBER_BEHAVIORS[m.behavior]] for m in project.members.values()])
     materials = (["Material", f"E ({units.stress})", "Poisson ratio", f"G ({units.stress})", f"Weight ({units.density})", "Source", "G input"],
                  [[m.name, show(m.E, "stress"), m.nu, show(m.G, "stress"), show(m.rho, "density"), m.source_label, "Derived" if m.shear_modulus is None else "Independent"]
                   for m in project.materials.values()])
@@ -279,6 +280,12 @@ def report_images(project, result, options):
 def result_table(project, result, kind):
     if result.model_signature != model_signature(project):
         raise ValueError("The project does not match this analysis snapshot. Analyze the current model or export from its retained diagram window.")
+    if kind == 'active_states':
+        from .unilateral import active_state_table
+        return active_state_table(project,result)
+    if kind == 'iterations':
+        from .unilateral import iteration_table
+        return iteration_table(result)
     if getattr(project, "dimension", "2D") == "3D":
         from .spatial_results import result_table as spatial_table
         return spatial_table(project, result, kind)
@@ -358,6 +365,11 @@ def report_html(project, result, source="Untitled", options=None, *, image_urls=
         label = "Single-combination results" if options.envelope_combinations else "Combination"
         combination_metadata = f"<b>{label}:</b> {escape(result.combination)} | <b>Factors:</b> {escape(factors)}"
     sections = []
+    iterative = getattr(result.solver,'_brecon_iterations',{}).get(result.combination)
+    if iterative is not None and (options.model or options.nodes or options.members):
+        from .unilateral import active_state_table
+        active_headers, active_rows = active_state_table(project,result)
+        sections.append(f"<h2>Unilateral Active State</h2><p>Converged in {iterative['iterations']} active-set iterations across {iterative['load_steps']} load step(s). Trial bar force is tension-positive; inactive bars carry zero force. Spring trial is global displacement. Neutral contacts are within the switch tolerance.</p>"+html_table(active_headers,active_rows))
     if spatial and project.surfaces:
         sections.append("<p><b>Experimental coupled rectangular Quad slabs:</b> shared solver nodes transfer loads to physical frame members. Generated __S nodes are result-only. Connections use coincident centrelines/mid-surfaces, without eccentric offsets or composite connectors. Local slab contours/probes and CSV are available in Results → Slabs; these frame reports do not include slab field tables. Surface edge restraints use global DOFs and are additional to node supports. Design checks are not included.</p>")
     if options.model:
@@ -466,7 +478,7 @@ class ResultExportMenu(QMenu):
     def __init__(self, parent, current):
         super().__init__("Export Results", parent)
         self.current = current
-        for label, kind in (("Node Results (CSV)...", "nodes"), ("Member Results (CSV)...", "members")):
+        for label, kind in (("Node Results (CSV)...", "nodes"), ("Member Results (CSV)...", "members"), ('Unilateral Active State (CSV)...','active_states'), ('Iteration History (CSV)...','iterations')):
             self.addAction(label, lambda checked=False, kind=kind: self.save_csv(kind))
         self.addSeparator()
         self.addAction("Print Results...", self.print_report)

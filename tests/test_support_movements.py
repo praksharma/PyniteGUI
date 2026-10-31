@@ -140,7 +140,7 @@ class SupportMovementTests(unittest.TestCase):
 
     def test_persistence_migration_signatures_invalid_constraints_and_zero_axial_pdelta_limit(self):
         from pynitegui.qt.automation_core import batch_candidate, AutomationError
-        for p,old,current in ((beam(),27,29),(to_spatial(beam()),34,36)):
+        for p,old,current in ((beam(),27,31),(to_spatial(beam()),34,38)):
             self.assertEqual(p.to_dict()['version'],current)
             data=p.to_dict();data['version']=old
             for node in data['nodes'].values():

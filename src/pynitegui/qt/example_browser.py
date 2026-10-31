@@ -52,6 +52,8 @@ NOTES["p_delta_support_motion"] = (
     "Elastic second-order column with base DX +0.03 in and RZ +0.0007 rad unchanged in every combination.",
     "Combined: tip DX about 3.51866 in. Base motion only: DX -0.306 in and zero member forces. Gravity amplifies the base-rotation response; refine the explicit segments.")
 NOTES.update(PLATE_NOTES)
+from .official_unilateral import NOTES as UNILATERAL_NOTES
+NOTES.update(UNILATERAL_NOTES)
 NOTES["3d_released_beam"] = ("Inclined, rolled beam with local RY/RZ released at both ends. N1 anchors torsion; its released bending rotations do not clamp the member.",
     "Local end My/Mz are zero; both uniform-load reactions balance. Recovered member-end bending slopes are nonzero even when shared nodal rotations are undefined.")
 NOTES["3d_sliding_beam"] = ("Inclined, rolled fixed-guided beam: end-j DX/DY/DZ are released while its rotations remain connected. Both joints are fixed; member-side motion is separate.",

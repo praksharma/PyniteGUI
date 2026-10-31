@@ -169,7 +169,7 @@ function update(payload,dragPreview=false) {
   }
   for(const member of data.members) {
     const a=vector(nodes.get(member.start).position),b=vector(nodes.get(member.end).position);
-    if(data.ids!==false)label(member.name+(member.kind==='truss'?' [truss]':''),a.clone().lerp(b,.5).add(new THREE.Vector3(0,span*.023,0)),c.label);
+    if(data.ids!==false)label(member.name+(member.kind==='truss'?' [truss]':'')+(member.active===false?' [inactive]':''),a.clone().lerp(b,.5).add(new THREE.Vector3(0,span*.023,0)),c.label);
     if(data.ids!==false)(member.releaseLabels||[]).forEach((text,index)=>{
       if(text!=='None')label(`${member.name} ${index?'j':'i'}: ${text}`,a.clone().lerp(b,index?.88:.12).add(new THREE.Vector3(0,span*.035,0)),c.label);
     });

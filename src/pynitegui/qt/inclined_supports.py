@@ -210,7 +210,9 @@ def recover_reactions(model, project, combination, matrix, force, fixed_end, dis
             raise FreeEquilibriumError(f"Support-constraint free physical equilibrium failed at {name} in {combination}; no results were accepted.")
         if normal is not None and abs(float(normal @ d[:count])-definition.settlement_normal) > 1e-10*max(1., float(abs(d[:count]).max())):
             raise ValueError(f"Inclined constraint displacement failed at {name} in {combination}.")
-        springs = np.array(definition.springs) if definition is not None else np.zeros(len(offsets))
+        spring_dofs = ('DX','DY','DZ','RX','RY','RZ') if spatial else ('DX','DY','RZ')
+        springs = np.array([float(getattr(node,'spring_'+dof)[0] or 0.) if getattr(node,'spring_'+dof)[2] else 0.
+                            for dof in spring_dofs])
         spring = -springs*d
         external = np.zeros(6)
         external[offsets] = rigid+spring

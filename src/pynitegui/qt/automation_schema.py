@@ -24,10 +24,10 @@ def model_reference(dimension="2D"):
                 required.append(field.name)
             if field.name == "name":
                 schema["description"] = "Normally omit: the operation key supplies name; if supplied it must equal key."
-            if field.name.startswith("spring_"):
+            if field.name.startswith("spring_") and not field.name.endswith('_mode'):
                 schema.update(minimum=0, description="Bilateral stiffness: kip/in for translations, kip-in/rad for rotations; cannot coexist with a rigid restraint on that DOF.")
             if field.name.startswith("settlement_"):
-                schema["description"] = ("Signed model-level prescribed support motion: canonical inches for translations/normal, radians for rotations. Same value in every combination, including zero-factor combinations; do not scale with loads. Nonzero global fields require explicit rigid global restraints; settlement_normal requires inclined. Duplicate global/normal prescriptions must agree. Linear elastic and supported frame-only P-Delta; solve P-Delta combinations independently, never superpose. Springs keep zero rest positions.")
+                schema["description"] = ("Signed model-level prescribed support motion: canonical inches for translations/normal, radians for rotations. Same value in every combination, including zero-factor combinations; do not scale with loads. Nonzero global fields require explicit rigid global restraints; settlement_normal requires inclined. Duplicate global/normal prescriptions must agree. Linear, iterative elastic and supported frame-only P-Delta; solve P-Delta combinations independently, never superpose. Springs keep zero rest positions.")
             if field.name in ("position", "end_position"):
                 schema.update(minimum=0, maximum=1, description="Fraction of member length, not a coordinate or percentage.")
             properties[field.name] = schema
@@ -37,6 +37,12 @@ def model_reference(dimension="2D"):
     entities["materials"]["properties"]["shear_modulus"].update(type=["number", "null"], exclusiveMinimum=0,
         description="Optional independent frame/truss G in ksi. null (default) derives E/[2(1+nu)]. Positive finite numbers only; independent G requires custom provenance.")
     nodes = entities["nodes"]["properties"]
+    from .unilateral import MEMBER_BEHAVIORS, SPRING_BEHAVIORS, ITERATIVE_DEFAULTS
+    for name, schema in nodes.items():
+        if name.startswith('spring_') and name.endswith('_mode'):
+            schema.update(enum=list(SPRING_BEHAVIORS), description='Global spring action: bilateral, positive displacement only, or negative displacement only. One-way action requires positive stiffness and Iterative elastic. Reaction opposes displacement; zero rest position.')
+    entities['members']['properties']['behavior'].update(enum=list(MEMBER_BEHAVIORS),
+        description='Bilateral or tension_only/compression_only axial bar. Unilateral requires kind=truss and Iterative elastic; states are solved independently for every complete combination, with reactivation. No material yielding.')
     nodes["support"]["enum"] = ["free", "pin", "roller", "fixed", "custom", "inclined"]
     nodes["support"]["description"] = ("Supports are node fields, not a supports collection/object. restraint_* flags apply to custom and, in 3D, as additional global restraints for inclined. An inclined support fixes translation along its normal; other translations/rotations remain free unless separately restrained. Springs retain global axes.")
     if spatial:
@@ -72,8 +78,15 @@ def model_reference(dimension="2D"):
                 "default_material": "existing material ID", "default_section": "existing section ID",
                 "default_load_case": "existing case ID", "self_weight_case": "existing case ID or null",
                 "self_weight_factor": "positive finite multiplier",
-                "analysis_method": {"enum": ["linear", "p_delta"], "default": "linear",
-                    "description": "Elastic analysis. p_delta solves each combination independently with geometric stiffness. Frame-only: no surfaces, trusses or released translations. Not steel pushover or concrete plasticity."}}
+                "analysis_method": {"enum": ["linear", "p_delta", "iterative"], "default": "linear",
+                    "description": "Elastic analysis. p_delta: geometric stiffness, frame-only restrictions. iterative: first-order unilateral axial bars/global support springs with activation and reactivation; no surfaces or spatial frame releases. Solve every combination independently. Not plastic yielding."}}
+    for key, default in ITERATIVE_DEFAULTS.items():
+        settings[key] = {'type':'integer' if type(default) is int else 'number', 'default':default,
+                         'minimum':1 if type(default) is int else 0,
+                         'maximum':500 if key == 'iteration_limit' else 100 if key == 'load_steps' else 1000}
+    settings['member_tolerance']['description'] = 'Axial switch tolerance in canonical kip; not residual strength.'
+    settings['translation_tolerance']['description'] = 'One-way spring translation switch tolerance in canonical inches.'
+    settings['rotation_tolerance']['description'] = 'One-way rotational spring switch tolerance in radians.'
     if spatial:
         entities["surfaces"] = surface_reference(entities["materials"])
         entities["surface_pressures"] = {"type": "object", "additionalProperties": {"type": "number", "minimum": -1e6, "maximum": 1e6},
@@ -84,7 +97,7 @@ def model_reference(dimension="2D"):
             "description": "Key is a rectangular Quad surface ID. put replaces its entire outer-edge -> global rigid DOF list map. Omit free edges. Geometry-owned, reapplied on remesh. Shared joints use the union of restraints; spring conflicts are rejected. Remove explicitly when deleting a surface. Opening rims are excluded."}
         settings["surface_analysis_enabled"] = {"type": "boolean", "default": False,
             "description": "Experimental coupled analysis opt-in. When true, the complete candidate must contain only conforming, connected rectangular Quad surfaces. No solve occurs during editing."}
-        surface_info = "Spatial v36: surfaces, surface_pressures and surface_supports are editable via put/delete; surface_analysis_enabled via settings/set. Recipes use canonical inches/kip, pressure kip/in2. Geometry-only surfaces block analysis. Frame releases cannot be combined with surfaces. Coupled candidate topology is checked once after all operations; stability and independent equilibrium remain analysis gates."
+        surface_info = "Spatial v38: surfaces, surface_pressures and surface_supports are editable via put/delete; surface_analysis_enabled via settings/set. Recipes use canonical inches/kip, pressure kip/in2. Geometry-only surfaces block analysis. Frame releases cannot be combined with surfaces. Coupled candidate topology is checked once after all operations; stability and independent equilibrium remain analysis gates."
     return {
         "dimension": dimension, "input_units": "Canonical inch-kip regardless of display units; angles in degrees, rotations in radians.",
         "entities": entities,

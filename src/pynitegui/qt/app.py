@@ -75,7 +75,7 @@ def deformation_paths(project, result, straight=False):
     paths = []
     for member in project.members.values():
         a, b = project.nodes[member.start], project.nodes[member.end]
-        if straight:
+        if straight or member.kind == 'truss':
             paths.append([(a.x, a.y, *result.displacements[member.start][:2]),
                           (b.x, b.y, *result.displacements[member.end][:2])])
             continue
@@ -392,6 +392,8 @@ class StructureView(QGraphicsView):
                 continue
             a, b = project.nodes[member.start], project.nodes[member.end]
             pen = QPen(QColor(c["accent"] if ("members", name) in selected else c["member"]), 3)
+            if self.window.result is not None and not self.window.result.solver.members[name].active[self.window.result.combination] and ('members',name) not in selected:
+                pen.setColor(QColor(c['muted']))
             pen.setCosmetic(True)
             if member.kind == "truss":
                 pen.setStyle(Qt.PenStyle.DashLine)
@@ -1298,6 +1300,8 @@ class MainWindow(QMainWindow):
                 fields[key].setObjectName(key)
                 fields[key].setToolTip("Global bilateral support spring. Zero means no spring; free this direction before assigning a positive stiffness.")
                 self.form.addRow(f"{label} ({getattr(self.project.units, quantity)})", fields[key])
+            from .unilateral import add_node_controls
+            add_node_controls(self.form, fields, entity)
             if entity.support == "inclined":
                 reaction = QLabel("Analyze to inspect")
                 reaction.setObjectName("inclined_normal_reaction")
@@ -1329,6 +1333,8 @@ class MainWindow(QMainWindow):
             fields["kind"].addItems(["frame", "truss"])
             fields["kind"].setCurrentText(entity.kind)
             self.form.addRow("Type", fields["kind"])
+            from .unilateral import add_member_control
+            add_member_control(self.form, fields, entity)
             release_fields = (("release_start_x", "Start axial DX"), ("release_start_y", "Start shear DY"),
                               ("release_start", "Start moment RZ"), ("release_end_x", "End axial DX"),
                               ("release_end_y", "End shear DY"), ("release_end", "End moment RZ"))
@@ -1423,7 +1429,7 @@ class MainWindow(QMainWindow):
                 fields["end_magnitude"].valueChanged.connect(update_force)
             update_force()
         def apply():
-            values = {key: widget.currentText() if isinstance(widget, QComboBox) else widget.isChecked() if isinstance(widget, QCheckBox) else widget.value() for key, widget in fields.items()}
+            values = {key: (widget.currentData() if widget.property('enum_data') else widget.currentText()) if isinstance(widget, QComboBox) else widget.isChecked() if isinstance(widget, QCheckBox) else widget.value() for key, widget in fields.items()}
             if kind == "loads" and fields["angle"].value() == fields["angle"].property("initial_angle"):
                 values["angle"] = fields["angle"].property("original_angle")
             if kind == "nodes" and values["support"] != "custom":
@@ -1741,8 +1747,11 @@ class MainWindow(QMainWindow):
         from .analysis_method import settings_dialog
         dialog = settings_dialog(self, self.project)
         if dialog.exec():
-            method = dialog.method.currentData()
-            self.edit("Change analysis method", lambda project: setattr(project, "analysis_method", method))
+            values = dialog.settings_values()
+            def mutate(project):
+                for key, value in values.items():
+                    setattr(project, key, value)
+            self.edit("Change analysis method", mutate)
 
     def manage_self_weight(self):
         from .self_weight import SelfWeightDialog

@@ -72,7 +72,9 @@ def member_candidates(project, result, name, component, combination):
                 from .spatial_results import truss_motion
                 r = result.for_combination(combination)
                 return [(x, side, float(truss_motion(r, name, x)[1 if component == "dy" else 2])) for x, side in ((0., "right"), (length, "left"))]
-            return [(x, side, float(solver.deflection("dy", x, combination))) for x, side in ((0., "right"), (length, "left"))]
+            from .unilateral import planar_bar_motion
+            r = result.for_combination(combination)
+            return [(x, side, float(planar_bar_motion(r, name, x)[1])) for x, side in ((0., "right"), (length, "left"))]
         return [(0., "right", 0.), (length, "left", 0.)]
     points = []
     submembers = list(getattr(solver, "sub_members", {}).values()) or [solver]

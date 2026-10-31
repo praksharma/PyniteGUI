@@ -97,8 +97,9 @@ to serve its assets instead of the source checkout during browser testing.
 
 Elastic 2D/3D frames and bilateral axial-only trusses, plus frame-only P-Delta
 within GUIDE.md restrictions. Surface meshing, plate analysis and coupled Quad
-slabs remain explicitly experimental. Nonlinear/plastic, modal, unilateral and
-reinforced-concrete workflows are deferred. Remaining UI roadmap items do not
+slabs remain explicitly experimental. Development after RC4 adds Iterative elastic
+for unilateral axial bars and global support springs, with the checkpoint below.
+Plastic, modal and reinforced-concrete workflows remain pending. Remaining UI roadmap items do not
 block this scope.
 
 ## Historical RC3 Checklist and Future Publication Gates
@@ -196,6 +197,49 @@ Do not move existing release tags or replace reviewed release assets to retry.
 
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
+
+## Post-RC4 Iterative Elastic Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-10-31. The user explicitly lifted the
+new-solver hold. Public RC4 assets remain unchanged. New saves use planar **v31**
+and spatial **v38**, with strict bilateral/default migration from legacy files.
+
+- Add tension/compression-only axial bars and positive/negative-displacement-only
+  global ground springs. Frame members remain bilateral. Reject surfaces and
+  spatial frame releases for this method.
+- Solve each full combination independently with activation and reactivation,
+  configurable load steps/iteration limits/switch tolerances, unchanged imposed
+  support motions and physical reactions. Use sparse contact rows. Reject cycles,
+  nonconvergence, nonfinite response, nonpositive active stiffness and failed
+  force/moment balance. Certify neutral-contact directional stability; fail closed
+  on unresolved mechanism cones above 600 free coordinates.
+- Add staged native, Model Tables and bulk controls; method settings; snapshot
+  Active state/Iterations tabs; CSV, printed contact states and paginated MCP
+  contact/history results. Inactive bars keep joint-chord deformation, zero actual
+  axial force and muted rendering. Trial axial force is tension-positive; spring
+  trial is displacement/rotation, not reaction.
+- Add three official examples under Iterative elastic, preserving the existing
+  pinned source revision and MIT notice. Fixed vertical anchors in the source
+  spring-supported frame are condensed exactly into global ground springs; no
+  general node-to-node spring API is claimed. Compare all source nodal motions
+  and transferred anchor reactions to a pinned PyNite 3.0.0 fixture. Independently
+  verify reversed-foundation uplift against the simply supported beam formula,
+  exhaustive bar active sets, member reactivation, load reversal, spring signs,
+  inclined/prescribed constraints, neutral mechanisms and bilateral limits.
+- The catalog now contains 35 frame/truss/coupled examples plus the separate
+  official plate example; **12 of 20** official scripts are adapted.
+- Validation: **1,056 full-suite tests**, no skips, **311.375 s**, including MCP;
+  a further **21 focused mechanics/station-query tests** cover the final inactive
+  bar chord correction. The installed wheel passes **24 tests** on PyNite 3.0.0 /
+  Qt 6.11.2 and PyNite 3.2.1 / Qt 6.12.0, including a real wire solve; both also
+  pass all 35 examples through save/reopen/solve/export/native windows and MCP.
+  Strict documentation passes 55 HTML pages plus browser navigation/image/search
+  checks. The offline 3D viewport checks inactive rendering/selection and its
+  existing interaction/graphics suite. Native documentation capture is included.
+  Wheel/source audits verify packaged runtime files and checksums.
+- Modal analysis, steel pushover, RC plasticity and general surface interfaces
+  remain separate pending milestones. Target-platform hardware checks and signing
+  still require their documented evidence.
 
 ## Post-RC4 P-Delta Support-Movement Checkpoint
 

@@ -10,6 +10,7 @@ def populate_bulk_inspector(window):
     fields = {}
     springs = {}
     movements = {}
+    spring_modes = ()
     spatial = getattr(window.project, "dimension", "2D") == "3D"
     restraint_fields = ("restraint_x", "restraint_y", "restraint_rz")
     spring_fields = ("spring_x", "spring_y", "spring_rz")
@@ -24,7 +25,7 @@ def populate_bulk_inspector(window):
         widget = QComboBox()
         widget.addItem("Keep existing", None)
         for value in options:
-            widget.addItem(value, value)
+            widget.addItem(options[value] if isinstance(options, dict) and isinstance(options[value],str) else value, value)
         widget.setObjectName("bulk_" + key)
         window.form.addRow(label, widget)
         fields[key] = widget
@@ -42,6 +43,10 @@ def populate_bulk_inspector(window):
 
     kinds = {kind for kind, name in selections}
     if "nodes" in kinds:
+        from .unilateral import spring_mode_fields, SPRING_BEHAVIORS
+        spring_modes = spring_mode_fields(next(node for node in window.project.nodes.values()))
+        for key in spring_modes:
+            choice(key, key.removeprefix('spring_').removesuffix('_mode').upper()+' spring action', SPRING_BEHAVIORS)
         window.form.addRow(QLabel(f"Nodes ({sum(kind == 'nodes' for kind, name in selections)})"))
         support = choice("support", "Support", ("free", "pin", "roller", "fixed", "custom", "inclined"))
         angles = {}
@@ -87,6 +92,8 @@ def populate_bulk_inspector(window):
             window.form.addRow(enabled, value)
             movements[key] = enabled, value
     if "members" in kinds:
+        from .unilateral import MEMBER_BEHAVIORS
+        choice('behavior', 'Axial behaviour (axial-only bars)', MEMBER_BEHAVIORS)
         window.form.addRow(QLabel(f"Members ({sum(kind == 'members' for kind, name in selections)})"))
         choice("material", "Material", window.project.materials)
         choice("section", "Section", window.project.sections)
@@ -151,8 +158,8 @@ def populate_bulk_inspector(window):
                 if spatial and kind == "nodes" and values.get("support") == "inclined" and entity.support != "inclined":
                     for key in restraint_fields:
                         setattr(entity, key, False)
-                keys = {"nodes": ("support", "support_angle", "support_elevation", *restraint_fields, *spring_fields),
-                        "members": ("material", "section", "roll", "kind", *RELEASE_FIELDS) if spatial else ("material", "section", "kind", "release_start", "release_end",
+                keys = {"nodes": ("support", "support_angle", "support_elevation", *restraint_fields, *spring_fields, *spring_modes),
+                        "members": ("material", "section", "roll", "kind", 'behavior', *RELEASE_FIELDS) if spatial else ("material", "section", "kind", 'behavior', "release_start", "release_end",
                                     "release_start_x", "release_end_x", "release_start_y", "release_end_y"),
                         "loads": ("case",)}[kind]
                 for key in keys:
@@ -163,11 +170,16 @@ def populate_bulk_inspector(window):
                     if spatial:
                         entity.support_elevation = 0.
                 if kind == "nodes":
+                    for key in spring_modes:
+                        if getattr(entity,key.removesuffix('_mode')) == 0 and key not in values:
+                            setattr(entity,key,'bilateral')
                     from .support_movements import clear_inapplicable_movements
                     clear_inapplicable_movements(entity)
                     for key in movements:
                         if key in values:
                             setattr(entity, key, values[key])
+                if kind == 'members' and values.get('kind') == 'frame' and 'behavior' not in values:
+                    entity.behavior = 'bilateral'
                 if kind == "loads" and factor is not None:
                     entity.magnitude *= factor
                     if entity.kind == "distributed":

@@ -37,8 +37,8 @@ workflows, plus the locked **PyniteFEA 3.0.0** source. The
 [upstream capability list](https://github.com/JWock82/Pynite#current-capabilities)
 describes the engine, not features automatically available in this GUI.
 **Done** means usable in the stated application workflow; **Partial** identifies
-the exact missing part. Summary: **9 done, 4 partial, 5 pending**. P-Delta coverage rechecked 2026-10-26;
-spatial translational/rotational-release scope rechecked 2026-10-29.
+the exact missing part. Summary: **11 done, 3 partial, 4 pending**. P-Delta coverage rechecked 2026-10-26;
+spatial translational/rotational-release scope rechecked 2026-10-29; unilateral scope rechecked 2026-10-31.
 
 | Engine capability | GUI status | Coverage or remaining task |
 | --- | --- | --- |
@@ -50,9 +50,9 @@ spatial translational/rotational-release scope rechecked 2026-10-29.
 | Cases and factored combinations | Done | Named cases, combination editing, selected-combination results and visible factored loads in 2D/3D. |
 | Member shear, moment and deflection output | Done | Member detail curves in 2D/3D; spatial biaxial shear/bending, torsion and deformation; whole-frame force/moment overlays. |
 | Physical-member internal joints | Partial | Explicit split/connect workflows in 2D/3D; experimental coupled slabs add solver-only subdivision at conforming shell nodes. General implicit user-frame intersections remain excluded. |
-| Unilateral member behaviour | Pending | Add tension-only/compression-only flags, iterative active-set analysis and activation/mechanism benchmarks; ordinary 2D/3D trusses are not unilateral members. |
+| Unilateral member behaviour | Done | Iterative elastic tension/compression-only axial trusses in 2D/3D, activation/reactivation, independent combinations/load steps, neutral-contact stability and active-state/iteration results. Frame members remain bilateral; surfaces and spatial frame releases are excluded. |
 | Node-to-node spring elements | Pending | Add separate spring entities, axial stiffness units and bilateral/tension-only/compression-only behaviour; support springs are not spring elements. |
-| Bilateral/unilateral support springs | Partial | Bilateral global DX/DY/RZ springs in 2D and all six DOFs in 3D are implemented. One-way support springs and iterative activation remain pending. |
+| Bilateral/unilateral support springs | Done | Bilateral global springs plus positive/negative-displacement-only action with Iterative elastic, per-combination activation and physical reaction recovery. No general node-to-node spring entities. |
 | DKMQ quadrilaterals | Partial | Plate-only bending tool plus opt-in rectangular Quad/frame coupling with pressure cases, self-weight, shared joints, conformity checks, nodal results/deformation and equilibrium. Local moment/membrane-stress contours, probes and edge supports are implemented. Validated shear recovery and general membrane/drilling/curved-shell benchmarks remain pending. |
 | Polynomial rectangles | Partial | Quad/Rect choice for rectangular plate bending (including openings) with centre-coordinate recovery, deflection comparison and equilibrium regressions. General membrane/shell workflows and additional formulation-specific benchmarks remain pending. |
 | Shape/opening meshing | Done | All seven concrete PyNite generators with shape-specific/common options, bounded checks, control lines/openings, offline 3D geometry preview, recipes/undo and connectivity export. Curved-shell analysis and frame assembly remain distinct pending capabilities. |
@@ -63,13 +63,12 @@ spatial translational/rotational-release scope rechecked 2026-10-29.
 
 ### Analysis Method Checklist
 
-Implementation status checked 2026-10-26. Tick a method only when its stated GUI
+Implementation status checked 2026-10-31. Tick a method only when its stated GUI
 workflow has validated inputs, usable results and regression coverage; an API
 existing in PyNite alone does not count. Keep this checklist and the capability
 table above in sync as methods are implemented.
 
-**Current priority:** software quality and UI polish. New solver implementation
-is on hold at the user’s request; existing analysis methods remain available.
+**Current priority:** the user lifted the new-solver hold on 2026-10-31. Complete validated unilateral, modal and steel-pushover workflows alongside the remaining surface milestones; retain explicit engineering gates.
 
 - [x] **Linear elastic** (`analyze_linear`): 2D/3D frames, bilateral axial-only
   trusses and opt-in rectangular Quad slab/frame coupling; reactions,
@@ -79,12 +78,15 @@ is on hold at the user’s request; existing analysis methods remain available.
   progress phases, effective-stiffness checks and method-labelled snapshots/
   exports. Analytical compression/tension, refinement and instability regressions
   plus a public example. Frame-only; no slabs, trusses or released translations.
-- [ ] **General iterative elastic** (`analyze`): tension-only/compression-only
-  members and one-way support springs, activation/deactivation and optional
-  load stepping. Add persisted behaviour flags, iteration/tolerance controls,
-  convergence/active-state results, independent combination solves and activation/
-  mechanism benchmarks. Materials remain elastic; this is not plastic yielding.
-- [ ] **Steel plastic pushover** (`analyze_pushover`) — planned after the solver hold:
+- [x] **Iterative elastic (unilateral):** persisted tension/compression-only axial
+  bars and one-way global ground springs; staged native/table/bulk controls,
+  iteration/load-step/tolerance settings, independent combination solves with
+  activation and reactivation, snapshot activity/history, CSV and paginated MCP.
+  Independent exhaustive active-set, spring sign, load reversal, prescribed-motion,
+  neutral-mechanism and pinned official-example checks. Frame-only, no surfaces or
+  spatial frame releases. Materials remain elastic. Unresolved neutral mechanisms
+  above 600 free coordinates are rejected, never assumed stable.
+- [ ] **Steel plastic pushover** (`analyze_pushover`):
   validated yield strength and plastic section moduli (`fy`, `Zy`, `Zz`), section/
   material binding, elastic preload and push patterns, load increments,
   displacement stop conditions, accepted-step histories and base-shear/roof-
@@ -131,8 +133,7 @@ the appropriate category, record the upstream source commit/link and applicable
 license notices, preserve units/loading/analysis assumptions, document expected
 results, and add focused numerical and save/reopen checks. Reuse or update an
 existing matching example rather than adding duplicates. Record any deliberate
-differences from upstream. New solver work remains on hold; this checklist does
-not change the analysis-method priorities above.
+differences from upstream. New solver work is authorized; apply the analysis-method gates above.
 
 **Frames and existing analysis methods — first adaptation candidates:**
 
@@ -170,11 +171,11 @@ not change the analysis-method priorities above.
   sensitivity, save/reopen and categorized native opening. Surface/plate recipe
   materials reject independent G because their formulations derive it internally.
 
-**Springs and unilateral members — audit dependencies; defer missing behaviour:**
+**Springs and unilateral members — completed 2026-10-31:**
 
-- [ ] [Beam on Elastic Foundation.py](https://github.com/JWock82/Pynite/blob/main/Examples/Beam%20on%20Elastic%20Foundation.py)
-- [ ] [Braced Frame - Spring Supported.py](https://github.com/JWock82/Pynite/blob/main/Examples/Braced%20Frame%20-%20Spring%20Supported.py)
-- [ ] [Braced Frame - Tension Only.py](https://github.com/JWock82/Pynite/blob/main/Examples/Braced%20Frame%20-%20Tension%20Only.py)
+- [x] [Beam on Elastic Foundation.py](https://github.com/JWock82/Pynite/blob/main/Examples/Beam%20on%20Elastic%20Foundation.py)
+- [x] [Braced Frame - Spring Supported.py](https://github.com/JWock82/Pynite/blob/main/Examples/Braced%20Frame%20-%20Spring%20Supported.py)
+- [x] [Braced Frame - Tension Only.py](https://github.com/JWock82/Pynite/blob/main/Examples/Braced%20Frame%20-%20Tension%20Only.py)
 
 **Plates, shells, walls and foundations — gate on validated surface workflows:**
 
@@ -187,7 +188,9 @@ not change the analysis-method priorities above.
 
 **Current-capability audit (2026-10-27, all 20 pinned scripts reviewed):**
 
-Nine official adaptations are now available. The rectangular Quad plate opens
+Twelve official adaptations are now available. Three new Iterative elastic examples preserve the pinned source inputs: compression-only foundation, tension-only braced frame, and fixed-anchor spring-supported frame. The last condenses its fixed vertical spring anchors exactly into one-way ground springs; general node-to-node spring entities remain pending. Pinned upstream result parity, independent uplift mechanics, persistence and worker/MCP checks cover this scope.
+
+ The rectangular Quad plate opens
 through **File > Examples > Plates (Experimental)** or Browse Examples in the
 separate editable plate workspace: original 10 × 20 ft dimensions, 1 ft thickness,
 1 ft Quad mesh, clamped edges, W pressure +250 psf and factor 1.0. Canonical unit
@@ -197,18 +200,11 @@ are covered. Existing MIT notice and pinned source revision apply. No solver
 features were added. See GUIDE for the plate-only constraint/combination-name
 adaptation and the complete dependency table.
 
-Remaining 11 scripts are intentionally unchecked:
+Remaining eight scripts are unchecked:
 
-- Beam on Elastic Foundation: 24 **compression-only** DY springs; bilateral
-  support springs would change lift-off behaviour. Physical-member subdivision
-  alone is not the blocker.
-- Braced Frame - Spring Supported: tension-only and compression-only axial
-  spring elements, including documented gravity-only instability. Bilateral
-  nodal springs are not equivalent.
-- Braced Frame - Tension Only: tension-only braces/active-set analysis.
 - Rectangular Wall - Linear Varying Load: geometry-owned depth-varying pressure
   and a validated wall workflow. The plate pilot has multiple uniform cases,
-  but no geometry-varying pressure or general membrane behaviour.
+  but no geometry-varying pressure. This source is transverse plate bending; general membrane behaviour is not its prerequisite.
 - Shear Wall - Basic/Advanced: validated in-plane membrane/drilling workflow,
   shell support/load assignment, wall result recovery; Advanced additionally
   needs shear-wall/story/pier/coupling-beam APIs and its stiffness modifiers.
@@ -221,7 +217,7 @@ Remaining 11 scripts are intentionally unchecked:
 - Moment Frame - Pushover / Pushover Analysis: plastic section definitions,
   incremental pushover controls, hinge states and results.
 
-**Additional solver workflows — on hold with the corresponding solver tasks:**
+**Additional solver workflows — authorized, pending validation:**
 
 - [ ] [Modal Analysis.py](https://github.com/JWock82/Pynite/blob/main/Examples/Modal%20Analysis.py)
 - [ ] [Moment Frame - Pushover.py](https://github.com/JWock82/Pynite/blob/main/Examples/Moment%20Frame%20-%20Pushover.py)
@@ -418,8 +414,8 @@ Remaining 11 scripts are intentionally unchecked:
   editable spatial example, independent 3D compliance/P-Delta references and actual
   worker/metadata checks. Existing frame P-Delta gains constrained geometric-stiffness
   convergence and instability rejection; its truss/surface/release restrictions
-  remain. Imposed-motion P-Delta is recorded above; unilateral behaviour and
-  plastic connections remain separate.
+  remain. Imposed-motion P-Delta and Iterative elastic unilateral behaviour are
+  recorded above; plastic connections remain separate.
 
 ## Loads and Analysis
 
@@ -534,8 +530,7 @@ Remaining 11 scripts are intentionally unchecked:
 
 ## Project Quality
 
-Current focus: usability, presentation and reliability; solver expansion is on
-hold. Keep the analysis checklist's completed methods and pending scope intact.
+Current focus: usability, presentation and reliability alongside the authorized solver expansion. Keep the analysis checklist's completed methods and pending scope intact.
 
 - [x] Add a native Help menu with website/F1, Getting Started, searchable current
   keyboard shortcuts, About/version/license information and user-initiated source/

@@ -30,6 +30,24 @@ const server = http.createServer((request,response)=>{
     page.on('pageerror',error=>errors.push(error.message));
     await page.goto(`http://127.0.0.1:${server.address().port}/`);
     await page.waitForFunction(()=>window.pyniteViewer);
+    await page.evaluate(async data=>{
+      const THREE=await import('three');
+      const {drawFrame,recolorFrame}=await import('./frame_meshes.js');
+      data=structuredClone(data);data.members=data.members.slice(0,1);
+      data.members[0].active=false;data.selection=[];
+      const group=new THREE.Group(),picks=[];
+      drawFrame(data,1,group,picks);
+      const member=group.children.find(item=>item.userData.identities?.[0]?.[0]==='members');
+      const color=new THREE.Color();member.getColorAt(0,color);
+      const matches=value=>new THREE.Color(value).toArray().every((v,i)=>Math.abs(v-color.toArray()[i])<1e-6);
+      if(!matches(data.colors.muted))throw Error('Inactive bar not muted');
+      data.selection=[['members',data.members[0].name]];recolorFrame(data,group);
+      member.getColorAt(0,color);
+      if(!matches(data.colors.accent))throw Error('Inactive selection not visible');
+      data.selection=[];recolorFrame(data,group);member.getColorAt(0,color);
+      if(!matches(data.colors.muted))throw Error('Deselection lost inactive state');
+      group.traverse(item=>{item.geometry?.dispose();item.material?.dispose();});
+    },payload);
     const levelSnaps=await page.evaluate(async()=>{
       const THREE=await import('three');
       const {snapLevel,snappedMove}=await import('./node_drag.js');

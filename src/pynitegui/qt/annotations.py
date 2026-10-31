@@ -34,6 +34,10 @@ def support_label(project, node):
         if k:
             pieces.append(f"{label} spring {project.units.to_display(k, quantity):g} {getattr(project.units, quantity)}")
     movement = movement_summary(node, project.units)
+    from .unilateral import spring_mode_text
+    action = spring_mode_text(node)
+    if action:
+        pieces.append(action)
     if movement != "None":
         pieces.append("Imposed: "+movement+" | all combinations")
     return " | ".join(pieces)

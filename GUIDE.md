@@ -20,7 +20,8 @@ tool before installing Brecon so its `pynitegui` compatibility command can be
 created. Keep project files; uninstalling the tool does not delete them.
 
 The stable 1.0 scope is elastic 2D/3D frames and bilateral axial-only trusses,
-with frame-only P-Delta within the documented restrictions. Surface/plate tools
+with frame-only P-Delta within the documented restrictions. Development additionally
+provides Iterative elastic for unilateral axial bars/global support springs. Surface/plate tools
 retain their experimental status; nonlinear plastic, modal and reinforced-concrete
 workflows are outside the stable scope. See **Engineering Scope** for limits.
 
@@ -610,7 +611,7 @@ point probe. Missing patches return no value; tests explicitly prevent bridging
 a hole or extrapolating to an edge. Boundary/opening recovery, irregular meshes,
 stiffness/material jumps, thick plates, curved shells, shear peaks and rotational
 frame–shell interfaces still need validation. Quad Qx/Qy remain unavailable in
-snapshots, probes, CSV and MCP. This study does not change the solver-method hold.
+snapshots, probes, CSV and MCP. This study is separate from the subsequently authorized solver expansion.
 
 ![Quad shear feasibility: raw and own-element recovery fail; an interior neighbouring-moment fit converges](docs/assets/screenshots/quad-shear-benchmarks.png)
 
@@ -1068,8 +1069,8 @@ again. Closing the source window does not close the copy.
   Tables for a bilateral axial-only element. PyNite releases both bending planes
   and torsion at one end; the element transfers axial force only. E and A determine
   stiffness; Iy/Iz/J and roll do not add bending/torsion stiffness. Truss members
-  use thinner spring/axial-colored lines and a `[truss]` label. This is not a
-  tension-only or compression-only element.
+  use thinner spring/axial-colored lines and a `[truss]` label. Bilateral is the default; select
+  tension-only/compression-only behaviour with Iterative elastic for unilateral bars.
   Manual member loads are rejected; apply forces at braced/restraint-compatible
   joints. Conversion to truss never silently removes existing member loads.
   Self-weight is lumped half to each end joint; frame self-weight remains distributed.
@@ -1606,15 +1607,12 @@ The official plate opens as an unsolved mesh preview. Use Analyze for its
 transverse displacement and element-centre moment/shear contours, or Save plate
 for an editable copy.
 
-The official catalog audit covers all 20 scripts: nine are adapted; eleven
+The official catalog audit covers all 20 scripts: twelve are adapted; eight
 still depend on capabilities outside the current app. No substitute model is
 presented as a completed official adaptation.
 
 | Remaining official example | Required capability before adaptation |
 | --- | --- |
-| Beam on Elastic Foundation | Compression-only support springs and lift-off iteration. |
-| Braced Frame - Spring Supported | Unilateral axial spring elements and their instability handling. |
-| Braced Frame - Tension Only | Tension-only braces and active-set analysis. |
 | Rectangular Wall - Linear Varying Load | Depth-varying pressure and validated shell boundary assignment; current pilot pressure is uniform. |
 | Shear Wall - Basic | Validated in-plane membrane/drilling supports, loads and wall result recovery. |
 | Shear Wall - Advanced | Shear-wall/story/pier/coupling-beam APIs and modifiers, plus validated membrane/drilling response. |
@@ -1908,7 +1906,7 @@ As for other P-Delta results, global equilibrium checks forces only; undeformed
 moment arms do not include second-order effects. P-Delta with trusses, released
 translations, spatial rotational releases or surfaces remains unsupported.
 Imposed support movements are available in linear analysis and supported frame-only
-P-Delta as described below; unilateral contact and plastic connections remain
+P-Delta as described below; unilateral contact uses Iterative elastic, while plastic connections remain
 separate tasks.
 
 Production uses sparse node-local free coordinates and unchanged engine member
@@ -2108,10 +2106,56 @@ snapshot and converts its labels.
 ### Analysis and Force Diagrams
 
 **Edit > Analysis Method** (also in the Properties menu) selects **Linear elastic**
-(default) or **P-Delta elastic** for the project. This is saved, undoable and shared
+(default), **P-Delta elastic**, or **Iterative elastic (unilateral)** for the project. This is saved, undoable and shared
 by manual, live and MCP analysis. Changing the method invalidates results. The
 Analyze tooltip, result snapshot, diagram windows, CSV and printable result reports
 identify the solved method; changing combinations preserves it.
+
+**Iterative elastic** supports 2D/3D frames and axial-only trusses with one-way
+behaviour. Select a truss member and set **Axial behaviour** to **Tension only** or
+**Compression only** in Properties, Model Tables or bulk edit. Frame members remain
+bilateral. Give a global support spring positive stiffness, then select its
+**spring action**: both directions, positive displacement only, or negative
+displacement only. The direction describes global translation/rotation; spring
+reaction opposes displacement from its zero rest position. This is elastic
+contact/lift-off, not yielding. Linear and P-Delta reject one-way definitions.
+Coupled surfaces and spatial frame end releases are outside this method's scope.
+
+The method dialog sets maximum iterations (1–500 per load step), load steps
+(1–100), and switch tolerances in the displayed force/length units and radians.
+Defaults are 30 iterations, one step, 1e-9 kip axial force, 1e-10 in translation
+and 1e-12 rad rotation. Each **complete combination starts independently** with
+all contacts active; every iteration can activate or deactivate contacts.
+Applied loads ramp over the steps; imposed support motions stay unchanged.
+Values within tolerance are neutral and retain their previous active state.
+There is no artificial residual stiffness. Cycles, nonconvergence, missing
+stiffness, nonfinite response and failed force/moment balance reject the snapshot.
+At neutral contact, a separate directional stability check rejects free motions
+that can open every unloaded contact. Unresolved mechanisms above 600 free
+coordinates are rejected rather than accepted without certification.
+
+Results provide **Active state** and **Iterations** tabs, matching CSV exports,
+and MCP `read_results(kind="active_states"|"iterations")` with pagination.
+Trial axial force is **tension positive**, unlike the usual compression-positive
+member N output; inactive bars carry zero actual axial force. Spring trials are
+global displacement (length/radians), not reaction. Trial values, neutral flags
+and activation history belong to the analyzed snapshot and combination. Nonlinear
+results must never be made by superposing independently solved cases.
+
+Try **File > Examples > Iterative elastic**: the official 300 in foundation beam
+with 24 negative-DY springs, tension-only cross-braced frame, and spring-supported
+braced frame. The source revision/license are shared with the other official
+examples. Foundation nodes at x=144/156 in displace about -0.19876689 in under
+-40 kip; reversing the load releases all soil and recovers a pinned beam.
+The cross-braced frame activates Brace1 and releases Brace2 for positive wind.
+For the ground-spring frame N1 moves +0.00393088 in and N4 -0.00406912 in in
+1.2D+1.0W. Its fixed source anchor nodes are exactly condensed into global ground
+springs; this does not add a general node-to-node spring API. Gravity-only ground
+support is unstable and rejected. All preserve the source's material G, explicit
+loads and factors; foundation physical-beam segmentation becomes 25 editable
+12 in members, while the brace types explicitly suppress bending.
+
+![Official tension-only braced frame and converged active states](docs/assets/screenshots/iterative-braced.png)
 
 P-Delta is available for 2D/3D **frame-only** models, including bilateral support
 springs, imposed rigid-support motions and supported planar moment releases.
@@ -2747,12 +2791,13 @@ Custom supports independently restrain global DX, DY, and RZ. Bilateral elastic
 springs may resist any otherwise free global DX/DY/RZ direction. Spring reactions
 are the opposing stiffness times displacement/rotation and are included in all
 reaction tables, envelopes, and exports. Inclined rollers are additionally available
-for planar and spatial models within the method limits described under Supports and Springs. One-sided springs,
-and semi-rigid member-end springs are not implemented. Point loads support global FX, FY,
+for planar and spatial models within the method limits described under Supports and Springs. One-sided springs
+are available in Iterative elastic; semi-rigid member-end springs are not implemented. Point loads support global FX, FY,
 MZ, and signed angled forces. Member point/distributed forces additionally
 support local x/y and member-relative angles. Nodal forces use global axes only;
 distributed moments are not implemented.
 Loads belong to named cases. User-defined combinations apply finite case factors.
+Iterative elastic solves every complete combination independently with its own active contacts.
 Linear elastic load increments use superposition about the prescribed support-motion state; P-Delta elastic solves each complete
 combination independently with its own axial-load-dependent geometric stiffness. The initial project has
 Case 1 and a Service combination at factor 1. No design-code factors or
@@ -3082,7 +3127,12 @@ translation in 3D. Values are canonical inches/radians, default zero. Older sche
 migrate zero movement without altering support conditions; nonzero movement in
 older versions, missing current fields, nonfinite/non-numeric values, movement on
 free/spring-only directions and inconsistent normal/global prescriptions are rejected.
-New saves use planar v29, spatial v36 and plate v3.
+Planar **v31** and spatial **v38** add required member `behavior`, per-spring
+`spring_*_mode` and project iteration/load-step/tolerance settings. Legacy files
+migrate to bilateral behaviour and default controls. Nondefault new fields in
+old versions, missing current fields, invalid direction/type combinations and
+nonpositive one-way spring stiffnesses are rejected.
+New saves use planar v31, spatial v38 and plate v3.
 
 Spatial files retain XYZ, all six restraints/springs, and roll. Unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be

@@ -263,6 +263,8 @@ def populate_inspector(window):
             fields[key] = unit_number(getattr(entity, key), project.units, quantity, 0)
             fields[key].setObjectName(key)
             form.addRow(f"Spring {dof} ({getattr(project.units, quantity)})", fields[key])
+        from .unilateral import add_node_controls
+        add_node_controls(form, fields, entity)
         if entity.support == "inclined":
             reaction = QLabel()
             reaction.setObjectName("inclined_normal_reaction")
@@ -272,6 +274,8 @@ def populate_inspector(window):
     elif kind == "members":
         fields["kind"] = choices(("frame", "truss"), entity.kind, "spatial_member_kind")
         form.addRow("Type", fields["kind"])
+        from .unilateral import add_member_control
+        add_member_control(form, fields, entity)
         for key, label, values in (("start", "Start", project.nodes), ("end", "End", project.nodes),
                                   ("material", "Material", project.materials), ("section", "Section", project.sections)):
             fields[key] = choices(values, getattr(entity, key), "spatial_" + key)
@@ -327,7 +331,7 @@ def populate_inspector(window):
         if custom_values:
             values = custom_values()
         else:
-            values = {key: widget.currentText() if isinstance(widget, QComboBox) else widget.isChecked() if isinstance(widget, QCheckBox)
+            values = {key: (widget.currentData() if widget.property('enum_data') else widget.currentText()) if isinstance(widget, QComboBox) else widget.isChecked() if isinstance(widget, QCheckBox)
                       else unit_value(widget, project.units) if widget.property("quantity") else widget.value() for key, widget in fields.items()}
             if kind == "nodes":
                 for key, widget in fields.items():

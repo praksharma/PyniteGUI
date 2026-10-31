@@ -37,6 +37,7 @@ tests = [
 description = "Geometry/editing, units, assignments, libraries, validation, persistence and native model editors."
 tests = [
   "test_qt_inclined",
+  "test_qt_iterative",
   "test_qt_support_movements",
   "test_qt_spatial_releases",
   "test_independent_g.IndependentGModelTests",
@@ -120,6 +121,7 @@ tests = [
   "test_spatial_inclined",
   "test_support_movements",
   "test_pdelta_movements",
+  "test_iterative",
 ]
 
 [groups.surfaces]
