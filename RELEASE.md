@@ -98,8 +98,9 @@ to serve its assets instead of the source checkout during browser testing.
 Elastic 2D/3D frames and bilateral axial-only trusses, plus frame-only P-Delta
 within GUIDE.md restrictions. Surface meshing, plate analysis and coupled Quad
 slabs remain explicitly experimental. Development after RC4 adds Iterative elastic
-for unilateral axial bars and global support springs, with the checkpoint below.
-Plastic, modal and reinforced-concrete workflows remain pending. Remaining UI roadmap items do not
+for unilateral axial bars/global support springs and a separate frame Vibration
+Modes workspace, with the checkpoints below. Plastic and reinforced-concrete
+workflows remain pending. Remaining UI roadmap items do not
 block this scope.
 
 ## Historical RC3 Checklist and Future Publication Gates
@@ -197,6 +198,48 @@ Do not move existing release tags or replace reviewed release assets to retry.
 
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
+
+## Post-RC4 Modal Analysis Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-10-31. Frame/plate formats and public
+RC4 artifacts are unchanged. Modal inputs/results use a separate workspace and
+self-contained JSON export; the static analysis-method choice is preserved.
+
+- Add explicit mass-source combination, global weight component, gravity and
+  mode count for unreleased bilateral 2D/3D frames, including inclined supports
+  and optional bilateral global springs. Reject surfaces, trusses/releases,
+  unilateral contacts and imposed support motions. No geometric preload,
+  damping, spectrum/time-history or earthquake-response calculation is claimed.
+- Reuse checked PyNite elastic stiffness; integrate centreline point/line weights
+  consistently at their actual stations, with physical polar rotary inertia for
+  generated self-weight. Do not use the engine's negative member-load lumping or
+  its artificial zero-DOF inertia. Solve the reciprocal mass/stiffness eigenproblem;
+  reject unresolved/missing modes, nonfinite values, failed eigen-equations or
+  failed mass orthogonality.
+- Add a native Vibration Modes window with frequencies, periods, normalized node
+  shapes, mass sources, amplified 2D/3D curves and spatial section-orientation ticks.
+  Export snapshot tables, stamped PNG/SVG and a complete JSON archive with source
+  model/configuration, engine version and canonical shapes. Keep static results
+  separate; model revisions reject outdated replies and later stale reads.
+- Use the existing isolated worker, shared busy/cancellation lifecycle and
+  session/revision checks. Add MCP run_modal_analysis/read_modal_results with
+  typed inputs and pagination; analysis_status/cancel_analysis serve either job.
+- Add the official modal column with original mass factors and 386.4 in/s² gravity.
+  First three frequencies: **1.15622542, 7.47866382, 20.16831186 Hz**. Compare all
+  normalized shapes/frequencies to the pinned upstream fixture. Independently
+  verify tip masses, distributed continuum convergence, gravity/weight scaling,
+  orientation/roll invariance, physical torsional polar inertia, homogeneous
+  normal constraints and a sparse **603-coordinate** mass/spring-chain spectrum.
+- The catalog contains **36 frame/truss/coupled/modal definitions**, plus the
+  separate plate example; **13 of 20** official examples are adapted.
+- Validation: **1,072 tests**, no skips, **318.173 s**, including MCP wire tests.
+  Final wheel checks pass **15 tests** on PyNite 3.0.0 / Qt 6.11.2 (14.876 s)
+  and PyNite 3.2.1 / Qt 6.12.0 (11.203 s), including the actual modal worker,
+  cancellation, exports, sparse benchmark and wire calls. Both installed
+  environments pass all 36 examples through save/open/solve/export/native windows
+  and MCP discovery/edit/undo. Strict docs verify **56 HTML pages**; browser checks
+  cover navigation, images/search, subpath serving and theme/layout behaviour.
+  Packaged runtime assets, wheel/source metadata and checksums are audited.
 
 ## Post-RC4 Iterative Elastic Checkpoint
 

@@ -30,7 +30,9 @@ for the tested configurations and remaining checks before stable 1.0.
 
 Surface meshing, rectangular plate analysis and coupled rectangular Quad slabs
 are **experimental**. P-Delta keeps materials elastic and has model restrictions;
-plastic, modal and reinforced-concrete nonlinear workflows are not implemented.
+plastic and reinforced-concrete nonlinear workflows are not implemented.
+Development after RC4 adds iterative unilateral bars/support springs and a separate
+frame [Vibration Modes workspace](https://github.com/praksharma/PyniteGUI/blob/master/GUIDE.md#vibration-modes); these additions are available from the source checkout.
 Read the [engineering scope](https://github.com/praksharma/PyniteGUI/blob/master/GUIDE.md#engineering-scope) before relying on results.
 
 **RC4 plate limitation:** Rect moment/shear recovery is corrected in development.

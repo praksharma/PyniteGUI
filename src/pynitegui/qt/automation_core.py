@@ -15,6 +15,8 @@ TOOLS = {
     "read_results": ("Result reads", "Read paginated snapshot-labelled results: kind=nodes|members|surface_elements|active_states|iterations. active_states reports converged unilateral contact activity with trial values/units; iterations returns paginated per-step convergence history; iteration_summary is compact. Spatial members with translational releases include a released_end_translations table (member-side local DX/DY/DZ, distinct from joint motion) for members on the page. surface_elements requires surface_id from read_model.model.surfaces and returns unsmoothed local Quad element-centre Mx,My,Mxy (moment/length), Sx,Sy,Txy (membrane stresses, tension positive). Quad transverse shear is unavailable pending independent validation. Output units follow headers. Use analysis_status.available_combinations for solved names; omit combination to use the snapshot default. Only the active snapshot is retained."),
     "apply_batch": ("Model edits", "Apply a validated model batch as one undoable edit."),
     "run_analysis": ("Analysis", "Start background analysis using settings.analysis_method (linear|p_delta|iterative) and return a job_id immediately. Poll analysis_status with that job_id until running=false, then check state/error before read_results. phase is human-readable progress text, not a fixed enum."),
+    "run_modal_analysis": ("Analysis", "Start an independent first-order frame vibration job. Explicit combination supplies weight; nonnegative factors only. Convert absolute individual global X/Y/Z force components to positive mass using gravity in canonical in/s² (default standard gravity 386.08858267716533). Density contributes only through selected generated self-weight. Unreleased bilateral frames only; no surfaces, trusses, one-way contacts or imposed motions. modes=1..50. Returns job_id; poll analysis_status until running=false and state=Current, then read_modal_results. Never interpret mode shapes as static displacements/forces or earthquake response."),
+    "read_modal_results": ("Result reads", "Read the current accepted modal snapshot: frequencies (Hz/seconds), normalized node shapes for a 1-based mode, or mass_sources, with offset/limit pagination. Use snapshot_id and available_modes from analysis_status after a modal job reaches Current. Translation-normalized shapes use displacement ratios and rotations rad per displayed length; rotation-only modes use translations length/rad and rotation ratios. No static forces/reactions. Model edits require reanalysis; changing display units only changes shape/source headers."),
     "analysis_status": ("Analysis", "Read job progress, failures, the active snapshot and available_combinations (solved names). Poll after run_analysis until running=false; check state/error. Only one active result snapshot is retained; job_id rejects replaced jobs."),
     "cancel_analysis": ("Analysis", "Cancel the identified running analysis job."),
 }
@@ -197,7 +199,7 @@ class AutomationCommands:
             if include_schema:
                 response["schema"] = model_reference(getattr(window.project, "dimension", "2D"))
             return response
-        self.guard(arguments, revision=name in ("apply_batch", "run_analysis"))
+        self.guard(arguments, revision=name in ("apply_batch", "run_analysis", "run_modal_analysis"))
         if name == "read_schema":
             from .automation_schema import model_reference, batch_examples
             return {**self.identity(), "schema": model_reference(getattr(window.project, "dimension", "2D")), "examples": batch_examples(window.project)}
@@ -230,6 +232,32 @@ class AutomationCommands:
                 raise AutomationError("request_cancelled", "The request was cancelled before starting.")
             window.run_analysis(automation=True)
             return self.status()
+        if name == 'run_modal_analysis':
+            self.require_idle_editor()
+            if window.thread is not None:
+                raise AutomationError('analysis_busy','An analysis is already running.')
+            if cancelled():raise AutomationError('request_cancelled','The request was cancelled before starting.')
+            from .modal import ModalSettings
+            from .modal_jobs import controller
+            settings=ModalSettings(arguments['combination'],arguments.get('modes',3),arguments.get('direction','Y'),arguments.get('gravity',386.08858267716533))
+            controller(window).start(settings,automation=True)
+            return self.status()
+        if name == 'read_modal_results':
+            from .modal_jobs import controller
+            from .modal_results import modal_table
+            modal=controller(window);status=modal.status()
+            if modal.result is None or status['state']!='Current':
+                raise AutomationError('no_modal_results','Complete modal analysis of the current model before reading modal results.')
+            result=modal.result
+            if arguments.get('snapshot_id') and arguments['snapshot_id']!=result.snapshot_id:
+                raise AutomationError('stale_snapshot','The modal snapshot changed; read analysis_status again.')
+            offset,limit=arguments.get('offset',0),arguments.get('limit',100)
+            if type(offset) is not int or offset<0 or type(limit) is not int or not 1<=limit<=1000:
+                raise AutomationError('invalid_query','Use nonnegative offset and a limit from 1 to 1000.')
+            headers,rows=modal_table(result,window.project.units,arguments.get('kind','frequencies'),arguments.get('mode',1))
+            return {**self.identity(),**result.metadata(),'headers':headers,'rows':rows[offset:offset+limit],
+                    'total_rows':len(rows),'offset':offset,'unit_system':window.project.unit_system,'analysis_state':'Current',
+                    'mode':arguments.get('mode',1) if arguments.get('kind','frequencies')=='shapes' else None}
         if name == "analysis_status":
             if arguments.get("job_id") and arguments["job_id"] != window.analysis_job_id:
                 raise AutomationError("unknown_job", "The job is no longer the current analysis job.")
@@ -332,6 +360,9 @@ class AutomationCommands:
 
     def status(self):
         window = self.window
+        if getattr(window,'analysis_kind','static')=='modal':
+            from .modal_jobs import controller
+            return {**self.identity(),**controller(window).status()}
         return {**self.identity(), "job_id": window.analysis_job_id, "running": window.thread is not None,
                 "job_session_id": window.analysis_job_session, "job_model_revision": getattr(window, "analysis_revision", None),
                 "phase": window.analysis_phase.text() if window.thread is not None else "",

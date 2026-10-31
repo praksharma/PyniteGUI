@@ -127,6 +127,69 @@ window.close()
 
 @unittest.skipUnless(dependencies_available(), "Install the optional mcp extra for wire tests")
 class ServerWireTests(ServerWindowTests):
+    def test_wire_modal_job_shapes_units_and_model_drift(self):
+        self.window.load_project(example_project('official_modal'))
+        self.window.automation_mode.set_enabled(True)
+        self.server.permissions.set_group('Analysis',True)
+        self.server.permissions.set_group('Model edits',True)
+        async def callback(client):
+            model=(await client.call_tool('read_model',{})).structured_content['data']
+            identity={'session_id':model['session_id']}
+            bad=await client.call_tool('run_modal_analysis',{**identity,'expected_revision':model['revision'],'combination':'Mass','modes':True})
+            self.assertTrue(bad.is_error)
+            bad=await client.call_tool('run_modal_analysis',{**identity,'expected_revision':model['revision'],'combination':'Mass','gravity':True})
+            self.assertTrue(bad.is_error)
+            started=await client.call_tool('run_modal_analysis',{**identity,'expected_revision':model['revision'],'combination':'Mass','modes':3,'gravity':386.4})
+            self.assertFalse(started.is_error,started)
+            job=started.structured_content['data']['job_id']
+            for _ in range(300):
+                status=(await client.call_tool('analysis_status',{**identity,'job_id':job})).structured_content['data']
+                if not status['running']:break
+                await asyncio.sleep(.02)
+            self.assertEqual(status['state'],'Current',status)
+            self.assertEqual(status['analysis_kind'],'modal');self.assertEqual(status['available_modes'],[1,2,3])
+            snapshot=status['snapshot']['snapshot_id']
+            response=await client.call_tool('read_modal_results',{**identity,'snapshot_id':snapshot,'offset':1,'limit':1})
+            self.assertFalse(response.is_error,response)
+            data=response.structured_content['data'];self.assertEqual(data['total_rows'],3)
+            self.assertEqual(data['rows'][0][0],2);self.assertAlmostEqual(data['rows'][0][1],7.47866382,places=7)
+            response=await client.call_tool('read_modal_results',{**identity,'kind':'shapes','mode':2,'snapshot_id':snapshot,'offset':1,'limit':1})
+            self.assertFalse(response.is_error,response)
+            rz=response.structured_content['data']['rows'][0][-1]
+            edited=await client.call_tool('apply_batch',{**identity,'expected_revision':model['revision'],
+                'operations':[{'op':'set','collection':'settings','value':{'unit_system':'si_mm'}}]})
+            self.assertFalse(edited.is_error,edited)
+            revision=edited.structured_content['data']['revision']
+            response=await client.call_tool('read_modal_results',{**identity,'kind':'shapes','mode':2,'snapshot_id':snapshot,'offset':1,'limit':1})
+            self.assertFalse(response.is_error,response)
+            shape=response.structured_content['data'];self.assertEqual(shape['mode'],2)
+            self.assertIn('RZ (rad/mm)',shape['headers']);self.assertAlmostEqual(shape['rows'][0][-1],rz/25.4)
+            edited=await client.call_tool('apply_batch',{**identity,'expected_revision':revision,
+                'operations':[{'op':'put','collection':'materials','key':'Steel','value':{'E':20000.}}]})
+            self.assertFalse(edited.is_error,edited)
+            stale=await client.call_tool('read_modal_results',{**identity})
+            self.assertTrue(stale.is_error);self.assertEqual(stale.structured_content['error']['code'],'no_modal_results')
+        self.with_client(callback)
+
+    def test_wire_modal_cancel_uses_existing_job_contract(self):
+        self.window.load_project(example_project('official_modal'))
+        self.window.automation_mode.set_enabled(True)
+        self.server.permissions.set_group('Analysis',True)
+        async def callback(client):
+            model=(await client.call_tool('read_model',{})).structured_content['data']
+            identity={'session_id':model['session_id']}
+            started=await client.call_tool('run_modal_analysis',{**identity,'expected_revision':model['revision'],'combination':'Mass','modes':1})
+            self.assertFalse(started.is_error,started);job=started.structured_content['data']['job_id']
+            cancelled=await client.call_tool('cancel_analysis',{**identity,'job_id':job})
+            self.assertFalse(cancelled.is_error,cancelled)
+            for _ in range(300):
+                status=(await client.call_tool('analysis_status',{**identity,'job_id':job})).structured_content['data']
+                if not status['running']:break
+                await asyncio.sleep(.02)
+            self.assertEqual(status['state'],'Cancelled',status)
+            self.assertIsNone(status['snapshot'])
+        with patch('pynitegui.qt.modal_jobs.modal_child',slow_automation_child):self.with_client(callback)
+
     def test_wire_pdelta_prescribed_motion_edit_worker_and_zero_load_state(self):
         self.window.load_project(example_project('p_delta_support_motion'))
         self.window.automation_mode.set_enabled(True)
@@ -340,7 +403,7 @@ class ServerWireTests(ServerWindowTests):
     def test_official_client_discovers_reads_model_units_and_snapshot_results(self):
         async def callback(client):
             listed = await client.list_tools()
-            self.assertEqual({tool.name for tool in listed.tools}, {"read_model","read_schema","read_units","read_results"})
+            self.assertEqual({tool.name for tool in listed.tools}, {"read_model","read_schema","read_units","read_results","read_modal_results"})
             response = await client.call_tool("read_model", {})
             self.assertFalse(response.is_error, response)
             model = response.structured_content["data"]

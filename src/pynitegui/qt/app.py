@@ -745,6 +745,7 @@ class MainWindow(QMainWindow):
         tools_menu.addAction(self.action("Beam / Frame Generator...", lambda: open_geometry_tool(self, 1)))
         tools_menu.addAction(self.action("Surface Meshing (Experimental)...", lambda: self.show_mesh_workspace()))
         tools_menu.addAction(self.action("Rectangular Plate (Experimental)...", self.show_plate_workspace))
+        tools_menu.addAction(self.action("Vibration Modes...", self.show_modal_workspace))
         tools_menu.addAction(self.action("Automation Server...", self.show_automation_server))
         from .toolbar_icons import tool_icon
         def icon_action(action, name, tooltip):
@@ -1172,6 +1173,8 @@ class MainWindow(QMainWindow):
         self.view.redraw()
         self.update_title()
         self.automation_mode.sync_filters()
+        if hasattr(self, "_modal_controller"):
+            self._modal_controller.changed.emit()
 
     def load_visible(self, load):
         case = self.load_filter.currentData()
@@ -1917,6 +1920,11 @@ class MainWindow(QMainWindow):
         self.saved = Project().to_dict()
         self.update_title()
         self.statusBar().showMessage(f"Example: {EXAMPLES[key]} | {project.units.summary}")
+        if key == 'official_modal':
+            from .modal_jobs import controller
+            from .modal import ModalSettings
+            modal=controller(self);modal.last_settings=ModalSettings('Mass',3,gravity=386.4)
+            modal.show();modal.panel.set_inputs(modal.last_settings)
 
     def show_mesh_workspace(self, previous=None):
         from .mesh_workspace import MeshWorkspace
@@ -1950,6 +1958,11 @@ class MainWindow(QMainWindow):
         from .plate_workspace import PlateWorkspace
         PlateWorkspace(self, self.project.unit_system).exec()
 
+    def show_modal_workspace(self):
+        if not self.mcp_mode:
+            from .modal_jobs import controller
+            controller(self).show()
+
     def show_automation_server(self):
         from .automation_server import AutomationServer, AutomationPanel
         if self.automation_server is None:
@@ -1972,6 +1985,7 @@ class MainWindow(QMainWindow):
                 QMessageBox.information(self, "Analysis Unavailable", surface_issue)
             return
         self.live_analysis.discard()
+        self.analysis_kind = "static"
         self.analysis_automatic = automatic
         self.analysis_remote = automation
         self.analysis_error = ""
@@ -2007,6 +2021,10 @@ class MainWindow(QMainWindow):
                 self.results_panel.set_analysis_state("Analyzing", phase)
 
     def cancel_analysis(self, *, user_requested=True):
+        if getattr(self, 'analysis_kind', 'static') == 'modal' and self.thread is not None:
+            from .modal_jobs import controller
+            controller(self).cancel()
+            return
         pending = self.live_analysis.pending or self.live_analysis.deferred is not None
         if user_requested:
             self.live_analysis.discard()
@@ -2032,6 +2050,8 @@ class MainWindow(QMainWindow):
         self.thread.deleteLater()
         self.thread = None
         self.worker = None
+        if hasattr(self, "_modal_controller"):
+            self._modal_controller.changed.emit()
         self.analyze_action.setEnabled(True)
         self.cancel_analysis_action.setEnabled(self.live_analysis.pending or self.live_analysis.deferred is not None)
         for widget in (self.analysis_phase, self.analysis_progress, self.analysis_cancel_button):

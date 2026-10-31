@@ -38,6 +38,7 @@ SECTION_PAGES = {
     "Point and Distributed Loads": ("analysis/loads.md", "Point, Angled and Distributed Loads"),
     "Load Cases and Combinations": ("analysis/combinations.md", "Load Cases and Combinations"),
     "Materials and Sections": ("modeling/properties.md", "Materials and Sections"),
+    "Vibration Modes": ("analysis/modal.md", "Vibration Modes"),
     "Analysis and Force Diagrams": ("analysis/solve.md", "Analysis, Deformation and Force Diagrams"),
     "Combination Envelopes": ("results/envelopes.md", "Combination Envelopes"),
     "CSV and Printable Reports": ("results/reports.md", "CSV and Printable Reports"),

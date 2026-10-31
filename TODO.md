@@ -37,14 +37,14 @@ workflows, plus the locked **PyniteFEA 3.0.0** source. The
 [upstream capability list](https://github.com/JWock82/Pynite#current-capabilities)
 describes the engine, not features automatically available in this GUI.
 **Done** means usable in the stated application workflow; **Partial** identifies
-the exact missing part. Summary: **11 done, 3 partial, 4 pending**. P-Delta coverage rechecked 2026-10-26;
+the exact missing part. Summary: **12 done, 3 partial, 3 pending**. P-Delta coverage rechecked 2026-10-26;
 spatial translational/rotational-release scope rechecked 2026-10-29; unilateral scope rechecked 2026-10-31.
 
 | Engine capability | GUI status | Coverage or remaining task |
 | --- | --- | --- |
 | Elastic 3D statics | Done | Linear spatial-frame and axial-only truss analysis, six DOFs, rolled frame members, materials/sections and validated results. Local translational/rotational frame end releases and member-side motion are validated for linear frame-only models. |
 | Frame P-Delta | Done | Saved linear/P-Delta choice for 2D/3D frame-only models; independent combination solves, actual phase feedback, effective-stiffness rejection, method-labelled snapshots/reports/MCP and analytical compression/tension/refinement benchmarks. No coupled slabs, trusses, released translations or spatial rotational releases. |
-| Frame modal analysis | Pending | Add an explicit mass source, gravity/unit conversion, frequencies, mode shapes and a separate modal result workflow. |
+| Frame modal analysis | Done | Separate native/MCP modal workspace; explicit combination/direction/gravity, physical consistent mass, frequencies/periods, normalized 2D/3D mode plots/tables, mass sources and stamped CSV/PNG/SVG/JSON. Unreleased bilateral frames only; no surfaces/trusses/imposed motions or geometric preload. Independent sparse/dense mechanics and pinned official checks. |
 | Steel-frame pushover | Pending | Confirmed locked-engine steel I-section interaction model: needs fy, Zy/Zz, section/material binding, elastic preload, push increments, displacement stop, accepted-step histories and capacity curves. First-order only; no P-Delta integration or nonlinear shells. Benchmark before GUI exposure. |
 | Member point/distributed and nodal loading | Done | Nodal/member forces and moments, uniform/linear-varying distributed forces and partial spans in 2D/3D. Distributed member moments are excluded. |
 | Cases and factored combinations | Done | Named cases, combination editing, selected-combination results and visible factored loads in 2D/3D. |
@@ -92,10 +92,14 @@ table above in sync as methods are implemented.
   displacement stop conditions, accepted-step histories and base-shear/roof-
   displacement capacity curves. Benchmark the steel I-section interaction model.
   The public engine method is first-order; no P-Delta integration or nonlinear slabs.
-- [ ] **Modal analysis** (`analyze_modal`): explicit mass-source combination,
-  load-to-mass direction and consistent gravity conversion, mode count, natural
-  frequencies/periods and mode shapes with their own results/visualization and
-  independent benchmarks. Modal analysis alone is not an earthquake-response solver.
+- [x] **Modal analysis:** explicit mass-source combination, global load-to-mass
+  direction and gravity; separate native mode workspace, frequencies/periods,
+  normalized shapes and mass-source tables, image/table/archive exports and
+  revision-aware MCP jobs/cancellation/pagination. Verified physical mass without
+  artificial inertia, sparse/dense eigen-equations and orthogonality, analytical
+  tip/continuum/torsion/spring-chain checks and the official modal column.
+  Unreleased bilateral frames only. This is not earthquake-response analysis.
+
 
 Separate solver/formulation work:
 
@@ -188,9 +192,9 @@ differences from upstream. New solver work is authorized; apply the analysis-met
 
 **Current-capability audit (2026-10-27, all 20 pinned scripts reviewed):**
 
-Twelve official adaptations are now available. Three new Iterative elastic examples preserve the pinned source inputs: compression-only foundation, tension-only braced frame, and fixed-anchor spring-supported frame. The last condenses its fixed vertical spring anchors exactly into one-way ground springs; general node-to-node spring entities remain pending. Pinned upstream result parity, independent uplift mechanics, persistence and worker/MCP checks cover this scope.
+Thirteen official adaptations are now available. The official modal column preserves the source inputs/gravity and opens the separate mode workspace, with pinned frequency/normalized-shape parity and independent dynamics checks. Three new Iterative elastic examples preserve the pinned source inputs: compression-only foundation, tension-only braced frame, and fixed-anchor spring-supported frame. The last condenses its fixed vertical spring anchors exactly into one-way ground springs; general node-to-node spring entities remain pending. Pinned upstream result parity, independent uplift mechanics, persistence and worker/MCP checks cover this scope.
 
- The rectangular Quad plate opens
+The rectangular Quad plate opens
 through **File > Examples > Plates (Experimental)** or Browse Examples in the
 separate editable plate workspace: original 10 × 20 ft dimensions, 1 ft thickness,
 1 ft Quad mesh, clamped edges, W pressure +250 psf and factor 1.0. Canonical unit
@@ -200,7 +204,7 @@ are covered. Existing MIT notice and pinned source revision apply. No solver
 features were added. See GUIDE for the plate-only constraint/combination-name
 adaptation and the complete dependency table.
 
-Remaining eight scripts are unchecked:
+Remaining seven scripts are unchecked:
 
 - Rectangular Wall - Linear Varying Load: geometry-owned depth-varying pressure
   and a validated wall workflow. The plate pilot has multiple uniform cases,
@@ -213,13 +217,12 @@ Remaining eight scripts are unchecked:
 - Circular Bin with Conical Hopper: curved shell assembly/merged interfaces,
   spatially varying pressure and shell supports/results. Its geometry generators
   being available does not establish analysis support.
-- Modal Analysis: mass/modal solver and mode results.
 - Moment Frame - Pushover / Pushover Analysis: plastic section definitions,
   incremental pushover controls, hinge states and results.
 
 **Additional solver workflows — authorized, pending validation:**
 
-- [ ] [Modal Analysis.py](https://github.com/JWock82/Pynite/blob/main/Examples/Modal%20Analysis.py)
+- [x] [Modal Analysis.py](https://github.com/JWock82/Pynite/blob/main/Examples/Modal%20Analysis.py)
 - [ ] [Moment Frame - Pushover.py](https://github.com/JWock82/Pynite/blob/main/Examples/Moment%20Frame%20-%20Pushover.py)
 - [ ] [Pushover Analysis.py](https://github.com/JWock82/Pynite/blob/main/Examples/Pushover%20Analysis.py)
 

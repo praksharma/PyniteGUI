@@ -346,6 +346,39 @@ def capture_iterative(output):
             app.processEvents()
 
 
+def capture_modal(output):
+    from pynitegui.qt.modal import analyze_modal, ModalSettings
+    from pynitegui.qt.modal_jobs import controller
+    output.mkdir(parents=True, exist_ok=True)
+    app = QApplication.instance() or QApplication([])
+    configure_theme(app, "light")
+    with tempfile.TemporaryDirectory(prefix="brecon-modal-docs-") as directory:
+        root = Path(directory)
+        window = MainWindow(root / "recovery", QSettings(str(root / "settings.ini"), QSettings.Format.IniFormat))
+        modal = controller(window)
+        try:
+            window.load_project(example_project("official_modal"))
+            modal.last_settings = ModalSettings("Mass", 3, gravity=386.4)
+            modal.show()
+            modal.panel.resize(1280, 940)
+            with redirect_stdout(StringIO()):
+                modal.result = analyze_modal(window.project, modal.last_settings)
+            modal.state, modal.session, modal.revision = "Current", window.project_session, window.revision
+            modal.changed.emit()
+            app.processEvents()
+            modal.panel.canvas.draw()
+            if not modal.panel.grab().save(str(output / "modal-column.png")):
+                raise RuntimeError("Could not save modal workspace")
+            print("Captured modal-column.png")
+        finally:
+            if modal.panel is not None:
+                modal.panel.close()
+            window.saved = window.project.to_dict()
+            window.close()
+            window.deleteLater()
+            app.processEvents()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path,
@@ -355,8 +388,11 @@ if __name__ == "__main__":
     parser.add_argument("--settlement-only", action="store_true", help="Capture the settled beam and prescribed motion controls.")
     parser.add_argument("--pdelta-motion-only", action="store_true", help="Capture the P-Delta column with imposed base motion.")
     parser.add_argument("--iterative-only", action="store_true", help="Capture unilateral braces and active-state results.")
+    parser.add_argument("--modal-only", action="store_true", help="Capture the native modal workspace with the official column.")
     options = parser.parse_args()
-    if options.iterative_only:
+    if options.modal_only:
+        capture_modal(options.output)
+    elif options.iterative_only:
         capture_iterative(options.output)
     elif options.pdelta_motion_only:
         capture_inclined(options.output, pdelta_motion=True)

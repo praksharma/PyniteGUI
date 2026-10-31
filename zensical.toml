@@ -27,7 +27,7 @@ nav = [
   { "Loads and Analysis" = [
     { "Point and Distributed Loads" = "analysis/loads.md" }, { "Cases and Combinations" = "analysis/combinations.md" },
     { "Automatic Self-Weight" = "analysis/self-weight.md" }, { "Solve and Force Diagrams" = "analysis/solve.md" },
-    { "Live Recalculation" = "analysis/live.md" }, { "Stability Diagnostics" = "analysis/stability.md" }
+    { "Vibration Modes" = "analysis/modal.md" }, { "Live Recalculation" = "analysis/live.md" }, { "Stability Diagnostics" = "analysis/stability.md" }
   ] },
   { "Results" = [
     { "Linked Tables and Equilibrium" = "results/linked.md" }, { "Combination Envelopes" = "results/envelopes.md" },

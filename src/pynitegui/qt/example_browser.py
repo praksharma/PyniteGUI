@@ -85,6 +85,9 @@ def loading_summary(project):
                  for name, factors in project.combinations.items())
     return "\n".join(lines)
 
+from .official_modal import KEY as MODAL_KEY, NOTES as MODAL_NOTES
+NOTES[MODAL_KEY] = MODAL_NOTES
+
 
 class ExamplePreview(QWidget):
     def __init__(self, parent=None):

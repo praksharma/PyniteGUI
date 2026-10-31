@@ -22,8 +22,9 @@ created. Keep project files; uninstalling the tool does not delete them.
 The stable 1.0 scope is elastic 2D/3D frames and bilateral axial-only trusses,
 with frame-only P-Delta within the documented restrictions. Development additionally
 provides Iterative elastic for unilateral axial bars/global support springs. Surface/plate tools
-retain their experimental status; nonlinear plastic, modal and reinforced-concrete
-workflows are outside the stable scope. See **Engineering Scope** for limits.
+retain their experimental status; nonlinear plastic and reinforced-concrete
+workflows are outside the stable scope. Development adds a separate validated
+frame vibration-mode workspace; see Vibration Modes for its mass and entity limits. See **Engineering Scope** for limits.
 
 The searchable Zensical manual is built from this GUIDE and the project records.
 See **Documentation Site** below for local preview and publication instructions.
@@ -1607,7 +1608,7 @@ The official plate opens as an unsolved mesh preview. Use Analyze for its
 transverse displacement and element-centre moment/shear contours, or Save plate
 for an editable copy.
 
-The official catalog audit covers all 20 scripts: twelve are adapted; eight
+The official catalog audit covers all 20 scripts: thirteen are adapted; seven
 still depend on capabilities outside the current app. No substitute model is
 presented as a completed official adaptation.
 
@@ -1618,7 +1619,6 @@ presented as a completed official adaptation.
 | Shear Wall - Advanced | Shear-wall/story/pier/coupling-beam APIs and modifiers, plus validated membrane/drilling response. |
 | Mat Foundation | Mat/soil contact API, compression-only soil springs, foundation point force/moment assignment. |
 | Circular Bin with Conical Hopper | Curved-shell assembly, merged interfaces, varying pressure and shell support/results. |
-| Modal Analysis | Mass/modal solve and mode-result workflow. |
 | Moment Frame - Pushover / Pushover Analysis | Plastic section definitions, incremental pushover controls, hinge-state results. |
 
 **3D Frames > Official PyNite - Space Frame with Nodal Loads 1 / 2** now
@@ -2364,6 +2364,90 @@ analysis. This exports a still frame, not a movie. Playback and export do not
 edit model definitions or numerical results.
 
 [![Native static deformation animation with fixed reference and amplified displacement field](docs/assets/screenshots/static-deformation-animation.png)](docs/assets/screenshots/static-deformation-animation.png)
+
+### Vibration Modes
+
+**Tools > Vibration Modes** opens a separate native workspace for small free
+vibrations of an elastic 2D/3D frame. Its frequencies, periods and normalized
+shapes have their own snapshots; the static Results dock is preserved. Choose
+an existing **mass-source combination**, global force component X/Y (also Z in
+3D), positive gravity and 1–50 modes. Inputs are staged in this workspace rather
+than saved as a static analysis-method choice. Exported modal JSON includes the
+complete frame definition, settings and canonical shapes for reproducibility.
+
+A selected force component supplies **weight**, converted to isotropic mass as
+`abs(factored component)/gravity` for each physical load separately. Mass-source
+factors must be nonnegative. Loads orthogonal to the chosen direction and moments
+contribute no mass. Density adds mass only when generated self-weight belongs to
+the selected combination; density is never silently treated as mass density.
+Member point/partial/linearly varying weights use their real stations and
+consistent Euler–Bernoulli centreline interpolation. Split a sign-changing
+individual distributed weight before analysis. Generated self-weight also adds
+physical polar rotary inertia using `(Iy + Iz)/A`; other inferred point/line
+weights are located on the member centreline and supply no torsional radius.
+
+Gravity defaults to standard gravity, **386.08858267716533 in/s²** (9.80665 m/s²).
+The form displays acceleration in the workspace's labelled length unit per s²;
+MCP inputs are always canonical in/s². Multiplying gravity by four doubles the
+natural frequencies for unchanged weights; multiplying weights by four halves
+them. The mass-source table exposes every included load and converted quantity.
+
+This workflow uses PyNite's checked elastic stiffness and Brecon's independently
+validated consistent mass/eigen adapter. The locked PyNite 3.0.0 member-load
+lumping can produce a negative end mass: at x=60 in on a 120 in span, a unit mass
+gets -59/120 at one end and 60/120 at the other. Its global mass assembly also
+adds small artificial inertia at zero-mass DOFs. Those paths are not used here.
+Brecon solves `M phi = mu K phi`, with `omega² = 1/mu`, so zero-mass coordinates
+need no artificial inertia. Positive physical stiffness, finite resolved modes,
+eigen-equation residuals and mass orthogonality remain acceptance gates. A request
+exceeding the number of resolved mass-carrying modes is rejected; reduce the count.
+
+Current scope is **unreleased bilateral frame members** with rigid/inclined
+supports and optional bilateral global ground springs. Surface/plate mass, truss
+or released-frame mass recovery, vibration about one-way contact states and imposed
+support motions are excluded. Modes use first-order elastic stiffness, even when
+the frame's static method is P-Delta. There is no geometric preload, buckling,
+damping, response spectrum, time-history or earthquake-response calculation.
+
+The **Frequencies** table reports Hz and seconds. Choose a mode to view its
+node table and amplified member shape, or click its frequency row. Translational
+reference modes have maximum absolute global nodal translation component 1;
+translations are ratios, and rotations are rad per displayed length of reference
+amplitude. Rotation-reference modes use maximum nodal rotation component 1;
+translations are displayed length/rad and rotations are ratios. Signs and display
+amplitudes are arbitrary. Spatial section ticks make axial twist visible. These
+quantities must not be interpreted as static displacements, reactions or forces.
+
+Use the plot toolbar for pan/zoom and PNG/SVG export with visible snapshot stamps
+and embedded metadata. Export the current table as CSV, or the full modal snapshot
+as JSON, including source model, configuration signature, engine version, mass
+sources and normalized shapes. JSON is an analysis archive; regular frame saves
+remain `.pynite.json`. Opening the modal workspace does not alter the frame or
+its undo history. Edits during analysis reject the outdated reply; later model
+edits mark modes outdated. Display-unit changes preserve the frequencies and
+physical snapshot. Cancel uses the shared analysis controls and isolated worker.
+
+Try **File > Examples > Modal > Official PyNite - Three-Storey Modal Column**
+(or Browse Examples). This opens the editable 30 ft W12x26 column and the modal
+workspace with **Mass = D + D-SW**, three 2 kip joint weights, generated steel
+self-weight and the source's **32.2 ft/s² = 386.4 in/s²** gravity. At the pinned
+source revision the first three frequencies are approximately **1.15622542,
+7.47866382 and 20.16831186 Hz**. All source geometry, E/G, sections, density,
+supports and mass factors are preserved; canonical conversion and normalized
+shapes match a pinned upstream fixture. Independent point-mass, continuum-beam,
+torsional-polar-inertia, orientation/roll, exact-normal support and 603-coordinate
+mass/spring-chain references cover the adapter separately.
+
+![Official three-storey modal column with natural frequencies and its first mode](docs/assets/screenshots/modal-column.png)
+
+MCP clients call `run_modal_analysis` with session/revision guards, combination,
+mode count, direction and canonical gravity. Poll the existing `analysis_status`
+using its job ID until `running=false` and `state=Current`. Its `analysis_kind`
+is `modal`, with a modal snapshot and `available_modes`. Read
+`read_modal_results(kind="frequencies"|"shapes"|"mass_sources", mode=1, ... )`
+using snapshot ID and pagination. The existing `cancel_analysis` cancels either
+job kind. Static `run_analysis`/`read_results` remain separate. A model edit or
+failed/incomplete modal job cannot supply current modal results.
 
 ### Combination Envelopes
 

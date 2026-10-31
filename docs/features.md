@@ -36,7 +36,7 @@ when comparing with the published rc1 wheel.
 | Opt-in debounced live recalculation | [Live recalculation](analysis/live.md) |
 | Rigid-body/mechanism/stiffness checks and affected-node findings | [Diagnostics](analysis/stability.md), [topology](modeling/topology.md) |
 
-Modal analysis, steel pushover, reinforced-concrete plasticity and node-to-node spring elements are **not implemented GUI workflows**. See the
+Steel pushover, reinforced-concrete plasticity and node-to-node spring elements are **not implemented GUI workflows**. See the
 [audited roadmap](project/roadmap.md), not the upstream feature list alone.
 Development adds [inclined rollers](modeling/supports.md) for 2D/3D linear frames,
 trusses and supported releases, plus inclined supports in the existing frame
@@ -58,6 +58,11 @@ examples are available under Iterative elastic.
 P-Delta keeps materials elastic and excludes slabs/trusses/released translations
 and spatial rotational releases.
 See [method limits and plasticity boundaries](analysis/solve.md).
+
+Frame [Vibration Modes](analysis/modal.md) provide explicit physical mass sources,
+frequencies/periods and normalized 2D/3D shapes in a separate native workspace, with
+CSV/PNG/SVG/JSON and revision-aware MCP jobs. Scope: unreleased bilateral frames;
+no surfaces, trusses, geometric preload, imposed motion or earthquake response.
 
 ## Results
 
@@ -101,7 +106,7 @@ See [method limits and plasticity boundaries](analysis/solve.md).
 | Selection/finding-focused camera navigation in 2D/3D; Shift+F and full-model Fit | [Help and workspace](start/help.md), [model findings](modeling/topology.md) |
 | Optional Model/Results workspaces and collapsible command toolbars, preserving draft inputs and view framing | [Workspaces](start/help.md) |
 | Help menu, website/F1, searchable shortcuts, About/version details and default-layout recovery | [Help and workspace](start/help.md) |
-| Searchable native example browser with geometry/loading/check previews; categorized menus, Gerber/three-hinged arch, twelve official examples, coupled slabs and P-Delta | [Examples and preferences](start/examples.md), [hinge walkthrough](start/first-model.md#try-an-internal-hinge-or-three-hinged-arch) |
+| Searchable native example browser with geometry/loading/check previews; categorized menus, Gerber/three-hinged arch, thirteen official examples, coupled slabs and P-Delta | [Examples and preferences](start/examples.md), [hinge walkthrough](start/first-model.md#try-an-internal-hinge-or-three-hinged-arch) |
 | Official clamped rectangular Quad plate in separate editable workspace; nine of twenty upstream examples adapted | [Examples and limits](start/examples.md), [plate workspace](surfaces/plates.md) |
 | Light/dark themes and scrollable properties | [Examples and preferences](start/examples.md) |
 | Software-rendering recovery, observed renderer diagnostics, NVIDIA/Wayland profiles | [Graphics](start/graphics.md), [Linux NVIDIA](start/nvidia.md) |

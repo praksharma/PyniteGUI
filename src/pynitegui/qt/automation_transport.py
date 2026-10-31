@@ -8,7 +8,7 @@ from typing import Any, Literal
 from mcp.server import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 from mcp_types import CallToolResult, TextContent, ToolAnnotations
-from pydantic import StrictInt, StrictBool, ValidationError
+from pydantic import StrictInt, StrictBool, StrictFloat, ValidationError
 from .automation_core import TOOLS
 from .automation_schema import model_reference
 from pynitegui import __version__
@@ -113,6 +113,20 @@ def build_application(bridge, permissions, token, port, network_event, *, requir
     @server.tool(description=TOOLS["run_analysis"][1])
     async def run_analysis(session_id: str, expected_revision: StrictInt) -> dict[str, Any]:
         return await call("run_analysis", dict(session_id=session_id, expected_revision=expected_revision))
+
+    @server.tool(description=TOOLS["run_modal_analysis"][1])
+    async def run_modal_analysis(session_id: str, expected_revision: StrictInt, combination: str,
+                                 modes: StrictInt = 3, direction: Literal["X", "Y", "Z"] = "Y",
+                                 gravity: StrictFloat = 386.08858267716533) -> dict[str, Any]:
+        return await call("run_modal_analysis", dict(session_id=session_id, expected_revision=expected_revision,
+            combination=combination, modes=modes, direction=direction, gravity=gravity))
+
+    @server.tool(description=TOOLS["read_modal_results"][1], annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False))
+    async def read_modal_results(session_id: str, kind: Literal["frequencies", "shapes", "mass_sources"] = "frequencies",
+                                 mode: StrictInt = 1, snapshot_id: str | None = None,
+                                 offset: StrictInt = 0, limit: StrictInt = 100) -> dict[str, Any]:
+        return await call("read_modal_results", dict(session_id=session_id, kind=kind, mode=mode,
+            snapshot_id=snapshot_id, offset=offset, limit=limit))
 
     @server.tool(description=TOOLS["analysis_status"][1], annotations=ToolAnnotations(read_only_hint=True, open_world_hint=False))
     async def analysis_status(session_id: str, job_id: str | None = None) -> dict[str, Any]:

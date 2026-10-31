@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add a separate native/MCP Vibration Modes workflow for unreleased bilateral
+  elastic frames. Use explicit weight combinations/directions/gravity, verified
+  consistent mass and finite eigenmodes without artificial inertia. Add frequency,
+  period, mode-shape and mass-source tables/plots, snapshot-aware CSV/PNG/SVG/JSON,
+  isolated jobs/cancellation, stale-result rejection and the official modal column.
+  Verify independent continuum, tip, torsion, orientation and sparse-chain references
+  plus pinned upstream frequency/shape parity. Static results remain separate.
+
 - Add Iterative elastic with tension/compression-only axial trusses and one-way
   global support springs, activation/reactivation, independent combinations,
   prescribed motions and configurable load steps/tolerances. Reject convergence,
@@ -9,8 +17,8 @@
   iteration histories, unit-aware CSV/print/MCP, inactive-bar rendering and three
   official examples with pinned upstream parity and independent mechanics checks.
   Save planar v31/spatial v38; migrate legacy definitions to bilateral defaults.
-  The user lifted the new-solver hold on 2026-10-31; modal and steel pushover remain
-  separate pending workflows.
+  The user lifted the new-solver hold on 2026-10-31; steel pushover remains
+  a separate pending workflow.
 
 - Enable imposed rigid-support movements within existing 2D/3D frame-only P-Delta
   analysis after independent continuum/energy checks. Preserve the same motion
