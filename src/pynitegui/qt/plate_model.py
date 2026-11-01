@@ -341,8 +341,10 @@ def analyze_plate(definition, progress=None):
         q,gx,gy=pressure_coefficients(definition,factors)
         pressures=element_pressures(definition,points,cells,factors)
         applied,equilibrium,continuous,area=plate_equilibrium(model,definition,combination)
+        from .quad_shear_snapshot import plate_recovery
+        recovered_shear=plate_recovery(definition,points,cells,moments,pressures)
         pressure=q if gx==0. and gy==0. else None
-        solutions[combination] = dict(displacement=displacement, reactions=reactions, moments=moments, shears=shears,
+        solutions[combination] = dict(displacement=displacement, reactions=reactions, moments=moments, shears=shears, recovered_shear=recovered_shear,
                                       applied=applied, pressure=pressure, mean_pressure=applied/area, element_pressures=pressures, pressure_coefficients=np.array((q,gx,gy)),
                                       continuous_pressure_resultants=dict(zip(("normal_force_kip","first_moment_local_x_kip_in","first_moment_local_y_kip_in"),continuous.tolist())),
                                       pressure_representation='Uniform per element, sampled at its geometry centroid; refine varying profiles.',

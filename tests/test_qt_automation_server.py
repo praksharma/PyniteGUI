@@ -567,6 +567,14 @@ class ServerWireTests(ServerWindowTests):
             self.assertFalse(slab.is_error, slab)
             self.assertEqual(len(slab.structured_content["data"]["rows"]), 2)
             self.assertEqual(slab.structured_content["data"]["surface_id"], "Floor2")
+            data=slab.structured_content['data']
+            self.assertEqual(data['shear_recovery']['available'],0)
+            self.assertIn('unvalidated',data['shear_recovery']['reason'])
+            for key in ('Recovered Qx (kip/in)','Recovered Qy (kip/in)'):
+                column=data['headers'].index(key)
+                self.assertTrue(all(row[column] is None for row in data['rows']))
+            import json
+            json.dumps(data,allow_nan=False)
             rejected = await client.call_tool("apply_batch", {"session_id":model["session_id"], "expected_revision":revision,
                 "operations":[{"op":"put","collection":"surfaces","key":"Floor2","value":{"origin":[0,241,0]}}]})
             self.assertTrue(rejected.is_error)

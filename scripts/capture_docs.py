@@ -439,6 +439,27 @@ def capture_wall(output):
         window.pending=False;window.saved=window.definition.to_dict();window.reject();window.deleteLater();app.processEvents()
 
 
+def capture_recovered_shear(output):
+    from pynitegui.qt.official_plate import example_definition
+    from pynitegui.qt.plate_workspace import PlateWorkspace
+    from pynitegui.qt.plate_model import analyze_plate
+    output.mkdir(parents=True,exist_ok=True)
+    app=QApplication.instance() or QApplication([])
+    configure_theme(app,'light')
+    for key,filename in (('thin_plate_recovered_shear','plate-recovered-shear.png'),
+                         ('opening_plate_recovered_shear','plate-recovered-shear-masks.png')):
+        window=PlateWorkspace(definition=example_definition(key))
+        try:
+            window.resize(1360,960);window.show()
+            with redirect_stdout(StringIO()):result=analyze_plate(window.definition)
+            window.analysis_finished(result,'');window.component.setCurrentIndex(8)
+            app.processEvents();window.canvas.draw()
+            if not window.grab().save(str(output/filename)):raise RuntimeError('Could not save '+filename)
+            print('Captured '+filename)
+        finally:
+            window.pending=False;window.saved=window.definition.to_dict();window.reject();window.deleteLater();app.processEvents()
+
+
 def capture_joint_springs(output):
     from pynitegui.qt.joint_spring_editor import JointSpringsDialog
     output.mkdir(parents=True, exist_ok=True)
@@ -498,8 +519,11 @@ if __name__ == "__main__":
     parser.add_argument("--pushover-only", action="store_true", help="Capture the checked steel capacity workspace.")
     parser.add_argument("--wall-only", action="store_true", help="Capture the official hydrostatic wall and pressure profile editor.")
     parser.add_argument("--joint-springs-only", action="store_true", help="Capture joint spring definitions and one-way results.")
+    parser.add_argument("--recovered-shear-only", action="store_true", help="Capture thin-plate recovered centre shear and opening masks.")
     options = parser.parse_args()
-    if options.joint_springs_only:
+    if options.recovered_shear_only:
+        capture_recovered_shear(options.output)
+    elif options.joint_springs_only:
         capture_joint_springs(options.output)
     elif options.wall_only:
         capture_wall(options.output)

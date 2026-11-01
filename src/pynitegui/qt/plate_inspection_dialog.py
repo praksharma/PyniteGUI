@@ -43,7 +43,7 @@ class PlateInspector(QDialog):
         self.element.currentTextChanged.connect(self.update_probe)
         note = QLabel("Click a material element in the plate plot, select a centre row, or choose an element and xi/eta. "
             "Natural coordinates range from -1 to +1; (0,0) is its centre. "
-            "Interface values belong to the selected element; no averaging. Moment/shear contours remain element-centred. "
+            "Moment values belong to the selected element; no averaging. Recovered Quad Q is a smoothed centre-only fit with explicit missing cells. Moment/shear contours remain element-centred. "
             "The table shows local centre coordinates; global XYZ is in the probe and CSV. "
             "Probes show bending resultants; corner peaks and combined face stresses are unverified.")
         note.setWordWrap(True)
@@ -100,7 +100,7 @@ class PlateInspector(QDialog):
                 + "; ".join(f"{case} × {factor:g}" for case, factor in result["factors"].items()))
             try:
                 headers, rows = plate_probe_table(result, units)
-                ResultsPanel.populate(self.table, headers, rows)
+                ResultsPanel.populate(self.table, headers, [["unavailable" if value is None else value for value in row] for row in rows])
                 for column in (1, 2, 5, 6, 7):
                     self.table.setColumnHidden(column, True)
                 self.element.addItems(result["element_names"])
@@ -129,7 +129,9 @@ class PlateInspector(QDialog):
             if "Qx" in data:
                 values += [f"{key} {data[key]*units.factor('intensity'):.7g} {units.intensity}" for key in ("Qx", "Qy")]
             else:
-                values.append("Quad Qx/Qy unavailable: recovery is not validated")
+                for key,label in (('recovered_Qx','Recovered Qx'),('recovered_Qy','Recovered Qy')):
+                    value=data[key]
+                    values.append(f"{label} {value*units.factor('intensity'):.7g} {units.intensity}" if value is not None else f"{label} unavailable ({data['shear_status'].replace('_',' ')})")
             values += [f"Applied element pressure {data['applied_pressure']*units.factor('pressure'):.7g} {units.pressure}",
                        f"Target profile pressure {data['target_pressure']*units.factor('pressure'):.7g} {units.pressure}"]
             self.probe.setText(f"{data['element']} | xi {data['xi']:g}, eta {data['eta']:g}\n"

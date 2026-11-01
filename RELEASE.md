@@ -12,7 +12,8 @@ in source; public signed installers and broader platform coverage remain later s
 **Known RC4 plate limitation:** independent post-release checks found raw Rect
 moment/shear recovery inconsistent with verified plate laws in PyNite 3.0/3.2.
 Quad moments are preferable for RC4; Quad transverse shear is also unverified
-and must not be relied on. Development disables Quad shear plots/data. The
+and must not be relied on. Development disables raw Quad shear plots/data; guarded recovered centre shear
+is available only for eligible standalone thin plates as recorded below. The
 Rect correction and independent opening/Rect benchmarks are in **1.0.0rc5.dev0** source development; RC4 assets
 are unchanged. Non-unit Rect bending modifiers are rejected in development
 because the supported engine ignores them in bending stiffness. See the
@@ -317,6 +318,41 @@ and public RC4 artifacts are unchanged. Quad shear remains disabled in productio
   and newer PyNite **3.2.1** / Qt **6.12.0** (**50.388 s**). Ownership covers **174
   classes** across nine primary groups. Strict docs/link checks cover **58 HTML
   pages**; browser QA checks the figure and explicit unresolved-production gate.
+
+## Post-RC4 Guarded Plate Shear Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-01. Public RC4 artifacts and all
+project formats remain unchanged. The catalog now contains **42 frame examples
+and four plate examples**; official adaptations remain **14/20**.
+
+- Add separately labelled Recovered Qx/Qy centre contours to the standalone Quad
+  workspace, guarded by verified geometry, thickness, material, edge, loading and
+  mesh scope. Keep raw Quad shear disabled. Expose smoothed centre fits separately
+  from within-element moment probes and corrected Rect shear.
+- Preserve explicit corner/stencil masks, zero versus missing, signed/zero
+  combinations, centre-only probes, fit/status metadata and force/length units.
+  Centre/probe CSV includes recovery method, scope reason and snapshot provenance.
+  Unit changes reuse the result; engineering edits/new analysis clear it.
+- Add two editable custom examples and native documentation screenshots. Check
+  the application path against independent Navier and triangular-load solutions,
+  converged opening-energy references, cantilever cut forces and normal gravity.
+- Reject coupled recovery: independent finite-torsion edge-beam checks show that
+  masking beam-contact cells still gives nonconvergent shear error. Coupled result
+  columns stay empty/null with explicit UI/CSV/MCP eligibility reasons and counts.
+  General frame–shell interfaces, arbitrary holes and pointwise peaks remain open.
+- Full pinned suite: **1,156 tests**, no skips, **545.543 s**, including MCP.
+  Ownership checks cover **180 classes** across nine primary groups.
+- Installed-wheel checks: **34 focused mechanics/native/MCP tests**, no skips,
+  with pinned PyNite **3.0.0** / Qt **6.11.2** (**59.342 s**) and newer PyNite
+  **3.2.1** / Qt **6.12.0** (**53.970 s**). Both environments pass all **42 frame
+  and four plate examples** through save/reopen/solve/export/native windows plus
+  authenticated MCP discovery, edits and undo. All **129 runtime files** match
+  the source, audited wheel and both installed copies byte for byte.
+- Strict docs/link checks cover **58 HTML pages**; browser QA checks screenshots,
+  full-text search, subpath links, theme and layout. Visually inspected both new
+  native screenshots. Wheel/source metadata, runtime assets, licenses and source
+  contents pass distribution auditing. No viewport JavaScript changed.
+
 
 ## Post-RC4 Joint-Spring Checkpoint
 

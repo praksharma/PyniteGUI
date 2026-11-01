@@ -103,9 +103,9 @@ RC/surface plasticity remain outside this workflow.
 | Affine/nonuniform applied-traction membrane convergence and strain energy, coincident beam/slab strip refinement and quantified rejected drilling cases; corrected non-square YZ edge/probe axes | [Bounded coupled verification](surfaces/main-model.md) |
 | Rectangle fitting to selected corners/perimeters or complete frame levels | [Slab placement](surfaces/main-model.md) |
 | Separate Quad/Rect plate bending, multiple uniform cases/combinations, horizontal self-weight, edge supports, cached combination contours and provenance CSV | [Experimental plate-only analysis](surfaces/plates.md) |
-| Separate-plate element picking, local bending probes, linked marker, centre table and unit/snapshot-labelled centre/probe CSV; corrected Rect shear, Quad shear unavailable | [Local plate inspection](surfaces/plates.md) |
+| Separate-plate element picking, local bending probes, linked marker, centre table and unit/snapshot-labelled centre/probe CSV; corrected Rect shear and guarded recovered Quad centre shear | [Local plate inspection](surfaces/plates.md) |
 | Independent centred-opening/Rect recovery benchmarks; corrected Rect resultants in post-RC4 development, with explicit limits | [Plate verification and RC4 limitation](surfaces/plates.md) |
-| Test-only Quad shear comparison and convergent interior neighbouring-moment candidate; boundary/interface recovery unvalidated and shear output disabled | [Quad shear feasibility](surfaces/plates.md) |
+| Guarded standalone thin-Quad recovered centre shear, explicit corner/stencil masks, centre-only probes, provenance CSV and two custom examples; raw/coupled shear unavailable | [Quad shear feasibility](surfaces/plates.md) |
 | Four display-unit presets and canonical inch/kip storage | [Units](reference/units.md) |
 | Versioned save/open, migrations, undo/redo, recent-file cleanup and autosave/recovery | [History](reference/saving.md), [formats](reference/formats.md), [recovery](reference/recovery.md) |
 | Native macOS/Windows/Linux development packages, locked wheel/source builds and relocated frozen checks; public installers/signing pending | [Installation/build workflow](start/install.md), [validation record](project/releases.md) |
@@ -113,7 +113,7 @@ RC/surface plasticity remain outside this workflow.
 | Optional Model/Results workspaces and collapsible command toolbars, preserving draft inputs and view framing | [Workspaces](start/help.md) |
 | Help menu, website/F1, searchable shortcuts, About/version details and default-layout recovery | [Help and workspace](start/help.md) |
 | Searchable native example browser with geometry/loading/check previews; categorized menus, Gerber/three-hinged arch, fourteen official examples, coupled slabs and P-Delta | [Examples and preferences](start/examples.md), [hinge walkthrough](start/first-model.md#try-an-internal-hinge-or-three-hinged-arch) |
-| Official clamped rectangular Quad plate in separate editable workspace; nine of twenty upstream examples adapted | [Examples and limits](start/examples.md), [plate workspace](surfaces/plates.md) |
+| Official clamped Quad plate and hydrostatic wall in the separate workspace; fourteen of twenty upstream examples adapted | [Examples and limits](start/examples.md), [plate workspace](surfaces/plates.md) |
 | Light/dark themes and scrollable properties | [Examples and preferences](start/examples.md) |
 | Software-rendering recovery, observed renderer diagnostics, NVIDIA/Wayland profiles | [Graphics](start/graphics.md), [Linux NVIDIA](start/nvidia.md) |
 | Optional localhost MCP server, frame/surface/pressure batch edits, coupling opt-in, permission groups and background solve lifecycle | [MCP server](automation/mcp.md) |
@@ -136,12 +136,15 @@ Three editable examples have independent hand references and refinement checks.
 The separate plate workspace supports geometry-owned linear pressure along local
 width/height, centroid-load previews and pressure probes. The official hydrostatic
 tank wall is available with pinned bending/nodal parity and independent load and
-refinement checks. See [Plate loading](surfaces/plates.md). Quad shear stays disabled.
+refinement checks. See [Plate loading](surfaces/plates.md). That thick clamped wall remains outside recovered-shear scope.
 
 The [Quad-shear validation study](surfaces/plates.md) now covers outer boundaries,
 graded meshes and material/thickness interfaces with explicit missing stencils.
 Independent Kirchhoff energy references now resolve selected opening-area means
 and sampled fields away from corners. A compatible, pressure-equilibrated research
-method now meets the bounded free-rim target while preserving polynomial and
-interface checks. Production eligibility/masks and general source/interface
-validation remain pending; Quad shear is unavailable in application results.
+method meets the bounded free-rim target while preserving polynomial and
+interface checks. Its guarded standalone integration provides separately labelled
+Recovered Qx/Qy centre contours, missing-value masks and provenance exports.
+Finite edge-beam checks reject coupled recovery; main-model CSV/MCP reports null
+shear with explicit eligibility/status metadata. General source/interface and
+corner-peak validation remain pending.

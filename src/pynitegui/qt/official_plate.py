@@ -1,4 +1,4 @@
-"""Official transverse Quad example in the existing separate plate workspace.
+"""Official adaptations and custom benchmarks in the separate plate workspace.
 
 Source: PyNite Examples/Rectangular Plate Bending - Qauds.py at the revision
 in official_examples.SOURCE_COMMIT. MIT notice: licenses/pynite-examples.txt.
@@ -8,9 +8,15 @@ from .plate_model import PlateDefinition
 
 
 PLATE_EXAMPLES = {"official_plate_quad": "Official PyNite - Clamped Rectangular Quad Plate",
-                  "official_wall_hydrostatic": "Official PyNite - Hydrostatic Tank Wall"}
+                  "official_wall_hydrostatic": "Official PyNite - Hydrostatic Tank Wall",
+                  "thin_plate_recovered_shear": "Thin Plate - Recovered Centre Shear",
+                  "opening_plate_recovered_shear": "Thin Plate Opening - Masked Recovered Shear"}
 PLATE_CATEGORY = "Plates (Experimental)"
 PLATE_NOTES = {
+    'thin_plate_recovered_shear': ('Custom thin simply supported Quad plate, 120 by 180 in, t=0.6 in and mesh 7.5 in. Signed and zero pressure combinations. Recovered Q is a smoothed centre fit.',
+        'Choose Recovered Qx/Qy after analysis. Raw Quad shear stays unavailable. Compare refinement; centre tables/CSV show eligibility and fit provenance.'),
+    'opening_plate_recovered_shear': ('Custom 120 in square thin plate with a centred 40 in free opening, nu=0.2, t=0.6 in and 5 in mesh. Pressure -1e-7 kip/in2.',
+        'Recovered centre shear is masked near reentrant corners and when a stencil includes a corner. Blank values are unavailable. Refine to 4 in and compare; no corner-peak/design claim.'),
     "official_wall_hydrostatic": (
         "Official PyNite adaptation: 25 × 15 ft tank wall, 1 ft thick, with 15 ft of water. Quad mesh 1 ft, left/right/bottom clamped, top free. Linear transverse pressure follows height.",
         "375 Quads; 1.4F normal load +245.7 kip and reaction sum −245.7 kip. Compare mesh refinements. Quad shear remains unverified and disabled; this is transverse plate bending, not an in-plane shear wall."),
@@ -22,6 +28,12 @@ PLATE_NOTES = {
 def example_definition(key="official_plate_quad", unit_system="imperial"):
     if key not in PLATE_EXAMPLES:
         raise ValueError(f"Unknown official plate example: {key}")
+    if key in ('thin_plate_recovered_shear','opening_plate_recovered_shear'):
+        opening=key=='opening_plate_recovered_shear'
+        definition=PlateDefinition(width=120.,height=120. if opening else 180.,thickness=.6,mesh_size=5. if opening else 7.5,
+            pressure=-1e-7,unit_system=unit_system,combinations={'Reverse':{'Case 1':-2.},'Zero':{'Case 1':0.}},
+            openings=[dict(name='Opening',x_left=40.,y_bott=40.,width=40.,height=40.)] if opening else [])
+        definition.validate();return definition
     if key=='official_wall_hydrostatic':
         definition=PlateDefinition(width=300.,height=180.,thickness=12.,mesh_size=12.,
             material=Material('Concrete',E=57000.*4500.**.5/1000.,nu=1/6,rho=150./1000./12**3),

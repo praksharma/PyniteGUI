@@ -444,7 +444,9 @@ not generated node IDs, and are reapplied when the mesh is refined.
 
 **Analyze** runs in a cancellable isolated process. Results include nodal normal
 displacement, normal-force reaction sum and unsmoothed element-centre Mx/My/Mxy
-contours, plus Qx/Qy for Rect only. Quad shear is withheld pending validation.
+contours, plus corrected Qx/Qy for Rect. Eligible thin Quad plates additionally
+offer separately labelled **Recovered Qx/Qy (centre)** with explicit masks; raw
+Quad shear stays unavailable. See the guarded recovery workflow below.
 Moments are force-length per unit length (for example kN-m/m);
 shears are force per unit length. Displacement colouring interpolates nodal values
 over display triangles; it is not a higher-order displacement recovery or a
@@ -509,8 +511,8 @@ solving again. Plot titles name the combination and snapshot; the status shows
 its actual factors and normal reaction sum. Nodal CSV uses the chosen combination
 and includes case factors, snapshot ID/time/signature, global normal and weight
 case, canonical pressure profiles/combined affine coefficients and the
-applied-pressure discretization. Quad shear
-remains unavailable; corrected Rect shear remains separate.
+applied-pressure discretization. Raw Quad shear remains unavailable; guarded
+recovered centre shear and corrected Rect shear remain separate.
 The separate plate tool still has no general membrane or combined face-stress
 inspection and is not connected to the main-model MCP server.
 
@@ -588,9 +590,10 @@ shared edge, choose the element explicitly to inspect either side.
 
 Read Mx/My/Mxy as moment per unit width in the displayed local axes. Rect also
 shows Qx/Qy as force per unit length, recovered from its corrected displacement
-polynomial. Quad shows only its within-element bilinear moment recovery; its
-transverse shear remains unavailable. There is no averaging between elements,
-no new membrane or combined face-stress result, and no corner-peak certification.
+polynomial. Quad moment probes use within-element bilinear recovery. Its raw
+transverse shear remains unavailable; the separately labelled recovered Q fields
+use neighbouring moments and are available only at eligible element centres.
+There is no new membrane or combined face-stress result, or corner-peak certification.
 Moment/shear contours still show element-centre values when the probe is elsewhere.
 The probe/table also distinguish **Applied element pressure** (the actual constant
 load used in that cell) from **Target profile pressure** at the probe coordinate.
@@ -814,8 +817,10 @@ The near-rim comparison additionally restricts centres to x=20–40, y=48–72 i
 L2 norms use the actual cell areas. Its finest reference-mesh difference is
 about 0.17%, while recovery still fails the 5% rim gate. Selected mean and
 sampled-field convergence do not validate pointwise re-entrant-corner shear,
-arbitrary holes, thick/curved meshes or frame–shell interfaces. **Quad shear
-remains unavailable in production plots, snapshots, probes, CSV and MCP.**
+arbitrary holes, thick/curved meshes or frame–shell interfaces. At that research
+checkpoint Quad shear remained unavailable. The later compatible method and
+guarded standalone integration are described below; this original report is
+preserved as negative evidence.
 
 ![Independent opening-energy reference converges while the original quadratic fit fails free-rim recovery](docs/assets/screenshots/opening-shear-reference.png)
 
@@ -883,18 +888,74 @@ separate regressions.
 ![Compatible pressure-balanced recovery passes the refined free-rim target while preserving outer-boundary refinement](docs/assets/screenshots/equilibrated-quad-shear.png)
 
 [Download the compatible-recovery report](docs/assets/equilibrated-quad-shear.json).
-Its **`bounded_free_rim_recovery_ready`** flag approves these research cases;
-**`production_ready: false`** still applies. The helper stays outside application
-imports. Product integration needs explicit eligibility, snapshot-aware masked
-fields and guards for concentrated/line/member transfer and general interfaces.
-Pointwise reentrant-corner peaks, arbitrary opening/skew/thick/curved meshes and
-support changes remain unvalidated. Existing Quad shear plots, probes, CSV and
-MCP stay disabled until that integration and its validation are complete.
+Its **`bounded_free_rim_recovery_ready`** flag approves these research cases.
+The frozen report retains **`production_ready: false`**: it records the research
+checkpoint before product integration. Research helpers and their hashed sources
+are preserved unchanged; application code now owns its guarded implementation.
+The following standalone workflow is the subsequently verified integration.
+Coupled frame–slab shear, general interfaces and corner peaks remain unavailable.
 
 ```sh
 uv run --locked python -B scripts/benchmark_equilibrated_shear.py --output /tmp/equilibrated-shear.json --figure /tmp/equilibrated-shear.png
 uv run --locked python -B scripts/test.py test_equilibrated_quad_shear
 ```
+
+
+**Guarded recovered centre shear (development after RC4):** open **Examples >
+Plates (Experimental) > Thin Plate - Recovered Centre Shear**, or **Thin Plate
+Opening - Masked Recovered Shear**. Run **Analyze**, then choose **Recovered Qx
+(centre)** or **Recovered Qy (centre)**. These are smoothed, pressure-equilibrated
+fits to neighbouring solved moments, distinct from the disabled raw Quad Qx/Qy.
+The availability line gives the accepted/total cell count or the reason the
+recovery controls are disabled. Existing moments and displacement remain usable
+when recovered shear is unavailable.
+
+| Eligibility | Required scope |
+| --- | --- |
+| Geometry/material | Standalone rectangular Quad plate, width/height from 2:3 to 3:2, isotropic unmodified bending, nu from 0 to 0.3, thickness/short span no greater than 0.01. XY/XZ/YZ and translated origins retain the same local signs. |
+| Mesh | Complete Cartesian 3 × 3 patches; longest cell edge no greater than short span/8. Invalid, incomplete or ill-conditioned patches are unavailable; no fitting across holes. |
+| Edges/loading without openings | All four edges simply supported with uniform/affine transverse pressure, or nu=0 with exactly one clamped and three free edges under uniform pressure. Selected combinations and permitted normal self-weight use their actual solved cell pressures. |
+| Opening | One centred one-third square hole in a square plate, nu=0.2, thickness/span no greater than 0.005, uniform Cartesian mesh with longest edge no greater than span/24, simply supported outer edges and uniform pressure. Other opening shapes/placements are unavailable. |
+| Reentrant corners | Mask centres closer than the larger of span/12 and 2.5 cell edges to a corner, and patches whose bounding box contains a corner. No pointwise peak claim. |
+| Main-model frame–slab coupling | Unavailable. Even a pressure-only slab with a finite-stiffness edge beam changes the recovery problem beyond the validated standalone boundary conditions. |
+
+![Native thin-plate recovered Qx with local axes, units and snapshot identity](docs/assets/screenshots/plate-recovered-shear.png)
+
+Blank cell faces mean **unavailable**, not zero. A true zero result remains a
+finite value with its own colour. The opening example accepts 464 of 512 cells
+at 5 in mesh size and leaves explicit corner/stencil masks. Refine it to 4 in to
+compare the available fields; reentrant-corner peaks remain outside scope.
+
+![Native recovered centre shear around a free opening, with unavailable corner cells left blank](docs/assets/screenshots/plate-recovered-shear-masks.png)
+
+**Inspect Results…** adds Recovered Qx/Qy, status and fit-method columns to the
+centre table. At xi=eta=0, an accepted cell reports recovered values in force per
+length. Moving the probe off-centre reports `centre_only` and no recovered shear;
+its within-element moment/pressure probe still works. Missing values display as
+**unavailable**. Centre/probe CSV writes blank shear entries, the explicit status,
+fit method, recovery method/description, eligibility reason, units and the usual
+snapshot/time/signature/combination/axes. Display-unit changes reuse the accepted
+snapshot. Engineering edits or a new analysis clear it. Reverse and zero-load
+combinations retain their signs and masks.
+
+Independent production-path checks include Navier shear/refinement, actual
+triangular pressure along both axes, the converged opening energy reference,
+nu=0 cantilever cut forces, normal gravity and signed/zero cases. The bounded
+opening rim stays below the unchanged 5% error target at 5 and 4 in mesh sizes.
+These checks validate the stated observables and geometry, rather than arbitrary
+plate geometry or design limits.
+
+**Finite frame-interface rejection:** an independent Levy thin-plate solution
+adds the actual torsional edge-beam energy and reduces to Navier when GJ=0.
+For GJ/(D × width) = 0.1, 1 and 10, merely masking beam-contact cells gives
+refined recovered-vector errors of about 5.24%, 24.17% and 35.06%; each worsens
+from the coarser mesh. Thus contact-cell masking is insufficient. Main-model
+contours keep recovered-Q choices disabled, and surface CSV/MCP rows include
+empty/null values with the reason that coupled shear is unvalidated. MCP
+`read_results(kind="surface_elements")` includes `shear_recovery` method, sample,
+eligibility, counts, reason and status counts; it does not imply that the separate
+plate workspace is MCP-controlled. Existing coupled moments/stresses retain
+unsmoothed centre/probe values and the full equilibrium acceptance gate.
 
 **Opening benchmark:** a 120 × 120 in plate, thickness 0.6 in, E=3600 ksi,
 nu=0.2, simply supported outer edges and a centred 40 × 40 in free opening,
@@ -1882,7 +1943,7 @@ notice:
 
 The official plate opens as an unsolved mesh preview. Use Analyze for its
 transverse displacement and element-centre moment contours, or Save plate
-for an editable copy. Quad shear remains disabled. The hydrostatic tank wall is
+for an editable copy. Its clamped/thick geometry is outside recovered-shear scope. The hydrostatic tank wall is
 also available in this category; its illustrated loading/bending walkthrough is
 in the rectangular plate section above.
 

@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (QComboBox, QDoubleSpinBox, QFileDialog, QHBoxLayo
 
 from .spatial_surfaces import surface_geometry
 from .surface_supports import PLANE_AXES
-from .surface_results import FIELDS, QUAD_SHEAR_LIMITATION, centre_results, field_units, inspect_surface, surface_table
+from .surface_results import FIELDS, DISPLAY_FIELDS, RECOVERED_FIELDS, surface_recovery, QUAD_SHEAR_LIMITATION, centre_results, field_units, inspect_surface, surface_table
 from .theme import colors, style_axes
 
 
@@ -28,7 +28,7 @@ class SurfaceResultsPanel(QWidget):
         self.surface.setObjectName("surface_result_mesh")
         self.field.setObjectName("surface_result_field")
         self.element.setObjectName("surface_result_element")
-        for key, (label, _) in FIELDS.items():
+        for key, (label, _) in DISPLAY_FIELDS.items():
             self.field.addItem(label, key)
         for title, control in (("Slab", self.surface), ("Contour", self.field), ("Element", self.element)):
             control.setAccessibleName(title)
@@ -52,14 +52,15 @@ class SurfaceResultsPanel(QWidget):
         row.addWidget(self.export)
         layout.addLayout(row)
         note = QLabel("Local axes: x from element i→j, y from i→n, z = x×y. Membrane stresses: tension positive. "
-                      "Moments are per unit width. Contours use unsmoothed element centres. "
+                      "Moments are per unit width. Moment/stress contours use unsmoothed element centres. "
                       "Click a face to probe; xi/eta ±1 are element edges. Corner peaks and design checks are unverified.")
         note.setWordWrap(True)
         layout.addWidget(note)
-        limitation = QLabel("Quad transverse shear is unavailable pending independent validation.")
+        limitation = QLabel("Coupled Quad shear is unavailable; validated recovered Q is limited to the separate thin-plate workspace.")
         limitation.setToolTip(QUAD_SHEAR_LIMITATION)
         limitation.setWordWrap(True)
         layout.addWidget(limitation)
+        self.recovered_note=QLabel();self.recovered_note.setWordWrap(True);layout.addWidget(self.recovered_note)
         self.probe = QLabel("Run coupled analysis to inspect slab results.")
         self.probe.setWordWrap(True)
         self.probe.setTextFormat(Qt.TextFormat.PlainText)
@@ -117,6 +118,7 @@ class SurfaceResultsPanel(QWidget):
         self.table.setRowCount(0)
         self.element.clear()
         self.probe.setText(message)
+        self.recovered_note.clear()
         self.export.setEnabled(False)
         self.canvas.draw_idle()
 
@@ -126,8 +128,14 @@ class SurfaceResultsPanel(QWidget):
         name = self.surface.currentText()
         try:
             self.rows = centre_results(self.result, name)
+            recovery=surface_recovery(self.result,name)
+            self.recovered_note.setText(f"Recovered centre shear: {recovery['available']}/{recovery['total']} cells. {recovery['reason']}")
+            for index in range(self.field.count()):
+                if self.field.itemData(index) in RECOVERED_FIELDS:
+                    self.field.model().item(index).setEnabled(bool(recovery['available']))
+                    self.field.setItemData(index,recovery['reason'],Qt.ItemDataRole.ToolTipRole)
             headers, rows = surface_table(self.project, self.result, name)
-            self.panel.populate(self.table, headers, rows)
+            self.panel.populate(self.table, headers, [["unavailable" if v is None else v for v in row] for row in rows])
             self.element.blockSignals(True)
             old = self.element.currentText()
             self.element.clear()
@@ -147,14 +155,17 @@ class SurfaceResultsPanel(QWidget):
         if not self.rows or self.result is None:
             return
         name, key = self.surface.currentText(), self.field.currentData()
+        if key in RECOVERED_FIELDS and not surface_recovery(self.result,name)['available']:
+            self.field.blockSignals(True);self.field.setCurrentIndex(0);self.field.blockSignals(False);key=self.field.currentData()
         definition, units = self.project.surfaces[name], self.project.units
         u, v, _ = PLANE_AXES[definition.plane]
         _, _, points, cells = surface_geometry(definition)
         points = np.asarray(points)[:, [u, v]] * units.length_factor
         self.polygons = [points[list(cell)] for cell in cells]
         factor, unit = field_units(units, key)
-        values = np.array([row[key] * factor for row in self.rows])
-        bound = max(float(np.abs(values).max()), 1e-15)
+        values=np.array([row[key]*factor if row[key] is not None else np.nan for row in self.rows])
+        finite=values[np.isfinite(values)];bound=max(float(abs(finite).max()),1e-15) if len(finite) else 1.
+        values=np.ma.masked_invalid(values)
         self.figure.clear()
         ax = self.figure.add_subplot()
         self.artist = PolyCollection(self.polygons, array=values, cmap="coolwarm", clim=(-bound, bound),
@@ -165,7 +176,7 @@ class SurfaceResultsPanel(QWidget):
         ax.set_xlabel(f"Global {'XYZ'[u]} ({units.length})")
         ax.set_ylabel(f"Global {'XYZ'[v]} ({units.length})")
         ax.set_title(f"{name} | {key} ({unit}) | {self.result.combination}\n"
-                     f"Snapshot {self.result.snapshot_id} | element centres, unsmoothed", fontsize=9)
+                     f"Snapshot {self.result.snapshot_id} | "+("smoothed centre fit; blanks unavailable" if key in RECOVERED_FIELDS else "element centres, unsmoothed"), fontsize=9)
         style_axes(ax)
         self.figure.set_facecolor(colors()["canvas"])
         bar = self.figure.colorbar(self.artist, ax=ax, label=f"{key} ({unit})", shrink=.8)
@@ -182,7 +193,8 @@ class SurfaceResultsPanel(QWidget):
             row = inspect_surface(self.result, name, element, self.xi.value(), self.eta.value())
             units = self.project.units
             position = ", ".join(f"{value*units.length_factor:.6g}" for value in row["position"])
-            values = " | ".join(f"{key} {row[key]*field_units(units, key)[0]:.6g} {field_units(units, key)[1]}" for key in FIELDS)
+            values=" | ".join(f"{DISPLAY_FIELDS[key][0]} {row[key]*field_units(units,key)[0]:.6g} {field_units(units,key)[1]}" if row[key] is not None
+                              else f"{key} unavailable ({row['shear_status'].replace('_',' ')})" for key in DISPLAY_FIELDS)
             axes = "; ".join(f"{axis}=({', '.join(f'{value:g}' for value in vector)})" for axis, vector in zip("xyz", row["axes"]))
             self.probe.setText(f"{element} | XYZ ({position}) {units.length} | {values}\nLocal unit axes: {axes}")
             if self.artist is not None:
@@ -254,7 +266,9 @@ class SurfaceResultsPanel(QWidget):
             writer.writerow(["# Snapshot", self.result.snapshot_id, "Combination", self.result.combination,
                              "Surface", name, "Analyzed UTC", self.result.analyzed_at])
             writer.writerow(["# Model signature", self.result.model_signature])
-            writer.writerow(["# Unsmoothed element centres (xi=eta=0); membrane tension positive; no combined face stresses or design checks"])
+            from .quad_shear_snapshot import summary
+            writer.writerow(["# Recovered shear",str(summary(surface_recovery(self.result,name)))])
+            writer.writerow(["# Raw moments/stresses: unsmoothed element centres (xi=eta=0); membrane tension positive; no combined face stresses or design checks"])
             writer.writerow([*headers, *(f"local {axis} global {component}" for axis in "xyz" for component in "XYZ")])
             for row, canonical in zip(rows, centre_results(self.result, name)):
                 writer.writerow([*row, *np.array(canonical["axes"]).ravel().tolist()])

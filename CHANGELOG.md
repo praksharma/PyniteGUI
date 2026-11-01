@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Integrate bounded recovered Qx/Qy in the separate thin-Quad plate workspace:
+  explicit eligibility, masked centre contours, centre-only probes, status/fit
+  metadata and unit/snapshot-labelled CSV. Add thin-rectangle and free-opening
+  examples with reverse/zero combinations and native screenshots. Independently
+  verify Navier, actual triangular loads, opening rims and nu=0 cantilevers.
+  Preserve raw-shear rejection. Finite edge-beam checks reject coupled recovery;
+  main-model UI/CSV/MCP now explains missing shear with explicit null/status
+  metadata. General interfaces, corner peaks and arbitrary plates remain open.
+
 - Fix the bounded free-rim shear-recovery gap in a research-only compatible
   moment-potential method. Match cell means, enforce actual affine-pressure
   equilibrium and verified straight-free-edge conditions, and preserve exact

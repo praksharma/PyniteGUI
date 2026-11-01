@@ -147,7 +147,7 @@ class PlateWorkspace(QDialog):
         self.component = QComboBox()
         self.component.addItems(["Mesh", "Normal displacement", "Mx (element centre)",
                                  "My (element centre)", "Mxy (element centre)",
-                                 "Qx (element centre)", "Qy (element centre)", "Applied pressure (element average)"])
+                                 "Qx (element centre)", "Qy (element centre)", "Applied pressure (element average)", "Recovered Qx (centre)", "Recovered Qy (centre)"])
         self.component.setToolTip("Resultants follow the local x/y axes shown on the plot. "
                                  "Positive bending moments oppose positive curvature. "
                                  "Contours use unsmoothed element-centre values; sharp opening-corner peaks are mesh-sensitive.")
@@ -156,6 +156,7 @@ class PlateWorkspace(QDialog):
         self.recovery_note = QLabel()
         self.recovery_note.setWordWrap(True)
         layout.addWidget(self.recovery_note)
+        self.recovered_note=QLabel();self.recovered_note.setWordWrap(True);layout.addWidget(self.recovered_note)
         self.figure = Figure()
         self.canvas = FigureCanvasQTAgg(self.figure)
         self.plot_toolbar = NavigationToolbar2QT(self.canvas, self)
@@ -285,6 +286,15 @@ class PlateWorkspace(QDialog):
             self.component.blockSignals(True)
             self.component.setCurrentIndex(1 if self.result is not None else 0)
             self.component.blockSignals(False)
+        recovered=self.result.get('recovered_shear') if self.result is not None else None
+        enabled=bool(recovered and recovered['available'] and self.definition.element_type=='Quad')
+        for index in (8,9):
+            self.component.model().item(index).setEnabled(enabled)
+            self.component.setItemData(index,recovered['reason'] if recovered else 'Analyze an eligible thin Quad plate first',Qt.ItemDataRole.ToolTipRole)
+        self.recovered_note.setVisible(self.definition.element_type=='Quad' and recovered is not None)
+        self.recovered_note.setText((f"Recovered centre shear: {recovered['available']}/{recovered['total']} cells. {recovered['reason']}" if recovered else ''))
+        if self.component.currentIndex() in (8,9) and not enabled:
+            self.component.blockSignals(True);self.component.setCurrentIndex(1 if self.result is not None else 0);self.component.blockSignals(False)
         model = build_plate(self.definition)
         _, points, cells = plate_geometry(model, self.definition)
         units = self.definition.units
@@ -303,6 +313,13 @@ class PlateWorkspace(QDialog):
             artist=PolyCollection(polygons,array=values,cmap='coolwarm');ax.add_collection(artist)
             peak=max(float(np.max(abs(values))),1e-15);artist.set_clim(-peak,peak)
             self.figure.colorbar(artist,ax=ax,label=units.pressure)
+        elif self.result is not None and index in (8,9):
+            recovered=self.result['recovered_shear'];column=index-8
+            values=np.array([value[column] if value is not None else np.nan for value in recovered['values']])*units.factor('intensity')
+            masked=np.ma.masked_invalid(values)
+            artist=PolyCollection(polygons,array=masked,cmap='coolwarm');ax.add_collection(artist)
+            peak=max(float(np.max(abs(values[np.isfinite(values)]))),1e-15);artist.set_clim(-peak,peak)
+            self.figure.colorbar(artist,ax=ax,label=units.intensity)
         elif self.result is not None and index:
             if index == 1:
                 values = self.result["displacement"] * units.length_factor
@@ -337,6 +354,7 @@ class PlateWorkspace(QDialog):
         title = self.component.currentText() + (" | DKMQ quads" if self.definition.element_type == "Quad" else " | Polynomial rectangles")
         if self.result is not None:
             title += f"\n{self.result['combination']} | Snapshot {self.result['snapshot_id']}"
+        if index in (8,9):title+='\nSmoothed centre fit; blank cells are unavailable'
         if index==7:
             title+='\nCentroid pressure per element; refine varying profiles'
             if self.result is None:title+=' | Plate combination preview'

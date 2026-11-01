@@ -17,15 +17,18 @@ FIELDS = {
     "Txy": ("Membrane Txy", "stress"),
 }
 
+RECOVERED_FIELDS = {'recovered_Qx': ('Recovered Qx (centre)', 'intensity'), 'recovered_Qy': ('Recovered Qy (centre)', 'intensity')}
+DISPLAY_FIELDS={**FIELDS,**RECOVERED_FIELDS}
+
 QUAD_SHEAR_LIMITATION = (
-    "Quad Qx/Qy unavailable: PyNite 3.0/3.2 transverse shear recovery fails the "
+    "Raw Quad Qx/Qy unavailable: PyNite 3.0/3.2 transverse shear recovery fails the "
     "independent thin-plate Navier benchmark under mesh refinement. "
     "Moments and membrane stresses are separate results; do not infer shear design from these plots."
 )
 
 
 def field_units(units, key):
-    quantity = FIELDS[key][1]
+    quantity = DISPLAY_FIELDS[key][1]
     if quantity == "surface_moment":
         return units.force_factor, f"{units.moment}/{units.length}"
     return units.factor(quantity), getattr(units, quantity)
@@ -51,8 +54,23 @@ def inspect_surface(result, surface, element, xi=0., eta=0.):
     axes = np.asarray(quad.T())[:3, :3]
     if axes.shape != (3, 3) or not np.all(np.isfinite(axes)):
         raise ValueError("Surface recovery returned incompatible local axes.")
-    return {"element": element, "position": point.tolist(), "axes": axes.tolist(),
+    from .quad_shear_snapshot import probe
+    data=surface_recovery(result,surface)
+    recovered=probe(data,mapping['elements'].index(element),xi,eta)
+    return {**recovered,"element": element, "position": point.tolist(), "axes": axes.tolist(),
             "xi": float(xi), "eta": float(eta), **dict(zip(FIELDS, values.tolist()))}
+
+
+def surface_recovery(result,surface):
+    from .quad_shear_snapshot import unavailable
+    mapping=result.solver._pynitegui_surfaces[surface]
+    cache=getattr(result.solver,'_brecon_recovered_shear',None)
+    if cache is None:cache=result.solver._brecon_recovered_shear={}
+    key=(result.combination,surface)
+    if key not in cache:
+        cache[key]=unavailable(len(mapping['elements']),
+            'Coupled frame–slab recovered shear is unvalidated; use the separate thin-plate workspace')
+    return cache[key]
 
 
 def centre_results(result, surface):
@@ -71,7 +89,7 @@ def centre_results(result, surface):
 def surface_table(project, result, surface):
     units = project.units
     headers = ["Element", *(f"{axis} ({units.length})" for axis in ("X", "Y", "Z")),
-               *(f"{key} ({field_units(units, key)[1]})" for key in FIELDS)]
+               *(f"{('Recovered '+key[-2:]) if key in RECOVERED_FIELDS else key} ({field_units(units,key)[1]})" for key in DISPLAY_FIELDS), 'Recovered shear status','Recovered fit']
     rows = [[row["element"], *(v*units.length_factor for v in row["position"]),
-             *(row[key]*field_units(units, key)[0] for key in FIELDS)] for row in centre_results(result, surface)]
+             *(None if row[key] is None else row[key]*field_units(units,key)[0] for key in DISPLAY_FIELDS),row['shear_status'],row['shear_fit_method']] for row in centre_results(result, surface)]
     return headers, rows

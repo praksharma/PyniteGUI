@@ -53,7 +53,7 @@ spatial translational/rotational-release scope rechecked 2026-10-29; unilateral 
 | Unilateral member behaviour | Done | Iterative elastic tension/compression-only axial trusses in 2D/3D, activation/reactivation, independent combinations/load steps, neutral-contact stability and active-state/iteration results. Frame members remain bilateral; surfaces and spatial frame releases are excluded. |
 | Node-to-node spring elements | Done | Explicit massless axial links between existing joints in 2D/3D, entered force/length stiffness and bilateral/tension-only/compression-only action. Native staged editing, ownership/copy/undo, spring-only networks, results/CSV/reports/MCP and independent mechanics. Linear/iterative only; no modal/plastic/P-Delta/surface or spatial frame-release coupling. |
 | Bilateral/unilateral support springs | Done | Bilateral global springs plus positive/negative-displacement-only action with Iterative elastic, per-combination activation and physical reaction recovery. Ground support laws remain distinct from joint-to-joint axial links. |
-| DKMQ quadrilaterals | Partial | Plate-only bending tool plus opt-in rectangular Quad/frame coupling with pressure cases, self-weight, shared joints, conformity checks, nodal results/deformation and equilibrium. Local moment/membrane-stress contours, probes and edge supports are implemented. Validated shear recovery and general membrane/drilling/curved-shell benchmarks remain pending. |
+| DKMQ quadrilaterals | Partial | Plate-only bending tool plus opt-in rectangular Quad/frame coupling with pressure cases, self-weight, shared joints, conformity checks, nodal results/deformation and equilibrium. Local moment/membrane-stress contours, probes and edge supports are implemented. Guarded standalone recovered centre shear is implemented; coupled shear and general membrane/drilling/curved-shell benchmarks remain pending. |
 | Polynomial rectangles | Partial | Quad/Rect choice for rectangular plate bending (including openings) with centre-coordinate recovery, deflection comparison and equilibrium regressions. General membrane/shell workflows and additional formulation-specific benchmarks remain pending. |
 | Shape/opening meshing | Done | All seven concrete PyNite generators with shape-specific/common options, bounded checks, control lines/openings, offline 3D geometry preview, recipes/undo and connectivity export. Curved-shell analysis and frame assembly remain distinct pending capabilities. |
 | Support reactions | Done | Unit-aware reactions, exports and six spatial components, including bilateral springs and model-level imposed support motions in linear analysis and supported frame-only P-Delta. |
@@ -209,7 +209,7 @@ differences from upstream. New solver work is authorized; apply the analysis-met
 
 **Current-capability audit (2026-10-27, all 20 pinned scripts reviewed):**
 
-Fourteen official adaptations are now available. The hydrostatic tank wall now uses geometry-owned linear pressure in the transverse plate workspace, with all source nodal/moment parity, independent triangular-load continuum/refinement checks and explicit centroid-load first moments. Quad shear remains disabled. The official modal column preserves the source inputs/gravity and opens the separate mode workspace, with pinned frequency/normalized-shape parity and independent dynamics checks. Three new Iterative elastic examples preserve the pinned source inputs: compression-only foundation, tension-only braced frame, and fixed-anchor spring-supported frame. The last condenses its fixed vertical spring anchors exactly into one-way ground springs; general node-to-node spring entities are now a separate implemented workflow. Pinned upstream result parity, independent uplift mechanics, persistence and worker/MCP checks cover this scope.
+Fourteen official adaptations are now available. The hydrostatic tank wall now uses geometry-owned linear pressure in the transverse plate workspace, with all source nodal/moment parity, independent triangular-load continuum/refinement checks and explicit centroid-load first moments. Raw Quad shear remains disabled; the separate bounded thin-plate recovery is described below. The official modal column preserves the source inputs/gravity and opens the separate mode workspace, with pinned frequency/normalized-shape parity and independent dynamics checks. Three new Iterative elastic examples preserve the pinned source inputs: compression-only foundation, tension-only braced frame, and fixed-anchor spring-supported frame. The last condenses its fixed vertical spring anchors exactly into one-way ground springs; general node-to-node spring entities are now a separate implemented workflow. Pinned upstream result parity, independent uplift mechanics, persistence and worker/MCP checks cover this scope.
 
 The rectangular Quad plate opens
 through **File > Examples > Plates (Experimental)** or Browse Examples in the
@@ -277,8 +277,11 @@ Remaining six scripts are unchecked:
   spring-conflict rejection, undo, viewport/report display and atomic MCP edits.
   Retain rigid-body and independent all-combination equilibrium rejection.
 - [ ] Independently validate coupled Quad transverse shear recovery before exposing
-  it. PyNite 3.0/3.2 raw Qx/Qy fails the thin-plate Navier refinement benchmark;
-  Quad shear plots/data remain disabled in both coupled and plate workspaces.
+  it. Raw Qx/Qy fails thin-plate Navier refinement. A finite-torsion edge-beam
+  Levy reference also rejects recovery with contact-cell masks: fine errors
+  5.24/24.17/35.06% for GJ/(D*width)=0.1/1/10 worsen under refinement.
+  Coupled recovered fields remain null with an explicit UI/CSV/MCP reason;
+  standalone recovery below does not certify frame–shell interfaces.
 - [x] Complete a test-only Quad shear recovery feasibility study: independently
   check Navier reference truncation, raw shear, own-element moment divergence and
   a complete 3 x 3 neighbouring-centre moment fit. Cover separate/coupled thin
@@ -309,12 +312,15 @@ Remaining six scripts are unchecked:
   unchanged exact interface cut forces. Rim errors fall from 12.27/11.57% to
   3.35/3.14% on the refined meshes, meeting the unchanged 5% gate without dropping
   available comparison cells. Publish the reproducible 63-record report/figure.
-- [ ] Integrate the validated bounded recovery with explicit production
-  eligibility, snapshot-aware masked output and source/interface guards before
-  exposing it. Pointwise corner peaks, arbitrary opening/skew/thick/curved meshes,
-  concentrated/line/member transfer and general interfaces remain unvalidated.
-  Keep smoothed recovery distinct from unsmoothed probes and missing patches
-  explicit; production Quad shear remains disabled pending this work.
+- [x] Integrate validated bounded recovery in the separate thin-plate workspace:
+  explicit geometry/material/edge/loading/mesh eligibility, snapshot-bound masked
+  centre Qx/Qy, centre-only probes, status/fit metadata and unit/provenance CSV.
+  Add two custom examples and illustrated guidance. Verify independent Navier,
+  triangular-pressure, free-opening and nu=0 cantilever references, true zero
+  versus missing, reverse combinations, real workers and stale-result clearing.
+  Keep raw Quad shear disabled and coupled fields unavailable after the finite
+  edge-beam rejection. Pointwise corner peaks, arbitrary opening/skew/thick/curved
+  meshes, concentrated/line/member transfer and general interfaces remain open.
 - [x] Add solved traction-based affine membrane checks in every plane, signed/zero
   combinations and refinement; independently compare applied loads, displacement
   and stress without prescribing the solution. Add coincident nu=0 slender-strip

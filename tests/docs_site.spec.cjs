@@ -96,7 +96,10 @@ const server = http.createServer((request,response)=>{
         assert(figures.some(image=>image.src.endsWith('equilibrated-quad-shear.png')),'Missing compatible-recovery comparison figure');
         assert((await page.locator('article').innerText()).includes('bounded_free_rim_recovery_ready'),'Missing bounded recovery versus production distinction');
         assert((await page.locator('article').innerText()).includes('bounded_reference_observables_ready'),'Missing independent reference-versus-recovery distinction');
-        assert((await page.locator('article').innerText()).includes('production_ready: false'),'Missing unresolved shear-publication gate');
+        assert((await page.locator('article').innerText()).includes('production_ready: false'),'Missing preserved research checkpoint');
+        assert((await page.locator('article').innerText()).includes('Guarded recovered centre shear'),'Missing current standalone workflow');
+        assert((await page.locator('article').innerText()).includes('Finite frame-interface rejection'),'Missing rejected coupling scope');
+        assert(figures.some(image=>image.src.endsWith('plate-recovered-shear.png'))&&figures.some(image=>image.src.endsWith('plate-recovered-shear-masks.png')),'Missing production recovery screenshots');
         assert(figures.some(image=>image.src.endsWith('plate-load-combinations.png'))&&
           figures.some(image=>image.src.endsWith('plate-load-program.png')),'Missing plate loading workflow screenshots');
       }
