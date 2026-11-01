@@ -141,6 +141,7 @@ refinement checks. See [Plate loading](surfaces/plates.md). Quad shear stays dis
 The [Quad-shear validation study](surfaces/plates.md) now covers outer boundaries,
 graded meshes and material/thickness interfaces with explicit missing stencils.
 Independent Kirchhoff energy references now resolve selected opening-area means
-and sampled fields away from corners. The current fit still fails free-rim
-recovery accuracy; Quad shear remains research data and is unavailable in
-production results.
+and sampled fields away from corners. A compatible, pressure-equilibrated research
+method now meets the bounded free-rim target while preserving polynomial and
+interface checks. Production eligibility/masks and general source/interface
+validation remain pending; Quad shear is unavailable in application results.

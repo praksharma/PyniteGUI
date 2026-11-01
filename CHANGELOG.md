@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Fix the bounded free-rim shear-recovery gap in a research-only compatible
+  moment-potential method. Match cell means, enforce actual affine-pressure
+  equilibrium and verified straight-free-edge conditions, and preserve exact
+  polynomial derivatives. Refined rim errors decrease to about 3.35/3.14%, meeting
+  the unchanged 5% gate. Add manufactured/axis/sign/zero/geometry and full bounded
+  benchmark checks plus an illustrated 63-record report. Production integration,
+  corner peaks and general interface/source guards remain pending; application
+  Quad-shear output is unchanged.
+
 - Add an independent boundary-fitted Kirchhoff energy reference for the plate
   opening: bicubic C1/biquintic C2 Hermite spaces, exact quadrature, natural free
   hole and simply supported outer traces. Verify polynomial/energy identities,

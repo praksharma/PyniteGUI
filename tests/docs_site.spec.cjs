@@ -93,6 +93,8 @@ const server = http.createServer((request,response)=>{
         assert(figures.some(image=>image.src.endsWith('quad-shear-benchmarks.png')),'Missing Quad shear feasibility figure');
         assert(figures.some(image=>image.src.endsWith('quad-shear-boundaries.png')),'Missing boundary/interface shear figure');
         assert(figures.some(image=>image.src.endsWith('opening-shear-reference.png')),'Missing independent opening reference figure');
+        assert(figures.some(image=>image.src.endsWith('equilibrated-quad-shear.png')),'Missing compatible-recovery comparison figure');
+        assert((await page.locator('article').innerText()).includes('bounded_free_rim_recovery_ready'),'Missing bounded recovery versus production distinction');
         assert((await page.locator('article').innerText()).includes('bounded_reference_observables_ready'),'Missing independent reference-versus-recovery distinction');
         assert((await page.locator('article').innerText()).includes('production_ready: false'),'Missing unresolved shear-publication gate');
         assert(figures.some(image=>image.src.endsWith('plate-load-combinations.png'))&&

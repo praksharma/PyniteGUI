@@ -802,7 +802,7 @@ The older sine-reference condition guard and its diagnostic report are preserved
 This resolves the reference ambiguity for those observables, but exposes a
 **recovery error**. At actual Quad element centres at least 10 in from every
 re-entrant corner, the 72/96 quintic reference difference stays below 0.5%.
-The current neighbouring-moment fit gives:
+The original independent quadratic neighbouring-moment fit gives:
 
 | Quad mesh / elements | Vector L2 error away from corners | Vector L2 error near the free rim |
 | --- | --- | --- |
@@ -817,7 +817,7 @@ sampled-field convergence do not validate pointwise re-entrant-corner shear,
 arbitrary holes, thick/curved meshes or frame–shell interfaces. **Quad shear
 remains unavailable in production plots, snapshots, probes, CSV and MCP.**
 
-![Independent opening-energy reference converges while the current moment fit fails free-rim recovery](docs/assets/screenshots/opening-shear-reference.png)
+![Independent opening-energy reference converges while the original quadratic fit fails free-rim recovery](docs/assets/screenshots/opening-shear-reference.png)
 
 [Download the independent opening-reference report](docs/assets/opening-shear-reference.json).
 It distinguishes `bounded_reference_observables_ready` from
@@ -827,6 +827,73 @@ recovery gate. Reproduce it with:
 ```sh
 uv run --locked python -B scripts/benchmark_opening_shear.py --output /tmp/opening-shear.json --figure /tmp/opening-shear.png
 uv run --locked python -B scripts/test.py test_plate_energy_reference
+```
+
+**Compatible, load-equilibrated recovery (research):** the free-rim error above
+is corrected for the stated thin-plate benchmarks by fitting one quintic moment
+potential `U`, rather than three unrelated moment polynomials:
+`Mx=−(U,xx+nu*U,yy)`, `My=−(U,yy+nu*U,xx)`, and
+`Mxy=−(1−nu)*U,xy`. The recovered shear is `Q=−grad(laplacian(U))`.
+This enforces moment compatibility within an isotropic region. The fit also
+satisfies `laplacian(laplacian(U))=q` for the actual affine pressure. On explicitly
+identified straight free faces it imposes `Mnn=0` and the effective Kirchhoff
+shear condition `Vn=Qn+dMnt/dt=0`.
+
+The inputs are **cell-mean moments**. On the supported Cartesian Quad element,
+its bilinear moment field has the same centre value and mean; an actual-element
+quadrature check verifies this in XY/XZ/YZ. The fitted smooth polynomial is
+integrated over each cell before comparison with that mean. Its value at one
+point is not substituted for a different field's mean. No reference solution,
+new displacement solve, modified load or modified stiffness enters recovery.
+
+Uniform-pressure patches that already reproduce a compatible quadratic moment
+field retain their exact derivative through a lower-degree, **polynomial-exact**
+branch. This decision uses the observed moment reproduction residual, not
+benchmark answers. Boundary constraints do not overwrite an already exact
+discrete polynomial derivative. Other patches use the constrained quintic fit;
+the report records which branch was used, the active free faces, local fit
+condition, moment-fit residual and constraint backward error. A fit residual or
+available stencil alone is not an accuracy certificate.
+
+Patches remain complete 3 × 3 Cartesian cell blocks within one owner/constitutive
+region. Supplied free edges must match complete exposed faces; an interior
+line or material interface cannot be passed off as a free edge. Non-affine
+pressure, insufficient same-region cells, excessive grading and unresolved fits
+return no value. Coordinate rounding handles only floating-point aliases. The
+field is smoothed recovery, distinct from the unsmoothed element probe.
+
+The unchanged independent opening reference and **5% free-rim gate** give:
+
+| Opening mesh / elements | Original rim vector L2 error | Compatible rim vector L2 error |
+| --- | --- | --- |
+| 10 in / 128 | 59.53% | 9.72% |
+| 5 in / 512 | 12.27% | 3.35% |
+| 4 in / 800 | 11.57% | 3.14% |
+
+Both refined meshes now pass the gate; the coarse mesh still fails. On the
+finest mesh, error away from reentrant corners is below 1%. The same fixed
+comparison regions and cell-area weights are used for both methods, with no
+newly dropped cells. Uniform/graded standalone and negligible-edge-beam coupled
+Navier checks preserve refinement, with finest outer-row errors below 1%.
+The exact nu=0 interface cantilever cut-force check remains within 1e-6 relative
+L2. Manufactured quintic/affine-pressure and free-edge fields, SI-like scaling,
+signed/zero cases, all planes, missing patches and false-edge rejection are
+separate regressions.
+
+![Compatible pressure-balanced recovery passes the refined free-rim target while preserving outer-boundary refinement](docs/assets/screenshots/equilibrated-quad-shear.png)
+
+[Download the compatible-recovery report](docs/assets/equilibrated-quad-shear.json).
+Its **`bounded_free_rim_recovery_ready`** flag approves these research cases;
+**`production_ready: false`** still applies. The helper stays outside application
+imports. Product integration needs explicit eligibility, snapshot-aware masked
+fields and guards for concentrated/line/member transfer and general interfaces.
+Pointwise reentrant-corner peaks, arbitrary opening/skew/thick/curved meshes and
+support changes remain unvalidated. Existing Quad shear plots, probes, CSV and
+MCP stay disabled until that integration and its validation are complete.
+
+```sh
+uv run --locked python -B scripts/benchmark_equilibrated_shear.py --output /tmp/equilibrated-shear.json --figure /tmp/equilibrated-shear.png
+uv run --locked python -B scripts/test.py test_equilibrated_quad_shear
 ```
 
 **Opening benchmark:** a 120 × 120 in plate, thickness 0.6 in, E=3600 ksi,

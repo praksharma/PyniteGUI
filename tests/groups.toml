@@ -149,6 +149,7 @@ tests = [
   "test_quad_shear_validation",
   "test_quad_shear_boundaries",
   "test_plate_energy_reference",
+  "test_equilibrated_quad_shear",
   "test_plate_inspection",
   "test_qt_coupled_surfaces",
   "test_qt_mesh_workspace",

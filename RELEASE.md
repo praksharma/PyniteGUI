@@ -199,6 +199,47 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 Compatible Quad-Shear Recovery Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-01. This is a bounded research
+recovery implementation, not production exposure. Application solves, accepted
+snapshots, file formats and public RC4 artifacts are unchanged; existing Quad
+shear outputs remain disabled pending masked, guarded product integration.
+
+- Replace unrelated moment fits with one compatible quintic potential U for the
+  stated isotropic thin-plate cases. Enforce actual affine-pressure equilibrium
+  and genuine straight free-face normal moment/effective-shear conditions.
+  Differentiate Q from U without a reference input or new displacement solve.
+- Match cell means by exact quadrature; verify actual Quad centre/mean identity
+  in all planes. Preserve exact compatible polynomial derivatives when their
+  data already reproduce the lower-degree field to roundoff. Record that branch
+  separately; do not force discrete constant moment biases into boundary values.
+  Uniform-pressure interface cantilevers retain the unchanged 1e-6 relative-L2
+  cut-force gate. No global physical force/moment tolerance is modified.
+- Require complete same-region 3×3 Cartesian stencils and exposed whole faces
+  for explicitly supplied free edges. Reject false interior/interface edges,
+  non-affine pressure, excessive grading, missing/thin regions and unresolved
+  fits with explicit status/no value. Record constitutive compatibility, local
+  fit conditioning, constraint backward error, moment-fit residual and branch.
+- The independent opening reference now gives rim vector errors **9.72%, 3.35%,
+  3.14%** on 10/5/4 in meshes, compared with the original **59.53%, 12.27%,
+  11.57%**. Both refined meshes meet the unchanged **5%** gate; the coarse mesh
+  still fails. Finest away-corner error is **0.94%**, using the same regions and
+  no newly dropped cells. Uniform/graded/coupled Navier refinement is preserved;
+  finest boundary-row errors are below 1%. Original reports remain unchanged.
+- Publish 63 source-stamped numerical records and an inspected figure. Keep
+  `bounded_free_rim_recovery_ready` distinct from **`production_ready: false`**.
+  Complete the bounded recovery TODO, retaining explicit production eligibility,
+  masked output and concentrated/line/member-source/interface guards. Pointwise
+  corner peaks and arbitrary/skew/thick/curved geometries remain unvalidated.
+- Validation: **166 surface tests**, no skips, **269.765 s**. All **11 focused
+  checks** pass with installed pinned PyNite **3.0.0** / Qt **6.11.2** (**74.451 s**)
+  and newer PyNite **3.2.1** / Qt **6.12.0** (**74.675 s**). Test ownership covers
+  **178 classes** across nine primary groups. Strict docs/link checks cover **58
+  HTML pages**; browser QA checks the comparison figure and bounded-versus-
+  production distinction. Distribution audit includes the new research sources,
+  numerical report and figure.
+
 ## Post-RC4 Independent Opening-Energy Reference Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-01. Test/reference and documentation

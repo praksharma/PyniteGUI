@@ -301,12 +301,20 @@ Remaining six scripts are unchecked:
   means and sampled fields away from reentrant corners pass 0.5% reference
   stability. Preserve the old sine-reference rejection and publish the new
   reproducible report/figure with explicit reference-versus-recovery status.
-- [ ] Fix and validate free-rim recovery before integrating the neighbouring-
-  moment fit. The independent reference exposes about 11.57% finest-mesh vector
-  L2 error near the free rim versus a 0.17% reference-mesh difference; this fails
-  the 5% recovery gate. Pointwise corner peaks, arbitrary openings/meshes and
-  general interfaces remain unvalidated. Keep smoothed recovery distinct from
-  unsmoothed probes, missing patches explicit and production Quad shear disabled.
+- [x] Fix the bounded free-rim recovery error using a compatible quintic moment
+  potential, actual affine-pressure equilibrium and true straight-free-edge
+  conditions. Match solved cell means by exact quadrature; preserve already
+  exact polynomial derivatives. Verify manufactured fields, false-edge rejection,
+  all-plane/signed/zero invariance, uniform/graded/coupled Navier refinement and
+  unchanged exact interface cut forces. Rim errors fall from 12.27/11.57% to
+  3.35/3.14% on the refined meshes, meeting the unchanged 5% gate without dropping
+  available comparison cells. Publish the reproducible 63-record report/figure.
+- [ ] Integrate the validated bounded recovery with explicit production
+  eligibility, snapshot-aware masked output and source/interface guards before
+  exposing it. Pointwise corner peaks, arbitrary opening/skew/thick/curved meshes,
+  concentrated/line/member transfer and general interfaces remain unvalidated.
+  Keep smoothed recovery distinct from unsmoothed probes and missing patches
+  explicit; production Quad shear remains disabled pending this work.
 - [x] Add solved traction-based affine membrane checks in every plane, signed/zero
   combinations and refinement; independently compare applied loads, displacement
   and stress without prescribing the solution. Add coincident nu=0 slender-strip

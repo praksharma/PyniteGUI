@@ -1,0 +1,3317 @@
+{
+  "bounded_checks_passed": true,
+  "bounded_free_rim_recovery_ready": true,
+  "production_ready": false,
+  "python": "3.12.13",
+  "numpy": "2.5.3",
+  "scipy": "1.18.1",
+  "pynite": "3.0.0",
+  "brecon": "1.0.0rc5.dev0",
+  "source_sha256": {
+    "tests/equilibrated_quad_shear.py": "9e402de4282e85d9ac09264eb05fdb5527b40cf23fdc1434654ba72be7443652",
+    "tests/equilibrated_quad_shear_cases.py": "d86a68f30b28f4279ec42b15fff63d8a29f4ac1ad3d2970ca1c16a657860204e",
+    "tests/quad_shear_boundaries.py": "bf89f7c78cb0713c6acc4a4c1fe2b6d5dc173323768d0a8f88415be0b2d7d483",
+    "tests/plate_energy_reference.py": "d4a447db07e111d0705bda086555dd89d2987882b758990aec63a5b7718bb9f0",
+    "scripts/benchmark_equilibrated_shear.py": "7afd1c44aa2d8779604978a44e93c1d33a582618a7b9c3ae207cae5abe6d8fe4"
+  },
+  "units": {
+    "length": "in",
+    "pressure": "kip/in2",
+    "moment_per_length": "kip",
+    "shear": "kip/in"
+  },
+  "method": "Pure postprocessing of solved cell-mean moments on complete same-region 3x3 Cartesian stencils. A compatible quintic potential U gives Mx=-(Uxx+nu Uyy), My=-(Uyy+nu Uxx), Mxy=-(1-nu)Uxy. Enforce laplacian(laplacian(U))=actual affine q and genuine straight free-edge Mnn=0, Vn=Qn+dMnt/dt=0. Recovered Q=-grad(laplacian(U)). Match polynomial moment means by exact Gaussian quadrature, not invented point values.",
+  "polynomial_preservation": "Uniform-pressure patches that already reproduce compatible quadratic cell-mean moments to roundoff retain the exact lower-degree derivative. Recognize this using data residual/range, never reference answers. Do not overwrite a discrete constant moment bias with boundary constraints. Report polynomial_exact versus equilibrated_quintic explicitly.",
+  "safeguards": "No nearest-point bridging of holes/regions; exposed complete cell faces required for supplied free edges. Canonicalize coordinate roundoff only. Missing/thin/overgraded/ill-conditioned/non-affine patches return no value. Field/constraint residuals and local fit conditioning are recorded; availability is not an accuracy certificate.",
+  "scope": "Uniform/graded thin standalone and negligible-edge-beam coupled Navier rectangles; two nu=0 cantilevers with E x4 / thickness x1.5 interfaces; a 120x120x0.6 in plate with a 40x40 in free opening. XY numerical report; all-plane, signed/zero, affine manufactured and actual bilinear-cell-mean identities are checked separately by tests.",
+  "opening_comparison": "Same FE element centres and exact area weights as the original report. Exclude points within 10 in of reentrant corners; free-rim region additionally x=20..40,y=48..72 in. Reference is independent C2 energy solves on 72/96 grids; require <0.5% reference L2 difference. Preserve the 5% recovery gate on both 5 and 4 in meshes, no dropped available cells.",
+  "reference_diagnostics": {
+    "72": {
+      "dofs": 43200,
+      "free_dofs": 42328,
+      "elements": 4608,
+      "condition": 17558823.009210363,
+      "eigen_residuals": [
+        6.537845977804558e-16,
+        4.1872125350298785e-09
+      ],
+      "backward_error": 6.0521143836590544e-15,
+      "energy_relative_error": 8.155222860589296e-11,
+      "force_moment_relative_error": 7.693008730047524e-11,
+      "compliance": 4111680626.3155813,
+      "area": 12800.0
+    },
+    "96": {
+      "dofs": 76032,
+      "free_dofs": 74872,
+      "elements": 8192,
+      "condition": 55486689.30607354,
+      "eigen_residuals": [
+        7.88733901583382e-16,
+        9.116386180116832e-09
+      ],
+      "backward_error": 3.48397559704097e-15,
+      "energy_relative_error": 1.7579136533969062e-11,
+      "force_moment_relative_error": 1.280876654741192e-09,
+      "compliance": 4111823581.2813153,
+      "area": 12800.0
+    }
+  },
+  "records": [
+    {
+      "case": "boundary",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Service",
+      "elements": 24,
+      "available": 24,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 24
+      },
+      "status_counts": {
+        "centered": 8,
+        "one_sided": 16
+      },
+      "method_counts": {
+        "equilibrated_quintic": 24
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 1.0305397885154554e-16,
+      "max_local_fit_condition": 81.71161169036087,
+      "max_moment_fit_relative_residual": 0.020227367369858956,
+      "errors": {
+        "all": {
+          "compared_cells": 24,
+          "legacy_relative_l2": 0.20842410339040215,
+          "compatible_relative_l2": 0.057385934429011784,
+          "compatible_max_absolute_error": 2.7401013854010164e-07
+        },
+        "outer_boundary_row": {
+          "compared_cells": 16,
+          "legacy_relative_l2": 0.21913905406864392,
+          "compatible_relative_l2": 0.05992300651468654,
+          "compatible_max_absolute_error": 2.7401013854010164e-07
+        },
+        "interior": {
+          "compared_cells": 8,
+          "legacy_relative_l2": 0.028280811813242213,
+          "compatible_relative_l2": 0.02286971436126416,
+          "compatible_max_absolute_error": 3.432097331207064e-08
+        }
+      }
+    },
+    {
+      "case": "boundary",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Reverse",
+      "elements": 24,
+      "available": 24,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 24
+      },
+      "status_counts": {
+        "centered": 8,
+        "one_sided": 16
+      },
+      "method_counts": {
+        "equilibrated_quintic": 24
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 1.0305397885154554e-16,
+      "max_local_fit_condition": 81.71161169036087,
+      "max_moment_fit_relative_residual": 0.020227367369858956,
+      "errors": {
+        "all": {
+          "compared_cells": 24,
+          "legacy_relative_l2": 0.20842410339040215,
+          "compatible_relative_l2": 0.057385934429011784,
+          "compatible_max_absolute_error": 5.480202770802033e-07
+        },
+        "outer_boundary_row": {
+          "compared_cells": 16,
+          "legacy_relative_l2": 0.21913905406864392,
+          "compatible_relative_l2": 0.05992300651468654,
+          "compatible_max_absolute_error": 5.480202770802033e-07
+        },
+        "interior": {
+          "compared_cells": 8,
+          "legacy_relative_l2": 0.028280811813242213,
+          "compatible_relative_l2": 0.02286971436126416,
+          "compatible_max_absolute_error": 6.864194662414129e-08
+        }
+      }
+    },
+    {
+      "case": "boundary",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Zero",
+      "elements": 24,
+      "available": 24,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 24
+      },
+      "status_counts": {
+        "centered": 8,
+        "one_sided": 16
+      },
+      "method_counts": {
+        "polynomial_exact": 24
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 28.399835937016604,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "all": {
+          "compared_cells": 24,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "compared_cells": 16,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "interior": {
+          "compared_cells": 8,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "boundary",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Service",
+      "elements": 96,
+      "available": 96,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 96
+      },
+      "status_counts": {
+        "centered": 60,
+        "one_sided": 36
+      },
+      "method_counts": {
+        "equilibrated_quintic": 96
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 1.2726947725939653e-16,
+      "max_local_fit_condition": 81.71161169036087,
+      "max_moment_fit_relative_residual": 0.004693038014705997,
+      "errors": {
+        "all": {
+          "compared_cells": 96,
+          "legacy_relative_l2": 0.059908167425433465,
+          "compatible_relative_l2": 0.011801564524771543,
+          "compatible_max_absolute_error": 9.429312035595154e-08
+        },
+        "outer_boundary_row": {
+          "compared_cells": 36,
+          "legacy_relative_l2": 0.07619560562465554,
+          "compatible_relative_l2": 0.014068703709727695,
+          "compatible_max_absolute_error": 9.429312035595154e-08
+        },
+        "interior": {
+          "compared_cells": 60,
+          "legacy_relative_l2": 0.006682545778673089,
+          "compatible_relative_l2": 0.006745455384785692,
+          "compatible_max_absolute_error": 2.031488597997576e-08
+        }
+      }
+    },
+    {
+      "case": "boundary",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Reverse",
+      "elements": 96,
+      "available": 96,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 96
+      },
+      "status_counts": {
+        "centered": 60,
+        "one_sided": 36
+      },
+      "method_counts": {
+        "equilibrated_quintic": 96
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 1.2726947725939653e-16,
+      "max_local_fit_condition": 81.71161169036087,
+      "max_moment_fit_relative_residual": 0.004693038014705997,
+      "errors": {
+        "all": {
+          "compared_cells": 96,
+          "legacy_relative_l2": 0.059908167425433465,
+          "compatible_relative_l2": 0.011801564524771543,
+          "compatible_max_absolute_error": 1.8858624071190307e-07
+        },
+        "outer_boundary_row": {
+          "compared_cells": 36,
+          "legacy_relative_l2": 0.07619560562465554,
+          "compatible_relative_l2": 0.014068703709727695,
+          "compatible_max_absolute_error": 1.8858624071190307e-07
+        },
+        "interior": {
+          "compared_cells": 60,
+          "legacy_relative_l2": 0.006682545778673089,
+          "compatible_relative_l2": 0.006745455384785692,
+          "compatible_max_absolute_error": 4.062977195995152e-08
+        }
+      }
+    },
+    {
+      "case": "boundary",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Zero",
+      "elements": 96,
+      "available": 96,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 96
+      },
+      "status_counts": {
+        "centered": 60,
+        "one_sided": 36
+      },
+      "method_counts": {
+        "polynomial_exact": 96
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 28.399835937016604,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "all": {
+          "compared_cells": 96,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "compared_cells": 36,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "interior": {
+          "compared_cells": 60,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "boundary",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Service",
+      "elements": 384,
+      "available": 384,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 384
+      },
+      "status_counts": {
+        "centered": 308,
+        "one_sided": 76
+      },
+      "method_counts": {
+        "equilibrated_quintic": 384
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 1.9771385055045095e-16,
+      "max_local_fit_condition": 81.71161169036087,
+      "max_moment_fit_relative_residual": 0.000982141190688357,
+      "errors": {
+        "all": {
+          "compared_cells": 384,
+          "legacy_relative_l2": 0.015799611400542698,
+          "compatible_relative_l2": 0.003399226183042124,
+          "compatible_max_absolute_error": 5.0097352226671504e-08
+        },
+        "outer_boundary_row": {
+          "compared_cells": 76,
+          "legacy_relative_l2": 0.026146878136489294,
+          "compatible_relative_l2": 0.00511165320718582,
+          "compatible_max_absolute_error": 5.0097352226671504e-08
+        },
+        "interior": {
+          "compared_cells": 308,
+          "legacy_relative_l2": 0.0017861024929378784,
+          "compatible_relative_l2": 0.0018109831024590592,
+          "compatible_max_absolute_error": 6.7291624376199814e-09
+        }
+      }
+    },
+    {
+      "case": "boundary",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Reverse",
+      "elements": 384,
+      "available": 384,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 384
+      },
+      "status_counts": {
+        "centered": 308,
+        "one_sided": 76
+      },
+      "method_counts": {
+        "equilibrated_quintic": 384
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 1.9771385055045095e-16,
+      "max_local_fit_condition": 81.71161169036087,
+      "max_moment_fit_relative_residual": 0.000982141190688357,
+      "errors": {
+        "all": {
+          "compared_cells": 384,
+          "legacy_relative_l2": 0.015799611400542698,
+          "compatible_relative_l2": 0.003399226183042124,
+          "compatible_max_absolute_error": 1.0019470445334301e-07
+        },
+        "outer_boundary_row": {
+          "compared_cells": 76,
+          "legacy_relative_l2": 0.026146878136489294,
+          "compatible_relative_l2": 0.00511165320718582,
+          "compatible_max_absolute_error": 1.0019470445334301e-07
+        },
+        "interior": {
+          "compared_cells": 308,
+          "legacy_relative_l2": 0.0017861024929378784,
+          "compatible_relative_l2": 0.0018109831024590592,
+          "compatible_max_absolute_error": 1.3458324875239963e-08
+        }
+      }
+    },
+    {
+      "case": "boundary",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Zero",
+      "elements": 384,
+      "available": 384,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 384
+      },
+      "status_counts": {
+        "centered": 308,
+        "one_sided": 76
+      },
+      "method_counts": {
+        "polynomial_exact": 384
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 28.399835937016604,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "all": {
+          "compared_cells": 384,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "compared_cells": 76,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "interior": {
+          "compared_cells": 308,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "graded",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Service",
+      "elements": 42,
+      "available": 42,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 42
+      },
+      "status_counts": {
+        "centered": 20,
+        "one_sided": 22
+      },
+      "method_counts": {
+        "equilibrated_quintic": 42
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 4.0220429607891493e-16,
+      "max_local_fit_condition": 90.44812647046794,
+      "max_moment_fit_relative_residual": 0.011934064345117092,
+      "errors": {
+        "all": {
+          "compared_cells": 42,
+          "legacy_relative_l2": 0.1274043516710288,
+          "compatible_relative_l2": 0.0323217675771701,
+          "compatible_max_absolute_error": 2.4703533383225845e-07
+        },
+        "outer_boundary_row": {
+          "compared_cells": 22,
+          "legacy_relative_l2": 0.14269825113874723,
+          "compatible_relative_l2": 0.034884771328156504,
+          "compatible_max_absolute_error": 2.4703533383225845e-07
+        },
+        "interior": {
+          "compared_cells": 20,
+          "legacy_relative_l2": 0.04242477101574758,
+          "compatible_relative_l2": 0.021045494035620758,
+          "compatible_max_absolute_error": 5.960763605594376e-08
+        }
+      }
+    },
+    {
+      "case": "graded",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Reverse",
+      "elements": 42,
+      "available": 42,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 42
+      },
+      "status_counts": {
+        "centered": 20,
+        "one_sided": 22
+      },
+      "method_counts": {
+        "equilibrated_quintic": 42
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 4.0220429607891493e-16,
+      "max_local_fit_condition": 90.44812647046794,
+      "max_moment_fit_relative_residual": 0.011934064345117092,
+      "errors": {
+        "all": {
+          "compared_cells": 42,
+          "legacy_relative_l2": 0.1274043516710288,
+          "compatible_relative_l2": 0.0323217675771701,
+          "compatible_max_absolute_error": 4.940706676645169e-07
+        },
+        "outer_boundary_row": {
+          "compared_cells": 22,
+          "legacy_relative_l2": 0.14269825113874723,
+          "compatible_relative_l2": 0.034884771328156504,
+          "compatible_max_absolute_error": 4.940706676645169e-07
+        },
+        "interior": {
+          "compared_cells": 20,
+          "legacy_relative_l2": 0.04242477101574758,
+          "compatible_relative_l2": 0.021045494035620758,
+          "compatible_max_absolute_error": 1.1921527211188753e-07
+        }
+      }
+    },
+    {
+      "case": "graded",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Zero",
+      "elements": 42,
+      "available": 42,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 42
+      },
+      "status_counts": {
+        "centered": 20,
+        "one_sided": 22
+      },
+      "method_counts": {
+        "polynomial_exact": 42
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 28.48865342117105,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "all": {
+          "compared_cells": 42,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "compared_cells": 22,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "interior": {
+          "compared_cells": 20,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "graded",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Service",
+      "elements": 117,
+      "available": 117,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 117
+      },
+      "status_counts": {
+        "centered": 77,
+        "one_sided": 40
+      },
+      "method_counts": {
+        "equilibrated_quintic": 117
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 3.9249568158954576e-16,
+      "max_local_fit_condition": 83.1587515598512,
+      "max_moment_fit_relative_residual": 0.004533938233369597,
+      "errors": {
+        "all": {
+          "compared_cells": 117,
+          "legacy_relative_l2": 0.04925176945139312,
+          "compatible_relative_l2": 0.010001201515992385,
+          "compatible_max_absolute_error": 9.879174362115808e-08
+        },
+        "outer_boundary_row": {
+          "compared_cells": 40,
+          "legacy_relative_l2": 0.06478820588811852,
+          "compatible_relative_l2": 0.011965480957089188,
+          "compatible_max_absolute_error": 9.879174362115808e-08
+        },
+        "interior": {
+          "compared_cells": 77,
+          "legacy_relative_l2": 0.009020797217832069,
+          "compatible_relative_l2": 0.006552167325654122,
+          "compatible_max_absolute_error": 2.224036358826307e-08
+        }
+      }
+    },
+    {
+      "case": "graded",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Reverse",
+      "elements": 117,
+      "available": 117,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 117
+      },
+      "status_counts": {
+        "centered": 77,
+        "one_sided": 40
+      },
+      "method_counts": {
+        "equilibrated_quintic": 117
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 3.9249568158954576e-16,
+      "max_local_fit_condition": 83.1587515598512,
+      "max_moment_fit_relative_residual": 0.004533938233369597,
+      "errors": {
+        "all": {
+          "compared_cells": 117,
+          "legacy_relative_l2": 0.04925176945139312,
+          "compatible_relative_l2": 0.010001201515992385,
+          "compatible_max_absolute_error": 1.9758348724231616e-07
+        },
+        "outer_boundary_row": {
+          "compared_cells": 40,
+          "legacy_relative_l2": 0.06478820588811852,
+          "compatible_relative_l2": 0.011965480957089188,
+          "compatible_max_absolute_error": 1.9758348724231616e-07
+        },
+        "interior": {
+          "compared_cells": 77,
+          "legacy_relative_l2": 0.009020797217832069,
+          "compatible_relative_l2": 0.006552167325654122,
+          "compatible_max_absolute_error": 4.448072717652614e-08
+        }
+      }
+    },
+    {
+      "case": "graded",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Zero",
+      "elements": 117,
+      "available": 117,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 117
+      },
+      "status_counts": {
+        "centered": 77,
+        "one_sided": 40
+      },
+      "method_counts": {
+        "polynomial_exact": 117
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 28.397299078565602,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "all": {
+          "compared_cells": 117,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "compared_cells": 40,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "interior": {
+          "compared_cells": 77,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "graded",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Service",
+      "elements": 425,
+      "available": 425,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 425
+      },
+      "status_counts": {
+        "centered": 345,
+        "one_sided": 80
+      },
+      "method_counts": {
+        "equilibrated_quintic": 425
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 5.0436989638327585e-16,
+      "max_local_fit_condition": 81.8098468513933,
+      "max_moment_fit_relative_residual": 0.0009239915430832066,
+      "errors": {
+        "all": {
+          "compared_cells": 425,
+          "legacy_relative_l2": 0.014721486199332072,
+          "compatible_relative_l2": 0.0034074244502359154,
+          "compatible_max_absolute_error": 5.134751870416426e-08
+        },
+        "outer_boundary_row": {
+          "compared_cells": 80,
+          "legacy_relative_l2": 0.024631157688058312,
+          "compatible_relative_l2": 0.004938644745649623,
+          "compatible_max_absolute_error": 5.134751870416426e-08
+        },
+        "interior": {
+          "compared_cells": 345,
+          "legacy_relative_l2": 0.0018155843537018045,
+          "compatible_relative_l2": 0.0021485846200610904,
+          "compatible_max_absolute_error": 9.536684693243693e-09
+        }
+      }
+    },
+    {
+      "case": "graded",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Reverse",
+      "elements": 425,
+      "available": 425,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 425
+      },
+      "status_counts": {
+        "centered": 345,
+        "one_sided": 80
+      },
+      "method_counts": {
+        "equilibrated_quintic": 425
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 5.0436989638327585e-16,
+      "max_local_fit_condition": 81.8098468513933,
+      "max_moment_fit_relative_residual": 0.0009239915430832066,
+      "errors": {
+        "all": {
+          "compared_cells": 425,
+          "legacy_relative_l2": 0.014721486199332072,
+          "compatible_relative_l2": 0.0034074244502359154,
+          "compatible_max_absolute_error": 1.0269503740832852e-07
+        },
+        "outer_boundary_row": {
+          "compared_cells": 80,
+          "legacy_relative_l2": 0.024631157688058312,
+          "compatible_relative_l2": 0.004938644745649623,
+          "compatible_max_absolute_error": 1.0269503740832852e-07
+        },
+        "interior": {
+          "compared_cells": 345,
+          "legacy_relative_l2": 0.0018155843537018045,
+          "compatible_relative_l2": 0.0021485846200610904,
+          "compatible_max_absolute_error": 1.9073369386487386e-08
+        }
+      }
+    },
+    {
+      "case": "graded",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Zero",
+      "elements": 425,
+      "available": 425,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 425
+      },
+      "status_counts": {
+        "centered": 345,
+        "one_sided": 80
+      },
+      "method_counts": {
+        "polynomial_exact": 425
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 28.392630335709967,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "all": {
+          "compared_cells": 425,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "compared_cells": 80,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "interior": {
+          "compared_cells": 345,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "coupled_boundary",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Service",
+      "elements": 24,
+      "available": 24,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 24
+      },
+      "status_counts": {
+        "centered": 8,
+        "one_sided": 16
+      },
+      "method_counts": {
+        "equilibrated_quintic": 24
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 1.0063192542254056e-16,
+      "max_local_fit_condition": 81.71161169036087,
+      "max_moment_fit_relative_residual": 0.020227367372103598,
+      "errors": {
+        "all": {
+          "compared_cells": 24,
+          "legacy_relative_l2": 0.20842410338500883,
+          "compatible_relative_l2": 0.05738593441351324,
+          "compatible_max_absolute_error": 2.740101385408265e-07
+        },
+        "outer_boundary_row": {
+          "compared_cells": 16,
+          "legacy_relative_l2": 0.21913905406298803,
+          "compatible_relative_l2": 0.05992300649815425,
+          "compatible_max_absolute_error": 2.740101385408265e-07
+        },
+        "interior": {
+          "compared_cells": 8,
+          "legacy_relative_l2": 0.02828081181145444,
+          "compatible_relative_l2": 0.02286971436358774,
+          "compatible_max_absolute_error": 3.432097330828165e-08
+        }
+      }
+    },
+    {
+      "case": "coupled_boundary",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Reverse",
+      "elements": 24,
+      "available": 24,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 24
+      },
+      "status_counts": {
+        "centered": 8,
+        "one_sided": 16
+      },
+      "method_counts": {
+        "equilibrated_quintic": 24
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 1.0063192542254056e-16,
+      "max_local_fit_condition": 81.71161169036087,
+      "max_moment_fit_relative_residual": 0.020227367372103598,
+      "errors": {
+        "all": {
+          "compared_cells": 24,
+          "legacy_relative_l2": 0.20842410338500883,
+          "compatible_relative_l2": 0.05738593441351324,
+          "compatible_max_absolute_error": 5.48020277081653e-07
+        },
+        "outer_boundary_row": {
+          "compared_cells": 16,
+          "legacy_relative_l2": 0.21913905406298803,
+          "compatible_relative_l2": 0.05992300649815425,
+          "compatible_max_absolute_error": 5.48020277081653e-07
+        },
+        "interior": {
+          "compared_cells": 8,
+          "legacy_relative_l2": 0.02828081181145444,
+          "compatible_relative_l2": 0.02286971436358774,
+          "compatible_max_absolute_error": 6.86419466165633e-08
+        }
+      }
+    },
+    {
+      "case": "coupled_boundary",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Zero",
+      "elements": 24,
+      "available": 24,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 24
+      },
+      "status_counts": {
+        "centered": 8,
+        "one_sided": 16
+      },
+      "method_counts": {
+        "polynomial_exact": 24
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 28.399835937016604,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "all": {
+          "compared_cells": 24,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "compared_cells": 16,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "interior": {
+          "compared_cells": 8,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "coupled_boundary",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Service",
+      "elements": 96,
+      "available": 96,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 96
+      },
+      "status_counts": {
+        "centered": 60,
+        "one_sided": 36
+      },
+      "method_counts": {
+        "equilibrated_quintic": 96
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 1.5180130557438529e-16,
+      "max_local_fit_condition": 81.71161169036087,
+      "max_moment_fit_relative_residual": 0.004693038033465669,
+      "errors": {
+        "all": {
+          "compared_cells": 96,
+          "legacy_relative_l2": 0.05990816741570687,
+          "compatible_relative_l2": 0.011801564503788666,
+          "compatible_max_absolute_error": 9.429312035519323e-08
+        },
+        "outer_boundary_row": {
+          "compared_cells": 36,
+          "legacy_relative_l2": 0.07619560561225486,
+          "compatible_relative_l2": 0.014068703680939229,
+          "compatible_max_absolute_error": 9.429312035519323e-08
+        },
+        "interior": {
+          "compared_cells": 60,
+          "legacy_relative_l2": 0.006682545778128617,
+          "compatible_relative_l2": 0.006745455385379773,
+          "compatible_max_absolute_error": 2.031488597276624e-08
+        }
+      }
+    },
+    {
+      "case": "coupled_boundary",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Reverse",
+      "elements": 96,
+      "available": 96,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 96
+      },
+      "status_counts": {
+        "centered": 60,
+        "one_sided": 36
+      },
+      "method_counts": {
+        "equilibrated_quintic": 96
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 1.5180130557438529e-16,
+      "max_local_fit_condition": 81.71161169036087,
+      "max_moment_fit_relative_residual": 0.004693038033465669,
+      "errors": {
+        "all": {
+          "compared_cells": 96,
+          "legacy_relative_l2": 0.05990816741570687,
+          "compatible_relative_l2": 0.011801564503788666,
+          "compatible_max_absolute_error": 1.8858624071038646e-07
+        },
+        "outer_boundary_row": {
+          "compared_cells": 36,
+          "legacy_relative_l2": 0.07619560561225486,
+          "compatible_relative_l2": 0.014068703680939229,
+          "compatible_max_absolute_error": 1.8858624071038646e-07
+        },
+        "interior": {
+          "compared_cells": 60,
+          "legacy_relative_l2": 0.006682545778128617,
+          "compatible_relative_l2": 0.006745455385379773,
+          "compatible_max_absolute_error": 4.062977194553248e-08
+        }
+      }
+    },
+    {
+      "case": "coupled_boundary",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Zero",
+      "elements": 96,
+      "available": 96,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 96
+      },
+      "status_counts": {
+        "centered": 60,
+        "one_sided": 36
+      },
+      "method_counts": {
+        "polynomial_exact": 96
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 28.399835937016604,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "all": {
+          "compared_cells": 96,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "compared_cells": 36,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "interior": {
+          "compared_cells": 60,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "coupled_boundary",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Service",
+      "elements": 384,
+      "available": 384,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 384
+      },
+      "status_counts": {
+        "centered": 308,
+        "one_sided": 76
+      },
+      "method_counts": {
+        "equilibrated_quintic": 384
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 3.5267876044446003e-16,
+      "max_local_fit_condition": 81.71161169036087,
+      "max_moment_fit_relative_residual": 0.0009821412348301986,
+      "errors": {
+        "all": {
+          "compared_cells": 384,
+          "legacy_relative_l2": 0.01579961138065235,
+          "compatible_relative_l2": 0.0033992261339015465,
+          "compatible_max_absolute_error": 5.009735222609023e-08
+        },
+        "outer_boundary_row": {
+          "compared_cells": 76,
+          "legacy_relative_l2": 0.02614687810330549,
+          "compatible_relative_l2": 0.005111653115679387,
+          "compatible_max_absolute_error": 5.009735222609023e-08
+        },
+        "interior": {
+          "compared_cells": 308,
+          "legacy_relative_l2": 0.0017861024929097821,
+          "compatible_relative_l2": 0.0018109831045015525,
+          "compatible_max_absolute_error": 6.72916243447156e-09
+        }
+      }
+    },
+    {
+      "case": "coupled_boundary",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Reverse",
+      "elements": 384,
+      "available": 384,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 384
+      },
+      "status_counts": {
+        "centered": 308,
+        "one_sided": 76
+      },
+      "method_counts": {
+        "equilibrated_quintic": 384
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 3.5267876044446003e-16,
+      "max_local_fit_condition": 81.71161169036087,
+      "max_moment_fit_relative_residual": 0.0009821412348301986,
+      "errors": {
+        "all": {
+          "compared_cells": 384,
+          "legacy_relative_l2": 0.01579961138065235,
+          "compatible_relative_l2": 0.0033992261339015465,
+          "compatible_max_absolute_error": 1.0019470445218046e-07
+        },
+        "outer_boundary_row": {
+          "compared_cells": 76,
+          "legacy_relative_l2": 0.02614687810330549,
+          "compatible_relative_l2": 0.005111653115679387,
+          "compatible_max_absolute_error": 1.0019470445218046e-07
+        },
+        "interior": {
+          "compared_cells": 308,
+          "legacy_relative_l2": 0.0017861024929097821,
+          "compatible_relative_l2": 0.0018109831045015525,
+          "compatible_max_absolute_error": 1.345832486894312e-08
+        }
+      }
+    },
+    {
+      "case": "coupled_boundary",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Zero",
+      "elements": 384,
+      "available": 384,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 384
+      },
+      "status_counts": {
+        "centered": 308,
+        "one_sided": 76
+      },
+      "method_counts": {
+        "polynomial_exact": 384
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 28.399835937016604,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "all": {
+          "compared_cells": 384,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "compared_cells": 76,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "interior": {
+          "compared_cells": 308,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "coupled_graded",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Service",
+      "elements": 42,
+      "available": 42,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 42
+      },
+      "status_counts": {
+        "centered": 20,
+        "one_sided": 22
+      },
+      "method_counts": {
+        "equilibrated_quintic": 42
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 4.03162374229547e-16,
+      "max_local_fit_condition": 90.44812647046794,
+      "max_moment_fit_relative_residual": 0.01193406434519028,
+      "errors": {
+        "all": {
+          "compared_cells": 42,
+          "legacy_relative_l2": 0.12740435166464442,
+          "compatible_relative_l2": 0.03232176756512804,
+          "compatible_max_absolute_error": 2.470353338309606e-07
+        },
+        "outer_boundary_row": {
+          "compared_cells": 22,
+          "legacy_relative_l2": 0.142698251130836,
+          "compatible_relative_l2": 0.03488477131335602,
+          "compatible_max_absolute_error": 2.470353338309606e-07
+        },
+        "interior": {
+          "compared_cells": 20,
+          "legacy_relative_l2": 0.04242477102255787,
+          "compatible_relative_l2": 0.021045494038224307,
+          "compatible_max_absolute_error": 5.960763605138101e-08
+        }
+      }
+    },
+    {
+      "case": "coupled_graded",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Reverse",
+      "elements": 42,
+      "available": 42,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 42
+      },
+      "status_counts": {
+        "centered": 20,
+        "one_sided": 22
+      },
+      "method_counts": {
+        "equilibrated_quintic": 42
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 4.03162374229547e-16,
+      "max_local_fit_condition": 90.44812647046794,
+      "max_moment_fit_relative_residual": 0.01193406434519028,
+      "errors": {
+        "all": {
+          "compared_cells": 42,
+          "legacy_relative_l2": 0.12740435166464442,
+          "compatible_relative_l2": 0.03232176756512804,
+          "compatible_max_absolute_error": 4.940706676619212e-07
+        },
+        "outer_boundary_row": {
+          "compared_cells": 22,
+          "legacy_relative_l2": 0.142698251130836,
+          "compatible_relative_l2": 0.03488477131335602,
+          "compatible_max_absolute_error": 4.940706676619212e-07
+        },
+        "interior": {
+          "compared_cells": 20,
+          "legacy_relative_l2": 0.04242477102255787,
+          "compatible_relative_l2": 0.021045494038224307,
+          "compatible_max_absolute_error": 1.1921527210276202e-07
+        }
+      }
+    },
+    {
+      "case": "coupled_graded",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Zero",
+      "elements": 42,
+      "available": 42,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 42
+      },
+      "status_counts": {
+        "centered": 20,
+        "one_sided": 22
+      },
+      "method_counts": {
+        "polynomial_exact": 42
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 28.48865342117105,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "all": {
+          "compared_cells": 42,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "compared_cells": 22,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "interior": {
+          "compared_cells": 20,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "coupled_graded",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Service",
+      "elements": 117,
+      "available": 117,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 117
+      },
+      "status_counts": {
+        "centered": 77,
+        "one_sided": 40
+      },
+      "method_counts": {
+        "equilibrated_quintic": 117
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 4.1792360030415206e-16,
+      "max_local_fit_condition": 83.1587515598512,
+      "max_moment_fit_relative_residual": 0.004533938233374468,
+      "errors": {
+        "all": {
+          "compared_cells": 117,
+          "legacy_relative_l2": 0.04925176944119613,
+          "compatible_relative_l2": 0.01000120149435853,
+          "compatible_max_absolute_error": 9.87917436204849e-08
+        },
+        "outer_boundary_row": {
+          "compared_cells": 40,
+          "legacy_relative_l2": 0.06478820587504147,
+          "compatible_relative_l2": 0.01196548092639522,
+          "compatible_max_absolute_error": 9.87917436204849e-08
+        },
+        "interior": {
+          "compared_cells": 77,
+          "legacy_relative_l2": 0.00902079721276603,
+          "compatible_relative_l2": 0.006552167323106377,
+          "compatible_max_absolute_error": 2.224036358467758e-08
+        }
+      }
+    },
+    {
+      "case": "coupled_graded",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Reverse",
+      "elements": 117,
+      "available": 117,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 117
+      },
+      "status_counts": {
+        "centered": 77,
+        "one_sided": 40
+      },
+      "method_counts": {
+        "equilibrated_quintic": 117
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 4.1792360030415206e-16,
+      "max_local_fit_condition": 83.1587515598512,
+      "max_moment_fit_relative_residual": 0.004533938233374468,
+      "errors": {
+        "all": {
+          "compared_cells": 117,
+          "legacy_relative_l2": 0.04925176944119613,
+          "compatible_relative_l2": 0.01000120149435853,
+          "compatible_max_absolute_error": 1.975834872409698e-07
+        },
+        "outer_boundary_row": {
+          "compared_cells": 40,
+          "legacy_relative_l2": 0.06478820587504147,
+          "compatible_relative_l2": 0.01196548092639522,
+          "compatible_max_absolute_error": 1.975834872409698e-07
+        },
+        "interior": {
+          "compared_cells": 77,
+          "legacy_relative_l2": 0.00902079721276603,
+          "compatible_relative_l2": 0.006552167323106377,
+          "compatible_max_absolute_error": 4.448072716935516e-08
+        }
+      }
+    },
+    {
+      "case": "coupled_graded",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Zero",
+      "elements": 117,
+      "available": 117,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 117
+      },
+      "status_counts": {
+        "centered": 77,
+        "one_sided": 40
+      },
+      "method_counts": {
+        "polynomial_exact": 117
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 28.397299078565602,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "all": {
+          "compared_cells": 117,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "compared_cells": 40,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "interior": {
+          "compared_cells": 77,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "coupled_graded",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Service",
+      "elements": 425,
+      "available": 425,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 425
+      },
+      "status_counts": {
+        "centered": 345,
+        "one_sided": 80
+      },
+      "method_counts": {
+        "equilibrated_quintic": 425
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 4.577729759853504e-16,
+      "max_local_fit_condition": 81.8098468513933,
+      "max_moment_fit_relative_residual": 0.0009239915430861059,
+      "errors": {
+        "all": {
+          "compared_cells": 425,
+          "legacy_relative_l2": 0.01472148617878003,
+          "compatible_relative_l2": 0.003407424399273976,
+          "compatible_max_absolute_error": 5.1347516823638674e-08
+        },
+        "outer_boundary_row": {
+          "compared_cells": 80,
+          "legacy_relative_l2": 0.024631157653691012,
+          "compatible_relative_l2": 0.0049386446464938375,
+          "compatible_max_absolute_error": 5.1347516823638674e-08
+        },
+        "interior": {
+          "compared_cells": 345,
+          "legacy_relative_l2": 0.0018155843510244591,
+          "compatible_relative_l2": 0.0021485846197439,
+          "compatible_max_absolute_error": 9.536684682308921e-09
+        }
+      }
+    },
+    {
+      "case": "coupled_graded",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Reverse",
+      "elements": 425,
+      "available": 425,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 425
+      },
+      "status_counts": {
+        "centered": 345,
+        "one_sided": 80
+      },
+      "method_counts": {
+        "equilibrated_quintic": 425
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 4.577729759853504e-16,
+      "max_local_fit_condition": 81.8098468513933,
+      "max_moment_fit_relative_residual": 0.0009239915430861059,
+      "errors": {
+        "all": {
+          "compared_cells": 425,
+          "legacy_relative_l2": 0.01472148617878003,
+          "compatible_relative_l2": 0.003407424399273976,
+          "compatible_max_absolute_error": 1.0269503364727735e-07
+        },
+        "outer_boundary_row": {
+          "compared_cells": 80,
+          "legacy_relative_l2": 0.024631157653691012,
+          "compatible_relative_l2": 0.0049386446464938375,
+          "compatible_max_absolute_error": 1.0269503364727735e-07
+        },
+        "interior": {
+          "compared_cells": 345,
+          "legacy_relative_l2": 0.0018155843510244591,
+          "compatible_relative_l2": 0.0021485846197439,
+          "compatible_max_absolute_error": 1.9073369364617842e-08
+        }
+      }
+    },
+    {
+      "case": "coupled_graded",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Zero",
+      "elements": 425,
+      "available": 425,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [],
+      "applied_free_face_counts": {
+        "0": 425
+      },
+      "status_counts": {
+        "centered": 345,
+        "one_sided": 80
+      },
+      "method_counts": {
+        "polynomial_exact": 425
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 28.392630335709967,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "all": {
+          "compared_cells": 425,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "compared_cells": 80,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "interior": {
+          "compared_cells": 345,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "opening",
+      "plane": "XY",
+      "mesh_size_in": 10.0,
+      "combination": "Service",
+      "elements": 128,
+      "available": 128,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 40.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 0,
+          "coordinate": 80.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 40.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 80.0,
+          "start": 40.0,
+          "end": 80.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 112,
+        "1": 16
+      },
+      "status_counts": {
+        "centered": 64,
+        "one_sided": 64
+      },
+      "method_counts": {
+        "equilibrated_quintic": 128
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 4.3050548436578235e-16,
+      "max_local_fit_condition": 81.71161169036093,
+      "max_moment_fit_relative_residual": 0.08602621974416469,
+      "errors": {
+        "away_from_corners": {
+          "compared_cells": 116,
+          "legacy_relative_l2": 0.11598373549004128,
+          "compatible_relative_l2": 0.028477928201574975,
+          "compatible_max_absolute_error": 1.0546173852225616e-07,
+          "reference_relative_l2": 7.019786375643281e-05
+        },
+        "near_rim": {
+          "compared_cells": 4,
+          "legacy_relative_l2": 0.595314018026615,
+          "compatible_relative_l2": 0.09720631003613377,
+          "compatible_max_absolute_error": 8.420165952672644e-08,
+          "reference_relative_l2": 0.00024626806570503414
+        }
+      }
+    },
+    {
+      "case": "opening",
+      "plane": "XY",
+      "mesh_size_in": 10.0,
+      "combination": "Reverse",
+      "elements": 128,
+      "available": 128,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 40.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 0,
+          "coordinate": 80.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 40.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 80.0,
+          "start": 40.0,
+          "end": 80.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 112,
+        "1": 16
+      },
+      "status_counts": {
+        "centered": 64,
+        "one_sided": 64
+      },
+      "method_counts": {
+        "equilibrated_quintic": 128
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 4.3050548436578235e-16,
+      "max_local_fit_condition": 81.71161169036093,
+      "max_moment_fit_relative_residual": 0.08602621974416469,
+      "errors": {
+        "away_from_corners": {
+          "compared_cells": 116,
+          "legacy_relative_l2": 0.11598373549004128,
+          "compatible_relative_l2": 0.028477928201574975,
+          "compatible_max_absolute_error": 2.1092347704451232e-07,
+          "reference_relative_l2": 7.019786375643281e-05
+        },
+        "near_rim": {
+          "compared_cells": 4,
+          "legacy_relative_l2": 0.595314018026615,
+          "compatible_relative_l2": 0.09720631003613377,
+          "compatible_max_absolute_error": 1.6840331905345288e-07,
+          "reference_relative_l2": 0.00024626806570503414
+        }
+      }
+    },
+    {
+      "case": "opening",
+      "plane": "XY",
+      "mesh_size_in": 10.0,
+      "combination": "Zero",
+      "elements": 128,
+      "available": 128,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 40.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 0,
+          "coordinate": 80.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 40.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 80.0,
+          "start": 40.0,
+          "end": 80.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 128
+      },
+      "status_counts": {
+        "centered": 64,
+        "one_sided": 64
+      },
+      "method_counts": {
+        "polynomial_exact": 128
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 28.39983593701659,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "away_from_corners": {
+          "compared_cells": 116,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0,
+          "reference_relative_l2": null
+        },
+        "near_rim": {
+          "compared_cells": 4,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0,
+          "reference_relative_l2": null
+        }
+      }
+    },
+    {
+      "case": "opening",
+      "plane": "XY",
+      "mesh_size_in": 5.0,
+      "combination": "Service",
+      "elements": 512,
+      "available": 512,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 40.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 0,
+          "coordinate": 80.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 40.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 80.0,
+          "start": 40.0,
+          "end": 80.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 464,
+        "1": 48
+      },
+      "status_counts": {
+        "centered": 384,
+        "one_sided": 128
+      },
+      "method_counts": {
+        "equilibrated_quintic": 512
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 4.419373741921146e-16,
+      "max_local_fit_condition": 81.71161169036093,
+      "max_moment_fit_relative_residual": 0.08787010314515588,
+      "errors": {
+        "away_from_corners": {
+          "compared_cells": 476,
+          "legacy_relative_l2": 0.046544930832363315,
+          "compatible_relative_l2": 0.01866626052366849,
+          "compatible_max_absolute_error": 1.928003795187924e-07,
+          "reference_relative_l2": 0.00011431060537968244
+        },
+        "near_rim": {
+          "compared_cells": 16,
+          "legacy_relative_l2": 0.12268914434799304,
+          "compatible_relative_l2": 0.03353745024180253,
+          "compatible_max_absolute_error": 6.113261133451688e-08,
+          "reference_relative_l2": 0.0003186305055170631
+        }
+      }
+    },
+    {
+      "case": "opening",
+      "plane": "XY",
+      "mesh_size_in": 5.0,
+      "combination": "Reverse",
+      "elements": 512,
+      "available": 512,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 40.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 0,
+          "coordinate": 80.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 40.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 80.0,
+          "start": 40.0,
+          "end": 80.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 464,
+        "1": 48
+      },
+      "status_counts": {
+        "centered": 384,
+        "one_sided": 128
+      },
+      "method_counts": {
+        "equilibrated_quintic": 512
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 4.419373741921146e-16,
+      "max_local_fit_condition": 81.71161169036093,
+      "max_moment_fit_relative_residual": 0.08787010314515588,
+      "errors": {
+        "away_from_corners": {
+          "compared_cells": 476,
+          "legacy_relative_l2": 0.046544930832363315,
+          "compatible_relative_l2": 0.01866626052366849,
+          "compatible_max_absolute_error": 3.856007590375848e-07,
+          "reference_relative_l2": 0.00011431060537968244
+        },
+        "near_rim": {
+          "compared_cells": 16,
+          "legacy_relative_l2": 0.12268914434799304,
+          "compatible_relative_l2": 0.03353745024180253,
+          "compatible_max_absolute_error": 1.2226522266903377e-07,
+          "reference_relative_l2": 0.0003186305055170631
+        }
+      }
+    },
+    {
+      "case": "opening",
+      "plane": "XY",
+      "mesh_size_in": 5.0,
+      "combination": "Zero",
+      "elements": 512,
+      "available": 512,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 40.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 0,
+          "coordinate": 80.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 40.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 80.0,
+          "start": 40.0,
+          "end": 80.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 512
+      },
+      "status_counts": {
+        "centered": 384,
+        "one_sided": 128
+      },
+      "method_counts": {
+        "polynomial_exact": 512
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 28.39983593701659,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "away_from_corners": {
+          "compared_cells": 476,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0,
+          "reference_relative_l2": null
+        },
+        "near_rim": {
+          "compared_cells": 16,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0,
+          "reference_relative_l2": null
+        }
+      }
+    },
+    {
+      "case": "opening",
+      "plane": "XY",
+      "mesh_size_in": 4.0,
+      "combination": "Service",
+      "elements": 800,
+      "available": 800,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 40.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 0,
+          "coordinate": 80.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 40.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 80.0,
+          "start": 40.0,
+          "end": 80.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 736,
+        "1": 64
+      },
+      "status_counts": {
+        "centered": 640,
+        "one_sided": 160
+      },
+      "method_counts": {
+        "equilibrated_quintic": 800
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 1.736619431468368e-16,
+      "max_local_fit_condition": 81.7116116903609,
+      "max_moment_fit_relative_residual": 0.08831357144053156,
+      "errors": {
+        "away_from_corners": {
+          "compared_cells": 752,
+          "legacy_relative_l2": 0.028457257823996888,
+          "compatible_relative_l2": 0.00940232656233511,
+          "compatible_max_absolute_error": 8.642657003423301e-08,
+          "reference_relative_l2": 0.0003786318426047335
+        },
+        "near_rim": {
+          "compared_cells": 30,
+          "legacy_relative_l2": 0.11567066108087481,
+          "compatible_relative_l2": 0.03139258436151793,
+          "compatible_max_absolute_error": 8.642656507898767e-08,
+          "reference_relative_l2": 0.0016833248486882726
+        }
+      }
+    },
+    {
+      "case": "opening",
+      "plane": "XY",
+      "mesh_size_in": 4.0,
+      "combination": "Reverse",
+      "elements": 800,
+      "available": 800,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 40.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 0,
+          "coordinate": 80.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 40.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 80.0,
+          "start": 40.0,
+          "end": 80.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 736,
+        "1": 64
+      },
+      "status_counts": {
+        "centered": 640,
+        "one_sided": 160
+      },
+      "method_counts": {
+        "equilibrated_quintic": 800
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 1.736619431468368e-16,
+      "max_local_fit_condition": 81.7116116903609,
+      "max_moment_fit_relative_residual": 0.08831357144053156,
+      "errors": {
+        "away_from_corners": {
+          "compared_cells": 752,
+          "legacy_relative_l2": 0.028457257823996888,
+          "compatible_relative_l2": 0.00940232656233511,
+          "compatible_max_absolute_error": 1.7285314006846601e-07,
+          "reference_relative_l2": 0.0003786318426047335
+        },
+        "near_rim": {
+          "compared_cells": 30,
+          "legacy_relative_l2": 0.11567066108087481,
+          "compatible_relative_l2": 0.03139258436151793,
+          "compatible_max_absolute_error": 1.7285313015797534e-07,
+          "reference_relative_l2": 0.0016833248486882726
+        }
+      }
+    },
+    {
+      "case": "opening",
+      "plane": "XY",
+      "mesh_size_in": 4.0,
+      "combination": "Zero",
+      "elements": 800,
+      "available": 800,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 40.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 0,
+          "coordinate": 80.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 40.0,
+          "start": 40.0,
+          "end": 80.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 80.0,
+          "start": 40.0,
+          "end": 80.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 800
+      },
+      "status_counts": {
+        "centered": 640,
+        "one_sided": 160
+      },
+      "method_counts": {
+        "polynomial_exact": 800
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 28.399835937016594,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "away_from_corners": {
+          "compared_cells": 752,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0,
+          "reference_relative_l2": null
+        },
+        "near_rim": {
+          "compared_cells": 30,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0,
+          "reference_relative_l2": null
+        }
+      }
+    },
+    {
+      "case": "stiffness_x",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Service",
+      "elements": 24,
+      "available": 0,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 120.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 0.0,
+          "start": 0.0,
+          "end": 120.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 180.0,
+          "start": 0.0,
+          "end": 120.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 24
+      },
+      "status_counts": {
+        "incomplete_or_mixed_region": 24
+      },
+      "method_counts": {
+        "missing": 24
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": null,
+      "max_local_fit_condition": null,
+      "max_moment_fit_relative_residual": null,
+      "errors": {}
+    },
+    {
+      "case": "stiffness_x",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Reverse",
+      "elements": 24,
+      "available": 0,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 120.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 0.0,
+          "start": 0.0,
+          "end": 120.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 180.0,
+          "start": 0.0,
+          "end": 120.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 24
+      },
+      "status_counts": {
+        "incomplete_or_mixed_region": 24
+      },
+      "method_counts": {
+        "missing": 24
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": null,
+      "max_local_fit_condition": null,
+      "max_moment_fit_relative_residual": null,
+      "errors": {}
+    },
+    {
+      "case": "stiffness_x",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Zero",
+      "elements": 24,
+      "available": 0,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 120.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 0.0,
+          "start": 0.0,
+          "end": 120.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 180.0,
+          "start": 0.0,
+          "end": 120.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 24
+      },
+      "status_counts": {
+        "incomplete_or_mixed_region": 24
+      },
+      "method_counts": {
+        "missing": 24
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": null,
+      "max_local_fit_condition": null,
+      "max_moment_fit_relative_residual": null,
+      "errors": {}
+    },
+    {
+      "case": "stiffness_x",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Service",
+      "elements": 96,
+      "available": 96,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 120.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 0.0,
+          "start": 0.0,
+          "end": 120.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 180.0,
+          "start": 0.0,
+          "end": 120.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 96
+      },
+      "status_counts": {
+        "centered": 40,
+        "one_sided": 56
+      },
+      "method_counts": {
+        "polynomial_exact": 96
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 1.2466559840205285e-16,
+      "max_local_fit_condition": 27.23039588727437,
+      "max_moment_fit_relative_residual": 1.3293492557095764e-11,
+      "errors": {
+        "all": {
+          "compared_cells": 96,
+          "legacy_relative_l2": 1.3240010159271634e-11,
+          "compatible_relative_l2": 1.2573292056202354e-11,
+          "compatible_max_absolute_error": 1.926932192367753e-16
+        },
+        "outer_boundary_row": {
+          "compared_cells": 36,
+          "legacy_relative_l2": 1.4172878416831597e-11,
+          "compatible_relative_l2": 1.2920539666335609e-11,
+          "compatible_max_absolute_error": 1.926932192367753e-16
+        },
+        "interior": {
+          "compared_cells": 60,
+          "legacy_relative_l2": 1.2446178969802564e-11,
+          "compatible_relative_l2": 1.2289383001311953e-11,
+          "compatible_max_absolute_error": 1.623423346707592e-16
+        }
+      }
+    },
+    {
+      "case": "stiffness_x",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Reverse",
+      "elements": 96,
+      "available": 96,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 120.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 0.0,
+          "start": 0.0,
+          "end": 120.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 180.0,
+          "start": 0.0,
+          "end": 120.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 96
+      },
+      "status_counts": {
+        "centered": 40,
+        "one_sided": 56
+      },
+      "method_counts": {
+        "polynomial_exact": 96
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 1.2466559840205285e-16,
+      "max_local_fit_condition": 27.23039588727437,
+      "max_moment_fit_relative_residual": 1.3293492557095764e-11,
+      "errors": {
+        "all": {
+          "compared_cells": 96,
+          "legacy_relative_l2": 1.3240010159271634e-11,
+          "compatible_relative_l2": 1.2573292056202354e-11,
+          "compatible_max_absolute_error": 3.853864384735506e-16
+        },
+        "outer_boundary_row": {
+          "compared_cells": 36,
+          "legacy_relative_l2": 1.4172878416831597e-11,
+          "compatible_relative_l2": 1.2920539666335609e-11,
+          "compatible_max_absolute_error": 3.853864384735506e-16
+        },
+        "interior": {
+          "compared_cells": 60,
+          "legacy_relative_l2": 1.2446178969802564e-11,
+          "compatible_relative_l2": 1.2289383001311953e-11,
+          "compatible_max_absolute_error": 3.246846693415184e-16
+        }
+      }
+    },
+    {
+      "case": "stiffness_x",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Zero",
+      "elements": 96,
+      "available": 96,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 120.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 0.0,
+          "start": 0.0,
+          "end": 120.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 180.0,
+          "start": 0.0,
+          "end": 120.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 96
+      },
+      "status_counts": {
+        "centered": 40,
+        "one_sided": 56
+      },
+      "method_counts": {
+        "polynomial_exact": 96
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 27.23039588727437,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "all": {
+          "compared_cells": 96,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "compared_cells": 36,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "interior": {
+          "compared_cells": 60,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "stiffness_x",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Service",
+      "elements": 384,
+      "available": 384,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 120.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 0.0,
+          "start": 0.0,
+          "end": 120.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 180.0,
+          "start": 0.0,
+          "end": 120.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 384
+      },
+      "status_counts": {
+        "centered": 264,
+        "one_sided": 120
+      },
+      "method_counts": {
+        "polynomial_exact": 384
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 1.5583199805344188e-16,
+      "max_local_fit_condition": 27.23039588727437,
+      "max_moment_fit_relative_residual": 1.4962725246051543e-10,
+      "errors": {
+        "all": {
+          "compared_cells": 384,
+          "legacy_relative_l2": 1.914930529811676e-10,
+          "compatible_relative_l2": 1.9066177064559326e-10,
+          "compatible_max_absolute_error": 1.722092520667351e-15
+        },
+        "outer_boundary_row": {
+          "compared_cells": 76,
+          "legacy_relative_l2": 1.584199238466098e-10,
+          "compatible_relative_l2": 1.5816069914743132e-10,
+          "compatible_max_absolute_error": 1.620279160407384e-15
+        },
+        "interior": {
+          "compared_cells": 308,
+          "legacy_relative_l2": 2.0105759313886897e-10,
+          "compatible_relative_l2": 2.0007507755729853e-10,
+          "compatible_max_absolute_error": 1.722092520667351e-15
+        }
+      }
+    },
+    {
+      "case": "stiffness_x",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Reverse",
+      "elements": 384,
+      "available": 384,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 120.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 0.0,
+          "start": 0.0,
+          "end": 120.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 180.0,
+          "start": 0.0,
+          "end": 120.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 384
+      },
+      "status_counts": {
+        "centered": 264,
+        "one_sided": 120
+      },
+      "method_counts": {
+        "polynomial_exact": 384
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 1.5583199805344188e-16,
+      "max_local_fit_condition": 27.23039588727437,
+      "max_moment_fit_relative_residual": 1.4962725246051543e-10,
+      "errors": {
+        "all": {
+          "compared_cells": 384,
+          "legacy_relative_l2": 1.914930529811676e-10,
+          "compatible_relative_l2": 1.9066177064559326e-10,
+          "compatible_max_absolute_error": 3.444185041334702e-15
+        },
+        "outer_boundary_row": {
+          "compared_cells": 76,
+          "legacy_relative_l2": 1.584199238466098e-10,
+          "compatible_relative_l2": 1.5816069914743132e-10,
+          "compatible_max_absolute_error": 3.240558320814768e-15
+        },
+        "interior": {
+          "compared_cells": 308,
+          "legacy_relative_l2": 2.0105759313886897e-10,
+          "compatible_relative_l2": 2.0007507755729853e-10,
+          "compatible_max_absolute_error": 3.444185041334702e-15
+        }
+      }
+    },
+    {
+      "case": "stiffness_x",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Zero",
+      "elements": 384,
+      "available": 384,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 120.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 0.0,
+          "start": 0.0,
+          "end": 120.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 180.0,
+          "start": 0.0,
+          "end": 120.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 384
+      },
+      "status_counts": {
+        "centered": 264,
+        "one_sided": 120
+      },
+      "method_counts": {
+        "polynomial_exact": 384
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 27.23039588727437,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "all": {
+          "compared_cells": 384,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "compared_cells": 76,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "interior": {
+          "compared_cells": 308,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "stiffness_y",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Service",
+      "elements": 24,
+      "available": 24,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 0.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 0,
+          "coordinate": 120.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 180.0,
+          "start": 0.0,
+          "end": 120.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 24
+      },
+      "status_counts": {
+        "centered": 4,
+        "one_sided": 20
+      },
+      "method_counts": {
+        "polynomial_exact": 24
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 9.349919880160431e-17,
+      "max_local_fit_condition": 27.23039588727437,
+      "max_moment_fit_relative_residual": 2.033467349651009e-12,
+      "errors": {
+        "all": {
+          "compared_cells": 24,
+          "legacy_relative_l2": 6.088591090552485e-12,
+          "compatible_relative_l2": 5.893914387352033e-12,
+          "compatible_max_absolute_error": 7.934327023520482e-17
+        },
+        "outer_boundary_row": {
+          "compared_cells": 16,
+          "legacy_relative_l2": 5.768972776093866e-12,
+          "compatible_relative_l2": 5.706314614930592e-12,
+          "compatible_max_absolute_error": 7.934327023520482e-17
+        },
+        "interior": {
+          "compared_cells": 8,
+          "legacy_relative_l2": 6.819051230414538e-12,
+          "compatible_relative_l2": 6.336575461500801e-12,
+          "compatible_max_absolute_error": 7.098474911169939e-17
+        }
+      }
+    },
+    {
+      "case": "stiffness_y",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Reverse",
+      "elements": 24,
+      "available": 24,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 0.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 0,
+          "coordinate": 120.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 180.0,
+          "start": 0.0,
+          "end": 120.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 24
+      },
+      "status_counts": {
+        "centered": 4,
+        "one_sided": 20
+      },
+      "method_counts": {
+        "polynomial_exact": 24
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 9.349919880160431e-17,
+      "max_local_fit_condition": 27.23039588727437,
+      "max_moment_fit_relative_residual": 2.033467349651009e-12,
+      "errors": {
+        "all": {
+          "compared_cells": 24,
+          "legacy_relative_l2": 6.088591090552485e-12,
+          "compatible_relative_l2": 5.893914387352033e-12,
+          "compatible_max_absolute_error": 1.5868654047040964e-16
+        },
+        "outer_boundary_row": {
+          "compared_cells": 16,
+          "legacy_relative_l2": 5.768972776093866e-12,
+          "compatible_relative_l2": 5.706314614930592e-12,
+          "compatible_max_absolute_error": 1.5868654047040964e-16
+        },
+        "interior": {
+          "compared_cells": 8,
+          "legacy_relative_l2": 6.819051230414538e-12,
+          "compatible_relative_l2": 6.336575461500801e-12,
+          "compatible_max_absolute_error": 1.4196949822339877e-16
+        }
+      }
+    },
+    {
+      "case": "stiffness_y",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Zero",
+      "elements": 24,
+      "available": 24,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 0.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 0,
+          "coordinate": 120.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 180.0,
+          "start": 0.0,
+          "end": 120.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 24
+      },
+      "status_counts": {
+        "centered": 4,
+        "one_sided": 20
+      },
+      "method_counts": {
+        "polynomial_exact": 24
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 27.23039588727437,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "all": {
+          "compared_cells": 24,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "compared_cells": 16,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "interior": {
+          "compared_cells": 8,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "stiffness_y",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Service",
+      "elements": 96,
+      "available": 96,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 0.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 0,
+          "coordinate": 120.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 180.0,
+          "start": 0.0,
+          "end": 120.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 96
+      },
+      "status_counts": {
+        "centered": 48,
+        "one_sided": 48
+      },
+      "method_counts": {
+        "polynomial_exact": 96
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 9.34991988141577e-17,
+      "max_local_fit_condition": 27.23039588727437,
+      "max_moment_fit_relative_residual": 5.84525205878649e-11,
+      "errors": {
+        "all": {
+          "compared_cells": 96,
+          "legacy_relative_l2": 6.358876631842771e-11,
+          "compatible_relative_l2": 6.165296145916867e-11,
+          "compatible_max_absolute_error": 1.1225863175232803e-15
+        },
+        "outer_boundary_row": {
+          "compared_cells": 36,
+          "legacy_relative_l2": 6.047610591009168e-11,
+          "compatible_relative_l2": 5.712799899898698e-11,
+          "compatible_max_absolute_error": 1.1225863175232803e-15
+        },
+        "interior": {
+          "compared_cells": 60,
+          "legacy_relative_l2": 6.577562592101118e-11,
+          "compatible_relative_l2": 6.476754068436094e-11,
+          "compatible_max_absolute_error": 9.743589398855668e-16
+        }
+      }
+    },
+    {
+      "case": "stiffness_y",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Reverse",
+      "elements": 96,
+      "available": 96,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 0.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 0,
+          "coordinate": 120.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 180.0,
+          "start": 0.0,
+          "end": 120.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 96
+      },
+      "status_counts": {
+        "centered": 48,
+        "one_sided": 48
+      },
+      "method_counts": {
+        "polynomial_exact": 96
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 9.34991988141577e-17,
+      "max_local_fit_condition": 27.23039588727437,
+      "max_moment_fit_relative_residual": 5.84525205878649e-11,
+      "errors": {
+        "all": {
+          "compared_cells": 96,
+          "legacy_relative_l2": 6.358876631842771e-11,
+          "compatible_relative_l2": 6.165296145916867e-11,
+          "compatible_max_absolute_error": 2.2451726350465606e-15
+        },
+        "outer_boundary_row": {
+          "compared_cells": 36,
+          "legacy_relative_l2": 6.047610591009168e-11,
+          "compatible_relative_l2": 5.712799899898698e-11,
+          "compatible_max_absolute_error": 2.2451726350465606e-15
+        },
+        "interior": {
+          "compared_cells": 60,
+          "legacy_relative_l2": 6.577562592101118e-11,
+          "compatible_relative_l2": 6.476754068436094e-11,
+          "compatible_max_absolute_error": 1.9487178797711335e-15
+        }
+      }
+    },
+    {
+      "case": "stiffness_y",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Zero",
+      "elements": 96,
+      "available": 96,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 0.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 0,
+          "coordinate": 120.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 180.0,
+          "start": 0.0,
+          "end": 120.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 96
+      },
+      "status_counts": {
+        "centered": 48,
+        "one_sided": 48
+      },
+      "method_counts": {
+        "polynomial_exact": 96
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 27.23039588727437,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "all": {
+          "compared_cells": 96,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "compared_cells": 36,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "interior": {
+          "compared_cells": 60,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "stiffness_y",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Service",
+      "elements": 384,
+      "available": 384,
+      "pressure_kip_per_in2": -1e-07,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 0.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 0,
+          "coordinate": 120.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 180.0,
+          "start": 0.0,
+          "end": 120.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 384
+      },
+      "status_counts": {
+        "centered": 280,
+        "one_sided": 104
+      },
+      "method_counts": {
+        "polynomial_exact": 384
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 1.0110846618521101e-16,
+      "max_local_fit_condition": 27.23039588727437,
+      "max_moment_fit_relative_residual": 9.232713360287953e-10,
+      "errors": {
+        "all": {
+          "compared_cells": 384,
+          "legacy_relative_l2": 1.3255367256165527e-09,
+          "compatible_relative_l2": 1.3256168155846996e-09,
+          "compatible_max_absolute_error": 1.7469190563513745e-14
+        },
+        "outer_boundary_row": {
+          "compared_cells": 76,
+          "legacy_relative_l2": 1.1612479950225644e-09,
+          "compatible_relative_l2": 1.1643675952107267e-09,
+          "compatible_max_absolute_error": 1.7469190563513745e-14
+        },
+        "interior": {
+          "compared_cells": 308,
+          "legacy_relative_l2": 1.3707857017413265e-09,
+          "compatible_relative_l2": 1.3700958417612556e-09,
+          "compatible_max_absolute_error": 1.706394120242708e-14
+        }
+      }
+    },
+    {
+      "case": "stiffness_y",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Reverse",
+      "elements": 384,
+      "available": 384,
+      "pressure_kip_per_in2": 2e-07,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 0.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 0,
+          "coordinate": 120.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 180.0,
+          "start": 0.0,
+          "end": 120.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 384
+      },
+      "status_counts": {
+        "centered": 280,
+        "one_sided": 104
+      },
+      "method_counts": {
+        "polynomial_exact": 384
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 1.0110846618521101e-16,
+      "max_local_fit_condition": 27.23039588727437,
+      "max_moment_fit_relative_residual": 9.232713360287953e-10,
+      "errors": {
+        "all": {
+          "compared_cells": 384,
+          "legacy_relative_l2": 1.3255367256165527e-09,
+          "compatible_relative_l2": 1.3256168155846996e-09,
+          "compatible_max_absolute_error": 3.493838112702749e-14
+        },
+        "outer_boundary_row": {
+          "compared_cells": 76,
+          "legacy_relative_l2": 1.1612479950225644e-09,
+          "compatible_relative_l2": 1.1643675952107267e-09,
+          "compatible_max_absolute_error": 3.493838112702749e-14
+        },
+        "interior": {
+          "compared_cells": 308,
+          "legacy_relative_l2": 1.3707857017413265e-09,
+          "compatible_relative_l2": 1.3700958417612556e-09,
+          "compatible_max_absolute_error": 3.412788240485416e-14
+        }
+      }
+    },
+    {
+      "case": "stiffness_y",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Zero",
+      "elements": 384,
+      "available": 384,
+      "pressure_kip_per_in2": -0.0,
+      "free_edges": [
+        {
+          "axis": 0,
+          "coordinate": 0.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 0,
+          "coordinate": 120.0,
+          "start": 0.0,
+          "end": 180.0
+        },
+        {
+          "axis": 1,
+          "coordinate": 180.0,
+          "start": 0.0,
+          "end": 120.0
+        }
+      ],
+      "applied_free_face_counts": {
+        "0": 384
+      },
+      "status_counts": {
+        "centered": 280,
+        "one_sided": 104
+      },
+      "method_counts": {
+        "polynomial_exact": 384
+      },
+      "equilibrium_verified": true,
+      "max_constraint_backward_error": 0.0,
+      "max_local_fit_condition": 27.23039588727437,
+      "max_moment_fit_relative_residual": 0.0,
+      "errors": {
+        "all": {
+          "compared_cells": 384,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "compared_cells": 76,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        },
+        "interior": {
+          "compared_cells": 308,
+          "legacy_relative_l2": null,
+          "compatible_relative_l2": null,
+          "compatible_max_absolute_error": 0.0
+        }
+      }
+    }
+  ],
+  "interpretation": "bounded_free_rim_recovery_ready approves the stated research checks only. This helper is not imported by the application. No pressure/DOF/stiffness/solution or global force/moment check is changed. Legacy quadratic-fit reports and their failed gates are preserved.",
+  "remaining": [
+    "Integrate snapshot-aware masked recovered fields only after explicit production eligibility and source/interface guards.",
+    "Pointwise reentrant-corner peaks and arbitrary opening/skew/thick/curved meshes remain unvalidated.",
+    "Concentrated/line/member load transfer, general frame-shell interfaces and arbitrary support changes are outside these bounded recovery checks."
+  ]
+}
