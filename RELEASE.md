@@ -199,6 +199,43 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 Quad-Shear Boundary Validation Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-01. This is a test/reference and
+reproducibility milestone. Application recovery, accepted snapshots, file formats
+and public RC4 artifacts are unchanged. Quad shear remains disabled in production.
+
+- Add test-only complete 3×3 one-sided moment stencils with constitutive-region
+  isolation. Canonicalize coordinate roundoff only; reject nonconforming grids,
+  excessive grading and ill-conditioning, and return explicit missing values for
+  incomplete/thin regions. Never use nearest points to bridge holes or stiffness
+  jumps. Fit availability is separate from physical accuracy.
+- Compare standalone and negligible-edge-beam coupled thin Navier plates on
+  uniform/control-line graded grids, plus nu=0 x/y cantilevers with E×4 and t×1.5
+  interfaces. Check signed/zero cases, XY/XZ/YZ, finite values and unchanged global
+  force/moment balance. Uniform outer-boundary-row L2 errors are 21.91/7.62/2.61%;
+  graded errors are 14.27/6.48/2.46%. Finest domain/interior errors remain below
+  2%/0.3%. Same-region interface cut-force errors are below 1e-6 relative L2;
+  coarse two-column regions correctly have no stencil.
+- Add independent analytic area-mean shear derivatives to the existing opening
+  Ritz reference and verify the intact Navier limit by independent quadrature.
+  Compare exact clipped material-patch means. The refined outer corner mean is
+  within 1% of the bounded reference. Preserve unresolved reference evidence:
+  11→13-term mean changes are 0.10% (corner), 0.91% (outer strip), about 490%
+  (near rim). The latter two fail the existing study's 0.5% reference-stability
+  gate; 17 terms exceeds the original 1e8 conditioning limit. No relaxed limit
+  or displacement/moment parity substitutes for a shear reference.
+- Publish 63 numerical records with source hashes, explicit
+  `bounded_checks_passed: true` and **`production_ready: false`**, plus an inspected
+  three-panel figure, reproducible command and illustrated guide. General opening
+  shear/peaks, arbitrary meshes, thick/curved shells and frame-shell interfaces
+  retain their validation gates.
+- Validation: **147 surface tests**, no skips, **172.168 s**. All **11 new focused
+  checks** pass with installed pinned PyNite **3.0.0** / Qt **6.11.2** (**50.570 s**)
+  and newer PyNite **3.2.1** / Qt **6.12.0** (**50.388 s**). Ownership covers **174
+  classes** across nine primary groups. Strict docs/link checks cover **58 HTML
+  pages**; browser QA checks the figure and explicit unresolved-production gate.
+
 ## Post-RC4 Joint-Spring Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-01. Public RC4 artifacts remain

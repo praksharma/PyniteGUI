@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Extend test-only Quad-shear recovery research to one-sided boundary patches,
+  conforming graded grids, openings and material/thickness interfaces. Reject
+  mixed/incomplete/ill-conditioned stencils with explicit missing values; retain
+  all-combination equilibrium checks. Add independent area-mean shear references,
+  signed/axis/refinement regressions, 63 numerical records and an illustrated
+  report. Record unresolved opening-reference convergence with unchanged condition
+  limits. Production Quad shear remains disabled pending those validation gates.
+
 - Add explicit massless axial springs between existing joints in 2D/3D, with
   entered stiffness and bilateral/tension-only/compression-only action. Support
   spring-only networks and mixed linear/iterative frame/truss models. Add staged

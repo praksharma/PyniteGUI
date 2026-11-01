@@ -137,3 +137,8 @@ The separate plate workspace supports geometry-owned linear pressure along local
 width/height, centroid-load previews and pressure probes. The official hydrostatic
 tank wall is available with pinned bending/nodal parity and independent load and
 refinement checks. See [Plate loading](surfaces/plates.md). Quad shear stays disabled.
+
+The [Quad-shear validation study](surfaces/plates.md) now covers outer boundaries,
+graded meshes and material/thickness interfaces with explicit missing stencils.
+Opening shear references still fail their convergence gate; recovered Quad shear
+remains research data and is unavailable in production results.

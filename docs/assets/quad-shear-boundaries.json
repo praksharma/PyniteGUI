@@ -1,0 +1,2180 @@
+{
+  "bounded_checks_passed": true,
+  "production_ready": false,
+  "python": "3.12.13",
+  "pynite": "3.0.0",
+  "brecon": "1.0.0rc5.dev0",
+  "source_sha256": {
+    "tests/quad_shear_boundaries.py": "bf89f7c78cb0713c6acc4a4c1fe2b6d5dc173323768d0a8f88415be0b2d7d483",
+    "tests/plate_reference.py": "629e796ff7b762cfaec15f37ee184e689fb51e73a42f48709107c5e158a3b062",
+    "scripts/benchmark_quad_shear_boundaries.py": "521ed4df3d4c73694da2e54295cf6d8c21b82a90a05db8cc9d9c9a8c72a1db5f"
+  },
+  "units": {
+    "length": "in",
+    "pressure": "kip/in2",
+    "shear": "kip/in"
+  },
+  "scope": "Standalone and negligible-edge-beam coupled 120x180x0.6 in thin plates, uniform/graded rectangular meshes, outer boundary rows, and two nu=0 cantilever directions with E x4 and thickness x1.5 interfaces. Separate 120x120 in plate with a 40x40 in free square opening. XY report; XY/XZ/YZ and signed/zero invariance checked by regression tests.",
+  "method": "Test-only quadratic centre-moment fits on complete contiguous 3x3 Cartesian stencils in one constitutive region. Centred stencils preferred; one-sided stencils allowed only with the target inside the patch. No nearest-point bridging of holes or jumps; excessive grading/rank loss/thin regions return NaN with status. This is smoothed equilibrium recovery, not raw element shear or an unsmoothed probe.",
+  "reference": "Independent Kirchhoff Navier series (160/320 boundary truncation check in tests), cantilever cut force Q=q(L-x), and analytic area means of opening Rayleigh-Ritz third derivatives. Opening basis sizes 9/11/13, original condition limit 1e8 retained at size 17.",
+  "interpretation": "bounded_checks_passed only verifies the stated bounds and preserves the negative opening gates. It is not permission to expose shear. Missing stencils remain missing; finite recovered values do not imply verified accuracy.",
+  "unresolved": [
+    "Opening outer-strip reference changes by more than 0.5% from 11 to 13 terms.",
+    "Near-rim opening reference is not converged; higher truncation breaches the existing conditioning limit.",
+    "Opening/reentrant-corner peaks, arbitrary irregular/skew/thick/curved elements and general frame-shell interfaces remain unverified.",
+    "No production integration: Quad shear remains unavailable in plots, probes, CSV and MCP."
+  ],
+  "opening_reference": {
+    "conditions": [
+      {
+        "terms": 9,
+        "condition": 10820.732048192995
+      },
+      {
+        "terms": 11,
+        "condition": 493190.25919325027
+      },
+      {
+        "terms": 13,
+        "condition": 25102405.57702829
+      }
+    ],
+    "patches": {
+      "corner": {
+        "box_in": [
+          0.0,
+          20.0,
+          0.0,
+          20.0
+        ],
+        "mean_shear_kip_per_in": [
+          [
+            -9.983102286035773e-07,
+            -9.983102286035776e-07
+          ],
+          [
+            -9.982142044015513e-07,
+            -9.982142044015509e-07
+          ],
+          [
+            -9.992120399337745e-07,
+            -9.99212039933775e-07
+          ]
+        ],
+        "relative_basis_gap": 0.0009986224068014773,
+        "reference_stable": true
+      },
+      "outer_strip": {
+        "box_in": [
+          0.0,
+          20.0,
+          40.0,
+          80.0
+        ],
+        "mean_shear_kip_per_in": [
+          [
+            -2.4279395011311716e-06,
+            -4.6855670951594e-23
+          ],
+          [
+            -2.445013105514529e-06,
+            -2.734961255013889e-23
+          ],
+          [
+            -2.4229437763540052e-06,
+            -2.439758772165855e-23
+          ]
+        ],
+        "relative_basis_gap": 0.009108477619622447,
+        "reference_stable": false
+      },
+      "near_rim": {
+        "box_in": [
+          20.0,
+          40.0,
+          48.0,
+          72.0
+        ],
+        "mean_shear_kip_per_in": [
+          [
+            -6.488792114432536e-08,
+            4.1663776482428526e-22
+          ],
+          [
+            -3.635716895744376e-08,
+            3.5582231461670514e-22
+          ],
+          [
+            -6.160308393668951e-09,
+            3.064546941423968e-22
+          ]
+        ],
+        "relative_basis_gap": 4.901842348478627,
+        "reference_stable": false
+      }
+    },
+    "higher_truncation": {
+      "terms": 17,
+      "accepted": false,
+      "message": "Ritz truncation is too ill-conditioned for this reference."
+    },
+    "relative_gap_limit": 0.005
+  },
+  "records": [
+    {
+      "case": "boundary",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Service",
+      "elements": 24,
+      "available": 24,
+      "statuses": {
+        "centered": 8,
+        "one_sided": 16
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.20842410339040215,
+          "raw_relative_l2": 0.4608769122033258,
+          "recovered_max_absolute_error": 8.626673803294002e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.21913905406864392,
+          "raw_relative_l2": 0.4270340311472924,
+          "recovered_max_absolute_error": 8.626673803294002e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.028280811813242213,
+          "raw_relative_l2": 0.7014942087784607,
+          "recovered_max_absolute_error": 4.1889111028360745e-08
+        }
+      }
+    },
+    {
+      "case": "boundary",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Reverse",
+      "elements": 24,
+      "available": 24,
+      "statuses": {
+        "centered": 8,
+        "one_sided": 16
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.20842410339040215,
+          "raw_relative_l2": 0.4608769122033258,
+          "recovered_max_absolute_error": 1.7253347606588003e-06
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.21913905406864392,
+          "raw_relative_l2": 0.4270340311472924,
+          "recovered_max_absolute_error": 1.7253347606588003e-06
+        },
+        "interior": {
+          "recovered_relative_l2": 0.028280811813242213,
+          "raw_relative_l2": 0.7014942087784607,
+          "recovered_max_absolute_error": 8.377822205672149e-08
+        }
+      }
+    },
+    {
+      "case": "boundary",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Zero",
+      "elements": 24,
+      "available": 24,
+      "statuses": {
+        "centered": 8,
+        "one_sided": 16
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "interior": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "boundary",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Service",
+      "elements": 96,
+      "available": 96,
+      "statuses": {
+        "centered": 60,
+        "one_sided": 36
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.059908167425433465,
+          "raw_relative_l2": 0.4543529229947967,
+          "recovered_max_absolute_error": 4.0371508603125777e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.07619560562465554,
+          "raw_relative_l2": 0.3833599590423027,
+          "recovered_max_absolute_error": 4.0371508603125777e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.006682545778673089,
+          "raw_relative_l2": 0.5491117901830052,
+          "recovered_max_absolute_error": 1.9008191363912365e-08
+        }
+      }
+    },
+    {
+      "case": "boundary",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Reverse",
+      "elements": 96,
+      "available": 96,
+      "statuses": {
+        "centered": 60,
+        "one_sided": 36
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.059908167425433465,
+          "raw_relative_l2": 0.4543529229947967,
+          "recovered_max_absolute_error": 8.074301720625155e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.07619560562465554,
+          "raw_relative_l2": 0.3833599590423027,
+          "recovered_max_absolute_error": 8.074301720625155e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.006682545778673089,
+          "raw_relative_l2": 0.5491117901830052,
+          "recovered_max_absolute_error": 3.801638272782473e-08
+        }
+      }
+    },
+    {
+      "case": "boundary",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Zero",
+      "elements": 96,
+      "available": 96,
+      "statuses": {
+        "centered": 60,
+        "one_sided": 36
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "interior": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "boundary",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Service",
+      "elements": 384,
+      "available": 384,
+      "statuses": {
+        "centered": 308,
+        "one_sided": 76
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.015799611400542698,
+          "raw_relative_l2": 0.4483030095711437,
+          "recovered_max_absolute_error": 1.9747616805874773e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.026146878136489294,
+          "raw_relative_l2": 0.35905916598331117,
+          "recovered_max_absolute_error": 1.9747616805874773e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.0017861024929378784,
+          "raw_relative_l2": 0.4918189237886986,
+          "recovered_max_absolute_error": 8.132963857778204e-09
+        }
+      }
+    },
+    {
+      "case": "boundary",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Reverse",
+      "elements": 384,
+      "available": 384,
+      "statuses": {
+        "centered": 308,
+        "one_sided": 76
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.015799611400542698,
+          "raw_relative_l2": 0.4483030095711437,
+          "recovered_max_absolute_error": 3.9495233611749546e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.026146878136489294,
+          "raw_relative_l2": 0.35905916598331117,
+          "recovered_max_absolute_error": 3.9495233611749546e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.0017861024929378784,
+          "raw_relative_l2": 0.4918189237886986,
+          "recovered_max_absolute_error": 1.626592771555641e-08
+        }
+      }
+    },
+    {
+      "case": "boundary",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Zero",
+      "elements": 384,
+      "available": 384,
+      "statuses": {
+        "centered": 308,
+        "one_sided": 76
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "interior": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "graded",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Service",
+      "elements": 42,
+      "available": 42,
+      "statuses": {
+        "centered": 20,
+        "one_sided": 22
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.1274043516710288,
+          "raw_relative_l2": 0.45539414633367237,
+          "recovered_max_absolute_error": 5.858088676295634e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.14269825113874723,
+          "raw_relative_l2": 0.4170905475872212,
+          "recovered_max_absolute_error": 5.858088676295634e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.04242477101574758,
+          "raw_relative_l2": 0.5693323054920896,
+          "recovered_max_absolute_error": 1.4821173714133192e-07
+        }
+      }
+    },
+    {
+      "case": "graded",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Reverse",
+      "elements": 42,
+      "available": 42,
+      "statuses": {
+        "centered": 20,
+        "one_sided": 22
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.1274043516710288,
+          "raw_relative_l2": 0.45539414633367237,
+          "recovered_max_absolute_error": 1.1716177352591269e-06
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.14269825113874723,
+          "raw_relative_l2": 0.4170905475872212,
+          "recovered_max_absolute_error": 1.1716177352591269e-06
+        },
+        "interior": {
+          "recovered_relative_l2": 0.04242477101574758,
+          "raw_relative_l2": 0.5693323054920896,
+          "recovered_max_absolute_error": 2.9642347428266385e-07
+        }
+      }
+    },
+    {
+      "case": "graded",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Zero",
+      "elements": 42,
+      "available": 42,
+      "statuses": {
+        "centered": 20,
+        "one_sided": 22
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "interior": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "graded",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Service",
+      "elements": 117,
+      "available": 117,
+      "statuses": {
+        "centered": 77,
+        "one_sided": 40
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.04925176945139312,
+          "raw_relative_l2": 0.45358387125616406,
+          "recovered_max_absolute_error": 3.927300165138503e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.06478820588811852,
+          "raw_relative_l2": 0.3781563982259475,
+          "recovered_max_absolute_error": 3.927300165138503e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.009020797217832069,
+          "raw_relative_l2": 0.5373536133108511,
+          "recovered_max_absolute_error": 5.52101349364947e-08
+        }
+      }
+    },
+    {
+      "case": "graded",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Reverse",
+      "elements": 117,
+      "available": 117,
+      "statuses": {
+        "centered": 77,
+        "one_sided": 40
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.04925176945139312,
+          "raw_relative_l2": 0.45358387125616406,
+          "recovered_max_absolute_error": 7.854600330277006e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.06478820588811852,
+          "raw_relative_l2": 0.3781563982259475,
+          "recovered_max_absolute_error": 7.854600330277006e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.009020797217832069,
+          "raw_relative_l2": 0.5373536133108511,
+          "recovered_max_absolute_error": 1.104202698729894e-07
+        }
+      }
+    },
+    {
+      "case": "graded",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Zero",
+      "elements": 117,
+      "available": 117,
+      "statuses": {
+        "centered": 77,
+        "one_sided": 40
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "interior": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "graded",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Service",
+      "elements": 425,
+      "available": 425,
+      "statuses": {
+        "centered": 345,
+        "one_sided": 80
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.014721486199332072,
+          "raw_relative_l2": 0.4477086428262428,
+          "recovered_max_absolute_error": 1.940602450852784e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.024631157688058312,
+          "raw_relative_l2": 0.3570576519344465,
+          "recovered_max_absolute_error": 1.940602450852784e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.0018155843537018045,
+          "raw_relative_l2": 0.4902744701532628,
+          "recovered_max_absolute_error": 1.3617159275109581e-08
+        }
+      }
+    },
+    {
+      "case": "graded",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Reverse",
+      "elements": 425,
+      "available": 425,
+      "statuses": {
+        "centered": 345,
+        "one_sided": 80
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.014721486199332072,
+          "raw_relative_l2": 0.4477086428262428,
+          "recovered_max_absolute_error": 3.881204901705568e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.024631157688058312,
+          "raw_relative_l2": 0.3570576519344465,
+          "recovered_max_absolute_error": 3.881204901705568e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.0018155843537018045,
+          "raw_relative_l2": 0.4902744701532628,
+          "recovered_max_absolute_error": 2.7234318550219162e-08
+        }
+      }
+    },
+    {
+      "case": "graded",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Zero",
+      "elements": 425,
+      "available": 425,
+      "statuses": {
+        "centered": 345,
+        "one_sided": 80
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "interior": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "coupled_boundary",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Service",
+      "elements": 24,
+      "available": 24,
+      "statuses": {
+        "centered": 8,
+        "one_sided": 16
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.20842410338500883,
+          "raw_relative_l2": 0.4608769121789119,
+          "recovered_max_absolute_error": 8.626673803260446e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.21913905406298803,
+          "raw_relative_l2": 0.4270340311171742,
+          "recovered_max_absolute_error": 8.626673803260446e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.02828081181145444,
+          "raw_relative_l2": 0.7014942087837788,
+          "recovered_max_absolute_error": 4.188911103300185e-08
+        }
+      }
+    },
+    {
+      "case": "coupled_boundary",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Reverse",
+      "elements": 24,
+      "available": 24,
+      "statuses": {
+        "centered": 8,
+        "one_sided": 16
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.20842410338500883,
+          "raw_relative_l2": 0.4608769121789119,
+          "recovered_max_absolute_error": 1.7253347606520893e-06
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.21913905406298803,
+          "raw_relative_l2": 0.4270340311171742,
+          "recovered_max_absolute_error": 1.7253347606520893e-06
+        },
+        "interior": {
+          "recovered_relative_l2": 0.02828081181145444,
+          "raw_relative_l2": 0.7014942087837788,
+          "recovered_max_absolute_error": 8.37782220660037e-08
+        }
+      }
+    },
+    {
+      "case": "coupled_boundary",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Zero",
+      "elements": 24,
+      "available": 24,
+      "statuses": {
+        "centered": 8,
+        "one_sided": 16
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "interior": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "coupled_boundary",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Service",
+      "elements": 96,
+      "available": 96,
+      "statuses": {
+        "centered": 60,
+        "one_sided": 36
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.05990816741570687,
+          "raw_relative_l2": 0.45435292297852137,
+          "recovered_max_absolute_error": 4.0371508603053186e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.07619560561225486,
+          "raw_relative_l2": 0.38335995901082115,
+          "recovered_max_absolute_error": 4.0371508603053186e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.006682545778128617,
+          "raw_relative_l2": 0.5491117901831479,
+          "recovered_max_absolute_error": 1.9008191367221723e-08
+        }
+      }
+    },
+    {
+      "case": "coupled_boundary",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Reverse",
+      "elements": 96,
+      "available": 96,
+      "statuses": {
+        "centered": 60,
+        "one_sided": 36
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.05990816741570687,
+          "raw_relative_l2": 0.45435292297852137,
+          "recovered_max_absolute_error": 8.074301720610637e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.07619560561225486,
+          "raw_relative_l2": 0.38335995901082115,
+          "recovered_max_absolute_error": 8.074301720610637e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.006682545778128617,
+          "raw_relative_l2": 0.5491117901831479,
+          "recovered_max_absolute_error": 3.8016382734443446e-08
+        }
+      }
+    },
+    {
+      "case": "coupled_boundary",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Zero",
+      "elements": 96,
+      "available": 96,
+      "statuses": {
+        "centered": 60,
+        "one_sided": 36
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "interior": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "coupled_boundary",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Service",
+      "elements": 384,
+      "available": 384,
+      "statuses": {
+        "centered": 308,
+        "one_sided": 76
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.01579961138065235,
+          "raw_relative_l2": 0.44830300951075264,
+          "recovered_max_absolute_error": 1.9747616805813999e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.02614687810330549,
+          "raw_relative_l2": 0.35905916575833546,
+          "recovered_max_absolute_error": 1.9747616805813999e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.0017861024929097821,
+          "raw_relative_l2": 0.4918189237956528,
+          "recovered_max_absolute_error": 8.132963859727227e-09
+        }
+      }
+    },
+    {
+      "case": "coupled_boundary",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Reverse",
+      "elements": 384,
+      "available": 384,
+      "statuses": {
+        "centered": 308,
+        "one_sided": 76
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.01579961138065235,
+          "raw_relative_l2": 0.44830300951075264,
+          "recovered_max_absolute_error": 3.9495233611627997e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.02614687810330549,
+          "raw_relative_l2": 0.35905916575833546,
+          "recovered_max_absolute_error": 3.9495233611627997e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.0017861024929097821,
+          "raw_relative_l2": 0.4918189237956528,
+          "recovered_max_absolute_error": 1.6265927719454454e-08
+        }
+      }
+    },
+    {
+      "case": "coupled_boundary",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Zero",
+      "elements": 384,
+      "available": 384,
+      "statuses": {
+        "centered": 308,
+        "one_sided": 76
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "interior": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "coupled_graded",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Service",
+      "elements": 42,
+      "available": 42,
+      "statuses": {
+        "centered": 20,
+        "one_sided": 22
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.12740435166464442,
+          "raw_relative_l2": 0.4553941463165638,
+          "recovered_max_absolute_error": 5.858088674511779e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.142698251130836,
+          "raw_relative_l2": 0.41709054756228775,
+          "recovered_max_absolute_error": 5.858088674511779e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.04242477102255787,
+          "raw_relative_l2": 0.5693323054944106,
+          "recovered_max_absolute_error": 1.4821173714465505e-07
+        }
+      }
+    },
+    {
+      "case": "coupled_graded",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Reverse",
+      "elements": 42,
+      "available": 42,
+      "statuses": {
+        "centered": 20,
+        "one_sided": 22
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.12740435166464442,
+          "raw_relative_l2": 0.4553941463165638,
+          "recovered_max_absolute_error": 1.1716177349023557e-06
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.142698251130836,
+          "raw_relative_l2": 0.41709054756228775,
+          "recovered_max_absolute_error": 1.1716177349023557e-06
+        },
+        "interior": {
+          "recovered_relative_l2": 0.04242477102255787,
+          "raw_relative_l2": 0.5693323054944106,
+          "recovered_max_absolute_error": 2.964234742893101e-07
+        }
+      }
+    },
+    {
+      "case": "coupled_graded",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Zero",
+      "elements": 42,
+      "available": 42,
+      "statuses": {
+        "centered": 20,
+        "one_sided": 22
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "interior": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "coupled_graded",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Service",
+      "elements": 117,
+      "available": 117,
+      "statuses": {
+        "centered": 77,
+        "one_sided": 40
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.04925176944119613,
+          "raw_relative_l2": 0.4535838712386098,
+          "recovered_max_absolute_error": 3.9273001651351235e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.06478820587504147,
+          "raw_relative_l2": 0.37815639818915864,
+          "recovered_max_absolute_error": 3.9273001651351235e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.00902079721276603,
+          "raw_relative_l2": 0.5373536133106838,
+          "recovered_max_absolute_error": 5.521013495458944e-08
+        }
+      }
+    },
+    {
+      "case": "coupled_graded",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Reverse",
+      "elements": 117,
+      "available": 117,
+      "statuses": {
+        "centered": 77,
+        "one_sided": 40
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.04925176944119613,
+          "raw_relative_l2": 0.4535838712386098,
+          "recovered_max_absolute_error": 7.854600330270247e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.06478820587504147,
+          "raw_relative_l2": 0.37815639818915864,
+          "recovered_max_absolute_error": 7.854600330270247e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.00902079721276603,
+          "raw_relative_l2": 0.5373536133106838,
+          "recovered_max_absolute_error": 1.1042026990917888e-07
+        }
+      }
+    },
+    {
+      "case": "coupled_graded",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Zero",
+      "elements": 117,
+      "available": 117,
+      "statuses": {
+        "centered": 77,
+        "one_sided": 40
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "interior": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "coupled_graded",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Service",
+      "elements": 425,
+      "available": 425,
+      "statuses": {
+        "centered": 345,
+        "one_sided": 80
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.01472148617878003,
+          "raw_relative_l2": 0.4477086427567004,
+          "recovered_max_absolute_error": 1.9406024508492836e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.024631157653691012,
+          "raw_relative_l2": 0.35705765167050285,
+          "recovered_max_absolute_error": 1.9406024508492836e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.0018155843510244591,
+          "raw_relative_l2": 0.49027447016020503,
+          "recovered_max_absolute_error": 1.36171595758175e-08
+        }
+      }
+    },
+    {
+      "case": "coupled_graded",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Reverse",
+      "elements": 425,
+      "available": 425,
+      "statuses": {
+        "centered": 345,
+        "one_sided": 80
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 0.01472148617878003,
+          "raw_relative_l2": 0.4477086427567004,
+          "recovered_max_absolute_error": 3.881204901698567e-07
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 0.024631157653691012,
+          "raw_relative_l2": 0.35705765167050285,
+          "recovered_max_absolute_error": 3.881204901698567e-07
+        },
+        "interior": {
+          "recovered_relative_l2": 0.0018155843510244591,
+          "raw_relative_l2": 0.49027447016020503,
+          "recovered_max_absolute_error": 2.7234319151635e-08
+        }
+      }
+    },
+    {
+      "case": "coupled_graded",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Zero",
+      "elements": 425,
+      "available": 425,
+      "statuses": {
+        "centered": 345,
+        "one_sided": 80
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "interior": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "opening",
+      "plane": "XY",
+      "mesh_size_in": 10.0,
+      "combination": "Service",
+      "elements": 128,
+      "available": 128,
+      "statuses": {
+        "centered": 64,
+        "one_sided": 64
+      },
+      "equilibrium_verified": true,
+      "opening_means": {
+        "corner": {
+          "recovered_kip_per_in": [
+            -1.0284129872869504e-06,
+            -1.0284129872869408e-06
+          ],
+          "reference_stable": true,
+          "reference_kip_per_in": [
+            -9.992120399337745e-07,
+            -9.99212039933775e-07
+          ],
+          "diagnostic_absolute_difference": 4.129637578099692e-08,
+          "relative_difference": 0.029223974678193626
+        },
+        "outer_strip": {
+          "recovered_kip_per_in": [
+            -2.440041594020134e-06,
+            4.745925603465845e-20
+          ],
+          "reference_stable": false,
+          "reference_kip_per_in": [
+            -2.4229437763540052e-06,
+            -2.439758772165855e-23
+          ],
+          "diagnostic_absolute_difference": 1.7097817666128557e-08,
+          "relative_difference": null
+        },
+        "near_rim": {
+          "recovered_kip_per_in": [
+            -5.251249900608121e-07,
+            2.1676367213625598e-19
+          ],
+          "reference_stable": false,
+          "reference_kip_per_in": [
+            -6.160308393668951e-09,
+            3.064546941423968e-22
+          ],
+          "diagnostic_absolute_difference": 5.189646816671431e-07,
+          "relative_difference": null
+        }
+      }
+    },
+    {
+      "case": "opening",
+      "plane": "XY",
+      "mesh_size_in": 10.0,
+      "combination": "Reverse",
+      "elements": 128,
+      "available": 128,
+      "statuses": {
+        "centered": 64,
+        "one_sided": 64
+      },
+      "equilibrium_verified": true,
+      "opening_means": {
+        "corner": {
+          "recovered_kip_per_in": [
+            2.0568259745739008e-06,
+            2.0568259745738817e-06
+          ],
+          "reference_stable": true,
+          "reference_kip_per_in": [
+            1.998424079867549e-06,
+            1.99842407986755e-06
+          ],
+          "diagnostic_absolute_difference": 8.259275156199384e-08,
+          "relative_difference": 0.029223974678193626
+        },
+        "outer_strip": {
+          "recovered_kip_per_in": [
+            4.880083188040268e-06,
+            -9.49185120693169e-20
+          ],
+          "reference_stable": false,
+          "reference_kip_per_in": [
+            4.8458875527080105e-06,
+            4.87951754433171e-23
+          ],
+          "diagnostic_absolute_difference": 3.4195635332257114e-08,
+          "relative_difference": null
+        },
+        "near_rim": {
+          "recovered_kip_per_in": [
+            1.0502499801216241e-06,
+            -4.3352734427251195e-19
+          ],
+          "reference_stable": false,
+          "reference_kip_per_in": [
+            1.2320616787337902e-08,
+            -6.129093882847936e-22
+          ],
+          "diagnostic_absolute_difference": 1.0379293633342862e-06,
+          "relative_difference": null
+        }
+      }
+    },
+    {
+      "case": "opening",
+      "plane": "XY",
+      "mesh_size_in": 10.0,
+      "combination": "Zero",
+      "elements": 128,
+      "available": 128,
+      "statuses": {
+        "centered": 64,
+        "one_sided": 64
+      },
+      "equilibrium_verified": true,
+      "opening_means": {
+        "corner": {
+          "recovered_kip_per_in": [
+            0.0,
+            0.0
+          ],
+          "reference_stable": true,
+          "reference_kip_per_in": [
+            -0.0,
+            -0.0
+          ],
+          "diagnostic_absolute_difference": 0.0,
+          "relative_difference": null
+        },
+        "outer_strip": {
+          "recovered_kip_per_in": [
+            0.0,
+            0.0
+          ],
+          "reference_stable": false,
+          "reference_kip_per_in": [
+            -0.0,
+            -0.0
+          ],
+          "diagnostic_absolute_difference": 0.0,
+          "relative_difference": null
+        },
+        "near_rim": {
+          "recovered_kip_per_in": [
+            0.0,
+            0.0
+          ],
+          "reference_stable": false,
+          "reference_kip_per_in": [
+            -0.0,
+            0.0
+          ],
+          "diagnostic_absolute_difference": 0.0,
+          "relative_difference": null
+        }
+      }
+    },
+    {
+      "case": "opening",
+      "plane": "XY",
+      "mesh_size_in": 5.0,
+      "combination": "Service",
+      "elements": 512,
+      "available": 512,
+      "statuses": {
+        "centered": 384,
+        "one_sided": 128
+      },
+      "equilibrium_verified": true,
+      "opening_means": {
+        "corner": {
+          "recovered_kip_per_in": [
+            -9.957662955563769e-07,
+            -9.957662955563123e-07
+          ],
+          "reference_stable": true,
+          "reference_kip_per_in": [
+            -9.992120399337745e-07,
+            -9.99212039933775e-07
+          ],
+          "diagnostic_absolute_difference": 4.873018431032653e-09,
+          "relative_difference": 0.0034484616274825857
+        },
+        "outer_strip": {
+          "recovered_kip_per_in": [
+            -2.4334331205876093e-06,
+            -1.5254533984457915e-19
+          ],
+          "reference_stable": false,
+          "reference_kip_per_in": [
+            -2.4229437763540052e-06,
+            -2.439758772165855e-23
+          ],
+          "diagnostic_absolute_difference": 1.0489344233604103e-08,
+          "relative_difference": null
+        },
+        "near_rim": {
+          "recovered_kip_per_in": [
+            -1.6502656679798688e-07,
+            3.626924494063976e-19
+          ],
+          "reference_stable": false,
+          "reference_kip_per_in": [
+            -6.160308393668951e-09,
+            3.064546941423968e-22
+          ],
+          "diagnostic_absolute_difference": 1.5886625840431794e-07,
+          "relative_difference": null
+        }
+      }
+    },
+    {
+      "case": "opening",
+      "plane": "XY",
+      "mesh_size_in": 5.0,
+      "combination": "Reverse",
+      "elements": 512,
+      "available": 512,
+      "statuses": {
+        "centered": 384,
+        "one_sided": 128
+      },
+      "equilibrium_verified": true,
+      "opening_means": {
+        "corner": {
+          "recovered_kip_per_in": [
+            1.9915325911127537e-06,
+            1.9915325911126245e-06
+          ],
+          "reference_stable": true,
+          "reference_kip_per_in": [
+            1.998424079867549e-06,
+            1.99842407986755e-06
+          ],
+          "diagnostic_absolute_difference": 9.746036862065305e-09,
+          "relative_difference": 0.0034484616274825857
+        },
+        "outer_strip": {
+          "recovered_kip_per_in": [
+            4.866866241175219e-06,
+            3.050906796891583e-19
+          ],
+          "reference_stable": false,
+          "reference_kip_per_in": [
+            4.8458875527080105e-06,
+            4.87951754433171e-23
+          ],
+          "diagnostic_absolute_difference": 2.0978688467208205e-08,
+          "relative_difference": null
+        },
+        "near_rim": {
+          "recovered_kip_per_in": [
+            3.3005313359597376e-07,
+            -7.253848988127952e-19
+          ],
+          "reference_stable": false,
+          "reference_kip_per_in": [
+            1.2320616787337902e-08,
+            -6.129093882847936e-22
+          ],
+          "diagnostic_absolute_difference": 3.177325168086359e-07,
+          "relative_difference": null
+        }
+      }
+    },
+    {
+      "case": "opening",
+      "plane": "XY",
+      "mesh_size_in": 5.0,
+      "combination": "Zero",
+      "elements": 512,
+      "available": 512,
+      "statuses": {
+        "centered": 384,
+        "one_sided": 128
+      },
+      "equilibrium_verified": true,
+      "opening_means": {
+        "corner": {
+          "recovered_kip_per_in": [
+            0.0,
+            0.0
+          ],
+          "reference_stable": true,
+          "reference_kip_per_in": [
+            -0.0,
+            -0.0
+          ],
+          "diagnostic_absolute_difference": 0.0,
+          "relative_difference": null
+        },
+        "outer_strip": {
+          "recovered_kip_per_in": [
+            0.0,
+            0.0
+          ],
+          "reference_stable": false,
+          "reference_kip_per_in": [
+            -0.0,
+            -0.0
+          ],
+          "diagnostic_absolute_difference": 0.0,
+          "relative_difference": null
+        },
+        "near_rim": {
+          "recovered_kip_per_in": [
+            0.0,
+            0.0
+          ],
+          "reference_stable": false,
+          "reference_kip_per_in": [
+            -0.0,
+            0.0
+          ],
+          "diagnostic_absolute_difference": 0.0,
+          "relative_difference": null
+        }
+      }
+    },
+    {
+      "case": "opening",
+      "plane": "XY",
+      "mesh_size_in": 4.0,
+      "combination": "Service",
+      "elements": 800,
+      "available": 800,
+      "statuses": {
+        "centered": 640,
+        "one_sided": 160
+      },
+      "equilibrium_verified": true,
+      "opening_means": {
+        "corner": {
+          "recovered_kip_per_in": [
+            -9.941039969631678e-07,
+            -9.94103996963266e-07
+          ],
+          "reference_stable": true,
+          "reference_kip_per_in": [
+            -9.992120399337745e-07,
+            -9.99212039933775e-07
+          ],
+          "diagnostic_absolute_difference": 7.223863646147527e-09,
+          "relative_difference": 0.005112071078423398
+        },
+        "outer_strip": {
+          "recovered_kip_per_in": [
+            -2.432074775720864e-06,
+            6.721905238644358e-19
+          ],
+          "reference_stable": false,
+          "reference_kip_per_in": [
+            -2.4229437763540052e-06,
+            -2.439758772165855e-23
+          ],
+          "diagnostic_absolute_difference": 9.130999366858811e-09,
+          "relative_difference": null
+        },
+        "near_rim": {
+          "recovered_kip_per_in": [
+            -7.39510297108199e-08,
+            7.36530440677083e-19
+          ],
+          "reference_stable": false,
+          "reference_kip_per_in": [
+            -6.160308393668951e-09,
+            3.064546941423968e-22
+          ],
+          "diagnostic_absolute_difference": 6.779072131715094e-08,
+          "relative_difference": null
+        }
+      }
+    },
+    {
+      "case": "opening",
+      "plane": "XY",
+      "mesh_size_in": 4.0,
+      "combination": "Reverse",
+      "elements": 800,
+      "available": 800,
+      "statuses": {
+        "centered": 640,
+        "one_sided": 160
+      },
+      "equilibrium_verified": true,
+      "opening_means": {
+        "corner": {
+          "recovered_kip_per_in": [
+            1.9882079939263355e-06,
+            1.988207993926532e-06
+          ],
+          "reference_stable": true,
+          "reference_kip_per_in": [
+            1.998424079867549e-06,
+            1.99842407986755e-06
+          ],
+          "diagnostic_absolute_difference": 1.4447727292295055e-08,
+          "relative_difference": 0.005112071078423398
+        },
+        "outer_strip": {
+          "recovered_kip_per_in": [
+            4.864149551441728e-06,
+            -1.3443810477288716e-18
+          ],
+          "reference_stable": false,
+          "reference_kip_per_in": [
+            4.8458875527080105e-06,
+            4.87951754433171e-23
+          ],
+          "diagnostic_absolute_difference": 1.8261998733717622e-08,
+          "relative_difference": null
+        },
+        "near_rim": {
+          "recovered_kip_per_in": [
+            1.479020594216398e-07,
+            -1.473060881354166e-18
+          ],
+          "reference_stable": false,
+          "reference_kip_per_in": [
+            1.2320616787337902e-08,
+            -6.129093882847936e-22
+          ],
+          "diagnostic_absolute_difference": 1.3558144263430188e-07,
+          "relative_difference": null
+        }
+      }
+    },
+    {
+      "case": "opening",
+      "plane": "XY",
+      "mesh_size_in": 4.0,
+      "combination": "Zero",
+      "elements": 800,
+      "available": 800,
+      "statuses": {
+        "centered": 640,
+        "one_sided": 160
+      },
+      "equilibrium_verified": true,
+      "opening_means": {
+        "corner": {
+          "recovered_kip_per_in": [
+            0.0,
+            0.0
+          ],
+          "reference_stable": true,
+          "reference_kip_per_in": [
+            -0.0,
+            -0.0
+          ],
+          "diagnostic_absolute_difference": 0.0,
+          "relative_difference": null
+        },
+        "outer_strip": {
+          "recovered_kip_per_in": [
+            0.0,
+            0.0
+          ],
+          "reference_stable": false,
+          "reference_kip_per_in": [
+            -0.0,
+            -0.0
+          ],
+          "diagnostic_absolute_difference": 0.0,
+          "relative_difference": null
+        },
+        "near_rim": {
+          "recovered_kip_per_in": [
+            0.0,
+            0.0
+          ],
+          "reference_stable": false,
+          "reference_kip_per_in": [
+            -0.0,
+            0.0
+          ],
+          "diagnostic_absolute_difference": 0.0,
+          "relative_difference": null
+        }
+      }
+    },
+    {
+      "case": "stiffness_x",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Service",
+      "elements": 24,
+      "available": 0,
+      "statuses": {
+        "incomplete_or_mixed_region": 24
+      },
+      "equilibrium_verified": true,
+      "errors": {}
+    },
+    {
+      "case": "stiffness_x",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Reverse",
+      "elements": 24,
+      "available": 0,
+      "statuses": {
+        "incomplete_or_mixed_region": 24
+      },
+      "equilibrium_verified": true,
+      "errors": {}
+    },
+    {
+      "case": "stiffness_x",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Zero",
+      "elements": 24,
+      "available": 0,
+      "statuses": {
+        "incomplete_or_mixed_region": 24
+      },
+      "equilibrium_verified": true,
+      "errors": {}
+    },
+    {
+      "case": "stiffness_x",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Service",
+      "elements": 96,
+      "available": 96,
+      "statuses": {
+        "centered": 40,
+        "one_sided": 56
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 1.3240010159271634e-11,
+          "raw_relative_l2": 1.601471389571094e-11,
+          "recovered_max_absolute_error": 1.9518349610170294e-16
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 1.4172878416831597e-11,
+          "raw_relative_l2": 1.5179591018610875e-11,
+          "recovered_max_absolute_error": 1.9518349610170294e-16
+        },
+        "interior": {
+          "recovered_relative_l2": 1.2446178969802564e-11,
+          "raw_relative_l2": 1.6650617580822935e-11,
+          "recovered_max_absolute_error": 1.6222036192635458e-16
+        }
+      }
+    },
+    {
+      "case": "stiffness_x",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Reverse",
+      "elements": 96,
+      "available": 96,
+      "statuses": {
+        "centered": 40,
+        "one_sided": 56
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 1.3240010159271634e-11,
+          "raw_relative_l2": 1.601471389571094e-11,
+          "recovered_max_absolute_error": 3.9036699220340587e-16
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 1.4172878416831597e-11,
+          "raw_relative_l2": 1.5179591018610875e-11,
+          "recovered_max_absolute_error": 3.9036699220340587e-16
+        },
+        "interior": {
+          "recovered_relative_l2": 1.2446178969802564e-11,
+          "raw_relative_l2": 1.6650617580822935e-11,
+          "recovered_max_absolute_error": 3.2444072385270917e-16
+        }
+      }
+    },
+    {
+      "case": "stiffness_x",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Zero",
+      "elements": 96,
+      "available": 96,
+      "statuses": {
+        "centered": 40,
+        "one_sided": 56
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "interior": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "stiffness_x",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Service",
+      "elements": 384,
+      "available": 384,
+      "statuses": {
+        "centered": 264,
+        "one_sided": 120
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 1.914930529811676e-10,
+          "raw_relative_l2": 1.9673207171749627e-10,
+          "recovered_max_absolute_error": 1.769170611875745e-15
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 1.584199238466098e-10,
+          "raw_relative_l2": 1.6022535953660138e-10,
+          "recovered_max_absolute_error": 1.6387614193164729e-15
+        },
+        "interior": {
+          "recovered_relative_l2": 2.0105759313886897e-10,
+          "raw_relative_l2": 2.0719869683986705e-10,
+          "recovered_max_absolute_error": 1.769170611875745e-15
+        }
+      }
+    },
+    {
+      "case": "stiffness_x",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Reverse",
+      "elements": 384,
+      "available": 384,
+      "statuses": {
+        "centered": 264,
+        "one_sided": 120
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 1.914930529811676e-10,
+          "raw_relative_l2": 1.9673207171749627e-10,
+          "recovered_max_absolute_error": 3.53834122375149e-15
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 1.584199238466098e-10,
+          "raw_relative_l2": 1.6022535953660138e-10,
+          "recovered_max_absolute_error": 3.2775228386329458e-15
+        },
+        "interior": {
+          "recovered_relative_l2": 2.0105759313886897e-10,
+          "raw_relative_l2": 2.0719869683986705e-10,
+          "recovered_max_absolute_error": 3.53834122375149e-15
+        }
+      }
+    },
+    {
+      "case": "stiffness_x",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Zero",
+      "elements": 384,
+      "available": 384,
+      "statuses": {
+        "centered": 264,
+        "one_sided": 120
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "interior": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "stiffness_y",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Service",
+      "elements": 24,
+      "available": 24,
+      "statuses": {
+        "centered": 4,
+        "one_sided": 20
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 6.088591090552485e-12,
+          "raw_relative_l2": 5.7710312670871004e-12,
+          "recovered_max_absolute_error": 8.394520023763744e-17
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 5.768972776093866e-12,
+          "raw_relative_l2": 5.719588954330673e-12,
+          "recovered_max_absolute_error": 8.394520023763744e-17
+        },
+        "interior": {
+          "recovered_relative_l2": 6.819051230414538e-12,
+          "raw_relative_l2": 5.897063124755749e-12,
+          "recovered_max_absolute_error": 8.013948120562386e-17
+        }
+      }
+    },
+    {
+      "case": "stiffness_y",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Reverse",
+      "elements": 24,
+      "available": 24,
+      "statuses": {
+        "centered": 4,
+        "one_sided": 20
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 6.088591090552485e-12,
+          "raw_relative_l2": 5.7710312670871004e-12,
+          "recovered_max_absolute_error": 1.6789040047527487e-16
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 5.768972776093866e-12,
+          "raw_relative_l2": 5.719588954330673e-12,
+          "recovered_max_absolute_error": 1.6789040047527487e-16
+        },
+        "interior": {
+          "recovered_relative_l2": 6.819051230414538e-12,
+          "raw_relative_l2": 5.897063124755749e-12,
+          "recovered_max_absolute_error": 1.6027896241124773e-16
+        }
+      }
+    },
+    {
+      "case": "stiffness_y",
+      "plane": "XY",
+      "mesh_size_in": 30.0,
+      "combination": "Zero",
+      "elements": 24,
+      "available": 24,
+      "statuses": {
+        "centered": 4,
+        "one_sided": 20
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "interior": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "stiffness_y",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Service",
+      "elements": 96,
+      "available": 96,
+      "statuses": {
+        "centered": 48,
+        "one_sided": 48
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 6.358876631842771e-11,
+          "raw_relative_l2": 7.726743774086314e-11,
+          "recovered_max_absolute_error": 1.1324491691611094e-15
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 6.047610591009168e-11,
+          "raw_relative_l2": 6.53717319974185e-11,
+          "recovered_max_absolute_error": 1.1324491691611094e-15
+        },
+        "interior": {
+          "recovered_relative_l2": 6.577562592101118e-11,
+          "raw_relative_l2": 8.493111354279708e-11,
+          "recovered_max_absolute_error": 9.755481741435118e-16
+        }
+      }
+    },
+    {
+      "case": "stiffness_y",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Reverse",
+      "elements": 96,
+      "available": 96,
+      "statuses": {
+        "centered": 48,
+        "one_sided": 48
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 6.358876631842771e-11,
+          "raw_relative_l2": 7.726743774086314e-11,
+          "recovered_max_absolute_error": 2.2648983383222188e-15
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 6.047610591009168e-11,
+          "raw_relative_l2": 6.53717319974185e-11,
+          "recovered_max_absolute_error": 2.2648983383222188e-15
+        },
+        "interior": {
+          "recovered_relative_l2": 6.577562592101118e-11,
+          "raw_relative_l2": 8.493111354279708e-11,
+          "recovered_max_absolute_error": 1.9510963482870236e-15
+        }
+      }
+    },
+    {
+      "case": "stiffness_y",
+      "plane": "XY",
+      "mesh_size_in": 15.0,
+      "combination": "Zero",
+      "elements": 96,
+      "available": 96,
+      "statuses": {
+        "centered": 48,
+        "one_sided": 48
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "interior": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        }
+      }
+    },
+    {
+      "case": "stiffness_y",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Service",
+      "elements": 384,
+      "available": 384,
+      "statuses": {
+        "centered": 280,
+        "one_sided": 104
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 1.3255367256165527e-09,
+          "raw_relative_l2": 1.3409420458450453e-09,
+          "recovered_max_absolute_error": 1.750068663662445e-14
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 1.1612479950225644e-09,
+          "raw_relative_l2": 1.1691863861556552e-09,
+          "recovered_max_absolute_error": 1.750068663662445e-14
+        },
+        "interior": {
+          "recovered_relative_l2": 1.3707857017413265e-09,
+          "raw_relative_l2": 1.3881188363340484e-09,
+          "recovered_max_absolute_error": 1.7324559687770073e-14
+        }
+      }
+    },
+    {
+      "case": "stiffness_y",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Reverse",
+      "elements": 384,
+      "available": 384,
+      "statuses": {
+        "centered": 280,
+        "one_sided": 104
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": 1.3255367256165527e-09,
+          "raw_relative_l2": 1.3409420458450453e-09,
+          "recovered_max_absolute_error": 3.50013732732489e-14
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": 1.1612479950225644e-09,
+          "raw_relative_l2": 1.1691863861556552e-09,
+          "recovered_max_absolute_error": 3.50013732732489e-14
+        },
+        "interior": {
+          "recovered_relative_l2": 1.3707857017413265e-09,
+          "raw_relative_l2": 1.3881188363340484e-09,
+          "recovered_max_absolute_error": 3.4649119375540147e-14
+        }
+      }
+    },
+    {
+      "case": "stiffness_y",
+      "plane": "XY",
+      "mesh_size_in": 7.5,
+      "combination": "Zero",
+      "elements": 384,
+      "available": 384,
+      "statuses": {
+        "centered": 280,
+        "one_sided": 104
+      },
+      "equilibrium_verified": true,
+      "errors": {
+        "all": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "outer_boundary_row": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        },
+        "interior": {
+          "recovered_relative_l2": null,
+          "raw_relative_l2": null,
+          "recovered_max_absolute_error": 0.0
+        }
+      }
+    }
+  ]
+}

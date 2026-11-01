@@ -285,10 +285,20 @@ Remaining six scripts are unchecked:
   plates, two cantilever directions, XY/XZ/YZ, refinement and signed/zero cases.
   Publish the reproducible comparison figure/report. The interior fit converges;
   raw/own-element fields do not. This does not complete the exposure task above.
-- [ ] Validate shear recovery at boundaries/openings, nonuniform meshes and
-  material/stiffness interfaces before integrating any neighbouring-moment fit.
-  Define missing-patch/error behaviour and distinguish smoothed recovered shear
-  from the existing unsmoothed element probes; do not bridge holes or jumps.
+- [x] Extend the test-only Quad-shear study to complete one-sided patches,
+  standalone/coupled outer boundaries, conforming graded meshes, openings and
+  two-direction E/thickness interfaces. Check all-plane/signed/zero invariance,
+  independent Navier/cut-force references, exact clipped-area means, conditioning,
+  and explicit missing-stencil status without bridging holes or constitutive
+  regions. Publish 63 numerical records and a comparison figure. Outer-boundary
+  errors refine below 3%; narrow regions remain unavailable. Preserve the
+  negative opening-reference evidence and the original conditioning limit.
+- [ ] Complete independent opening/rim shear references before integrating the
+  neighbouring-moment fit. At 11→13 Ritz terms, an outer-strip mean changes 0.91%
+  and a near-rim mean about 490%, above the 0.5% reference gate; 17 terms breaches
+  the existing 1e8 condition limit. Boundary/opening peaks, arbitrary meshes and
+  general interfaces remain unvalidated. Keep smoothed recovery distinct from
+  unsmoothed probes, missing patches explicit and production Quad shear disabled.
 - [x] Add solved traction-based affine membrane checks in every plane, signed/zero
   combinations and refinement; independently compare applied loads, displacement
   and stress without prescribing the solution. Add coincident nu=0 slender-strip

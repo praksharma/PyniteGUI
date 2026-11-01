@@ -703,6 +703,60 @@ The report's `checks_passed` approves only these bounded research checks;
 inspect the recorded error for each method. It does not approve raw shear or
 enable the candidate for engineering results.
 
+**Boundary and interface follow-up (development):** a separate test-only study
+extends the differentiation candidate to complete contiguous 3 × 3 rectangular
+patches, including **one-sided** stencils at boundaries. It fits three moment
+components with a quadratic polynomial in scaled local coordinates. A target
+must lie in its patch, all nine cells must exist, and every cell must have the
+same owner/material/thickness/modifier region. Holes and constitutive jumps are
+never crossed. Shared coordinates differing only by floating-point roundoff are
+canonicalized within 64 machine-epsilon units of the coordinate scale; the FE
+geometry and solution are unchanged. Nonconforming rectangles are rejected.
+Regions narrower than three cells, excessive adjacent grading (ratio above 4),
+and ill-conditioned stencils return **no shear value**, with an explicit status.
+An available stencil alone is not an accuracy certificate.
+
+The study compares separate plates and coupled slabs with a negligible-stiffness
+edge beam, uniform and control-line graded meshes, outer boundary rows, a free
+square opening, and two zero-Poisson cantilever directions with E increased by
+4 and thickness by 1.5 across an interface. It checks signed/zero combinations,
+XY/XZ/YZ, all-combination force/moment equilibrium, manufactured quadratic moment
+fields and explicit missing-stencil behaviour. The numerical report contains
+**63 XY case/mesh/combination records**; axis permutations are separate regressions.
+
+| Bounded comparison | Measured evidence |
+| --- | --- |
+| Uniform outer boundary rows, 24/96/384 Quads | Recovered vector L2 error decreases 21.91% → 7.62% → 2.61%. |
+| Graded outer boundary rows, 42/117/425 Quads | Error decreases 14.27% → 6.48% → 2.46%. Coupled thin-plate limits give the same refinement. |
+| Finest whole-domain / interior error | Below 2% / 0.3% for the uniform and graded Navier cases; boundary reference truncation is independently checked at 160/320 terms. |
+| Material/thickness interface cantilevers | Same-region stencils reproduce `Q=q(L−coordinate)` within 1e-6 relative L2. A coarse two-column material region has no usable stencil. |
+| Opening area means | Integrate the piecewise-constant recovered cell values over exact clipped material patches. The outer corner patch differs by less than 1% from the 13-term Ritz reference on the two finer meshes. |
+
+**Opening shear remains unresolved.** Analytic area means of the independent
+Ritz third derivatives change by **0.10%** at the corner, **0.91%** on an outer
+strip and about **490%** near the free rim when the basis grows from 11 to 13
+terms. The latter two fail the study's 0.5% reference-stability gate. A 17-term
+basis breaches the existing conditioning limit of 1e8 and is rejected; that
+limit has not been relaxed. Displacement or moment convergence cannot certify
+these shear derivatives. Rim/corner peaks, arbitrary irregular/skew/thick/curved
+meshes and general frame–shell interfaces still require independent validation.
+
+![One-sided Quad-shear study: outer-edge refinement, unresolved opening reference and missing interface stencils](docs/assets/screenshots/quad-shear-boundaries.png)
+
+[Download the numerical report](docs/assets/quad-shear-boundaries.json). It
+separates bounded regression success (`bounded_checks_passed`) from the explicit
+**`production_ready: false`** decision. Unconverged opening-reference differences
+are diagnostic quantities, not certified errors. Reproduce the study with:
+
+```sh
+uv run --locked python -B scripts/benchmark_quad_shear_boundaries.py --output /tmp/quad-boundaries.json --figure /tmp/quad-boundaries.png
+uv run --locked python -B scripts/test.py test_quad_shear_boundaries
+```
+
+Both recovery studies remain outside application imports. Quad shear stays
+unavailable in production plots, snapshots, probes, CSV and MCP while these
+opening and general-interface gates remain open.
+
 **Opening benchmark:** a 120 × 120 in plate, thickness 0.6 in, E=3600 ksi,
 nu=0.2, simply supported outer edges and a centred 40 × 40 in free opening,
 under -1e-7 kip/in². A separate Rayleigh–Ritz reference integrates the Kirchhoff

@@ -56,6 +56,15 @@ class OpeningRitz:
         xy = np.atleast_2d(points)
         return (np.sin(xy[:, 0, None]*self.ax)*np.sin(xy[:, 1, None]*self.by)) @ self.coefficients
 
+    def mean_shears(self, patch):
+        """Analytic area means of Q=-grad(laplacian(w)); multiply by q."""
+        x0,x1,y0,y1=patch;ax,by=self.ax,self.by
+        sx=(np.cos(ax*x0)-np.cos(ax*x1))/ax
+        sy=(np.cos(by*y0)-np.cos(by*y1))/by
+        cx=cosine_integral(ax,x0,x1);cy=cosine_integral(by,y0,y1)
+        return np.array([(cx*sy)@(ax*(ax*ax+by*by)*self.coefficients),
+                         (sx*cy)@(by*(ax*ax+by*by)*self.coefficients)])/((x1-x0)*(y1-y0))
+
     def mean_moments(self, patch):
         """Exact basis integrals on a rectangular material patch, not corner peaks."""
         x0, x1, y0, y1 = patch

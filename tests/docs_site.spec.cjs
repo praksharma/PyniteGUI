@@ -91,6 +91,8 @@ const server = http.createServer((request,response)=>{
         assert(figures.some(image=>image.src.endsWith('hydrostatic-wall.png'))&&figures.some(image=>image.src.endsWith('hydrostatic-wall-pressure.png'))&&figures.some(image=>image.src.endsWith('hydrostatic-wall-loading.png')),'Missing hydrostatic wall workflow screenshots');
         assert(figures.some(image=>image.src.endsWith('plate-recovery-benchmarks.png'))&&figures.every(image=>image.ok),'Missing plate benchmark figure');
         assert(figures.some(image=>image.src.endsWith('quad-shear-benchmarks.png')),'Missing Quad shear feasibility figure');
+        assert(figures.some(image=>image.src.endsWith('quad-shear-boundaries.png')),'Missing boundary/interface shear figure');
+        assert((await page.locator('article').innerText()).includes('production_ready: false'),'Missing unresolved shear-publication gate');
         assert(figures.some(image=>image.src.endsWith('plate-load-combinations.png'))&&
           figures.some(image=>image.src.endsWith('plate-load-program.png')),'Missing plate loading workflow screenshots');
       }
