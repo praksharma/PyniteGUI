@@ -141,6 +141,8 @@ tests = [
   "test_mesh_model",
   "test_plate_model",
   "test_plate_loads",
+  "test_plate_pressure",
+  "test_qt_plate_pressure",
   "test_plate_recovery",
   "test_quad_shear_validation",
   "test_plate_inspection",

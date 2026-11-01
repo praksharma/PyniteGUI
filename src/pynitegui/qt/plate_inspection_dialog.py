@@ -130,6 +130,8 @@ class PlateInspector(QDialog):
                 values += [f"{key} {data[key]*units.factor('intensity'):.7g} {units.intensity}" for key in ("Qx", "Qy")]
             else:
                 values.append("Quad Qx/Qy unavailable: recovery is not validated")
+            values += [f"Applied element pressure {data['applied_pressure']*units.factor('pressure'):.7g} {units.pressure}",
+                       f"Target profile pressure {data['target_pressure']*units.factor('pressure'):.7g} {units.pressure}"]
             self.probe.setText(f"{data['element']} | xi {data['xi']:g}, eta {data['eta']:g}\n"
                 + "Local x/y: "+", ".join(f"{v*units.length_factor:.7g}" for v in data["position"])+f" {units.length} | "
                 + "Global XYZ: "+", ".join(f"{v*units.length_factor:.7g}" for v in data["global_position"])+f" {units.length}\n"

@@ -81,6 +81,7 @@ class PlateWorkspace(QDialog):
         root.addWidget(splitter, 1)
         self.controls = QWidget()
         form = QFormLayout(self.controls)
+        form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
         self.form = form
         self.units_box = QComboBox()
         for key in ("imperial", "si", "si_mm", "imperial_ft"):
@@ -102,6 +103,7 @@ class PlateWorkspace(QDialog):
         self.case = QLineEdit()
         self.case.setToolTip("Primary pressure case. Renaming updates named combination and self-weight references.")
         self.fields["load_factor"].setToolTip("Factor for the primary-case Plate combination. Named combinations have their own factors.")
+        self.fields["pressure"].setToolTip("Primary-case pressure at local coordinate zero; linear profiles and end pressures are edited in Load Cases / Combinations.")
         self.fields["rho"].setToolTip("Material weight per unit volume (force/length³). Enable horizontal plate self-weight in Load Cases / Combinations.")
         form.addRow("Load case", self.case)
         self.case.textChanged.connect(self.mark_pending)
@@ -145,7 +147,7 @@ class PlateWorkspace(QDialog):
         self.component = QComboBox()
         self.component.addItems(["Mesh", "Normal displacement", "Mx (element centre)",
                                  "My (element centre)", "Mxy (element centre)",
-                                 "Qx (element centre)", "Qy (element centre)"])
+                                 "Qx (element centre)", "Qy (element centre)", "Applied pressure (element average)"])
         self.component.setToolTip("Resultants follow the local x/y axes shown on the plot. "
                                  "Positive bending moments oppose positive curvature. "
                                  "Contours use unsmoothed element-centre values; sharp opening-corner peaks are mesh-sensitive.")
@@ -183,7 +185,7 @@ class PlateWorkspace(QDialog):
         self.plane.setCurrentText(self.definition.plane)
         labels = {"width": "Width", "height": "Height", "thickness": "Thickness", "mesh_size": "Mesh size",
                   "E": "Elastic modulus", "nu": "Poisson ratio", "rho": "Weight density",
-                  "pressure": "Primary pressure", "load_factor": "Plate factor"}
+                  "pressure": "Pressure at zero", "load_factor": "Plate factor"}
         for key, widget in self.fields.items():
             value = getattr(self.definition.material, key) if key in ("E", "nu", "rho") else getattr(self.definition, key)
             factor, label = self.quantity(key, units)
@@ -197,7 +199,7 @@ class PlateWorkspace(QDialog):
         _, _, axis, sign = PLANES[self.definition.plane]
         self.normal_label.setText(("+" if sign > 0 else "-") + "XYZ"[axis])
         weight = self.definition.self_weight_case or "Off"
-        self.loading_summary.setText(f"{len(self.definition.load_cases)} pressure case(s), {len(self.definition.load_combinations)} combination(s)\nSelf-weight: {weight}")
+        self.loading_summary.setText(f"{len(self.definition.load_cases)} pressure case(s), {len(self.definition.load_combinations)} combination(s)\nSelf-weight: {weight} | Linear profiles: {len(self.definition.pressure_profiles)}")
         self.pending, self.loading, self.result = False, False, previous if keep else None
         self.export_action.setEnabled(keep)
         self.update_combination_choices()
@@ -279,7 +281,7 @@ class PlateWorkspace(QDialog):
         for index in (5, 6):
             self.component.model().item(index).setEnabled(self.definition.element_type != "Quad")
             self.component.setItemData(index, QUAD_SHEAR_LIMITATION if self.definition.element_type == "Quad" else "Rect polynomial shear recovery", Qt.ItemDataRole.ToolTipRole)
-        if self.definition.element_type == "Quad" and self.component.currentIndex() >= 5:
+        if self.definition.element_type == "Quad" and self.component.currentIndex() in (5,6):
             self.component.blockSignals(True)
             self.component.setCurrentIndex(1 if self.result is not None else 0)
             self.component.blockSignals(False)
@@ -294,7 +296,14 @@ class PlateWorkspace(QDialog):
         polygons = points[cells] * units.length_factor
         index = self.component.currentIndex()
         values, label = None, ""
-        if self.result is not None and index:
+        if index==7:
+            from .plate_pressure import element_pressures
+            combination=self.result['combination'] if self.result is not None else 'Plate'
+            values=element_pressures(self.definition,points,cells,self.definition.load_combinations[combination])*units.factor('pressure')
+            artist=PolyCollection(polygons,array=values,cmap='coolwarm');ax.add_collection(artist)
+            peak=max(float(np.max(abs(values))),1e-15);artist.set_clim(-peak,peak)
+            self.figure.colorbar(artist,ax=ax,label=units.pressure)
+        elif self.result is not None and index:
             if index == 1:
                 values = self.result["displacement"] * units.length_factor
                 triangles = np.vstack((cells[:, [0, 1, 2]], cells[:, [0, 2, 3]]))
@@ -328,6 +337,9 @@ class PlateWorkspace(QDialog):
         title = self.component.currentText() + (" | DKMQ quads" if self.definition.element_type == "Quad" else " | Polynomial rectangles")
         if self.result is not None:
             title += f"\n{self.result['combination']} | Snapshot {self.result['snapshot_id']}"
+        if index==7:
+            title+='\nCentroid pressure per element; refine varying profiles'
+            if self.result is None:title+=' | Plate combination preview'
         ax.set_title(title)
         ax.autoscale()
         ax.set_aspect("equal")
@@ -529,14 +541,17 @@ class PlateWorkspace(QDialog):
                 writer.writerow(["Node", f"Local x ({units.length})", f"Local y ({units.length})",
                                  f"Normal displacement ({units.length})", f"Normal reaction ({units.force})",
                                  "Combination", "Case factors", "Snapshot", "Analyzed UTC", "Model signature",
-                                 "Global normal", "Self-weight case"])
+                                 "Global normal", "Self-weight case", "Pressure profiles (canonical kip/in2)", "Pressure representation",
+                                 "Combined pressure at zero (kip/in2)", "dq/dlocal x (kip/in3)", "dq/dlocal y (kip/in3)"])
                 for name, point, displacement, reaction in zip(self.result["names"], self.result["points"],
                         self.result["displacement"], self.result["reactions"]):
                     writer.writerow([name, *(point*units.length_factor), displacement*units.length_factor,
                                      reaction*units.force_factor, self.result["combination"],
                                      "; ".join(f"{case}: {factor:g}" for case, factor in self.result["factors"].items()),
                                      self.result["snapshot_id"], self.result["analyzed_at"], self.result["model_signature"],
-                                     ", ".join(f"{v:g}" for v in self.definition.normal), self.definition.self_weight_case or "Off"])
+                                     ", ".join(f"{v:g}" for v in self.definition.normal), self.definition.self_weight_case or "Off",
+                                     json.dumps(self.definition.pressure_profiles,sort_keys=True),self.result["pressure_representation"],
+                                     *self.result["pressure_coefficients"]])
         except OSError as error:
             QMessageBox.warning(self, "Export Plate", str(error))
 

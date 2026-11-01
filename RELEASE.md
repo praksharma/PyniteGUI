@@ -199,6 +199,58 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 Linear Plate Pressure Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-01. Public RC4 artifacts and frame
+formats remain unchanged. Separate plate saves advance to **v4**; v1–v3 files
+migrate with their existing uniform loads, without enabling profiles or gravity.
+
+- Add geometry-owned uniform or linear local-x/local-y pressure cases, signed
+  origin/end values, case rename/delete ownership and existing per-case factors.
+  Profiles follow placement, dimensions, conforming openings and remeshing.
+  Self-weight remains a uniform addition on horizontal XZ plates only. Full-span
+  affine profiles do not clip negative values at a liquid level.
+- Apply each cell's centroid pressure, matching the official source. Integrate
+  rectangle-minus-openings force/first/second moments independently of the engine's
+  loads/reactions; account explicitly for the centroid discretization's first-
+  moment difference. Keep finite-result and six-component equilibrium rejection.
+  Never replace a varying field with an undocumented uniform mean pressure.
+- Add staged endpoint/axis controls with unit-preserving no-op, rename/delete,
+  Cancel/Apply and one-step undo. Add signed cell-pressure preview/contours, actual
+  element pressure versus target profile pressure in probes/tables/CSV, canonical
+  profile/combined-coefficient metadata in nodal CSV and strict save/open migration.
+  Wrap native form rows so longer pressure labels do not clip their inputs.
+- Add **Official PyNite - Hydrostatic Tank Wall** to the separate plate category
+  and searchable browser. Preserve the pinned 25 × 15 ft, 1 ft-thick, 4500 psi
+  concrete wall, 15 ft liquid level, 1 ft Quad mesh and three clamped/free-top
+  boundaries. Plate and source-named 1.4F both apply factor 1.4. Omit only the
+  redundant source control line at the top. Source revision and SHA-256 accompany
+  a fixture generated from the original ft/lb script, under its existing MIT notice.
+- All **416 nodal displacements/reactions** and **375 element-centre moment
+  tensors** match the original source. Maximum normal displacement is
+  **+0.07569638755 in**; normal force/reaction totals are **+245.7 / −245.7 kip**.
+  The continuous applied MX is 14742 kip-in; the 12 in centroid loading gives
+  **14774.76 kip-in**, which is the actual checked load. Quad raw shear remains
+  disabled; this is transverse bending, not an in-plane shear-wall workflow.
+- Independently verify triangular-load Navier displacement/moment convergence in
+  both Rect/Quad, all-plane signed/zero force and moment balance, nonuniform meshes,
+  two-axis combined profiles, off-centre openings, gravity and failure on tampered
+  engine pressures. Keep prior uniform benchmarks and the existing shear study.
+- Add illustrated workflow guidance and extend installed-wheel smoke checks to
+  **39 frame examples and 2 plate examples**. **14 of 20** pinned official scripts
+  are adapted; shear-wall, mat, curved-shell and second-order plastic gates remain.
+
+- Validation: **1,102 full-suite tests**, no skips, **355.107 s**, including MCP
+  wire tests and the unchanged Quad shear study using the recipe-based load checker.
+  Installed-wheel checks pass **23 focused tests** on PyNite 3.0.0 / Qt 6.11.2
+  (**15.564 s**) and PyNite 3.2.1 / Qt 6.12.0 (**15.188 s**), including actual
+  workers, exports, migration, unit/undo behaviour and pinned source parity.
+  Both environments pass every **39-frame / 2-plate** example through save/open,
+  analysis, export and native initialization, plus authenticated MCP discovery,
+  edit and undo. Strict docs verify **57 HTML pages**; browser QA verifies all
+  three wall screenshots, links/navigation/search, subpath serving and layout.
+  Wheel/source metadata, source contents, runtime assets and hashes are audited.
+
 ## Post-RC4 Steel Pushover Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-10-31. Public RC4 artifacts remain

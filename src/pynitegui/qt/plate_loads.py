@@ -12,12 +12,13 @@ class PlateLoadsDialog(QDialog):
         super().__init__(parent)
         self.definition = PlateDefinition.from_dict(definition.to_dict())
         self.setWindowTitle("Plate Load Cases and Combinations")
-        self.resize(800, 600)
+        self.resize(1000, 650)
         layout = QVBoxLayout(self)
-        note = QLabel("Each case is a signed uniform pressure on the net material area. "
-                      "The primary case and its factor remain in the main controls; Plate always uses that case alone. "
-                      "Add named combinations to combine cases. Self-weight is additional global -Y loading, "
-                      "available only for horizontal XZ plates. Its case uses the combination's ordinary factor.")
+        note = QLabel("Choose uniform pressure or linear variation along local x (width) / y (height). "
+                      "The first pressure is at coordinate zero; the end pressure is at the opposite edge. "
+                      "Profiles follow the geometry through remeshing, holes and placement. Each element receives its centroid pressure: compare mesh refinements. "
+                      "Signed profiles may cross zero; they are not automatically clipped at a liquid surface. "
+                      "Plate uses the primary case/factor; named combinations combine all cases. Self-weight adds global -Y pressure on horizontal XZ plates only.")
         note.setWordWrap(True)
         layout.addWidget(note)
         self.tabs = QTabWidget()
@@ -71,13 +72,19 @@ class PlateLoadsDialog(QDialog):
 
     def read_inputs(self):
         from .app import unit_value
-        values = {}
+        values = {};profiles={}
         for row in range(self.cases.rowCount()):
             widget = self.cases.cellWidget(row, 1)
             widget.interpretText()
-            values[self.cases.item(row, 0).text()] = unit_value(widget, self.definition.units, "pressure")
+            name=self.cases.item(row,0).text()
+            values[name] = unit_value(widget, self.definition.units, "pressure")
+            axis=self.cases.cellWidget(row,3).currentData()
+            if axis is not None:
+                end=self.cases.cellWidget(row,4);end.interpretText()
+                profiles[name]={'axis':axis,'end_pressure':unit_value(end,self.definition.units,'pressure')}
         self.definition.pressure = values.pop(self.definition.load_case)
         self.definition.additional_pressures = values
+        self.definition.pressure_profiles = profiles
         self.definition.self_weight_case = self.weight_case.currentData()
         self.weight_factor.interpretText()
         self.definition.self_weight_factor = (self.weight_factor.property("canonical")
@@ -87,14 +94,21 @@ class PlateLoadsDialog(QDialog):
         from .app import unit_number
         selection = selected if kind == "cases" else self.selected("cases")
         self.cases.blockSignals(True)
-        self.cases.setColumnCount(3)
-        self.cases.setHorizontalHeaderLabels(["Case", f"Uniform pressure ({self.definition.units.pressure})", "Role"])
+        self.cases.setColumnCount(5)
+        self.cases.setHorizontalHeaderLabels(["Case", f"Pressure at zero ({self.definition.units.pressure})", "Role", "Profile", f"End pressure ({self.definition.units.pressure})"])
         self.cases.setRowCount(len(self.definition.load_cases))
         for row, (name, pressure) in enumerate(self.definition.case_pressures.items()):
             self.cases.setItem(row, 0, QTableWidgetItem(name))
             field = unit_number(pressure, self.definition.units, "pressure", decimals=10)
             self.cases.setCellWidget(row, 1, field)
             self.cases.setItem(row, 2, QTableWidgetItem("Primary" if name == self.definition.load_case else "Additional"))
+            profile=self.definition.pressure_profiles.get(name,{})
+            axis=QComboBox();axis.addItem('Uniform',None);axis.addItem('Linear local x','x');axis.addItem('Linear local y','y')
+            axis.setObjectName('plate_profile_'+name);axis.setCurrentIndex(axis.findData(profile.get('axis')))
+            end=unit_number(profile.get('end_pressure',pressure),self.definition.units,'pressure',decimals=10)
+            end.setObjectName('plate_end_pressure_'+name);end.setEnabled(bool(profile))
+            axis.currentIndexChanged.connect(lambda index,end=end:end.setEnabled(index!=0))
+            self.cases.setCellWidget(row,3,axis);self.cases.setCellWidget(row,4,end)
             if name == selection or (selection not in self.definition.load_cases and row == 0):
                 self.cases.selectRow(row)
         self.cases.resizeColumnsToContents()
@@ -146,6 +160,7 @@ class PlateLoadsDialog(QDialog):
                             previous in factors for factors in self.definition.combinations.values()):
                         raise ValueError("Remove combination/self-weight references before deleting an additional case; keep the primary case.")
                     del self.definition.additional_pressures[previous]
+                    self.definition.pressure_profiles.pop(previous,None)
                 else:
                     name, accepted = QInputDialog.getText(self, "Add Pressure Case" if action == "add" else "Rename Pressure Case", "Name", text="" if action == "add" else previous)
                     if not accepted:

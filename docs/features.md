@@ -106,7 +106,7 @@ no surfaces, trusses, geometric preload, imposed motion or earthquake response.
 | Selection/finding-focused camera navigation in 2D/3D; Shift+F and full-model Fit | [Help and workspace](start/help.md), [model findings](modeling/topology.md) |
 | Optional Model/Results workspaces and collapsible command toolbars, preserving draft inputs and view framing | [Workspaces](start/help.md) |
 | Help menu, website/F1, searchable shortcuts, About/version details and default-layout recovery | [Help and workspace](start/help.md) |
-| Searchable native example browser with geometry/loading/check previews; categorized menus, Gerber/three-hinged arch, thirteen official examples, coupled slabs and P-Delta | [Examples and preferences](start/examples.md), [hinge walkthrough](start/first-model.md#try-an-internal-hinge-or-three-hinged-arch) |
+| Searchable native example browser with geometry/loading/check previews; categorized menus, Gerber/three-hinged arch, fourteen official examples, coupled slabs and P-Delta | [Examples and preferences](start/examples.md), [hinge walkthrough](start/first-model.md#try-an-internal-hinge-or-three-hinged-arch) |
 | Official clamped rectangular Quad plate in separate editable workspace; nine of twenty upstream examples adapted | [Examples and limits](start/examples.md), [plate workspace](surfaces/plates.md) |
 | Light/dark themes and scrollable properties | [Examples and preferences](start/examples.md) |
 | Software-rendering recovery, observed renderer diagnostics, NVIDIA/Wayland profiles | [Graphics](start/graphics.md), [Linux NVIDIA](start/nvidia.md) |
@@ -126,3 +126,8 @@ elastic preload plus nodal push increments, checked histories/capacity curves,
 unit-labelled tables, CSV/PNG/SVG/JSON and MCP jobs. Partial results are labelled;
 no P-Delta/plastic combination, nonlinear slabs or RC plasticity is claimed.
 Three editable examples have independent hand references and refinement checks.
+
+The separate plate workspace supports geometry-owned linear pressure along local
+width/height, centroid-load previews and pressure probes. The official hydrostatic
+tank wall is available with pinned bending/nodal parity and independent load and
+refinement checks. See [Plate loading](surfaces/plates.md). Quad shear stays disabled.

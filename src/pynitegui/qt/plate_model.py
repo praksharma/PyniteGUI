@@ -46,6 +46,7 @@ class PlateDefinition:
     combinations: dict = field(default_factory=dict)
     self_weight_case: str | None = None
     self_weight_factor: float = 1.
+    pressure_profiles: dict = field(default_factory=dict)
 
     @property
     def case_pressures(self):
@@ -69,8 +70,12 @@ class PlateDefinition:
 
     validate_load_name = staticmethod(Project.validate_load_name)
 
-    def pressure_for_case(self, case):
+    def pressure_for_case(self, case, x=0., y=0.):
         pressure = self.case_pressures[case]
+        profile=self.pressure_profiles.get(case)
+        if profile:
+            ratio=x/self.width if profile['axis']=='x' else y/self.height
+            pressure+=(profile['end_pressure']-pressure)*ratio
         if case == self.self_weight_case:
             # Only horizontal XZ plates can carry the complete global -Y weight
             # as transverse pressure. Never silently discard a tangent component.
@@ -85,6 +90,8 @@ class PlateDefinition:
             self.load_case = name
         else:
             self.additional_pressures[name] = self.additional_pressures.pop(previous)
+        if previous in self.pressure_profiles:
+            self.pressure_profiles[name]=self.pressure_profiles.pop(previous)
         for factors in self.combinations.values():
             if previous in factors:
                 factors[name] = factors.pop(previous)
@@ -147,26 +154,34 @@ class PlateDefinition:
                 raise ValueError("Plate self-weight requires an existing pressure case.")
             if self.plane != "XZ":
                 raise ValueError("Plate self-weight requires the horizontal XZ plane. Vertical plate membrane gravity is not supported.")
+        if not isinstance(self.pressure_profiles,dict):
+            raise ValueError('Pressure profiles must be a case-to-profile map.')
+        for case,profile in self.pressure_profiles.items():
+            if (case not in self.load_cases or not isinstance(profile,dict) or set(profile)!={'axis','end_pressure'} or
+                    profile['axis'] not in ('x','y') or not finite_number(profile['end_pressure']) or abs(profile['end_pressure'])>1e6):
+                raise ValueError('Pressure profiles require an existing case, local axis x/y and finite end_pressure within +/-1e6 kip/in2.')
+        from .plate_pressure import pressure_coefficients
         for factors in self.load_combinations.values():
-            value = math.fsum(self.pressure_for_case(case)*factor for case, factor in factors.items())
-            if not math.isfinite(value*self.width*self.height):
-                raise ValueError("Combined plate pressure resultant is not finite.")
+            q,gx,gy=pressure_coefficients(self,factors)
+            for x,y in ((0.,0.),(self.width,0.),(0.,self.height),(self.width,self.height)):
+                if not math.isfinite((q+gx*x+gy*y)*self.width*self.height):
+                    raise ValueError('Combined plate pressure resultant is not finite.')
 
     def to_dict(self):
         self.validate()
-        data = {"format": "pynitegui-rectangular-plate", "version": 3, "units": "in-kip", **asdict(self)}
+        data = {"format": "pynitegui-rectangular-plate", "version": 4, "units": "in-kip", **asdict(self)}
         data["material"].pop("fy")  # Steel yield data belongs to frame profiles.
         data["material"].pop("shear_modulus")  # Plate formulation derives G.
         return data
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or data.get("format") != "pynitegui-rectangular-plate" or type(data.get("version")) is not int or data["version"] not in (1, 2, 3) or data.get("units") != "in-kip":
+        if not isinstance(data, dict) or data.get("format") != "pynitegui-rectangular-plate" or type(data.get("version")) is not int or data["version"] not in (1, 2, 3, 4) or data.get("units") != "in-kip":
             raise ValueError("Unsupported rectangular plate file.")
         values = {key: value for key, value in data.items() if key not in ("format", "version", "units")}
         added = {"element_type", "origin", "x_control", "y_control", "openings", "kx_mod", "ky_mod", "node_start", "element_start", "mesh_name"}
         loading = {"additional_pressures", "combinations", "self_weight_case", "self_weight_factor"}
-        expected = {item.name for item in fields(cls)} - (added if data["version"] == 1 else set()) - (loading if data["version"] < 3 else set())
+        expected = {item.name for item in fields(cls)} - (added if data["version"] == 1 else set()) - (loading if data["version"] < 3 else set()) - ({"pressure_profiles"} if data["version"] < 4 else set())
         if set(values) != expected:
             raise ValueError("Plate file fields do not match the declared version schema.")
         try:
@@ -217,7 +232,8 @@ def build_plate(definition):
     for element in model.meshes[definition.mesh_name].elements.values():
         add_pressure = model.add_plate_surface_pressure if definition.element_type == "Rect" else model.add_quad_surface_pressure
         for case in definition.load_cases:
-            add_pressure(element.name, definition.pressure_for_case(case), case)
+            center=np.mean([(n.X,n.Y,n.Z) for n in (element.i_node,element.j_node,element.m_node,element.n_node)],axis=0)-definition.origin
+            add_pressure(element.name, definition.pressure_for_case(case,center[u],center[v]), case)
     for name, factors in definition.load_combinations.items():
         model.add_load_combo(name, dict(factors))
     return model
@@ -239,21 +255,16 @@ def plate_signature(definition):
     return hashlib.sha256(json.dumps(data, sort_keys=True, allow_nan=False).encode()).hexdigest()
 
 
-def plate_equilibrium(model, definition, combination, pressure):
+def plate_equilibrium(model, definition, combination):
     """Integrate recipe loads independently of the element reaction recovery."""
     from .equilibrium import FORCE_TOLERANCE, MOMENT_TOLERANCE, RELATIVE_TOLERANCE
     u, v, _, _ = PLANES[definition.plane]
-    area = definition.width*definition.height
-    first = np.array((area*definition.width/2, area*definition.height/2))
-    for opening in definition.openings:
-        removed = opening["width"]*opening["height"]
-        area -= removed
-        first -= removed*np.array((opening["x_left"]+opening["width"]/2,
-                                    opening["y_bott"]+opening["height"]/2))
-    centroid = np.zeros(3)
-    centroid[[u, v]] = first/area
-    force = definition.normal*pressure*area
-    applied = np.r_[force, np.cross(centroid, force)]
+    from .plate_pressure import pressure_resultants
+    _,points,cells=plate_geometry(model,definition)
+    loads,continuous,area=pressure_resultants(definition,points,cells,definition.load_combinations[combination])
+    force=definition.normal*loads[0]
+    first=np.zeros(3);first[[u,v]]=loads[1:]
+    applied=np.r_[force,np.cross(first,definition.normal)]
     contributions = []
     for node in model.nodes.values():
         reaction = np.array([getattr(node, key)[combination] for key in
@@ -270,7 +281,7 @@ def plate_equilibrium(model, definition, combination, pressure):
         if not all(math.isfinite(value) for value in (total, residual, tolerance)) or abs(residual) > tolerance:
             raise ValueError(f"Plate equilibrium failed for {combination}: {component} residual {residual:.6g} (limit {tolerance:.6g}), canonical kip/in units.")
         rows.append(dict(component=component, applied=float(applied[index]), reaction=total, residual=residual, tolerance=tolerance))
-    return pressure*area, rows
+    return float(loads[0]), rows, continuous, area
 
 
 def select_plate_combination(result, combination):
@@ -326,10 +337,16 @@ def analyze_plate(definition, progress=None):
                 for xi, eta in ((-1., -1.), (1., -1.), (1., 1.), (-1., 1.))] for element in elements])
         if any(not np.isfinite(values).all() for values in (displacement, reactions, moments, shears, inspection) if values is not None):
             raise ValueError(f"Plate analysis returned nonfinite results for {combination}.")
-        pressure = math.fsum(definition.pressure_for_case(case)*factor for case, factor in factors.items())
-        applied, equilibrium = plate_equilibrium(model, definition, combination, pressure)
+        from .plate_pressure import pressure_coefficients,element_pressures
+        q,gx,gy=pressure_coefficients(definition,factors)
+        pressures=element_pressures(definition,points,cells,factors)
+        applied,equilibrium,continuous,area=plate_equilibrium(model,definition,combination)
+        pressure=q if gx==0. and gy==0. else None
         solutions[combination] = dict(displacement=displacement, reactions=reactions, moments=moments, shears=shears,
-                                      applied=applied, pressure=pressure, factors=dict(factors), equilibrium=equilibrium,
+                                      applied=applied, pressure=pressure, mean_pressure=applied/area, element_pressures=pressures, pressure_coefficients=np.array((q,gx,gy)),
+                                      continuous_pressure_resultants=dict(zip(("normal_force_kip","first_moment_local_x_kip_in","first_moment_local_y_kip_in"),continuous.tolist())),
+                                      pressure_representation='Uniform per element, sampled at its geometry centroid; refine varying profiles.',
+                                      factors=dict(factors), equilibrium=equilibrium,
                                       inspection=inspection)
     result = {"names": names, "points": points, "cells": cells, "element_names": [element.name for element in elements], "solutions": solutions,
               "snapshot_id": uuid.uuid4().hex[:12], "analyzed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),

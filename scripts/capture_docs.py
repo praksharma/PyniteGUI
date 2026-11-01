@@ -413,6 +413,32 @@ def capture_pushover(output):
             app.processEvents()
 
 
+def capture_wall(output):
+    from pynitegui.qt.official_plate import example_definition
+    from pynitegui.qt.plate_workspace import PlateWorkspace
+    from pynitegui.qt.plate_model import analyze_plate
+    from pynitegui.qt.plate_loads import PlateLoadsDialog
+    output.mkdir(parents=True,exist_ok=True)
+    app=QApplication.instance() or QApplication([])
+    configure_theme(app,'light')
+    window=PlateWorkspace(definition=example_definition('official_wall_hydrostatic'))
+    loading=None
+    try:
+        window.resize(1360,960);window.show()
+        with redirect_stdout(StringIO()):result=analyze_plate(window.definition)
+        window.analysis_finished(result,'');window.combination.setCurrentText('1.4F')
+        for component,filename in ((1,'hydrostatic-wall.png'),(7,'hydrostatic-wall-pressure.png')):
+            window.component.setCurrentIndex(component);app.processEvents();window.canvas.draw()
+            if not window.grab().save(str(output/filename)):raise RuntimeError('Could not save '+filename)
+            print('Captured '+filename)
+        loading=PlateLoadsDialog(window,window.definition);loading.resize(1150,650);loading.show();app.processEvents()
+        if not loading.grab().save(str(output/'hydrostatic-wall-loading.png')):raise RuntimeError('Could not capture wall loading')
+        print('Captured hydrostatic-wall-loading.png')
+    finally:
+        if loading is not None:loading.reject();loading.deleteLater()
+        window.pending=False;window.saved=window.definition.to_dict();window.reject();window.deleteLater();app.processEvents()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path,
@@ -424,8 +450,11 @@ if __name__ == "__main__":
     parser.add_argument("--iterative-only", action="store_true", help="Capture unilateral braces and active-state results.")
     parser.add_argument("--modal-only", action="store_true", help="Capture the native modal workspace with the official column.")
     parser.add_argument("--pushover-only", action="store_true", help="Capture the checked steel capacity workspace.")
+    parser.add_argument("--wall-only", action="store_true", help="Capture the official hydrostatic wall and pressure profile editor.")
     options = parser.parse_args()
-    if options.pushover_only:
+    if options.wall_only:
+        capture_wall(options.output)
+    elif options.pushover_only:
         capture_pushover(options.output)
     elif options.modal_only:
         capture_modal(options.output)

@@ -5,6 +5,7 @@ from concurrent.futures import Future
 import contextlib
 import importlib.metadata
 import io
+import json
 import os
 from pathlib import Path
 import subprocess
@@ -83,6 +84,10 @@ def main(version, mcp):
     from pynitegui.qt.app import MainWindow
     from pynitegui.qt.automation_server import dependencies_available
     from pynitegui.qt.examples import EXAMPLES, example_project
+    from pynitegui.qt.official_plate import PLATE_EXAMPLES,example_definition
+    from pynitegui.qt.plate_model import PlateDefinition,analyze_plate
+    from pynitegui.qt.plate_workspace import PlateWorkspace
+    from pynitegui.qt.plate_inspection import write_plate_probes
     from pynitegui.qt.model import Project
     from pynitegui.qt.reports import export_csv, report_html
     installed = Path(pynitegui.__file__).resolve()
@@ -119,9 +124,23 @@ def main(version, mcp):
                 window.analysis_revision = window.revision
                 window.analysis_finished(result, None)
                 assert window.result is not None
+            for key in PLATE_EXAMPLES:
+                definition=example_definition(key)
+                path=Path(directory)/f'{key}.pyniteplate';path.write_text(json.dumps(definition.to_dict()))
+                restored=PlateDefinition.open(path)
+                assert restored.to_dict()==definition.to_dict()
+                with contextlib.redirect_stdout(io.StringIO()):plate_result=analyze_plate(restored)
+                assert abs(float(plate_result['reactions'].sum())+plate_result['applied'])<1e-7
+                write_plate_probes(Path(directory)/f'{key}-elements.csv',plate_result,restored.units)
+                plate=PlateWorkspace(definition=restored)
+                try:
+                    plate.analysis_finished(plate_result,'');plate.component.setCurrentIndex(7);plate.canvas.draw()
+                    assert plate.result['snapshot_id']==plate_result['snapshot_id']
+                finally:
+                    plate.pending=False;plate.saved=plate.definition.to_dict();plate.reject();plate.deleteLater();app.processEvents()
             if mcp:
                 mcp_smoke(app, window, version)
-        print(f"PASS: {version}, installed at {installed}; {len(EXAMPLES)} examples save/open/analyze/export and native windows")
+        print(f"PASS: {version}, installed at {installed}; {len(EXAMPLES)} frame examples and {len(PLATE_EXAMPLES)} plate examples save/open/analyze/export and native windows")
     finally:
         window.saved = window.project.to_dict()
         window.close()

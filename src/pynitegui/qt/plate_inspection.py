@@ -35,7 +35,11 @@ def inspect_plate(result, element, xi=0., eta=0.):
     axes = np.vstack((axes, np.cross(*axes)))
     global_point = np.array(definition["origin"], dtype=float)
     global_point[[u, v]] += point
-    return dict(element=element, xi=float(xi), eta=float(eta), position=point.tolist(),
+    q,gx,gy=result['pressure_coefficients']
+    applied,target=float(result['element_pressures'][index]),float(q+gx*point[0]+gy*point[1])
+    if not all(math.isfinite(value) for value in (applied,target)):
+        raise ValueError('Plate pressure recovery returned nonfinite values.')
+    return dict(applied_pressure=applied,target_pressure=target,element=element, xi=float(xi), eta=float(eta), position=point.tolist(),
         global_position=global_point.tolist(), axes=axes.tolist(),
         **dict(zip(("Mx", "My", "Mxy"), moments.tolist())),
         **({} if shears is None else dict(zip(("Qx", "Qy"), shears.tolist()))))
@@ -50,10 +54,12 @@ def plate_probe_table(result, units, probes=None):
         *(f"{key} ({units.moment}/{units.length})" for key in ("Mx", "My", "Mxy"))]
     if rect:
         headers += [f"{key} ({units.intensity})" for key in ("Qx", "Qy")]
+    headers += [f'Applied element pressure ({units.pressure})',f'Target profile pressure ({units.pressure})']
     rows = [[row["element"], row["xi"], row["eta"],
         *(value*units.length_factor for value in (*row["position"], *row["global_position"])),
         *(row[key]*units.force_factor for key in ("Mx", "My", "Mxy")),
-        *([row[key]*units.factor("intensity") for key in ("Qx", "Qy")] if rect else [])] for row in probes]
+        *([row[key]*units.factor("intensity") for key in ("Qx", "Qy")] if rect else []),
+        *(row[key]*units.factor('pressure') for key in ('applied_pressure','target_pressure'))] for row in probes]
     return headers, rows
 
 
@@ -65,9 +71,9 @@ def write_plate_probes(path, result, units, probes=None):
     context = [result["combination"], "; ".join(f"{case}: {factor:g}" for case, factor in result["factors"].items()),
         result["snapshot_id"], result["analyzed_at"], result["model_signature"], definition["element_type"],
         "Corrected Rect polynomial" if definition["element_type"] == "Rect" else "Quad bilinear moment recovery; Qx/Qy unavailable",
-        *(str(axis) for axis in axes)]
+        *(str(axis) for axis in axes),result["pressure_representation"]]
     with open(path, "w", newline="") as stream:
         writer = csv.writer(stream)
         writer.writerow(headers+["Combination", "Case factors", "Snapshot", "Analyzed UTC", "Model signature",
-                                 "Element family", "Recovery", "Local x global vector", "Local y global vector", "Local z global vector"])
+                                 "Element family", "Recovery", "Local x global vector", "Local y global vector", "Local z global vector", "Pressure representation"])
         writer.writerows([*row, *context] for row in rows)

@@ -120,8 +120,8 @@ def solve_case(case, size, plane="XY"):
         model.analyze_linear(check_stability=True, check_statics=False)
         elements = list(model.quads.values())
         samples = {name: gather(elements, name) for name in FACTORS}
-        for name, factor in FACTORS.items():
-            plate_equilibrium(model, definition, name, pressure*factor)
+        for name in FACTORS:
+            plate_equilibrium(model, definition, name)
         E = definition.material.E
     D = E*thickness**3/(12*(1-nu**2))
     for name, sample in samples.items():

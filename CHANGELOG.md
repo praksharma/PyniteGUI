@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Add geometry-owned linear pressure profiles to the separate plate workspace:
+  staged origin/end controls, remesh/opening/placement ownership, signed combined
+  cell-pressure previews, actual/target pressure probes and snapshot-aware CSV.
+  Save strict plate v4 files with uniform migration from v1–v3. Independently
+  integrate discrete force/moment resultants and verify triangular-load Navier
+  convergence in Rect/Quad. Add the official hydrostatic tank wall with pinned
+  source nodal/reaction/moment parity, native entry and illustrated guidance.
+  Keep Quad shear disabled and retain the transverse-only engineering scope.
+
+
 - Add a separate native/MCP first-order Steel Pushover workflow with explicit
   material fy and section Zy/Zz/material binding, elastic preload and nodal push,
   bounded step/retry/control limits, physically checked accepted histories,

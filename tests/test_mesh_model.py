@@ -100,6 +100,7 @@ class MeshModelTests(unittest.TestCase):
                     "additional_pressures", "combinations", "self_weight_case", "self_weight_factor"):
             old.pop(key)
         old["version"] = 1
+        old.pop("pressure_profiles")
         self.assertEqual(PlateDefinition.from_dict(old), definition)
         for key in ("version", "format", "width"):
             broken = copy.deepcopy(old)

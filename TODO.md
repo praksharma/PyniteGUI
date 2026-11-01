@@ -186,7 +186,7 @@ differences from upstream. New solver work is authorized; apply the analysis-met
 **Plates, shells, walls and foundations — gate on validated surface workflows:**
 
 - [x] [Rectangular Plate Bending - Qauds.py](https://github.com/JWock82/Pynite/blob/main/Examples/Rectangular%20Plate%20Bending%20-%20Qauds.py) (upstream filename spelling)
-- [ ] [Rectangular Wall - Linear Varying Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Rectangular%20Wall%20-%20Linear%20Varying%20Load.py)
+- [x] [Rectangular Wall - Linear Varying Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Rectangular%20Wall%20-%20Linear%20Varying%20Load.py)
 - [ ] [Shear Wall - Basic.py](https://github.com/JWock82/Pynite/blob/main/Examples/Shear%20Wall%20-%20Basic.py)
 - [ ] [Shear Wall - Advanced.py](https://github.com/JWock82/Pynite/blob/main/Examples/Shear%20Wall%20-%20Advanced.py)
 - [ ] [Mat Foundation.py](https://github.com/JWock82/Pynite/blob/main/Examples/Mat%20Foundation.py)
@@ -194,7 +194,7 @@ differences from upstream. New solver work is authorized; apply the analysis-met
 
 **Current-capability audit (2026-10-27, all 20 pinned scripts reviewed):**
 
-Thirteen official adaptations are now available. The official modal column preserves the source inputs/gravity and opens the separate mode workspace, with pinned frequency/normalized-shape parity and independent dynamics checks. Three new Iterative elastic examples preserve the pinned source inputs: compression-only foundation, tension-only braced frame, and fixed-anchor spring-supported frame. The last condenses its fixed vertical spring anchors exactly into one-way ground springs; general node-to-node spring entities remain pending. Pinned upstream result parity, independent uplift mechanics, persistence and worker/MCP checks cover this scope.
+Fourteen official adaptations are now available. The hydrostatic tank wall now uses geometry-owned linear pressure in the transverse plate workspace, with all source nodal/moment parity, independent triangular-load continuum/refinement checks and explicit centroid-load first moments. Quad shear remains disabled. The official modal column preserves the source inputs/gravity and opens the separate mode workspace, with pinned frequency/normalized-shape parity and independent dynamics checks. Three new Iterative elastic examples preserve the pinned source inputs: compression-only foundation, tension-only braced frame, and fixed-anchor spring-supported frame. The last condenses its fixed vertical spring anchors exactly into one-way ground springs; general node-to-node spring entities remain pending. Pinned upstream result parity, independent uplift mechanics, persistence and worker/MCP checks cover this scope.
 
 The rectangular Quad plate opens
 through **File > Examples > Plates (Experimental)** or Browse Examples in the
@@ -206,11 +206,8 @@ are covered. Existing MIT notice and pinned source revision apply. No solver
 features were added. See GUIDE for the plate-only constraint/combination-name
 adaptation and the complete dependency table.
 
-Remaining seven scripts are unchecked:
+Remaining six scripts are unchecked:
 
-- Rectangular Wall - Linear Varying Load: geometry-owned depth-varying pressure
-  and a validated wall workflow. The plate pilot has multiple uniform cases,
-  but no geometry-varying pressure. This source is transverse plate bending; general membrane behaviour is not its prerequisite.
 - Shear Wall - Basic/Advanced: validated in-plane membrane/drilling workflow,
   shell support/load assignment, wall result recovery; Advanced additionally
   needs shear-wall/story/pier/coupling-beam APIs and its stiffness modifiers.
@@ -328,6 +325,12 @@ Remaining seven scripts are unchecked:
   CSV. Retain corrected Rect polynomial moments/shear and Quad's unsmoothed
   within-element moment field; ship compact recovery data, never solve on a
   probe. Clear inspection/exports on engineering edits and retain unit-only snapshots.
+- [x] Add geometry-owned uniform/linear x/y plate pressure profiles, staged endpoint
+  controls, explicit centroid-pressure previews/probes/CSV, remesh/opening/placement
+  ownership and strict plate v4 migration. Integrate actual discrete force/moment
+  resultants independently and compare triangular-load Navier refinement. Adapt
+  the official hydrostatic tank wall with pinned source displacements/reactions/
+  centre moments. Preserve disabled Quad shear and transverse-only scope.
 - [ ] Extend the plate pilot to general membrane behaviour; validate new
   formulations before engineering claims. Combined face stresses remain deferred.
   Quad transverse shear recovery remains a separate open validation task above.

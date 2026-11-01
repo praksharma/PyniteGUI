@@ -438,7 +438,7 @@ global X in XY/XZ and Z in YZ; height follows Y in XY/YZ and Z in XZ.
 Pressure is force per geometry-length squared, with its positive global direction
 shown beside the controls (+Z in XY, -Y in XZ, -X in YZ). Negative pressure acts
 oppositely. The primary case and factor define the Plate baseline; **Load Cases /
-Combinations…** adds further uniform cases and named combinations. Pressure and
+Combinations…** adds uniform or linearly varying cases and named combinations. Pressure and
 edge assignments belong to the surface definition,
 not generated node IDs, and are reapplied when the mesh is refined.
 
@@ -452,9 +452,10 @@ deformed 3D shell view. Export CSV contains local node coordinates, signed norma
 displacements/reactions, selected-combination factors and snapshot identity. The plot toolbar exports images.
 
 Save/Open uses separate `.pyniteplate` files with canonical inch-kip values and
-strict format/version validation. Version 3 adds named loading and self-weight;
-version 2 stores advanced mesh options. Existing version 1/2 plate files migrate
-without adding pressures or gravity. Undo/redo covers applied definitions, not
+strict format/version validation. Version 4 adds geometry-owned linear pressure
+profiles; version 3 adds named loading/self-weight and version 2 advanced mesh
+options. Existing version 1/2/3 files migrate without changing their uniform
+pressures or enabling gravity. Undo/redo covers applied definitions, not
 individual keystrokes. Engineering changes clear results; Apply validates before
 changing the definition. Display-unit changes convert inputs/plots/CSV while
 retaining the current solved combination and snapshot, including unit undo/redo.
@@ -462,7 +463,7 @@ This workspace has its own unsaved-change prompt, not frame autosave/recovery.
 
 Pilot limits: one axis-aligned rectangular surface at a specified origin, up to
 1,024 elements, aspect ratios up to 20, linear small-displacement elastic bending,
-up to 32 uniform pressure cases and 32 combinations (including the primary
+up to 32 uniform/linear pressure cases and 32 combinations (including the primary
 **Plate** combination). In-plane translations and the
 drilling rotation are explicitly restrained everywhere; this is **not** general
 membrane/shell analysis. A simply supported edge restrains normal translation;
@@ -473,17 +474,19 @@ relative to thickness is flagged but does not enable geometric nonlinearity.
 Opening edges are free; outer edge supports and pressure are reapplied after
 refinement. Pressure resultant uses net area after openings, and result coordinates
 remain local to the origin. Arbitrary outlines, curved surface analysis, frame/surface coupling, nodal loads,
-general membrane loading, varying pressure, MCP, PDF and recovery integration
+general membrane loading, curved or clipped pressure fields, MCP, PDF and recovery integration
 remain separate milestones. Do not substitute this pilot for verified engineering
 design or assume the listed limits certify element quality.
 
 **Cases, combinations and self-weight:** the main pressure, case name and Plate
 factor retain the original quick workflow: `Plate = factor × primary case`.
-Open **Load Cases / Combinations…** to add uniform pressure cases, edit their
-pressures, rename them and create named combinations using per-case factors.
+Open **Load Cases / Combinations…** to add pressure cases, choose Uniform or Linear
+local x/y, edit origin/end pressures, rename them and create named combinations
+using per-case factors. Local x follows width and local y follows height.
 The built-in Plate combination remains a primary-case baseline; edit its factor
 in the main controls. Rename propagates through combination and self-weight
-references. Delete an additional case only after removing those references.
+references and its pressure profile. Delete an additional case only after removing
+combination/self-weight references; deleting it removes its owned profile.
 The dialog stages its edits: OK creates one undoable change, Cancel preserves
 the plate definition. It can use negative pressures/factors and zero-result
 combinations. An additional case can have zero manual pressure and carry weight.
@@ -505,9 +508,75 @@ the entire snapshot. Choose a solved combination above the contour without
 solving again. Plot titles name the combination and snapshot; the status shows
 its actual factors and normal reaction sum. Nodal CSV uses the chosen combination
 and includes case factors, snapshot ID/time/signature, global normal and weight
-case. Quad shear remains unavailable; corrected Rect shear remains separate.
+case, canonical pressure profiles/combined affine coefficients and the
+applied-pressure discretization. Quad shear
+remains unavailable; corrected Rect shear remains separate.
 The separate plate tool still has no general membrane or combined face-stress
 inspection and is not connected to the main-model MCP server.
+
+**Linear pressure profiles (development after RC4):** in the loading dialog,
+choose **Linear local x** or **Linear local y**. The first pressure applies at
+local coordinate zero; **End pressure** applies at the opposite width/height
+edge. The profile is affine across the complete rectangle and follows dimensions,
+placement, control lines, openings and remeshing. It is a surface recipe, not
+loads attached to generated element IDs. Negative and sign-changing profiles are
+allowed; values are **not clipped** to zero above a water level. Partial immersion,
+curved pressure laws and in-plane hydrostatic loading are not supplied by this tool.
+
+The current element APIs accept uniform pressure per cell. Each cell receives
+the target profile evaluated at its geometric centroid. This matches the pinned
+PyNite hydrostatic example. For affine pressure, the total force is exact even
+with conforming rectangular openings; pressure first moments differ from the
+continuous field by within-cell variance and converge with refinement. Independent
+equilibrium checks integrate the rectangle-minus-openings recipe and account for
+that explicit discretization. They do not check reactions against a silently
+substituted uniform mean pressure. The signed combined pressure can vary along
+both axes when different cases are combined. Horizontal self-weight is added
+uniformly to its selected case and factored once.
+
+Choose **Applied pressure (element average)** above the plot to see the actual
+cell loading, including before solving (the preview uses the Plate baseline).
+After solving it follows the selected combination. Inspect pressures and compare
+mesh refinements before interpreting displacements or moments. A passing load
+balance does not establish convergence. A simply supported triangular-load
+Navier series independently checks displacement and moment convergence for both
+Quad and corrected Rect elements; uniform-pressure cases retain their original
+behaviour. Rect/Quad shear availability is unchanged.
+
+**Official hydrostatic tank wall:** choose **File > Examples > Plates
+(Experimental) > Official PyNite - Hydrostatic Tank Wall** or search for it in
+Browse Examples. This opens the separate plate workspace, preserving the main
+frame and its unsaved work. The source has a 25 × 15 ft wall, 1 ft thickness,
+4500 psi concrete, a 1 ft Quad mesh, 15 ft water level, clamped left/right/bottom
+edges and a free top. F pressure decreases from **936 psf** at the bottom to zero
+at the top. **Plate** and the source-named **1.4F** both apply factor 1.4.
+The source's control line at the top is redundant and omitted; the mesh is identical.
+Pressure endpoints remain assigned values when dimensions change; recompute them
+if changing the fluid problem.
+The model remains transverse elastic bending, with internal membrane/drilling
+coordinates restrained. It is not the separate in-plane shear-wall API.
+
+At the source mesh there are **375 Quads and 416 nodes**, total applied normal
+force **+245.7 kip**, normal reactions **−245.7 kip**, and maximum displacement
+**+0.07569638755 in**. All transverse nodal displacements/reactions and element-
+centre moments match a fixture generated from the pinned original ft/lb script.
+The source uses G = 0.4E; Quad transverse stiffness derives its shear properties
+from E/nu, so independent frame G is neither needed nor enabled here. The
+continuous applied moment about global X is 14742 kip-in; centroid loading
+at 12 in mesh gives 14774.76 kip-in. The equilibrium check uses the latter actual
+load. Refine the mesh to reduce this difference.
+
+The original script also plots/compares raw Quad shear. That output remains
+**unverified and disabled** in Brecon; adapting the loading and validated bending
+response does not certify it. Source:
+[Rectangular Wall - Linear Varying Load.py](https://github.com/JWock82/Pynite/blob/e3a0bbd912b6cf13140f01ca0ed3a2ee55069f45/Examples/Rectangular%20Wall%20-%20Linear%20Varying%20Load.py),
+with the existing MIT attribution in `licenses/pynite-examples.txt`.
+
+![Official hydrostatic wall displacement and three clamped edges](docs/assets/screenshots/hydrostatic-wall.png)
+
+![Signed centroid pressure field decreasing towards the top of the tank wall](docs/assets/screenshots/hydrostatic-wall-pressure.png)
+
+![Geometry-owned linear height profile with bottom and top pressures](docs/assets/screenshots/hydrostatic-wall-loading.png)
 
 **Local plate inspection (development after RC4):** choose **Inspect Results…**
 or click a material element in the solved plot. The modeless inspector has an
@@ -523,6 +592,10 @@ polynomial. Quad shows only its within-element bilinear moment recovery; its
 transverse shear remains unavailable. There is no averaging between elements,
 no new membrane or combined face-stress result, and no corner-peak certification.
 Moment/shear contours still show element-centre values when the probe is elsewhere.
+The probe/table also distinguish **Applied element pressure** (the actual constant
+load used in that cell) from **Target profile pressure** at the probe coordinate.
+Both include the selected combination and self-weight and use pressure units;
+they need not coincide away from the element centroid.
 
 The inspector follows the workspace's combination and display units without
 another solve, retaining the element and natural coordinates for the same
@@ -550,7 +623,10 @@ inputs. `additional_pressures` maps other case names to signed canonical kip/in2
 `combinations` maps additional combination names to case-factor maps (`Plate` is
 reserved). `self_weight_case` is an existing case or null and
 `self_weight_factor` is a positive multiplier. All four new fields are required
-in version 3; extra fields in legacy versions are rejected. Solved arrays are
+in version 3. Version 4 additionally requires `pressure_profiles`: a case-name map
+to `{"axis": "x"|"y", "end_pressure": signed canonical kip/in2}`. Omit a case for
+uniform pressure. Profiles require existing cases, exactly these two fields and
+finite bounded pressures. New fields in legacy versions are rejected. Solved arrays are
 not saved in `.pyniteplate` files.
 
 Regression coverage includes independent Navier square-plate deflection and mesh
@@ -1612,16 +1688,17 @@ notice:
 [![Official clamped rectangular Quad plate opened in its editable separate workspace](docs/assets/screenshots/official-quad-plate.png)](docs/assets/screenshots/official-quad-plate.png)
 
 The official plate opens as an unsolved mesh preview. Use Analyze for its
-transverse displacement and element-centre moment/shear contours, or Save plate
-for an editable copy.
+transverse displacement and element-centre moment contours, or Save plate
+for an editable copy. Quad shear remains disabled. The hydrostatic tank wall is
+also available in this category; its illustrated loading/bending walkthrough is
+in the rectangular plate section above.
 
-The official catalog audit covers all 20 scripts: thirteen are adapted; seven
+The official catalog audit covers all 20 scripts: fourteen are adapted; six
 still depend on capabilities outside the current app. No substitute model is
 presented as a completed official adaptation.
 
 | Remaining official example | Required capability before adaptation |
 | --- | --- |
-| Rectangular Wall - Linear Varying Load | Depth-varying pressure and validated shell boundary assignment; current pilot pressure is uniform. |
 | Shear Wall - Basic | Validated in-plane membrane/drilling supports, loads and wall result recovery. |
 | Shear Wall - Advanced | Shear-wall/story/pier/coupling-beam APIs and modifiers, plus validated membrane/drilling response. |
 | Mat Foundation | Mat/soil contact API, compression-only soil springs, foundation point force/moment assignment. |
@@ -3349,7 +3426,7 @@ Planar **v33** and spatial **v40** add required material `fy` and section
 `Zy`/`Zz`/`steel_material` fields. Nullable defaults keep legacy definitions elastic.
 Nondefault plastic properties in older versions, missing current fields and
 inconsistent profile/material bindings are rejected. New saves use planar v33,
-spatial v40 and plate v3; standalone plate/mesh definitions omit steel properties.
+spatial v40 and plate v4; standalone plate/mesh definitions omit steel properties.
 
 Spatial files retain XYZ, all six restraints/springs, and roll. Unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be
