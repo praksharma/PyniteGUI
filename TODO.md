@@ -19,7 +19,7 @@
   the owner's environment approval. Verify registry artifact hashes and a fresh
   public-PyPI installation; preserve existing PyniteGUI releases (2026-10-28).
 
-Current scope: a 2D/3D frame and bilateral axial-only truss editor with SI/imperial input and display, per-member materials and
+Current scope: a 2D/3D frame, axial-only truss and joint-spring editor with SI/imperial input and display, per-member materials and
 sections, custom global support restraints, global/member-local angled forces, distributed loads,
 and named load cases/combinations. This list tracks remaining work;
 items are not promises of a particular release date.
@@ -37,8 +37,8 @@ workflows, plus the locked **PyniteFEA 3.0.0** source. The
 [upstream capability list](https://github.com/JWock82/Pynite#current-capabilities)
 describes the engine, not features automatically available in this GUI.
 **Done** means usable in the stated application workflow; **Partial** identifies
-the exact missing part. Summary: **13 done, 3 partial, 2 pending**. P-Delta coverage rechecked 2026-10-26;
-spatial translational/rotational-release scope rechecked 2026-10-29; unilateral scope rechecked 2026-10-31.
+the exact missing part. Summary: **14 done, 3 partial, 1 pending**. P-Delta coverage rechecked 2026-10-26;
+spatial translational/rotational-release scope rechecked 2026-10-29; unilateral scope rechecked 2026-10-31; joint springs checked 2026-11-01.
 
 | Engine capability | GUI status | Coverage or remaining task |
 | --- | --- | --- |
@@ -51,8 +51,8 @@ spatial translational/rotational-release scope rechecked 2026-10-29; unilateral 
 | Member shear, moment and deflection output | Done | Member detail curves in 2D/3D; spatial biaxial shear/bending, torsion and deformation; whole-frame force/moment overlays. |
 | Physical-member internal joints | Partial | Explicit split/connect workflows in 2D/3D; experimental coupled slabs add solver-only subdivision at conforming shell nodes. General implicit user-frame intersections remain excluded. |
 | Unilateral member behaviour | Done | Iterative elastic tension/compression-only axial trusses in 2D/3D, activation/reactivation, independent combinations/load steps, neutral-contact stability and active-state/iteration results. Frame members remain bilateral; surfaces and spatial frame releases are excluded. |
-| Node-to-node spring elements | Pending | Add separate spring entities, axial stiffness units and bilateral/tension-only/compression-only behaviour; support springs are not spring elements. |
-| Bilateral/unilateral support springs | Done | Bilateral global springs plus positive/negative-displacement-only action with Iterative elastic, per-combination activation and physical reaction recovery. No general node-to-node spring entities. |
+| Node-to-node spring elements | Done | Explicit massless axial links between existing joints in 2D/3D, entered force/length stiffness and bilateral/tension-only/compression-only action. Native staged editing, ownership/copy/undo, spring-only networks, results/CSV/reports/MCP and independent mechanics. Linear/iterative only; no modal/plastic/P-Delta/surface or spatial frame-release coupling. |
+| Bilateral/unilateral support springs | Done | Bilateral global springs plus positive/negative-displacement-only action with Iterative elastic, per-combination activation and physical reaction recovery. Ground support laws remain distinct from joint-to-joint axial links. |
 | DKMQ quadrilaterals | Partial | Plate-only bending tool plus opt-in rectangular Quad/frame coupling with pressure cases, self-weight, shared joints, conformity checks, nodal results/deformation and equilibrium. Local moment/membrane-stress contours, probes and edge supports are implemented. Validated shear recovery and general membrane/drilling/curved-shell benchmarks remain pending. |
 | Polynomial rectangles | Partial | Quad/Rect choice for rectangular plate bending (including openings) with centre-coordinate recovery, deflection comparison and equilibrium regressions. General membrane/shell workflows and additional formulation-specific benchmarks remain pending. |
 | Shape/opening meshing | Done | All seven concrete PyNite generators with shape-specific/common options, bounded checks, control lines/openings, offline 3D geometry preview, recipes/undo and connectivity export. Curved-shell analysis and frame assembly remain distinct pending capabilities. |
@@ -68,7 +68,7 @@ workflow has validated inputs, usable results and regression coverage; an API
 existing in PyNite alone does not count. Keep this checklist and the capability
 table above in sync as methods are implemented.
 
-**Current priority:** the user lifted the new-solver hold on 2026-10-31. Complete validated unilateral, modal and steel-pushover workflows alongside the remaining surface milestones; retain explicit engineering gates.
+**Current priority:** the user lifted the new-solver hold on 2026-10-31. Unilateral, modal, first-order steel pushover and joint-spring workflows are implemented within their recorded limits. Continue the remaining surface and combined P-Delta/plastic milestones with their explicit engineering gates.
 
 - [x] **Linear elastic** (`analyze_linear`): 2D/3D frames, bilateral axial-only
   trusses and opt-in rectangular Quad slab/frame coupling; reactions,
@@ -108,6 +108,21 @@ Separate solver/formulation work:
 - [ ] **Reinforced-concrete nonlinear frames/slabs:** evaluate a separate validated
   formulation/solver for cracking, reinforcement and plasticity. The locked
   PyNite steel pushover and elastic concrete presets do not supply RC plasticity.
+
+### Joint-Spring Milestone
+
+- [x] Add explicit planar/spatial joint-to-joint axial spring entities, entered
+  stiffness and bilateral/tension-only/compression-only modes. Support massless
+  spring-only networks and mixed frame/truss links; guard other solver scopes.
+- [x] Add staged Tools > Joint Springs editing, one-step undo, independent units,
+  endpoint ownership/deletion/conversion, repeat/transform/merge validation and
+  geometry previews. Parallel links are explicit and additive; crossings do not
+  connect. Add decorative native/browser zigzags and inactive state styling.
+- [x] Add signed extension/force/activity results, CSV/print/MCP, strict planar
+  v35/spatial v42 persistence with empty legacy defaults, and three hand-check
+  examples. Validate series/parallel laws, full oblique 3D congruence, imposed
+  motion, opposite one-way action, reactivation against independent exhaustive
+  contact sets, mechanisms, result units and native/wire lifecycle.
 
 ### Implementation Gates
 
@@ -194,7 +209,7 @@ differences from upstream. New solver work is authorized; apply the analysis-met
 
 **Current-capability audit (2026-10-27, all 20 pinned scripts reviewed):**
 
-Fourteen official adaptations are now available. The hydrostatic tank wall now uses geometry-owned linear pressure in the transverse plate workspace, with all source nodal/moment parity, independent triangular-load continuum/refinement checks and explicit centroid-load first moments. Quad shear remains disabled. The official modal column preserves the source inputs/gravity and opens the separate mode workspace, with pinned frequency/normalized-shape parity and independent dynamics checks. Three new Iterative elastic examples preserve the pinned source inputs: compression-only foundation, tension-only braced frame, and fixed-anchor spring-supported frame. The last condenses its fixed vertical spring anchors exactly into one-way ground springs; general node-to-node spring entities remain pending. Pinned upstream result parity, independent uplift mechanics, persistence and worker/MCP checks cover this scope.
+Fourteen official adaptations are now available. The hydrostatic tank wall now uses geometry-owned linear pressure in the transverse plate workspace, with all source nodal/moment parity, independent triangular-load continuum/refinement checks and explicit centroid-load first moments. Quad shear remains disabled. The official modal column preserves the source inputs/gravity and opens the separate mode workspace, with pinned frequency/normalized-shape parity and independent dynamics checks. Three new Iterative elastic examples preserve the pinned source inputs: compression-only foundation, tension-only braced frame, and fixed-anchor spring-supported frame. The last condenses its fixed vertical spring anchors exactly into one-way ground springs; general node-to-node spring entities are now a separate implemented workflow. Pinned upstream result parity, independent uplift mechanics, persistence and worker/MCP checks cover this scope.
 
 The rectangular Quad plate opens
 through **File > Examples > Plates (Experimental)** or Browse Examples in the

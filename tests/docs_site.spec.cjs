@@ -58,6 +58,7 @@ const server = http.createServer((request,response)=>{
       ['reference/units/','Units and Conversions'],['project/roadmap/','Brecon Roadmap'],
       ['modeling/3d/','3D Frames and Trusses'],
       ['modeling/supports/','Supports and Springs'],
+      ['modeling/joint-springs/','Joint Springs'],
       ['surfaces/plates/','Rectangular Plate Analysis']]){
       await page.goto(origin+prefix+url);
       await page.locator('article h1').filter({hasText:title}).waitFor();
@@ -66,6 +67,11 @@ const server = http.createServer((request,response)=>{
         const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));
         assert(figures.some(image=>image.src.endsWith('steel-pushover.png'))&&figures.every(image=>image.ok),'Missing steel pushover screenshot');
         assert((await page.locator('article').innerText()).includes('Partial'),'Missing partial-history contract');
+      }
+      if(url==='modeling/joint-springs/'){
+        const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));
+        assert(figures.some(image=>image.src.endsWith('joint-springs-editor.png'))&&figures.some(image=>image.src.endsWith('joint-springs-results.png'))&&figures.every(image=>image.ok),'Missing joint spring workflow screenshots');
+        assert((await page.locator('article').innerText()).includes('tension positive'),'Missing spring force convention');
       }
       if(url==='modeling/supports/'){
         const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));

@@ -30,6 +30,14 @@ def contacts(model, project):
         result.append(dict(key=('members', name), row=row, stiffness=stiffness,
                            sign=1 if member.behavior == 'tension_only' else -1,
                            tolerance=project.member_tolerance, behavior=member.behavior))
+    for name,spring in project.joint_springs.items():
+        if spring.behavior=='bilateral':continue
+        start,end=model.nodes[spring.start],model.nodes[spring.end]
+        axis=np.array((end.X-start.X,end.Y-start.Y,end.Z-start.Z));axis/=np.linalg.norm(axis)
+        indices=np.r_[6*start.ID+np.arange(3),6*end.ID+np.arange(3)]
+        row=csr_matrix((np.r_[-axis,axis],(np.zeros(6,dtype=int),indices)),shape=(1,size))
+        result.append(dict(key=('joint_springs',name),row=row,stiffness=spring.stiffness,
+            sign=1 if spring.behavior=='tension_only' else -1,tolerance=project.member_tolerance,behavior=spring.behavior))
     dofs = ('DX', 'DY', 'DZ', 'RX', 'RY', 'RZ') if getattr(project, 'dimension', '2D') == '3D' else ('DX', 'DY', 'RZ')
     for name, node in project.nodes.items():
         for index, (field, dof, stiffness) in enumerate(zip(spring_mode_fields(node), dofs, node.springs)):
@@ -52,6 +60,8 @@ def apply_states(model, combination, items, states):
             member.active[combination] = bool(active)
             for sub in member.sub_members.values():
                 sub.active[combination] = bool(active)
+        elif key[0]=='joint_springs':
+            model.springs[key[1]].active[combination]=bool(active)
         else:
             getattr(model.nodes[key[1]], 'spring_'+key[2])[2] = bool(active)
 
@@ -153,7 +163,7 @@ def solve_iterative(model, project, phase):
                     next_states, neutral, trial = [], [], []
                     for item, active in zip(items, states):
                         value = float((item['row'] @ displacement[:,0])[0])
-                        if item['key'][0] == 'members':
+                        if item['key'][0] in ('members','joint_springs'):
                             value *= item['stiffness']
                         signed = item['sign']*value
                         next_states.append(True if signed > item['tolerance'] else False if signed < -item['tolerance'] else active)

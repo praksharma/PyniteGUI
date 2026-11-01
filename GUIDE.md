@@ -2112,6 +2112,90 @@ collision checks include their values, and global orientations stay global.
 Changing a prescription invalidates results; changing display units retains the
 snapshot and converts its labels.
 
+### Joint Springs
+
+Development after RC4 adds massless axial springs between two **existing joints**
+in planar and spatial models. Open **Tools > Joint Springs…**, add a spring,
+choose its start/end joints, enter positive axial stiffness in the displayed
+force/length units, and choose **Bilateral**, **Tension only** or **Compression
+only**. Stiffness is entered directly: the spring uses no material, section or
+EA/L calculation. Multiple explicitly named springs between the same joints act
+in parallel and their stiffnesses add when active.
+
+The dialog stages all changes. **OK** creates one undo step; **Cancel** discards
+changes. The Structure tree lists the definitions, and the 2D/3D canvas and
+example browser show zigzag symbols. Edit springs through this dialog; their
+symbols and tree rows do not participate in node/member selection or member
+station probes. Supports and nodal loads are still edited on their joints.
+
+![Staged joint spring definitions](docs/assets/screenshots/joint-springs-editor.png)
+
+The small-displacement law uses the original unit chord `n` from start to end:
+`extension = n · (u_end − u_start)`, and active force is `k × extension`.
+Extension and reported spring force are **tension positive**. Reversing the
+endpoint order preserves both quantities and the response. This differs from
+compression-positive frame member N. Inactive springs report zero actual force
+and retain their signed trial extension for inspection. The zigzag is a symbol;
+its bends do not change the axial stiffness or create intermediate joints.
+
+Bilateral links support **Linear elastic** and **Iterative elastic**. One-way
+links require **Iterative elastic**: the axial force switch tolerance applies,
+not the displacement tolerance used by global ground springs. Every combination
+starts independently; contacts may deactivate and reactivate. Zero-force contacts
+receive the same directional stability check as unilateral bars, without residual
+stiffness. Two opposing one-way springs can restrain both signs of motion; a
+single unloaded one-way spring with a free opening direction is a mechanism.
+
+Spring-only networks are allowed. Translational stability remains a physical
+requirement; unsupported rotations with no incident rotational stiffness are
+reported as undefined, and loads on those rotations are rejected. Springs have
+zero initial force and no mass or self-weight. Nodal forces may be applied at
+endpoints; loads cannot be assigned along a spring. Initial gap/slack, damping,
+rotational links, large-displacement axes and spring rest-position movement are
+not implemented. Joint springs with P-Delta, modal analysis, steel pushover,
+surfaces or spatial frame end releases are rejected pending separate validation.
+
+After analysis, the **Joint springs** result tab lists stiffness, action, active
+state, extension and tension-positive force for the selected snapshot/combination.
+**Active state** and **Iterations** also describe one-way switching. Export the
+joint-spring CSV through **File > Export Results**, or include member and
+joint-spring results in a printable report. Units follow the selected display
+system without rerunning analysis. Active symbols are green and inactive symbols
+are grey/dashed. Spring forces are tabular; member force diagrams and member
+curve probes apply to frame/truss members.
+
+![One-way spring results, including inactive link force](docs/assets/screenshots/joint-springs-results.png)
+
+**File > Examples > Joint springs** contains three independent hand checks:
+
+| Example | Check |
+| --- | --- |
+| Series Network | `k = 100, 200 kip/in`, 10 kip at C: B DX = +0.1 in, C DX = +0.15 in, both forces +10 kip. |
+| Opposing One-Way Pair | Parallel tension k=200 and compression k=300 kip/in: +10 kip gives +0.05 in; Reverse gives −0.0333333 in; Zero is stable with zero force. |
+| 3D Oblique Network | Three orthogonal oblique directions with k=100/200/300 kip/in; independently solve `R diag(k) Rᵀ u = (10,20,−30)` kip and balance all reactions. |
+
+Definitions belong to their endpoint IDs. Moving a joint changes the original
+chord but keeps the entered k. Native joint deletion deletes incident links;
+undo restores them. Copy/repeat/rotate/mirror includes links when **both endpoints**
+are copied and shows them in the geometry preview. Reusing both existing endpoints
+can deliberately create additional parallel stiffness: review the new spring
+count before Apply. Two-node merging rewrites link endpoints and rejects any
+collapsed spring. Crossing a spring or placing a node on its interior does not
+split or connect it. 2D-to-3D conversion preserves the definitions and explicit
+support mapping. Spring IDs must differ from node/member IDs.
+
+MCP exposes typed `joint_springs` in `read_schema`/`read_model` and atomic
+`apply_batch` puts/deletes. A full new value is, in canonical inch-kip units:
+
+```json
+{"name":"S1","start":"A","end":"B","stiffness":100.0,"behavior":"bilateral"}
+```
+
+Use `read_results(kind="joint_springs")` with the usual snapshot, combination and
+pagination checks. Atomic node deletions must explicitly remove or update every
+incident spring in the same batch. Native and MCP edits share validation,
+revision checks, undo and analysis identity.
+
 ### Moving Nodes
 
 - In Select mode, drag a node to move it with snapping. Dashed connected members
@@ -2222,7 +2306,7 @@ Results provide **Active state** and **Iterations** tabs, matching CSV exports,
 and MCP `read_results(kind="active_states"|"iterations")` with pagination.
 Trial axial force is **tension positive**, unlike the usual compression-positive
 member N output; inactive bars carry zero actual axial force. Spring trials are
-global displacement (length/radians), not reaction. Trial values, neutral flags
+global displacement (length/radians), not reaction; joint-spring trials use axial force. Trial values, neutral flags
 and activation history belong to the analyzed snapshot and combination. Nonlinear
 results must never be made by superposing independently solved cases.
 
@@ -2234,7 +2318,7 @@ examples. Foundation nodes at x=144/156 in displace about -0.19876689 in under
 The cross-braced frame activates Brace1 and releases Brace2 for positive wind.
 For the ground-spring frame N1 moves +0.00393088 in and N4 -0.00406912 in in
 1.2D+1.0W. Its fixed source anchor nodes are exactly condensed into global ground
-springs; this does not add a general node-to-node spring API. Gravity-only ground
+springs. Separate general joint-spring entities are described under Joint Springs. Gravity-only ground
 support is unstable and rejected. All preserve the source's material G, explicit
 loads and factors; foundation physical-beam segmentation becomes 25 editable
 12 in members, while the brace types explicitly suppress bending.
@@ -3082,7 +3166,8 @@ springs may resist any otherwise free global DX/DY/RZ direction. Spring reaction
 are the opposing stiffness times displacement/rotation and are included in all
 reaction tables, envelopes, and exports. Inclined rollers are additionally available
 for planar and spatial models within the method limits described under Supports and Springs. One-sided springs
-are available in Iterative elastic; semi-rigid member-end springs are not implemented. Point loads support global FX, FY,
+are available in Iterative elastic. Separate axial links between existing joints
+are described under Joint Springs; semi-rigid member-end springs are not implemented. Point loads support global FX, FY,
 MZ, and signed angled forces. Member point/distributed forces additionally
 support local x/y and member-relative angles. Nodal forces use global axes only;
 distributed moments are not implemented.
@@ -3425,8 +3510,12 @@ nonpositive one-way spring stiffnesses are rejected.
 Planar **v33** and spatial **v40** add required material `fy` and section
 `Zy`/`Zz`/`steel_material` fields. Nullable defaults keep legacy definitions elastic.
 Nondefault plastic properties in older versions, missing current fields and
-inconsistent profile/material bindings are rejected. New saves use planar v33,
-spatial v40 and plate v4; standalone plate/mesh definitions omit steel properties.
+inconsistent profile/material bindings are rejected.
+Planar **v35** and spatial **v42** add a required root `joint_springs` object with
+explicit name/start/end/stiffness/behavior values. Legacy files migrate to an
+empty collection; a nonempty collection in an older version is rejected. New
+saves use planar v35, spatial v42 and plate v4; standalone plate/mesh definitions
+omit steel properties.
 
 Spatial files retain XYZ, all six restraints/springs, and roll. Unknown/future
 versions are rejected rather than guessed. Node and member identifiers must be

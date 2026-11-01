@@ -199,6 +199,54 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 Joint-Spring Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-01. Public RC4 artifacts remain
+unchanged. New frame saves use planar **v35** and spatial **v42** with required
+`joint_springs`; legacy files migrate to an empty collection. Plate v4 is unchanged.
+
+- Add explicit massless axial springs between existing joints, with entered k
+  in force/length units and bilateral/tension-only/compression-only action. Keep
+  endpoint order independent tension-positive extension/force and explicit
+  additive parallel links. Support pure spring networks and mixed frame/truss
+  models, including imposed motions and independent signed/zero combinations.
+- Route one-way links through the checked active-set solver with force tolerance,
+  activation/reactivation and neutral-contact stability; never add residual
+  stiffness. Reject P-Delta, modal/plastic, surfaces and spatial frame-end-release
+  coupling. No spring mass, self-weight, applied member loads, slack, damping or
+  rotational links. Rotations with no physical stiffness remain undefined.
+- Add staged Tools > Joint Springs controls, Cancel/Apply and one-step undo;
+  endpoint movement/deletion, copy/transform/merge validation and preview, explicit
+  2D-to-3D conversion, and decorative native/offline viewport/browser zigzags.
+  Editing stays in the dialog; spring symbols do not enter member selection or
+  member force-curve probes. Add snapshot/combination/unit-aware result tables,
+  CSV and printable definitions/results, typed MCP edits and paginated reads.
+- Add three custom examples: 100/200 kip/in series springs give B DX=+0.1 in and
+  C DX=+0.15 in under 10 kip; opposite one-way links give +0.05/−0.0333333 in
+  under ±10 kip, with a stable zero state; an oblique spatial network matches
+  independently assembled `R diag(k) Rᵀ`. Exhaustive independent contact sets
+  verify reactivation, and spatial one-way pairs verify signed load directions.
+- The catalog contains **42 frame/truss/spring examples and two plate examples**.
+  Official adaptations remain **14/20**; the existing fixed-anchor spring-frame
+  adaptation retains its exactly condensed ground springs.
+- Add illustrated guidance and a dedicated manual page. Retain the RC4 release
+  gates and all remaining wall/foundation, nonlinear concrete, shell/shear and
+  combined P-Delta/plastic validation gates.
+- Full pinned suite: **1,116 tests**, no skips, **362.079 s**, including MCP.
+  Test ownership checks pass: **172 classes** across nine primary groups.
+- Installed-wheel validation: **30 focused engineering/native/MCP tests**, no
+  skips, with pinned PyNite **3.0.0** / Qt **6.11.2** (**11.910 s**) and newer
+  PyNite **3.2.1** / Qt **6.12.0** (**9.085 s**). Both environments pass every
+  catalog example through save/reopen/solve/export/native windows and authenticated
+  MCP discovery/edit/undo. Wheel/source metadata, runtime assets and checksums pass.
+- Offline 3D viewport checks pass with the actual spring-only oblique network,
+  existing frame results, selection/orbit, diagnostics, context loss and bounded
+  resources. Mesh viewport checks pass all seven generators and coupled picking.
+  The strict manual build checks **58 HTML pages**; browser QA checks images,
+  search, subpath links, theme and layout. Visually checked both native screenshots
+  and the 3D spring-network image.
+
+
 ## Post-RC4 Linear Plate Pressure Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-01. Public RC4 artifacts and frame

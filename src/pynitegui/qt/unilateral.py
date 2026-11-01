@@ -14,7 +14,8 @@ def spring_mode_fields(node):
 
 
 def has_unilateral(project):
-    return (any(member.behavior != "bilateral" for member in project.members.values()) or
+    return (any(s.behavior!='bilateral' for s in project.joint_springs.values()) or
+            any(member.behavior != "bilateral" for member in project.members.values()) or
             any(getattr(node, key) != "bilateral" for node in project.nodes.values() for key in spring_mode_fields(node)))
 
 
@@ -107,10 +108,10 @@ def active_state_table(project, result):
         return headers, []
     rows = []
     for item in data['contacts']:
-        quantity = 'force' if item['kind'] == 'members' else 'rotation' if item['dof'].startswith('R') else 'length'
+        quantity = 'force' if item['kind'] in ('members','joint_springs') else 'rotation' if item['dof'].startswith('R') else 'length'
         unit = 'rad' if quantity == 'rotation' else getattr(project.units,quantity)
-        rows.append(['Member' if item['kind'] == 'members' else 'Ground spring', item['name'],item['dof'] or 'Axial',
-                     (MEMBER_BEHAVIORS if item['kind'] == 'members' else SPRING_BEHAVIORS)[item['behavior']],
+        rows.append(['Member' if item['kind'] == 'members' else 'Joint spring' if item['kind']=='joint_springs' else 'Ground spring', item['name'],item['dof'] or 'Axial',
+                     (MEMBER_BEHAVIORS if item['kind'] in ('members','joint_springs') else SPRING_BEHAVIORS)[item['behavior']],
                      'Yes' if item['active'] else 'No','Yes' if item['neutral'] else 'No',
                      project.units.to_display(item['trial'],quantity),unit])
     return headers, rows
@@ -130,5 +131,5 @@ def iteration_table(result):
     if data is None:
         return headers, []
     def labels(keys):
-        return '; '.join(key.replace('members:','Bar ',1).replace('springs:','Spring ',1) for key in keys)
+        return '; '.join(key.replace('joint_springs:','Joint spring ',1).replace('members:','Bar ',1).replace('springs:','Spring ',1) for key in keys)
     return headers, [[row['step'],row['iteration'],row['active'],row['total'],labels(row['activated']),labels(row['deactivated'])] for row in data['history']]

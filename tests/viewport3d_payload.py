@@ -112,6 +112,9 @@ if __name__ == "__main__":
         candidate = viewport_payload(window)
         candidate.update(plane="XY", offset=0, labels=True)
         payload["qaOfficialSpaceFrames"][str(number)] = candidate
+    window.load_project(example_project('3d_joint_spring_network'))
+    with contextlib.redirect_stdout(io.StringIO()):window.result=analyze(window.project)
+    payload['qaJointSprings']=viewport_payload(window)
     print(json.dumps(payload, allow_nan=False))
     window.saved = window.project.to_dict()
     window.close()

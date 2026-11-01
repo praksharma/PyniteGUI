@@ -1,5 +1,6 @@
 """Discoverable model reference derived from the actual desktop dataclasses."""
 from dataclasses import MISSING, asdict, fields
+from .joint_springs import JointSpring
 from .model import Node, Member, Load, Material, Section
 from .spatial_model import SpatialNode, SpatialMember, SpatialLoad
 from .units import UNIT_SYSTEMS
@@ -10,7 +11,7 @@ def model_reference(dimension="2D"):
     constructors = {"nodes": SpatialNode if spatial else Node,
                     "members": SpatialMember if spatial else Member,
                     "loads": SpatialLoad if spatial else Load,
-                    "materials": Material, "sections": Section}
+                    "materials": Material, "sections": Section,"joint_springs":JointSpring}
     entities = {}
     for collection, constructor in constructors.items():
         properties, required = {}, []
@@ -42,6 +43,10 @@ def model_reference(dimension="2D"):
         entities['sections']['properties'][key].update(type=['number','null'],exclusiveMinimum=0,
             description='Optional steel I-section plastic modulus, canonical in3, about the local '+key[-1]+' axis. Both Zy/Zz and steel_material are required together; supplied plastic properties require custom provenance.')
     entities['sections']['properties']['steel_material'].update(description='Optional material ID binding for the steel I-section interaction model. Must exist with positive fy; assigned members must use the same material. null requires Zy/Zz=null. Not an RC, shear/torsional-yield or hardening model.')
+    links=entities['joint_springs']['properties']
+    links['stiffness'].update(exclusiveMinimum=0,description='Positive finite axial k in canonical kip/in, independent of length/material/section. Massless first-order link, zero initial force/gap. No applied loads on the link.')
+    links['behavior'].update(enum=['bilateral','tension_only','compression_only'],description='One-way links require Iterative elastic; signed extension and force are tension-positive. Direction follows the original start/end chord. No geometric nonlinearity, damping, plasticity, slack length or rotational link.')
+    for key in ('start','end'):links[key]['description']='Existing distinct joint ID. Link endpoints remain explicit; crossings/interior nodes do not connect. Manage with Tools > Joint Springs.'
     nodes = entities["nodes"]["properties"]
     from .unilateral import MEMBER_BEHAVIORS, SPRING_BEHAVIORS, ITERATIVE_DEFAULTS
     for name, schema in nodes.items():
@@ -103,7 +108,7 @@ def model_reference(dimension="2D"):
             "description": "Key is a rectangular Quad surface ID. put replaces its entire outer-edge -> global rigid DOF list map. Omit free edges. Geometry-owned, reapplied on remesh. Shared joints use the union of restraints; spring conflicts are rejected. Remove explicitly when deleting a surface. Opening rims are excluded."}
         settings["surface_analysis_enabled"] = {"type": "boolean", "default": False,
             "description": "Experimental coupled analysis opt-in. When true, the complete candidate must contain only conforming, connected rectangular Quad surfaces. No solve occurs during editing."}
-        surface_info = "Spatial v40: surfaces, surface_pressures and surface_supports are editable via put/delete; surface_analysis_enabled via settings/set. Recipes use canonical inches/kip, pressure kip/in2. Geometry-only surfaces block analysis. Frame releases cannot be combined with surfaces. Coupled candidate topology is checked once after all operations; stability and independent equilibrium remain analysis gates."
+        surface_info = "Spatial v42: surfaces, surface_pressures and surface_supports are editable via put/delete; surface_analysis_enabled via settings/set. Recipes use canonical inches/kip, pressure kip/in2. Geometry-only surfaces block analysis. Frame releases cannot be combined with surfaces. Coupled candidate topology is checked once after all operations; stability and independent equilibrium remain analysis gates."
     return {
         "dimension": dimension, "input_units": "Canonical inch-kip regardless of display units; angles in degrees, rotations in radians.",
         "entities": entities,

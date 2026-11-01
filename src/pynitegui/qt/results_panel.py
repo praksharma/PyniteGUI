@@ -65,6 +65,11 @@ class ResultsPanel(QWidget):
             self.tabs.addTab(table, title)
         self.tables["members"].itemDoubleClicked.connect(self.activate_member)
         self.tables["members"].setToolTip("Select rows to highlight members. Double-click for Member Detail. Minimum/Maximum columns are independent extrema, not one common station.")
+        self.joint_table=QTableWidget(0,1)
+        self.joint_table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.joint_table.setObjectName('result_joint_springs')
+        self.joint_tab=self.tabs.addTab(self.joint_table,'Joint springs')
+        self.tabs.setTabVisible(self.joint_tab,False)
         self.active_states = QTableWidget(0,1)
         self.active_states.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.active_states.setObjectName('result_active_states')
@@ -122,6 +127,7 @@ class ResultsPanel(QWidget):
 
     def clear(self, project):
         self.project, self.result = project, None
+        self.joint_table.setRowCount(0);self.tabs.setTabVisible(self.joint_tab,False)
         self.equilibrium = None
         self.selections = []
         self.members_loaded = False
@@ -143,6 +149,10 @@ class ResultsPanel(QWidget):
         if self.result is None or self.result.snapshot_id != result.snapshot_id:
             self.analysis_state, self.state_detail = "Current", ""
         self.project, self.result = project, result
+        joint_headers,joint_rows=result_table(project,result,'joint_springs')
+        self.joint_table.setColumnCount(len(joint_headers));self.joint_table.setHorizontalHeaderLabels(joint_headers)
+        self.populate(self.joint_table,joint_headers,joint_rows)
+        self.tabs.setTabVisible(self.joint_tab,bool(project.joint_springs))
         iterative = getattr(result.solver, '_brecon_iterations', {}).get(result.combination)
         self.tabs.setTabVisible(self.active_tab, iterative is not None)
         self.tabs.setTabVisible(self.iteration_tab, iterative is not None)

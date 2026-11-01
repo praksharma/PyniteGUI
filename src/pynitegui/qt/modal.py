@@ -49,6 +49,7 @@ class ModalSettings:
 
 
 def modal_issue(project):
+    if project.joint_springs:return 'Joint springs are not yet validated for this modal/plastic workflow.'
     if getattr(project,'surfaces',{}):
         return 'Modal analysis currently supports frame-only models; surface mass and shell modes are not validated.'
     if has_unilateral(project):

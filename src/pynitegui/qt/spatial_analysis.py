@@ -71,8 +71,8 @@ def analyze_spatial(project, progress=None):
     issue = surface_analysis_issue(project)
     if issue:
         raise ValueError(issue)
-    if not project.members:
-        raise ValueError("Draw at least one 3D frame member.")
+    if not project.members and not project.joint_springs:
+        raise ValueError("Add at least one 3D member or joint spring.")
     issues = project.analysis_topology_issues() + project.analysis_release_issues()
     if issues:
         raise ValueError("\n\n".join(issues))
@@ -117,6 +117,8 @@ def analyze_spatial(project, progress=None):
         # reapply shared edge restraints so it cannot overwrite their union.
         from .surface_supports import apply_supports
         apply_supports(project, model, maps)
+    from .joint_springs import attach as attach_joint_springs
+    attach_joint_springs(model,project)
     for load in (*project.loads.values(), *project.self_weight_loads()):
         ends = dict(load.components(project, load.end_magnitude))
         for direction, magnitude in load.components(project):

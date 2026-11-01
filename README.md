@@ -31,7 +31,7 @@ for the tested configurations and remaining checks before stable 1.0.
 Surface meshing, rectangular plate analysis and coupled rectangular Quad slabs
 are **experimental**. P-Delta keeps materials elastic and has model restrictions;
 RC4 does not implement plastic workflows.
-Development after RC4 adds iterative unilateral bars/support springs and a separate
+Development after RC4 adds [joint-to-joint axial springs](https://github.com/praksharma/PyniteGUI/blob/master/GUIDE.md#joint-springs), iterative unilateral bars/support springs and a separate
 frame [Vibration Modes workspace](https://github.com/praksharma/PyniteGUI/blob/master/GUIDE.md#vibration-modes), plus checked first-order
 [Steel Pushover](https://github.com/praksharma/PyniteGUI/blob/master/GUIDE.md#steel-pushover). These are available from source; RC plasticity remains pending.
 Read the [engineering scope](https://github.com/praksharma/PyniteGUI/blob/master/GUIDE.md#engineering-scope) before relying on results.

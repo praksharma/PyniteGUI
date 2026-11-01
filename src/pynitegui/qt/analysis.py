@@ -185,8 +185,8 @@ def analyze(project: Project, progress=None) -> AnalysisResult:
     issue = analysis_method_issue(project)
     if issue:
         raise ValueError(issue)
-    if not project.members:
-        raise ValueError("Add at least one member before running analysis.")
+    if not project.members and not project.joint_springs:
+        raise ValueError("Add at least one member or joint spring before running analysis.")
     issues = project.analysis_topology_issues() + project.analysis_release_issues()
     if issues:
         raise ValueError("\n\n".join(issues))
@@ -225,6 +225,8 @@ def analyze(project: Project, progress=None) -> AnalysisResult:
         model.def_releases(member.name, Rzi=release_start, Rzj=release_end,
                            Dxi=member.release_start_x, Dxj=member.release_end_x,
                            Dyi=member.release_start_y, Dyj=member.release_end_y)
+    from .joint_springs import attach as attach_joint_springs
+    attach_joint_springs(model,project)
     for load in (*project.loads.values(), *project.self_weight_loads()):
         if load.target in project.nodes:
             for direction, magnitude in load.components(project):

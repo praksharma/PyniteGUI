@@ -129,6 +129,12 @@ function update(payload,dragPreview=false) {
   dispose();if(!data.labels)labelTextures.clearUnused();grid();
   const nodes=new Map(data.nodes.map(n=>[n.name,n])), selected=(kind,name)=>data.selection.some(s=>s[0]===kind&&s[1]===name);
   if(data.showNodes!==false)drawFrame(data,r,group,picks);
+  for(const spring of data.jointSprings||[]){
+    const geometry=new THREE.BufferGeometry().setFromPoints(spring.points.map(vector));
+    const material=spring.active?new THREE.LineBasicMaterial({color:c.support}):new THREE.LineDashedMaterial({color:c.muted,dashSize:span*.015,gapSize:span*.008});
+    const symbol=new THREE.Line(geometry,material);symbol.computeLineDistances();group.add(symbol);
+    if(data.labels)label(spring.name,vector(spring.points[Math.floor(spring.points.length/2)]),c.label);
+  }
   // Candidate geometry is decorative: never add it to picking/box selection.
   for(const points of data.geometryPreview?.lines||[]){
     const geometry=new THREE.BufferGeometry().setFromPoints(points.map(vector));

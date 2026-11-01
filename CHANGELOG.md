@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Add explicit massless axial springs between existing joints in 2D/3D, with
+  entered stiffness and bilateral/tension-only/compression-only action. Support
+  spring-only networks and mixed linear/iterative frame/truss models. Add staged
+  Tools editing, endpoint ownership, copy/merge/undo, canvas/example zigzags,
+  unit-aware extension/force/activity results, CSV/print and typed MCP batches.
+  Save planar v35/spatial v42 with empty legacy defaults. Add three hand-check
+  examples and illustrated guidance; verify independent networks, oblique 3D
+  stiffness, one-way reactivation, neutral mechanisms and lifecycle contracts.
+  P-Delta, modal/plastic, surface and spatial frame-release coupling stay gated.
+
 - Add geometry-owned linear pressure profiles to the separate plate workspace:
   staged origin/end controls, remesh/opening/placement ownership, signed combined
   cell-pressure previews, actual/target pressure probes and snapshot-aware CSV.

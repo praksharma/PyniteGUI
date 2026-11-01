@@ -102,13 +102,13 @@ class SpatialProject(Project):
     surface_supports: dict = field(default_factory=dict)
 
     def to_dict(self):
-        data = {"version": 40, "units": "in-kip", **asdict(self),
+        data = {"version": 42, "units": "in-kip", **asdict(self),
                 "surfaces": {name: mesh.to_dict() for name, mesh in self.surfaces.items()}}
         return data
 
     @classmethod
     def from_dict(cls, data):
-        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
+        if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] not in (16, 17, 18, 19, 20, 22, 24, 26, 28, 30, 32, 34, 36, 38, 40, 42) or data.get("dimension") != "3D" or data.get("units") != "in-kip":
             raise ValueError("Unsupported spatial project version, dimension, or units.")
         from .unilateral import check_schema, ITERATIVE_DEFAULTS, spring_mode_fields
         check_schema(data, data['version'], 38, ITERATIVE_DEFAULTS, "analysis settings")
@@ -141,8 +141,8 @@ class SpatialProject(Project):
             if isinstance(data.get(collection),dict):
                 for value in data[collection].values():
                     if isinstance(value,dict):check_steel_schema(value,data['version'],40,defaults,collection)
-        metadata = {**data, "version": 33 if data["version"] >= 40 else 31 if data["version"] >= 38 else 25 if data["version"] >= 26 else 23, "analysis_method": data.get("analysis_method", "linear"), "nodes": {}, "members": {}, "loads": {},
-                    "groups": {}, "levels": data.get("levels", {}), "snap_levels": data.get("snap_levels", False)}
+        metadata = {**data, "version": 35 if data["version"] >= 42 else 33 if data["version"] >= 40 else 31 if data["version"] >= 38 else 25 if data["version"] >= 26 else 23, "analysis_method": data.get("analysis_method", "linear"), "nodes": {}, "members": {}, "loads": {},
+                    "groups": {}, "joint_springs": {}, "levels": data.get("levels", {}), "snap_levels": data.get("snap_levels", False)}
         metadata.pop("dimension")
         metadata.pop("surfaces", None)
         metadata.pop("surface_analysis_enabled", None)
@@ -197,12 +197,14 @@ class SpatialProject(Project):
         result.surface_analysis_enabled = data.get("surface_analysis_enabled", False)
         result.surface_pressures = data.get("surface_pressures", {})
         result.surface_supports = data.get("surface_supports", {})
+        from .joint_springs import load_definitions
+        result.joint_springs=load_definitions(data,42)
         result.validate()
         return result
 
     def validate(self):
         Project(**{f.name: getattr(self, f.name) for f in fields(Project)
-                   if f.name not in ("nodes", "members", "loads", "groups")}).validate()
+                   if f.name not in ("nodes", "members", "loads", "groups", "joint_springs")}).validate()
         from .organization import validate_organization
         validate_organization(self)
         if self.dimension != "3D":
@@ -281,6 +283,8 @@ class SpatialProject(Project):
             connections.add(pair)
         from .plasticity import validate_bindings
         validate_bindings(self)
+        from .joint_springs import validate as validate_joint_springs
+        validate_joint_springs(self)
         for name, load in self.loads.items():
             if not isinstance(load, SpatialLoad) or name != load.name or not identifier(name) or not identifier(load.target) or load.target not in {*self.nodes, *self.members}:
                 raise ValueError("Invalid spatial load identifier or target.")
@@ -306,7 +310,7 @@ class SpatialProject(Project):
         for name, node in self.nodes.items():
             if math.dist(node.coords, (x, y, z)) <= 1e-8:
                 return name
-        name = self.next_name("N", self.nodes)
+        name = self.next_name("N", set(self.nodes)|set(self.members)|set(self.joint_springs))
         self.nodes[name] = SpatialNode(name, x, y, z=z)
         return name
 
@@ -316,7 +320,7 @@ class SpatialProject(Project):
         a, b = self.node_at(*start), self.node_at(*end)
         if any({member.start, member.end} == {a, b} for member in self.members.values()):
             raise ValueError("A member already connects these nodes.")
-        name = self.next_name("M", self.members)
+        name = self.next_name("M", set(self.nodes)|set(self.members)|set(self.joint_springs))
         self.members[name] = SpatialMember(name, a, b, self.default_material, self.default_section)
         return name
 
@@ -360,6 +364,7 @@ class SpatialProject(Project):
             frame_nodes.update(name for name, node in self.nodes.items()
                                if any(math.dist(node.coords, point) <= 1e-8 for point in points))
         connected = {node for member in self.members.values() for node in (member.start, member.end)}
+        connected.update(n for spring in self.joint_springs.values() for n in (spring.start,spring.end))
         return {(name, dof) for name in connected - frame_nodes for index, dof in enumerate(DOFS[3:], 3)
                 if not self.nodes[name].restraints[index] and not self.nodes[name].springs[index]}
 
@@ -466,6 +471,8 @@ class SpatialProject(Project):
         for member in self.members.values():
             adjacency[member.start].add(member.end)
             adjacency[member.end].add(member.start)
+        for spring in self.joint_springs.values():
+            adjacency[spring.start].add(spring.end);adjacency[spring.end].add(spring.start)
         remaining, groups = set(self.nodes), []
         while remaining:
             pending, group = [min(remaining)], set()

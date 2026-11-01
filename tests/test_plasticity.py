@@ -17,7 +17,7 @@ def steel_beam():
 
 class SteelDefinitionTests(unittest.TestCase):
     def test_roundtrip_new_formats_and_legacy_elastic_defaults(self):
-        for p,current,legacy in ((steel_beam(),33,31),(to_spatial(steel_beam()),40,38)):
+        for p,current,legacy in ((steel_beam(),35,31),(to_spatial(steel_beam()),42,38)):
             data=p.to_dict();self.assertEqual(data['version'],current)
             self.assertEqual(Project.from_dict(data).to_dict(),data)
             for collection,key in (('materials','fy'),('sections','Zy'),('sections','Zz'),('sections','steel_material')):

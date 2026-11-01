@@ -127,6 +127,39 @@ window.close()
 
 @unittest.skipUnless(dependencies_available(), "Install the optional mcp extra for wire tests")
 class ServerWireTests(ServerWindowTests):
+    def test_wire_joint_springs_schema_edit_worker_results_units_and_dependencies(self):
+        self.window.load_project(example_project('joint_spring_one_way'));self.window.automation_mode.set_enabled(True)
+        self.server.permissions.set_group('Analysis',True);self.server.permissions.set_group('Model edits',True)
+        async def callback(client):
+            model=(await client.call_tool('read_model',{})).structured_content['data'];identity={'session_id':model['session_id']}
+            self.assertIn('joint_springs',model['schema']['entities'])
+            self.assertEqual(model['schema']['entities']['joint_springs']['properties']['stiffness']['type'],'number')
+            edited=await client.call_tool('apply_batch',{**identity,'expected_revision':model['revision'],
+                'operations':[{'op':'put','collection':'joint_springs','key':'T','value':{'stiffness':400.}}]})
+            self.assertFalse(edited.is_error,edited);revision=edited.structured_content['data']['revision']
+            started=await client.call_tool('run_analysis',{**identity,'expected_revision':revision});self.assertFalse(started.is_error,started)
+            job=started.structured_content['data']['job_id']
+            for _ in range(300):
+                status=(await client.call_tool('analysis_status',{**identity,'job_id':job})).structured_content['data']
+                if not status['running']:break
+                await asyncio.sleep(.02)
+            self.assertEqual(status['state'],'Current',status)
+            response=await client.call_tool('read_results',{**identity,'kind':'joint_springs','combination':'Service','offset':0,'limit':1})
+            self.assertFalse(response.is_error,response);data=response.structured_content['data']
+            self.assertEqual(data['total_rows'],2);self.assertAlmostEqual(data['rows'][0][-2],.025)
+            self.assertAlmostEqual(data['rows'][0][-1],10.);snapshot=data['snapshot_id']
+            response=await client.call_tool('read_results',{**identity,'kind':'joint_springs','combination':'Reverse','offset':1,'limit':1})
+            self.assertFalse(response.is_error,response);self.assertAlmostEqual(response.structured_content['data']['rows'][0][-1],-10.)
+            edited=await client.call_tool('apply_batch',{**identity,'expected_revision':revision,
+                'operations':[{'op':'set','collection':'settings','value':{'unit_system':'si_mm'}}]})
+            self.assertFalse(edited.is_error,edited);revision=edited.structured_content['data']['revision']
+            response=await client.call_tool('read_results',{**identity,'kind':'joint_springs','combination':'Service','offset':0,'limit':1})
+            converted=response.structured_content['data'];self.assertEqual(converted['snapshot_id'],snapshot)
+            self.assertIn('Extension (mm)',converted['headers']);self.assertAlmostEqual(converted['rows'][0][-2],.635)
+            bad=await client.call_tool('apply_batch',{**identity,'expected_revision':revision,'operations':[{'op':'delete','collection':'nodes','key':'A'}]})
+            self.assertTrue(bad.is_error);self.assertEqual(bad.structured_content['error']['code'],'invalid_batch')
+        self.with_client(callback)
+
     def test_wire_pushover_checked_partial_typed_inputs_units_and_drift(self):
         self.window.load_project(example_project('steel_redistribution'))
         self.window.automation_mode.set_enabled(True)
@@ -351,7 +384,7 @@ class ServerWireTests(ServerWindowTests):
         self.server.permissions.set_group("Analysis", True)
         async def callback(client):
             model = (await client.call_tool("read_model", {})).structured_content["data"]
-            self.assertEqual(model["model"]["version"], 40)
+            self.assertEqual(model["model"]["version"], 42)
             fields = model["schema"]["entities"]["members"]["properties"]
             self.assertNotIn("const", fields["release_end_ry"])
             edited = await client.call_tool("apply_batch", {"session_id": model["session_id"],
@@ -477,7 +510,7 @@ class ServerWireTests(ServerWindowTests):
         before, count = self.window.project.to_dict(), self.window.undo.count()
         async def callback(client):
             tools = {tool.name:tool for tool in (await client.list_tools()).tools}
-            self.assertEqual(tools["read_results"].input_schema["properties"]["kind"]["enum"], ["nodes", "members", "surface_elements", "active_states", "iterations"])
+            self.assertEqual(tools["read_results"].input_schema["properties"]["kind"]["enum"], ["nodes", "members", "joint_springs", "surface_elements", "active_states", "iterations"])
             self.assertIn("Poll analysis_status", tools["run_analysis"].description)
             compact = (await client.call_tool("read_model", {"include_schema":False})).structured_content["data"]
             self.assertNotIn("schema", compact)

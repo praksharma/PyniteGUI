@@ -3,11 +3,13 @@ from .model import Load, Project
 from .official_unilateral import NAMES as UNILATERAL_EXAMPLES
 from .official_modal import KEY as MODAL_KEY, NAME as MODAL_NAME
 from .steel_examples import NAMES as STEEL_EXAMPLES
+from .joint_spring_examples import NAMES as JOINT_SPRING_EXAMPLES
 
 
 EXAMPLES = {
     **UNILATERAL_EXAMPLES,
     **STEEL_EXAMPLES,
+    **JOINT_SPRING_EXAMPLES,
     MODAL_KEY: MODAL_NAME,
     "simple_beam": "Simply Supported Beam",
     "portal": "Portal Frame - Distributed Load",
@@ -58,12 +60,16 @@ EXAMPLE_GROUPS = {
     'Iterative elastic': tuple(UNILATERAL_EXAMPLES),
     'Modal': (MODAL_KEY,),
     'Steel pushover': tuple(STEEL_EXAMPLES),
+    'Joint springs': tuple(JOINT_SPRING_EXAMPLES),
 }
 
 
 def example_project(key, unit_system="imperial"):
     if key not in EXAMPLES:
         raise ValueError(f"Unknown example: {key}")
+    if key in JOINT_SPRING_EXAMPLES:
+        from .joint_spring_examples import example_project as spring_example
+        return spring_example(key,unit_system)
     if key in STEEL_EXAMPLES:
         from .steel_examples import example_project as steel_example
         return steel_example(key,unit_system)

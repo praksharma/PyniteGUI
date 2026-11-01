@@ -56,6 +56,8 @@ from .official_unilateral import NOTES as UNILATERAL_NOTES
 NOTES.update(UNILATERAL_NOTES)
 from .steel_examples import NOTES as STEEL_NOTES
 NOTES.update(STEEL_NOTES)
+from .joint_spring_examples import NOTES as JOINT_SPRING_NOTES
+NOTES.update(JOINT_SPRING_NOTES)
 NOTES["3d_released_beam"] = ("Inclined, rolled beam with local RY/RZ released at both ends. N1 anchors torsion; its released bending rotations do not clamp the member.",
     "Local end My/Mz are zero; both uniform-load reactions balance. Recovered member-end bending slopes are nonzero even when shared nodal rotations are undefined.")
 NOTES["3d_sliding_beam"] = ("Inclined, rolled fixed-guided beam: end-j DX/DY/DZ are released while its rotations remain connected. Both joints are fixed; member-side motion is separate.",
@@ -136,6 +138,11 @@ class ExamplePreview(QWidget):
         painter.setPen(QPen(QColor(c["member"]), 2.))
         for member in project.members.values():
             painter.drawLine(screen(points[member.start]), screen(points[member.end]))
+        from .joint_springs import geometry as spring_geometry
+        painter.setPen(QPen(QColor(c['support']),1.5))
+        for spring in spring_geometry(project):
+            path=[screen(project_point(point)) for point in spring['points']]
+            for a,b in zip(path,path[1:]):painter.drawLine(a,b)
         for name, node in project.nodes.items():
             point = screen(points[name])
             painter.setPen(QPen(QColor(c["support"] if node.support == "inclined" or any(node.restraints) else c["member"]), 1.5))

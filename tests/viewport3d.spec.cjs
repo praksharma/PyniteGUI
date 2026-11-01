@@ -62,6 +62,15 @@ const server = http.createServer((request,response)=>{
     assert(driver.renderer&&driver.vendor&&driver.version.includes('WebGL'),'Missing observed WebGL driver information');
     assert.equal(driver.lost,false);
     assert(['Unmasked WebGL driver','Masked WebGL information'].includes(driver.source));
+    const springView=payload.qaJointSprings;
+    assert.equal(springView.jointSprings.length,3);
+    assert.equal(springView.members.length,0);
+    await page.evaluate(data=>{window.pyniteViewer.update(data);window.pyniteViewer.fit();},springView);
+    await page.waitForTimeout(100);
+    const springState=await page.evaluate(()=>window.pyniteViewer.state());
+    assert(springState.drawCalls>0,'Joint spring network failed to draw');
+    await page.screenshot({path:path.join(output,'joint-spring-network.png')});
+    await page.evaluate(data=>{window.pyniteViewer.update(data);window.pyniteViewer.fit();},payload);
     await require('./viewport3d_cache.cjs')(page,payload);
     await require('./viewport_focus.cjs')(page,payload,[payload.nodes[0].position],path.join(output,'focused-node.png'));
     for(const member of payload.qaStraight.members){

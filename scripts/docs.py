@@ -33,6 +33,7 @@ SECTION_PAGES = {
     "Topology and Model Checks": ("modeling/topology.md", "Topology and Model Checks"),
     "Member End Releases": ("modeling/releases.md", "Member End Releases"),
     "Autosave and Recovery": ("reference/recovery.md", "Autosave and Recovery"),
+    "Joint Springs": ("modeling/joint-springs.md", "Joint Springs"),
     "Supports and Springs": ("modeling/supports.md", "Supports and Springs"),
     "Moving Nodes": ("modeling/moving.md", "Moving Nodes"),
     "Point and Distributed Loads": ("analysis/loads.md", "Point, Angled and Distributed Loads"),

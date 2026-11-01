@@ -19,6 +19,7 @@ nav = [
     { "Workflows" = "modeling/index.md" }, { "Drawing and Selection" = "modeling/drawing.md" },
     { "Moving Nodes" = "modeling/moving.md" }, { "Model Tables" = "modeling/tables.md" },
     { "Materials and Sections" = "modeling/properties.md" }, { "Supports and Springs" = "modeling/supports.md" },
+    { "Joint Springs" = "modeling/joint-springs.md" },
     { "Member End Releases" = "modeling/releases.md" }, { "Axial-Only Trusses" = "modeling/trusses.md" },
     { "Topology and Model Checks" = "modeling/topology.md" }, { "Construction Connections" = "modeling/construction.md" },
     { "Transforms, Generators and Merging" = "modeling/tools.md" },

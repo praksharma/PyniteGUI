@@ -235,6 +235,7 @@ class Project:
     groups: dict = field(default_factory=dict)
     levels: dict = field(default_factory=dict)
     snap_levels: bool = False
+    joint_springs: dict = field(default_factory=dict,kw_only=True)
     iteration_limit: int = field(default=30, kw_only=True)
     load_steps: int = field(default=1, kw_only=True)
     member_tolerance: float = field(default=1e-9, kw_only=True)
@@ -416,7 +417,7 @@ class Project:
         del self.sections[name]
 
     def to_dict(self):
-        return {"version": 33, "units": "in-kip", **asdict(self)}
+        return {"version": 35, "units": "in-kip", **asdict(self)}
 
     @classmethod
     def from_dict(cls, data):
@@ -428,13 +429,14 @@ class Project:
         if "dimension" in data:
             raise ValueError("Unsupported project dimension.")
         version = data.get("version")
-        if type(version) is not int or version not in (*range(1, 16), 21, 23, 25, 27, 29, 31, 33) or data.get("units") != "in-kip":
+        if type(version) is not int or version not in (*range(1, 16), 21, 23, 25, 27, 29, 31, 33, 35) or data.get("units") != "in-kip":
             raise ValueError("Unsupported project version or units.")
         from .unilateral import check_schema, ITERATIVE_DEFAULTS
         check_schema(data, version, 31, ITERATIVE_DEFAULTS, "analysis settings")
         if version < 31 and data.get("analysis_method") == "iterative":
             raise ValueError("Iterative analysis requires planar version 31.")
         required = {"grid", "nodes", "members", "loads"}
+        if version>=35:required.add("joint_springs")
         required.update({"E", "nu", "rho"} if version == 1 else {"materials", "default_material"})
         required.update({"A", "Iy", "Iz", "J"} if version < 3 else {"sections", "default_section"})
         if version >= 5:
@@ -528,6 +530,8 @@ class Project:
         if data["version"] < 3:
             for member in result.members.values():
                 member.section = result.default_section
+        from .joint_springs import load_definitions
+        result.joint_springs=load_definitions(data,35)
         result.validate()
         return result
 
@@ -647,6 +651,8 @@ class Project:
             connections.add(connection)
         from .plasticity import validate_bindings
         validate_bindings(self)
+        from .joint_springs import validate as validate_joint_springs
+        validate_joint_springs(self)
         for name, load in self.loads.items():
             if (name != load.name or not identifier(name) or not identifier(load.target)
                     or load.target not in {*self.nodes, *self.members}):
@@ -683,7 +689,7 @@ class Project:
         for node in self.nodes.values():
             if math.isclose(node.x, x, rel_tol=0, abs_tol=1e-8) and math.isclose(node.y, y, rel_tol=0, abs_tol=1e-8):
                 return node.name
-        name = self.next_name("N", self.nodes)
+        name = self.next_name("N", set(self.nodes)|set(self.members)|set(self.joint_springs))
         self.nodes[name] = Node(name, x, y)
         return name
 
@@ -693,7 +699,7 @@ class Project:
         a, b = self.node_at(*start), self.node_at(*end)
         if any({m.start, m.end} == {a, b} for m in self.members.values()):
             raise ValueError("A member already connects these nodes.")
-        name = self.next_name("M", self.members)
+        name = self.next_name("M", set(self.nodes)|set(self.members)|set(self.joint_springs))
         self.members[name] = Member(name, a, b, self.default_material, self.default_section)
         return name
 
@@ -792,7 +798,7 @@ class Project:
         nodes.append(original.end)
         segments = []
         for index, (start, end) in enumerate(zip(nodes, nodes[1:])):
-            segment = name if index == 0 else self.next_name("M", self.members)
+            segment = name if index == 0 else self.next_name("M", set(self.nodes)|set(self.members)|set(self.joint_springs))
             self.members[segment] = replace(original, name=segment, start=start, end=end,
                                             release_start=original.release_start if index == 0 else False,
                                             release_end=original.release_end if index == len(nodes) - 2 else False,
@@ -881,6 +887,7 @@ class Project:
                 active.add(member.start)
             if not release_end:
                 active.add(member.end)
+        connected.update(n for spring in self.joint_springs.values() for n in (spring.start,spring.end))
         return {name for name in connected - active if not self.nodes[name].restraints[2] and not self.nodes[name].spring_rz}
 
     def analysis_release_issues(self):
@@ -912,6 +919,8 @@ class Project:
                     fraction = self.member_position(name, node.x, node.y)
                     if fraction is not None and 0 < fraction < 1:
                         issues.append(f"{node.name} lies inside {name}. Use Edit > Connect Intersections to make this connection explicit.")
+        for spring in self.joint_springs.values():
+            adjacency[spring.start].add(spring.end);adjacency[spring.end].add(spring.start)
         remaining = set(self.nodes)
         components = []
         while remaining:
@@ -929,6 +938,7 @@ class Project:
 
     def delete(self, kind, name):
         if kind == "nodes":
+            self.joint_springs={key:s for key,s in self.joint_springs.items() if name not in (s.start,s.end)}
             attached = [m.name for m in self.members.values() if name in (m.start, m.end)]
             for member in attached:
                 self.delete("members", member)

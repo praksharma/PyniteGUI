@@ -24,7 +24,7 @@ def spatial(project):
 
 
 def unique_name(project, prefix):
-    used = {key for collection in ("nodes", "members", "loads", "surfaces")
+    used = {key for collection in ("nodes", "members", "loads", "surfaces", "joint_springs")
             for key in getattr(project, collection, {})}
     return project.next_name(prefix, used)
 
@@ -154,7 +154,7 @@ def plan_transform(project, selections, operation, *, offset=(0., 0., 0.), origi
     members = [n for k, n in identities if k == "members"]
     nodes = list(dict.fromkeys([n for k, n in identities if k == "nodes"]+
                               [n for m in members for n in (project.members[m].start, project.members[m].end)]))
-    if copying and count*(len(nodes)+len(members)) > MAX_ADDITIONS:
+    if copying and count*(len(nodes)+len(members)+sum(s.start in nodes and s.end in nodes for s in project.joint_springs.values())) > MAX_ADDITIONS:
         raise ValueError(f"Use at most {MAX_ADDITIONS} candidate nodes and members per operation.")
     if not copying and getattr(project, "surfaces", {}):
         raise ValueError("Moving frame joints in a project with surfaces is not supported by this tool. Surface recipes and coupling need a separate coordinated edit.")
@@ -190,6 +190,11 @@ def plan_transform(project, selections, operation, *, offset=(0., 0., 0.), origi
             member_map[name] = new
             orient_member(project, candidate, name, new, matrix)
             selected.append(("members", new))
+        if copying:
+            for spring in project.joint_springs.values():
+                if spring.start in mapping and spring.end in mapping:
+                    new=unique_name(candidate,'S')
+                    candidate.joint_springs[new]=replace(spring,name=new,start=mapping[spring.start],end=mapping[spring.end])
         if copying and copy_loads:
             for load in project.loads.values():
                 target = member_map.get(load.target) if load.target in project.members else mapping.get(load.target)
@@ -207,9 +212,9 @@ def plan_transform(project, selections, operation, *, offset=(0., 0., 0.), origi
     attached = sum(name not in members and (m.start in nodes or m.end in nodes) for name, m in project.members.items()) if not copying else 0
     loads_added = len(candidate.loads)-len(project.loads)
     summary = (f"{operation.title()}: {count if copying else 0} additional copy/copies; {len(nodes)} source nodes, {len(members)} source members.\n"
-               f"{len(candidate.nodes)-len(project.nodes)} new nodes, {len(candidate.members)-len(project.members)} new members, {loads_added} copied loads.\n"
+               f"{len(candidate.nodes)-len(project.nodes)} new nodes, {len(candidate.members)-len(project.members)} new members, {len(candidate.joint_springs)-len(project.joint_springs)} new joint springs, {loads_added} copied loads.\n"
                f"Reused joints: {', '.join(sorted(reused)) or 'none'}. {attached} unselected incident members change with moved joints.\n"
-               "Global loads and support/spring axes stay global. Local load directions follow member axes; stations and end releases keep start/end meaning.\n"
+               "Global loads and ground-support spring axes stay global. Joint springs follow endpoints with unchanged k. Local loads follow member axes; stations and releases keep start/end meaning.\n"
                "3D section local y follows the transform; local z uses the right-hand rule. Self-weight follows added geometry. Groups/levels are not copied.")
     return GeometryPlan(candidate, list(dict.fromkeys(selected)), summary)
 
@@ -314,6 +319,11 @@ def plan_merge(project, target, source, tolerance, *, support_policy="reject", c
             member.start = target if member.start == source else member.start
             member.end = target if member.end == source else member.end
             affected.append(("members", name))
+    springs_changed = 0
+    for spring in candidate.joint_springs.values():
+        if source in (spring.start,spring.end):springs_changed += 1
+        if spring.start==source:spring.start=target
+        if spring.end==source:spring.end=target
     loads = []
     for load in candidate.loads.values():
         if load.target == source:
@@ -325,7 +335,7 @@ def plan_merge(project, target, source, tolerance, *, support_policy="reject", c
     check_candidate(project, candidate)
     return GeometryPlan(candidate, [("nodes", target), *affected],
                         f"Merge {source} into {target}; retain target coordinates.\n"
-                        f"Rewrite {len(affected)} member endpoints, {len(loads)} nodal loads and saved group references.\n"
+                        f"Rewrite {len(affected)} members, {springs_changed} joint springs, {len(loads)} nodal loads and saved group references.\n"
                         f"Support policy: {support_policy}. Both load sets remain separate and additive.\n"
                         "No members or loads are deleted. Global loads stay global; local loads follow changed member axes. Analyze again after Apply.")
 
@@ -343,4 +353,9 @@ def preview_geometry(original, plan):
         old = original.members.get(name)
         if old is None or points != [list(coordinates(original, n)) for n in (old.start, old.end)]:
             lines.append(points)
+    from .joint_springs import geometry
+    old_links = {row["name"]: row["points"] for row in geometry(original)}
+    for row in geometry(candidate):
+        if row["points"] != old_links.get(row["name"]):
+            lines.extend([[a, b] for a, b in zip(row["points"], row["points"][1:])])
     return {"nodes": nodes, "lines": lines}

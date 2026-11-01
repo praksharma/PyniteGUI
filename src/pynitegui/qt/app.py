@@ -413,6 +413,15 @@ class StructureView(QGraphicsView):
                     scene.addItem(symbol)
                     symbol.setPos(node.x, -node.y)
             self.label(name, (a.x + b.x) / 2, (a.y + b.y) / 2, offset=(4, 8))
+        from .joint_springs import payload as spring_payload
+        for spring in spring_payload(self.window):
+            from PySide6.QtGui import QPainterPath
+            points=spring['points'];path=QPainterPath(QPointF(points[0][0],-points[0][1]))
+            for point in points[1:]:path.lineTo(point[0],-point[1])
+            pen=QPen(QColor(c['support'] if spring['active'] else c['muted']),2);pen.setCosmetic(True)
+            if not spring['active']:pen.setStyle(Qt.PenStyle.DashLine)
+            item=scene.addPath(path,pen);item.setToolTip(spring['name']+' | Joint spring; edit in Tools > Joint Springs')
+            middle=points[len(points)//2];self.label(spring['name'],middle[0],middle[1],offset=(4,8))
         for name, node in project.nodes.items():
             if not self.window.entity_visible("nodes", name):
                 continue
@@ -745,6 +754,7 @@ class MainWindow(QMainWindow):
         tools_menu.addAction(self.action("Beam / Frame Generator...", lambda: open_geometry_tool(self, 1)))
         tools_menu.addAction(self.action("Surface Meshing (Experimental)...", lambda: self.show_mesh_workspace()))
         tools_menu.addAction(self.action("Rectangular Plate (Experimental)...", self.show_plate_workspace))
+        tools_menu.addAction(self.action("Joint Springs...",self.manage_joint_springs))
         tools_menu.addAction(self.action("Vibration Modes...", self.show_modal_workspace))
         tools_menu.addAction(self.action("Steel Pushover...", self.show_pushover_workspace))
         tools_menu.addAction(self.action("Automation Server...", self.show_automation_server))
@@ -1059,7 +1069,7 @@ class MainWindow(QMainWindow):
         self.analyze_action.setToolTip(f"Analyze (F5) | {METHODS[self.project.analysis_method]}; change in Edit > Analysis Method")
         spatial = getattr(self.project, "dimension", "2D") == "3D"
         self.surface_visibility_action.setEnabled(spatial)
-        self.convert_spatial_action.setEnabled(not spatial and bool(self.project.members))
+        self.convert_spatial_action.setEnabled(not spatial and bool(self.project.members or self.project.joint_springs))
         if spatial and self.spatial_view is None:
             from .spatial_view import SpatialView
             self.spatial_view = SpatialView(self)
@@ -1156,6 +1166,14 @@ class MainWindow(QMainWindow):
                 item.setData(0, Qt.ItemDataRole.UserRole, (kind, name))
                 if (kind, name) in selected:
                     item.setSelected(True)
+            parent.setExpanded(True)
+        if self.project.joint_springs:
+            from .joint_springs import BEHAVIORS
+            parent=QTreeWidgetItem(self.tree,[f'Joint springs ({len(self.project.joint_springs)})','Tools > Joint Springs'])
+            parent.setFlags(parent.flags() & ~Qt.ItemFlag.ItemIsSelectable)
+            for spring in self.project.joint_springs.values():
+                item=QTreeWidgetItem(parent,[spring.name,f'{spring.start} - {spring.end} | {units.to_display(spring.stiffness,"stiffness"):g} {units.stiffness} | {BEHAVIORS[spring.behavior]}'])
+                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsSelectable)
             parent.setExpanded(True)
         if self.project.self_weight_case is not None:
             generated = [load for load in self.project.self_weight_loads() if self.load_visible(load)]
@@ -1727,6 +1745,15 @@ class MainWindow(QMainWindow):
                 clear_inapplicable_movements(node)
             self.edit("Assign support", assign)
 
+    def manage_joint_springs(self):
+        if self.mcp_mode:return
+        from .joint_spring_editor import JointSpringsDialog
+        dialog=JointSpringsDialog(self,self.project)
+        if dialog.exec()==QDialog.DialogCode.Accepted:
+            from copy import deepcopy
+            self.edit('Edit joint springs',lambda p:setattr(p,'joint_springs',deepcopy(dialog.project.joint_springs)))
+        dialog.deleteLater()
+
     def manage_materials(self):
         from .materials import MaterialDialog
         MaterialDialog(self).exec()
@@ -1821,7 +1848,7 @@ class MainWindow(QMainWindow):
             self.load_project(SpatialProject(unit_system=self.project.unit_system))
 
     def convert_spatial_project(self):
-        if getattr(self.project, "dimension", "2D") != "2D" or not self.project.members:
+        if getattr(self.project, "dimension", "2D") != "2D" or not (self.project.members or self.project.joint_springs):
             return
         from .spatial_conversion import conversion_dialog, to_spatial
         dialog = conversion_dialog(self, self.project)

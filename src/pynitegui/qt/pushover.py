@@ -71,6 +71,7 @@ class PushoverSettings:
 
 
 def pushover_issue(project):
+    if project.joint_springs:return 'Joint springs are not yet validated for this modal/plastic workflow.'
     if getattr(project,'surfaces',{}):return 'Steel pushover is frame-only; nonlinear surfaces/slabs are not supported.'
     if has_unilateral(project):return 'Steel pushover currently requires bilateral members and ground springs.'
     if has_movements(project) or any(node.support=='inclined' for node in project.nodes.values()):

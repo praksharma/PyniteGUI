@@ -3,7 +3,7 @@
 This index describes GUI workflows in the current source checkout, not everything
 the PyNite engine can do. Use the [capability audit](project/roadmap.md#pynite-capability-coverage)
 for Done/Partial/Pending status, and the [version scope](reference/version-scope.md)
-when comparing with the published rc1 wheel.
+when comparing with the published RC4 wheel.
 
 ## Modeling
 
@@ -18,6 +18,7 @@ when comparing with the published rc1 wheel.
 | Perpendicular and midpoint construction connections | [Construction connections](modeling/construction.md) |
 | Per-member materials with optional independent frame/truss G, and sections, searchable libraries with dimensioned section sketches, defaults and provenance | [Assignments](modeling/properties.md), [materials](reference/materials.md), [sections](reference/sections.md) |
 | Free/pin/roller/fixed/custom supports, 2D/3D inclined rollers, imposed support motion and bilateral support springs | [2D supports](modeling/supports.md), [six-DOF spatial supports](modeling/3d.md) |
+| Massless bilateral/tension-only/compression-only axial links between existing joints, staged editing, spring-only networks, results/CSV/MCP | [Joint springs](modeling/joint-springs.md) |
 | Planar axial/shear/moment end releases | [Release editing](modeling/releases.md), [formulation and limits](reference/releases.md) |
 | Spatial local DX/DY/DZ/RX/RY/RZ end releases, recovered member-side motion and released 2D conversion | [3D editing and scope](modeling/3d.md), [release formulation](reference/releases.md) |
 | Bilateral axial-only trusses and mixed frame/truss models | [Trusses](modeling/trusses.md), [3D models](modeling/3d.md) |
@@ -36,7 +37,7 @@ when comparing with the published rc1 wheel.
 | Opt-in debounced live recalculation | [Live recalculation](analysis/live.md) |
 | Rigid-body/mechanism/stiffness checks and affected-node findings | [Diagnostics](analysis/stability.md), [topology](modeling/topology.md) |
 
-Reinforced-concrete plasticity and node-to-node spring elements remain pending. See the
+Reinforced-concrete plasticity remains pending. See the
 [audited roadmap](project/roadmap.md), not the upstream feature list alone.
 Development adds [inclined rollers](modeling/supports.md) for 2D/3D linear frames,
 trusses and supported releases, plus inclined supports in the existing frame
@@ -63,6 +64,11 @@ Frame [Vibration Modes](analysis/modal.md) provide explicit physical mass source
 frequencies/periods and normalized 2D/3D shapes in a separate native workspace, with
 CSV/PNG/SVG/JSON and revision-aware MCP jobs. Scope: unreleased bilateral frames;
 no surfaces, trusses, geometric preload, imposed motion or earthquake response.
+
+Development also adds [Steel Pushover](analysis/pushover.md): explicit steel
+I-section strengths, elastic preload, checked first-order capacity/end-yield
+histories and separate native/MCP exports. Combined P-Delta/plastic response and
+RC/surface plasticity remain outside this workflow.
 
 ## Results
 

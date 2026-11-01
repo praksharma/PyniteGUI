@@ -232,7 +232,7 @@ def definition_tables(project):
     from .reports import model_definition_tables
     from .model import Project
     from .unilateral import MEMBER_BEHAVIORS, spring_mode_text
-    metadata = Project(materials=project.materials, default_material=project.default_material, sections=project.sections,
+    metadata = Project(joint_springs=project.joint_springs,materials=project.materials, default_material=project.default_material, sections=project.sections,
                        default_section=project.default_section, unit_system=project.unit_system,
                        load_cases=project.load_cases, default_load_case=project.default_load_case, combinations=project.combinations)
     shared = model_definition_tables(metadata)
@@ -279,6 +279,6 @@ def definition_tables(project):
                        [[name, edge, ", ".join(dofs)] for name, edges in project.surface_supports.items() for edge, dofs in edges.items()]),
                       ("Surface Geometry and Material", ["Surface", "Property", "Value", "Units"], details)] if project.surfaces else []
     return [("Nodes and Supports (3D)", *nodes), ("Members and Assignments (3D)", *members), *shared[2:4],
-            *surface_tables,
+            *[row for row in shared if row[0]=="Joint Springs"], *surface_tables,
             ("Manual Loads (Unfactored)", headers, loads(project.loads.values())),
             ("Generated Self-Weight (Unfactored)", headers, loads(project.self_weight_loads())), shared[-1]]

@@ -4,9 +4,15 @@ METHODS = {"linear": "Linear elastic", "p_delta": "P-Delta elastic", "iterative"
 
 
 def analysis_method_issue(project):
+    if project.joint_springs:
+        if project.analysis_method=='p_delta' or getattr(project,'surfaces',{}):
+            return 'Joint springs currently require linear/iterative frame or truss models; P-Delta and surfaces are not validated.'
+        if getattr(project,'dimension','2D')=='3D':
+            from .spatial_releases import has_releases
+            if has_releases(project):return 'Joint springs with spatial frame end releases are not yet validated.'
     from .unilateral import has_unilateral
     if has_unilateral(project) and project.analysis_method != "iterative":
-        return "Unilateral members/support springs require Iterative elastic analysis. Linear and P-Delta do not silently treat them as bilateral."
+        return "Unilateral members/support springs/joint springs require Iterative elastic analysis. Linear and P-Delta do not silently treat them as bilateral."
     if project.analysis_method == "iterative":
         if getattr(project, "surfaces", {}):
             return "Iterative elastic is available for frame/truss models only; coupled surfaces are not validated for unilateral activation."
@@ -71,7 +77,7 @@ def settings_dialog(parent, project):
                        "Materials remain elastic. Frame-only models; no coupled slabs, trusses, released translations or spatial rotational releases. "
                        "Imposed rigid-support movements stay unchanged in every combination; each combination is solved independently. "
                        "Add intermediate joints to resolve member curvature and compare mesh refinement. "
-                       "Iterative elastic adds tension/compression-only axial bars and one-way global support springs, with activation and reactivation. "
+                       "Iterative elastic adds tension/compression-only axial bars and joint springs, plus one-way global support springs, with activation and reactivation. "
                        "Each full combination starts independently; support motions remain unchanged during load steps. "
                        "Switch tolerances define neutral contact, not artificial residual stiffness. Cycles, mechanisms and failed convergence reject results. "
                        "Steel plastic pushover and reinforced-concrete plasticity are separate capabilities and are not enabled here.")

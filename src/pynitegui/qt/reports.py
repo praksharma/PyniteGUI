@@ -80,7 +80,7 @@ class ReportOptionsDialog(QDialog):
         scroll.setWidget(content)
         layout.addWidget(scroll)
         self.sections = {}
-        for key, label in (("model", "Model definitions"), ("nodes", "Node results"), ("members", "Member results")):
+        for key, label in (("model", "Model definitions"), ("nodes", "Node results"), ("members", "Member and joint-spring results")):
             widget = QCheckBox(label)
             widget.setChecked(not envelope_only)
             self.sections[key] = widget
@@ -234,8 +234,10 @@ def model_definition_tables(project):
                     f"End ({units.intensity})", "End fraction", "Angle (deg)"]
     combos = (["Combination", "Case factors"],
               [[name, ", ".join(f"{case}: {factor:.6g}" for case, factor in factors.items())] for name, factors in project.combinations.items()])
+    from .joint_springs import definition_table
     return [("Nodes and Supports", *nodes), ("Members and Assignments", *members),
             ("Materials", *materials), ("Sections", *sections),
+            *([("Joint Springs",*definition_table(project))] if project.joint_springs else []),
             ("Manual Loads (Unfactored)", load_headers, load_rows(project.loads.values())),
             ("Generated Self-Weight (Unfactored)", load_headers, load_rows(project.self_weight_loads())),
             ("Load Combinations", *combos)]
@@ -281,6 +283,9 @@ def report_images(project, result, options):
 def result_table(project, result, kind):
     if result.model_signature != model_signature(project):
         raise ValueError("The project does not match this analysis snapshot. Analyze the current model or export from its retained diagram window.")
+    if kind == 'joint_springs':
+        from .joint_springs import result_table as joint_spring_results
+        return joint_spring_results(project,result)
     if kind == 'active_states':
         from .unilateral import active_state_table
         return active_state_table(project,result)
@@ -392,6 +397,9 @@ def report_html(project, result, source="Untitled", options=None, *, image_urls=
             if rows:
                 sections.append("<h3>Released Member-End Translations</h3><p>Member-side motions use rolled local axes. "
                                 "Released components can differ from the global joint displacements above.</p>"+html_table(headers, rows))
+    if options.members and project.joint_springs:
+        headers,rows=result_table(project,result,'joint_springs')
+        sections.append('<h2>Joint Spring Results</h2><p>Small-displacement axial extension and force are tension-positive, independently of endpoint order. Inactive links carry zero force. k is an entered force/length stiffness; links have no mass or self-weight.</p>'+html_table(headers,rows))
     if options.envelope_combinations:
         from .envelopes import HEADERS, display_rows, envelope_rows
         rows = list(display_rows(project, envelope_rows(project, result, options.envelope_combinations)))
@@ -479,7 +487,7 @@ class ResultExportMenu(QMenu):
     def __init__(self, parent, current):
         super().__init__("Export Results", parent)
         self.current = current
-        for label, kind in (("Node Results (CSV)...", "nodes"), ("Member Results (CSV)...", "members"), ('Unilateral Active State (CSV)...','active_states'), ('Iteration History (CSV)...','iterations')):
+        for label, kind in (("Node Results (CSV)...", "nodes"), ("Member Results (CSV)...", "members"), ("Joint Spring Results (CSV)...", "joint_springs"), ('Unilateral Active State (CSV)...','active_states'), ('Iteration History (CSV)...','iterations')):
             self.addAction(label, lambda checked=False, kind=kind: self.save_csv(kind))
         self.addSeparator()
         self.addAction("Print Results...", self.print_report)

@@ -439,6 +439,52 @@ def capture_wall(output):
         window.pending=False;window.saved=window.definition.to_dict();window.reject();window.deleteLater();app.processEvents()
 
 
+def capture_joint_springs(output):
+    from pynitegui.qt.joint_spring_editor import JointSpringsDialog
+    output.mkdir(parents=True, exist_ok=True)
+    app = QApplication.instance() or QApplication([])
+    configure_theme(app, "light")
+    with tempfile.TemporaryDirectory(prefix="brecon-joint-spring-docs-") as directory:
+        root = Path(directory)
+        window = MainWindow(root / "recovery", QSettings(str(root / "settings.ini"), QSettings.Format.IniFormat))
+        editor = None
+        try:
+            window.resize(1360, 850)
+            window.load_project(example_project("joint_spring_one_way"))
+            window.show()
+            with redirect_stdout(StringIO()):
+                result = analyze(window.project)
+            window.analysis_revision = window.revision
+            window.analysis_finished(result, "")
+            window.results_dock.show()
+            window.results_panel.tabs.setCurrentIndex(window.results_panel.joint_tab)
+            window.resizeDocks([window.results_dock], [300], Qt.Orientation.Vertical)
+            app.processEvents()
+            window.view.fit()
+            window.view.scale(3, 3)
+            window.view.redraw()
+            window.results_panel.joint_table.resizeColumnsToContents()
+            app.processEvents()
+            if not window.grab().save(str(output / "joint-springs-results.png")):
+                raise RuntimeError("Could not capture joint spring results")
+            print("Captured joint-springs-results.png")
+            editor = JointSpringsDialog(window, window.project)
+            editor.resize(1000, 430)
+            editor.show()
+            app.processEvents()
+            if not editor.grab().save(str(output / "joint-springs-editor.png")):
+                raise RuntimeError("Could not capture joint spring definitions")
+            print("Captured joint-springs-editor.png")
+        finally:
+            if editor is not None:
+                editor.reject()
+                editor.deleteLater()
+            window.saved = window.project.to_dict()
+            window.close()
+            window.deleteLater()
+            app.processEvents()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path,
@@ -451,8 +497,11 @@ if __name__ == "__main__":
     parser.add_argument("--modal-only", action="store_true", help="Capture the native modal workspace with the official column.")
     parser.add_argument("--pushover-only", action="store_true", help="Capture the checked steel capacity workspace.")
     parser.add_argument("--wall-only", action="store_true", help="Capture the official hydrostatic wall and pressure profile editor.")
+    parser.add_argument("--joint-springs-only", action="store_true", help="Capture joint spring definitions and one-way results.")
     options = parser.parse_args()
-    if options.wall_only:
+    if options.joint_springs_only:
+        capture_joint_springs(options.output)
+    elif options.wall_only:
         capture_wall(options.output)
     elif options.pushover_only:
         capture_pushover(options.output)
