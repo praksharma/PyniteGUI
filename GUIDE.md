@@ -732,7 +732,7 @@ fields and explicit missing-stencil behaviour. The numerical report contains
 | Material/thickness interface cantilevers | Same-region stencils reproduce `Q=q(L−coordinate)` within 1e-6 relative L2. A coarse two-column material region has no usable stencil. |
 | Opening area means | Integrate the piecewise-constant recovered cell values over exact clipped material patches. The outer corner patch differs by less than 1% from the 13-term Ritz reference on the two finer meshes. |
 
-**Opening shear remains unresolved.** Analytic area means of the independent
+**Historical sine-reference limit (boundary study):** analytic area means of the independent
 Ritz third derivatives change by **0.10%** at the corner, **0.91%** on an outer
 strip and about **490%** near the free rim when the basis grows from 11 to 13
 terms. The latter two fail the study's 0.5% reference-stability gate. A 17-term
@@ -753,9 +753,81 @@ uv run --locked python -B scripts/benchmark_quad_shear_boundaries.py --output /t
 uv run --locked python -B scripts/test.py test_quad_shear_boundaries
 ```
 
-Both recovery studies remain outside application imports. Quad shear stays
-unavailable in production plots, snapshots, probes, CSV and MCP while these
-opening and general-interface gates remain open.
+These recovery studies remain outside application imports. The following
+independent energy reference resolves selected opening-reference observables;
+production recovery and general-interface validation remain open.
+
+**Independent opening-energy reference (development):** minimize the Kirchhoff
+bending energy directly on a boundary-fitted rectangular grid, with the opening
+removed. This separate test implementation imports neither Brecon nor PyNite.
+It assembles conforming tensor-Hermite spaces of two orders: bicubic C1 with
+16 local DOFs, and biquintic C2 with 36. Gaussian quadrature integrates the
+polynomial energy, consistent pressure and clipped-patch shear means exactly.
+The physical energy is
+`D/2 integral(w,xx² + w,yy² + 2nu*w,xx*w,yy + 2(1−nu)*w,xy²) − integral(q*w)`.
+
+The outer displacement trace is zero, including its tangential Hermite data;
+normal slopes remain free, so the support is simply supported. Opening edges
+have no imposed constraints. Shared value/slope data enforce conformity, with
+curvature continuity additionally used by the quintic family. See
+[Burman, Larson and Hansbo](https://arxiv.org/abs/1911.00239) for tensor-Hermite
+plate-space background; this reference uses a boundary-fitted grid and does not
+implement their cut-cell stabilization or boundary-enforcement scheme.
+
+Width normalization and Jacobi scaling control the algebra. The **1e8 condition
+limit remains unchanged**, with extremal eigen residuals included in its check.
+Free-coordinate backward error, energy/work equality and global rigid-force/
+moment balance are checked before retaining a solution. No sparse factors or
+global stiffness matrices are retained with the compact reference fields.
+Independent polynomial energy/interpolation tests, the intact Navier limit,
+unit scaling, free-opening support checks and an actual ill-conditioned grid
+rejection cover the formulation.
+
+The same 120 × 120 in plate, nu=0.2 and 40 × 40 in free opening is solved on
+48/72/96 grids. Two independently refined polynomial families agree on the
+three selected area means within the 0.5% reference-stability gate. For the
+finest quintic reference under q=−1e−7 kip/in²:
+
+| Material patch (in) | Mean Qx (kip/in) |
+| --- | --- |
+| Corner: x=0–20, y=0–20 | −1.0002054e−6 |
+| Outer strip: x=0–20, y=40–80 | −2.4294629e−6 |
+| Near rim: x=20–40, y=48–72 | −9.4180327e−8 |
+
+The largest finest scaled condition is about 5.55e7. The cubic/quintic near-rim
+mean differs by about 0.066%; each family's 72→96 change is below 0.1%.
+These are **bounded reference-stability checks**, not a corner-peak certificate.
+The older sine-reference condition guard and its diagnostic report are preserved.
+
+This resolves the reference ambiguity for those observables, but exposes a
+**recovery error**. At actual Quad element centres at least 10 in from every
+re-entrant corner, the 72/96 quintic reference difference stays below 0.5%.
+The current neighbouring-moment fit gives:
+
+| Quad mesh / elements | Vector L2 error away from corners | Vector L2 error near the free rim |
+| --- | --- | --- |
+| 10 in / 128 | 11.60% | 59.53% |
+| 5 in / 512 | 4.65% | 12.27% |
+| 4 in / 800 | 2.85% | 11.57% |
+
+The near-rim comparison additionally restricts centres to x=20–40, y=48–72 in;
+L2 norms use the actual cell areas. Its finest reference-mesh difference is
+about 0.17%, while recovery still fails the 5% rim gate. Selected mean and
+sampled-field convergence do not validate pointwise re-entrant-corner shear,
+arbitrary holes, thick/curved meshes or frame–shell interfaces. **Quad shear
+remains unavailable in production plots, snapshots, probes, CSV and MCP.**
+
+![Independent opening-energy reference converges while the current moment fit fails free-rim recovery](docs/assets/screenshots/opening-shear-reference.png)
+
+[Download the independent opening-reference report](docs/assets/opening-shear-reference.json).
+It distinguishes `bounded_reference_observables_ready` from
+**`production_ready: false`**, records source hashes, and preserves the failed
+recovery gate. Reproduce it with:
+
+```sh
+uv run --locked python -B scripts/benchmark_opening_shear.py --output /tmp/opening-shear.json --figure /tmp/opening-shear.png
+uv run --locked python -B scripts/test.py test_plate_energy_reference
+```
 
 **Opening benchmark:** a 120 × 120 in plate, thickness 0.6 in, E=3600 ksi,
 nu=0.2, simply supported outer edges and a centred 40 × 40 in free opening,

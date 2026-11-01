@@ -140,5 +140,7 @@ refinement checks. See [Plate loading](surfaces/plates.md). Quad shear stays dis
 
 The [Quad-shear validation study](surfaces/plates.md) now covers outer boundaries,
 graded meshes and material/thickness interfaces with explicit missing stencils.
-Opening shear references still fail their convergence gate; recovered Quad shear
-remains research data and is unavailable in production results.
+Independent Kirchhoff energy references now resolve selected opening-area means
+and sampled fields away from corners. The current fit still fails free-rim
+recovery accuracy; Quad shear remains research data and is unavailable in
+production results.

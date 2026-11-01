@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Add an independent boundary-fitted Kirchhoff energy reference for the plate
+  opening: bicubic C1/biquintic C2 Hermite spaces, exact quadrature, natural free
+  hole and simply supported outer traces. Verify polynomial/energy identities,
+  intact Navier fields, unit scaling, conditioning, balance and two-family mesh
+  convergence. Resolve selected opening-shear reference observables without
+  relaxing the original condition limit. Publish the reproducible report and
+  figure; retain production rejection after measuring about 12% free-rim
+  recovery error against the converged reference. Corner peaks remain unverified.
+
 - Extend test-only Quad-shear recovery research to one-sided boundary patches,
   conforming graded grids, openings and material/thickness interfaces. Reject
   mixed/incomplete/ill-conditioned stencils with explicit missing values; retain

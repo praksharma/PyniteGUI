@@ -1,0 +1,406 @@
+{
+  "bounded_checks_passed": true,
+  "bounded_reference_observables_ready": true,
+  "production_ready": false,
+  "python": "3.12.13",
+  "numpy": "2.5.3",
+  "scipy": "1.18.1",
+  "pynite": "3.0.0",
+  "brecon": "1.0.0rc5.dev0",
+  "source_sha256": {
+    "tests/plate_energy_reference.py": "d4a447db07e111d0705bda086555dd89d2987882b758990aec63a5b7718bb9f0",
+    "tests/plate_reference.py": "629e796ff7b762cfaec15f37ee184e689fb51e73a42f48709107c5e158a3b062",
+    "tests/quad_shear_boundaries.py": "bf89f7c78cb0713c6acc4a4c1fe2b6d5dc173323768d0a8f88415be0b2d7d483",
+    "scripts/benchmark_opening_shear.py": "76639c78dd91997bf5884dfb072f40861ee309fa485f30db850cb031fa2aa2aa"
+  },
+  "units": {
+    "length": "in",
+    "pressure": "kip/in2",
+    "shear": "kip/in",
+    "compliance": "in6 (D * integral(w dA) / q)"
+  },
+  "definition": "120x120 in isotropic Kirchhoff plate, nu=0.2, D=1, centred 40x40 in free opening, simply supported outer traces; q=-1e-7 kip/in2 for shear comparisons. No hole-edge restraints. Scale w by q/D, M and Q by q.",
+  "method": "Independently assembled continuum curvature energy with conforming tensor-Hermite polynomials: 16-DOF bicubic C1 and 36-DOF biquintic C2 rectangles. Exact-degree Gaussian integration, width normalization, sparse solves, eigen-residual-aware condition estimate <=1e8, free residual, energy/work and global rigid force/moment checks. Reference imports neither application nor PyNite.",
+  "source_background": "https://arxiv.org/abs/1911.00239 (tensor-Hermite plate space background only; our boundary-fitted grid uses neither cut stabilization nor Nitsche terms)",
+  "scope": "Reference area means on three fixed material patches, two polynomial families, 48/72/96 grids. Pointwise reference/recovery comparisons use fixed FE cell centres at least 10 in from every reentrant corner; near-rim centres additionally lie in x=20..40,y=48..72 in. Relative L2 uses exact cell areas. This does not certify corner peaks or an entire arbitrary opening.",
+  "reference_gate": 0.005,
+  "production_recovery_rim_gate": 0.05,
+  "reference_mesh_gaps": {
+    "1": {
+      "corner": 0.00010743908133486155,
+      "outer_strip": 1.748174675959571e-05,
+      "near_rim": 0.0008974553624882868
+    },
+    "2": {
+      "corner": 1.5491738114632608e-05,
+      "outer_strip": 1.9120716482746108e-05,
+      "near_rim": 0.0009807139341971077
+    }
+  },
+  "cross_family_gaps": {
+    "corner": 0.00011933344763429735,
+    "outer_strip": 2.796495349230583e-06,
+    "near_rim": 0.0006576499162451529
+  },
+  "legacy_sine_means_kip_per_in": {
+    "corner": [
+      -9.992120399337745e-07,
+      -9.99212039933775e-07
+    ],
+    "outer_strip": [
+      -2.4229437763540052e-06,
+      -2.439758772165855e-23
+    ],
+    "near_rim": [
+      -6.160308393668951e-09,
+      3.064546941423968e-22
+    ]
+  },
+  "legacy_17_term_rejection": "Ritz truncation is too ill-conditioned for this reference.",
+  "references": [
+    {
+      "family": "bicubic_C1",
+      "grid_n": 48,
+      "order": 1,
+      "dofs": 8704,
+      "free_dofs": 8316,
+      "elements": 2048,
+      "condition": 1356424.268098507,
+      "eigen_residuals": [
+        3.790282172435536e-16,
+        1.1167799566933556e-08
+      ],
+      "backward_error": 1.2153438888988603e-15,
+      "energy_relative_error": 2.44237750109942e-11,
+      "force_moment_relative_error": 1.82821258132293e-11,
+      "compliance": 4111405850.5995355,
+      "area": 12800.0,
+      "means_kip_per_in": {
+        "corner": [
+          -9.99681797685358e-07,
+          -9.99681797685252e-07
+        ],
+        "outer_strip": [
+          -2.429594195099599e-06,
+          1.0759403012094147e-18
+        ],
+        "near_rim": [
+          -9.480702096176666e-08,
+          5.391780771857308e-19
+        ]
+      }
+    },
+    {
+      "family": "bicubic_C1",
+      "grid_n": 72,
+      "order": 1,
+      "dofs": 19200,
+      "free_dofs": 18620,
+      "elements": 4608,
+      "condition": 6857211.595958874,
+      "eigen_residuals": [
+        4.2707445145704206e-16,
+        5.245165281808254e-09
+      ],
+      "backward_error": 1.3509031245429034e-15,
+      "energy_relative_error": 5.984148246297155e-11,
+      "force_moment_relative_error": 1.2404864635495727e-10,
+      "compliance": 4111712235.1103945,
+      "area": 12800.0,
+      "means_kip_per_in": {
+        "corner": [
+          -9.99978579001646e-07,
+          -9.999785790003586e-07
+        ],
+        "outer_strip": [
+          -2.429498575228805e-06,
+          2.3176399703203792e-17
+        ],
+        "near_rim": [
+          -9.432684273251674e-08,
+          -2.082593497068795e-17
+        ]
+      }
+    },
+    {
+      "family": "bicubic_C1",
+      "grid_n": 96,
+      "order": 1,
+      "dofs": 33792,
+      "free_dofs": 33020,
+      "elements": 8192,
+      "condition": 21661729.971141987,
+      "eigen_residuals": [
+        4.547623821640996e-16,
+        1.968793955488518e-08
+      ],
+      "backward_error": 3.7166140798457204e-15,
+      "energy_relative_error": 3.361159370443673e-10,
+      "force_moment_relative_error": 2.2145697775588502e-10,
+      "compliance": 4111844007.0271645,
+      "area": 12800.0,
+      "means_kip_per_in": {
+        "corner": [
+          -1.0000860273224235e-06,
+          -1.0000860273276444e-06
+        ],
+        "outer_strip": [
+          -2.4294561040924297e-06,
+          -1.7587254056049254e-17
+        ],
+        "near_rim": [
+          -9.424226450686202e-08,
+          -4.089193979766155e-17
+        ]
+      }
+    },
+    {
+      "family": "biquintic_C2",
+      "grid_n": 48,
+      "order": 2,
+      "dofs": 19584,
+      "free_dofs": 19000,
+      "elements": 2048,
+      "condition": 3470033.8028186024,
+      "eigen_residuals": [
+        6.598893291371566e-16,
+        3.1005543821034348e-09
+      ],
+      "backward_error": 2.294302073522065e-15,
+      "energy_relative_error": 8.920040503745983e-12,
+      "force_moment_relative_error": 7.387715439399756e-11,
+      "compliance": 4111347287.485092,
+      "area": 12800.0,
+      "means_kip_per_in": {
+        "corner": [
+          -1.000152540353558e-06,
+          -1.0001525403565024e-06
+        ],
+        "outer_strip": [
+          -2.4296158587363458e-06,
+          -1.3955521308874091e-18
+        ],
+        "near_rim": [
+          -9.460890805481027e-08,
+          -2.0673472699364572e-17
+        ]
+      }
+    },
+    {
+      "family": "biquintic_C2",
+      "grid_n": 72,
+      "order": 2,
+      "dofs": 43200,
+      "free_dofs": 42328,
+      "elements": 4608,
+      "condition": 17558823.009210363,
+      "eigen_residuals": [
+        6.537845977804558e-16,
+        4.1872125350298785e-09
+      ],
+      "backward_error": 6.0521143836590544e-15,
+      "energy_relative_error": 8.155222860589296e-11,
+      "force_moment_relative_error": 7.693008730047524e-11,
+      "compliance": 4111680626.3155813,
+      "area": 12800.0,
+      "means_kip_per_in": {
+        "corner": [
+          -1.0001898903666792e-06,
+          -1.0001898903575457e-06
+        ],
+        "outer_strip": [
+          -2.4295093511454046e-06,
+          1.7589191547354228e-17
+        ],
+        "near_rim": [
+          -9.427269078165725e-08,
+          7.278233649310909e-17
+        ]
+      }
+    },
+    {
+      "family": "biquintic_C2",
+      "grid_n": 96,
+      "order": 2,
+      "dofs": 76032,
+      "free_dofs": 74872,
+      "elements": 8192,
+      "condition": 55486689.30607354,
+      "eigen_residuals": [
+        7.88733901583382e-16,
+        9.116386180116832e-09
+      ],
+      "backward_error": 3.48397559704097e-15,
+      "energy_relative_error": 1.7579136533969062e-11,
+      "force_moment_relative_error": 1.280876654741192e-09,
+      "compliance": 4111823581.2813153,
+      "area": 12800.0,
+      "means_kip_per_in": {
+        "corner": [
+          -1.0002053852671022e-06,
+          -1.000205385296902e-06
+        ],
+        "outer_strip": [
+          -2.429462898074125e-06,
+          -6.127361827457474e-17
+        ],
+        "near_rim": [
+          -9.418032682281517e-08,
+          -1.5880550414721e-16
+        ]
+      }
+    }
+  ],
+  "candidates": [
+    {
+      "mesh_size_in": 10.0,
+      "elements": 128,
+      "regions": {
+        "away_from_corners": {
+          "compared_cells": 116,
+          "reference_relative_l2": 7.019786375643281e-05,
+          "recovery_relative_l2": 0.11598373549004128
+        },
+        "near_rim": {
+          "compared_cells": 4,
+          "reference_relative_l2": 0.00024626806570503414,
+          "recovery_relative_l2": 0.595314018026615
+        }
+      },
+      "means": {
+        "corner": {
+          "recovered_kip_per_in": [
+            -1.0284129872869504e-06,
+            -1.0284129872869408e-06
+          ],
+          "reference_kip_per_in": [
+            -1.0002053852671022e-06,
+            -1.000205385296902e-06
+          ]
+        },
+        "outer_strip": {
+          "recovered_kip_per_in": [
+            -2.440041594020134e-06,
+            4.745925603465845e-20
+          ],
+          "reference_kip_per_in": [
+            -2.429462898074125e-06,
+            -6.127361827457474e-17
+          ]
+        },
+        "near_rim": {
+          "recovered_kip_per_in": [
+            -5.251249900608121e-07,
+            2.1676367213625598e-19
+          ],
+          "reference_kip_per_in": [
+            -9.418032682281517e-08,
+            -1.5880550414721e-16
+          ]
+        }
+      }
+    },
+    {
+      "mesh_size_in": 5.0,
+      "elements": 512,
+      "regions": {
+        "away_from_corners": {
+          "compared_cells": 476,
+          "reference_relative_l2": 0.00011431060537968244,
+          "recovery_relative_l2": 0.046544930832363315
+        },
+        "near_rim": {
+          "compared_cells": 16,
+          "reference_relative_l2": 0.0003186305055170631,
+          "recovery_relative_l2": 0.12268914434799304
+        }
+      },
+      "means": {
+        "corner": {
+          "recovered_kip_per_in": [
+            -9.957662955563769e-07,
+            -9.957662955563123e-07
+          ],
+          "reference_kip_per_in": [
+            -1.0002053852671022e-06,
+            -1.000205385296902e-06
+          ]
+        },
+        "outer_strip": {
+          "recovered_kip_per_in": [
+            -2.4334331205876093e-06,
+            -1.5254533984457915e-19
+          ],
+          "reference_kip_per_in": [
+            -2.429462898074125e-06,
+            -6.127361827457474e-17
+          ]
+        },
+        "near_rim": {
+          "recovered_kip_per_in": [
+            -1.6502656679798688e-07,
+            3.626924494063976e-19
+          ],
+          "reference_kip_per_in": [
+            -9.418032682281517e-08,
+            -1.5880550414721e-16
+          ]
+        }
+      }
+    },
+    {
+      "mesh_size_in": 4.0,
+      "elements": 800,
+      "regions": {
+        "away_from_corners": {
+          "compared_cells": 752,
+          "reference_relative_l2": 0.0003786318426047335,
+          "recovery_relative_l2": 0.028457257823996888
+        },
+        "near_rim": {
+          "compared_cells": 30,
+          "reference_relative_l2": 0.0016833248486882726,
+          "recovery_relative_l2": 0.11567066108087481
+        }
+      },
+      "means": {
+        "corner": {
+          "recovered_kip_per_in": [
+            -9.941039969631678e-07,
+            -9.94103996963266e-07
+          ],
+          "reference_kip_per_in": [
+            -1.0002053852671022e-06,
+            -1.000205385296902e-06
+          ]
+        },
+        "outer_strip": {
+          "recovered_kip_per_in": [
+            -2.432074775720864e-06,
+            6.721905238644358e-19
+          ],
+          "reference_kip_per_in": [
+            -2.429462898074125e-06,
+            -6.127361827457474e-17
+          ]
+        },
+        "near_rim": {
+          "recovered_kip_per_in": [
+            -7.39510297108199e-08,
+            7.36530440677083e-19
+          ],
+          "reference_kip_per_in": [
+            -9.418032682281517e-08,
+            -1.5880550414721e-16
+          ]
+        }
+      }
+    }
+  ],
+  "interpretation": "bounded_checks_passed preserves both converged reference evidence and an explicit failed recovery gate. Bounded reference observables are now ready; recovered Quad shear is not production ready. Original sine reference/reports stay unchanged.",
+  "unresolved": [
+    "About 12% shear-vector L2 error remains in the finest tested free-rim region.",
+    "Pointwise reentrant-corner shear does not have a converged reference in this study.",
+    "General opening geometry, irregular/thick/curved shells and frame-shell interfaces remain unvalidated."
+  ]
+}

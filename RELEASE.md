@@ -199,6 +199,47 @@ Do not move existing release tags or replace reviewed release assets to retry.
 References: [uv tools](https://docs.astral.sh/uv/guides/tools/) and
 [building and publishing](https://docs.astral.sh/uv/guides/package/).
 
+## Post-RC4 Independent Opening-Energy Reference Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-01. Test/reference and documentation
+work only; application recovery, file formats and public RC4 artifacts are
+unchanged. Selected opening-shear reference observables are now resolved, while
+production Quad shear remains disabled after a confirmed free-rim recovery error.
+
+- Add an independent Kirchhoff energy reference with no application/PyNite
+  imports. Construct conforming bicubic C1 / biquintic C2 tensor-Hermite fields,
+  exact-degree Gaussian energy/load/resultant quadrature, a boundary-fitted
+  40×40 in free opening in a 120×120 in plate, and correct simply supported outer
+  traces. Retain free normal slopes and impose no hole-edge restraints.
+- Normalize width, scale the free stiffness and enforce the original 1e8
+  condition limit with extremal eigen residuals. Check backward error, energy/work
+  equality and constrained-reaction rigid-force/moment balance. Maximum condition
+  across the reference records is **5.55e7**, backward error **6.06e−15**, energy
+  error **3.37e−10**, and force/moment error **1.29e−9**. Retain compact solved
+  fields, not sparse factors or global stiffness matrices.
+- Verify exact tensor-polynomial derivatives/energy, rigid modes, consistent
+  loading, intact non-square Navier fields, unit/compliance scaling, natural free
+  opening and actual high-condition rejection. Compare 48/72/96 grids in both
+  polynomial families. Three selected area means pass the 0.5% stability gate;
+  finest cubic/quintic near-rim means differ **0.066%** and each family's 72→96
+  change is below **0.1%**. Preserve the rejected older sine-reference truncation.
+- Compare the existing moment fit at actual FE cell centres at least 10 in from
+  every reentrant corner. Near-rim vector L2 errors are **59.53%, 12.27%, 11.57%**
+  on the 10/5/4 in meshes; the finest reference-mesh difference is **0.17%**.
+  Recovery still fails the 5% rim gate. Pointwise reentrant-corner shear, arbitrary
+  opening geometry/meshes, thick/curved shells and frame-shell interfaces remain
+  unvalidated. No finite or converged mean is presented as a peak certificate.
+- Publish six reference records, three recovery meshes, source hashes and an
+  inspected figure. Distinguish `bounded_reference_observables_ready` from
+  **`production_ready: false`**; tick the bounded-reference TODO and retain the
+  newly quantified recovery task. Preserve the original reports and guard.
+- Validation: **155 surface tests**, no skips, **204.531 s**. All **8 new focused
+  tests** pass on installed pinned PyNite **3.0.0** / Qt **6.11.2** (**44.581 s**)
+  and newer PyNite **3.2.1** / Qt **6.12.0** (**44.422 s**). Ownership covers
+  **176 classes** across nine primary groups. Strict documentation/link checks
+  cover **58 HTML pages**; browser QA covers the figure and explicit reference/
+  production distinction.
+
 ## Post-RC4 Quad-Shear Boundary Validation Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-01. This is a test/reference and

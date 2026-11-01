@@ -293,10 +293,18 @@ Remaining six scripts are unchecked:
   regions. Publish 63 numerical records and a comparison figure. Outer-boundary
   errors refine below 3%; narrow regions remain unavailable. Preserve the
   negative opening-reference evidence and the original conditioning limit.
-- [ ] Complete independent opening/rim shear references before integrating the
-  neighbouring-moment fit. At 11→13 Ritz terms, an outer-strip mean changes 0.91%
-  and a near-rim mean about 490%, above the 0.5% reference gate; 17 terms breaches
-  the existing 1e8 condition limit. Boundary/opening peaks, arbitrary meshes and
+- [x] Resolve bounded opening/rim reference observables using an independently
+  assembled Kirchhoff energy method: conforming bicubic C1 and biquintic C2,
+  exact quadrature, natural free hole, proper simply supported traces, unit
+  scaling and residual/energy/global-balance checks. Compare 48/72/96 grids and
+  polynomial families under the unchanged 1e8 condition guard. Selected area
+  means and sampled fields away from reentrant corners pass 0.5% reference
+  stability. Preserve the old sine-reference rejection and publish the new
+  reproducible report/figure with explicit reference-versus-recovery status.
+- [ ] Fix and validate free-rim recovery before integrating the neighbouring-
+  moment fit. The independent reference exposes about 11.57% finest-mesh vector
+  L2 error near the free rim versus a 0.17% reference-mesh difference; this fails
+  the 5% recovery gate. Pointwise corner peaks, arbitrary openings/meshes and
   general interfaces remain unvalidated. Keep smoothed recovery distinct from
   unsmoothed probes, missing patches explicit and production Quad shear disabled.
 - [x] Add solved traction-based affine membrane checks in every plane, signed/zero
