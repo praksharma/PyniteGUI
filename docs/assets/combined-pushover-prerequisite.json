@@ -1,0 +1,3355 @@
+{
+  "diagnostic_checks_passed": true,
+  "engine_supports_combined": true,
+  "elastic_prerequisite_passed": false,
+  "combined_plastic_validated": false,
+  "production_ready": false,
+  "python": "3.12.13",
+  "pynite": "3.2.1",
+  "brecon": "1.0.0rc5.dev0",
+  "source_sha256": {
+    "tests/combined_pushover_reference.py": "92eff521766c4865a4eb9fe3b98d483cada86b917feb6b3c3fe9b9ae4330d1d1",
+    "tests/combined_pushover_probe.py": "856c30b4773ade6d49bd9ff724ffad90d230132038af0d268e9fdbd172635d34",
+    "tests/test_combined_pushover.py": "a0a43ef5dd8e739f6f560353035b1d9eddbeed7c7c851289ad1c166ec26ec1fa",
+    "scripts/benchmark_combined_pushover.py": "2df03a20b145f5f19d0acbdbdbd50ec8a377e30ea7b614bfd6d8b477c0d893dc"
+  },
+  "engine_source_sha256": {
+    "FEModel3D": "9d85cc1b7a8472437db4d3de2a22707924891372b1958033e47428839495a63c",
+    "Member3D": "7f0a4c0a43ef14a2a657ac798ccf5c14a445b06ae213e195f110849fe6b33027"
+  },
+  "scope": {
+    "length_in": 120.0,
+    "rigidity_kip_in2": 2900000.0,
+    "area_in2": 1000.0,
+    "critical_compression_kip": 496.90716602706834,
+    "yield_stress_ksi": 1000000000.0,
+    "load": "Global lateral tip force 1 kip; prescribed compressive force ratio times the elastic critical load. Artificially high strength keeps every probe elastic. Large axial area makes shortening negligible for the bending reference.",
+    "paths": "Constant compression preload then lateral push; simultaneous axial/lateral ramp. 2/4/8 explicit members; 20/100/400 steps. Signed/zero lateral, XY/YZ and translated-origin controls.",
+    "references": "Independent closed-form cantilever solution of EI*w(4) + N*w(2) = 0, cross-checked against a state-transfer solution; independent Gauss-integrated Hermite bending/geometric energy.",
+    "gates": "Elastic relative displacement-field error <0.1%; deformed-lever-arm moment residual <0.012 kip-in for the 1 kip, 120 in reference. Controls and reference backward errors are separate checks. No tolerance is relaxed for a candidate.",
+    "diagnostic": "The half-axial ramp approaches an incomplete compliance integral rather than the static equilibrium field. Isolated half-axial patch only while the raw engine is in Pushover mode, restoring Member3D.kg on every exit. It is not used by Brecon and is not a complete solver correction.",
+    "meaning": "diagnostic_checks_passed means reference/control checks succeeded, not that the raw candidate qualified. Even an elastic pass would still need yielding, unloading, interaction, stability and accepted-step validation before production."
+  },
+  "records": [
+    {
+      "segments": 2,
+      "ratio": 0.0,
+      "steps": 1,
+      "path": "preload",
+      "variant": "elastic_p_delta",
+      "group": "ordinary_elastic_control",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.198620689655172,
+        "reference_tip_in": 0.19862068965517243,
+        "compression_kip": 0.0,
+        "applied_compression_kip": 0.0,
+        "continuum_relative_error": 2.199768747602677e-15,
+        "discrete_relative_error": 4.334868591098566e-16,
+        "tip_relative_error": -2.2358658134812177e-15,
+        "base_reaction": [
+          -1.0000000000000036,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          119.99999999999983
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          -1.7053025658242404e-13
+        ],
+        "free_joint_residual": 5.684341886080802e-14,
+        "max_yield_interaction": 3.59999999999999e-17,
+        "reference_backward_error": 5.921189464667521e-17
+      },
+      "max_yield_interaction": 3.59999999999999e-17,
+      "geometric_arguments": [],
+      "production_ready": false,
+      "accepted_steps": 1,
+      "max_free_joint_residual": 5.684341886080802e-14,
+      "max_reference_backward_error": 5.921189464667521e-17,
+      "max_deformed_moment_residual_kip_in": 1.7053025658242404e-13
+    },
+    {
+      "segments": 2,
+      "ratio": 0.0,
+      "steps": 100,
+      "path": "preload",
+      "variant": "first_order",
+      "group": "first_order_control",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.19862068965517188,
+        "reference_tip_in": 0.19862068965517243,
+        "compression_kip": 0.0,
+        "applied_compression_kip": 0.0,
+        "continuum_relative_error": 2.8490102675234904e-15,
+        "discrete_relative_error": 3.284115718707846e-16,
+        "tip_relative_error": -2.794832266851522e-15,
+        "base_reaction": [
+          -1.000000000000001,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          119.99999999999999
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          -1.4210854715202004e-14
+        ],
+        "free_joint_residual": 3.410605131648481e-13,
+        "max_yield_interaction": 3.599999999999999e-17,
+        "reference_backward_error": 5.921189464667521e-17
+      },
+      "max_yield_interaction": 3.599999999999999e-17,
+      "geometric_arguments": [],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 3.410605131648481e-13,
+      "max_reference_backward_error": 1.7042897307842366e-16,
+      "max_deformed_moment_residual_kip_in": 1.5631940186722204e-13
+    },
+    {
+      "segments": 2,
+      "ratio": 0.0,
+      "steps": 100,
+      "path": "preload",
+      "variant": "raw",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.19862068965517188,
+        "reference_tip_in": 0.19862068965517243,
+        "compression_kip": 0.0,
+        "applied_compression_kip": 0.0,
+        "continuum_relative_error": 2.8490102675234904e-15,
+        "discrete_relative_error": 3.284115718707846e-16,
+        "tip_relative_error": -2.794832266851522e-15,
+        "base_reaction": [
+          -1.000000000000001,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          119.99999999999999
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          -1.4210854715202004e-14
+        ],
+        "free_joint_residual": 3.410605131648481e-13,
+        "max_yield_interaction": 3.599999999999999e-17,
+        "reference_backward_error": 5.921189464667521e-17
+      },
+      "max_yield_interaction": 3.599999999999999e-17,
+      "geometric_arguments": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 3.410605131648481e-13,
+      "max_reference_backward_error": 1.7042897307842366e-16,
+      "max_deformed_moment_residual_kip_in": 1.5631940186722204e-13
+    },
+    {
+      "segments": 2,
+      "ratio": 0.0,
+      "steps": 100,
+      "path": "preload",
+      "variant": "half_axial_diagnostic",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.19862068965517188,
+        "reference_tip_in": 0.19862068965517243,
+        "compression_kip": 0.0,
+        "applied_compression_kip": 0.0,
+        "continuum_relative_error": 2.8490102675234904e-15,
+        "discrete_relative_error": 3.284115718707846e-16,
+        "tip_relative_error": -2.794832266851522e-15,
+        "base_reaction": [
+          -1.000000000000001,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          119.99999999999999
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          -1.4210854715202004e-14
+        ],
+        "free_joint_residual": 3.410605131648481e-13,
+        "max_yield_interaction": 3.599999999999999e-17,
+        "reference_backward_error": 5.921189464667521e-17
+      },
+      "max_yield_interaction": 3.599999999999999e-17,
+      "geometric_arguments": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 3.410605131648481e-13,
+      "max_reference_backward_error": 1.7042897307842366e-16,
+      "max_deformed_moment_residual_kip_in": 1.5631940186722204e-13
+    },
+    {
+      "segments": 2,
+      "ratio": 0.0,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "raw",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.19862068965517188,
+        "reference_tip_in": 0.19862068965517243,
+        "compression_kip": 0.0,
+        "applied_compression_kip": 0.0,
+        "continuum_relative_error": 2.8490102675234904e-15,
+        "discrete_relative_error": 3.284115718707846e-16,
+        "tip_relative_error": -2.794832266851522e-15,
+        "base_reaction": [
+          -1.000000000000001,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          119.99999999999999
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          -1.4210854715202004e-14
+        ],
+        "free_joint_residual": 3.410605131648481e-13,
+        "max_yield_interaction": 3.599999999999999e-17,
+        "reference_backward_error": 5.921189464667521e-17
+      },
+      "max_yield_interaction": 3.599999999999999e-17,
+      "geometric_arguments": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.1986206896551724,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 3.410605131648481e-13,
+      "max_reference_backward_error": 1.7042897307842366e-16,
+      "max_deformed_moment_residual_kip_in": 1.5631940186722204e-13
+    },
+    {
+      "segments": 2,
+      "ratio": 0.0,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "half_axial_diagnostic",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.19862068965517188,
+        "reference_tip_in": 0.19862068965517243,
+        "compression_kip": 0.0,
+        "applied_compression_kip": 0.0,
+        "continuum_relative_error": 2.8490102675234904e-15,
+        "discrete_relative_error": 3.284115718707846e-16,
+        "tip_relative_error": -2.794832266851522e-15,
+        "base_reaction": [
+          -1.000000000000001,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          119.99999999999999
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          -1.4210854715202004e-14
+        ],
+        "free_joint_residual": 3.410605131648481e-13,
+        "max_yield_interaction": 3.599999999999999e-17,
+        "reference_backward_error": 5.921189464667521e-17
+      },
+      "max_yield_interaction": 3.599999999999999e-17,
+      "geometric_arguments": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.1986206896551724,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 3.410605131648481e-13,
+      "max_reference_backward_error": 1.7042897307842366e-16,
+      "max_deformed_moment_residual_kip_in": 1.5631940186722204e-13
+    },
+    {
+      "segments": 4,
+      "ratio": 0.0,
+      "steps": 1,
+      "path": "preload",
+      "variant": "elastic_p_delta",
+      "group": "ordinary_elastic_control",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.19862068965518037,
+        "reference_tip_in": 0.19862068965517243,
+        "compression_kip": 0.0,
+        "applied_compression_kip": 0.0,
+        "continuum_relative_error": 4.0708150113038255e-14,
+        "discrete_relative_error": 1.8360102283511378e-13,
+        "tip_relative_error": 3.996610141597677e-14,
+        "base_reaction": [
+          -1.0000000000000746,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          120.00000000000571
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          5.7127635955112055e-12
+        ],
+        "free_joint_residual": 8.526512829121202e-13,
+        "max_yield_interaction": 3.6000000000003426e-17,
+        "reference_backward_error": 2.6861981473861503e-16
+      },
+      "max_yield_interaction": 3.6000000000003426e-17,
+      "geometric_arguments": [],
+      "production_ready": false,
+      "accepted_steps": 1,
+      "max_free_joint_residual": 8.526512829121202e-13,
+      "max_reference_backward_error": 2.6861981473861503e-16,
+      "max_deformed_moment_residual_kip_in": 5.7127635955112055e-12
+    },
+    {
+      "segments": 4,
+      "ratio": 0.0,
+      "steps": 100,
+      "path": "preload",
+      "variant": "first_order",
+      "group": "first_order_control",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.1986206896551802,
+        "reference_tip_in": 0.19862068965517243,
+        "compression_kip": 0.0,
+        "applied_compression_kip": 0.0,
+        "continuum_relative_error": 3.959112203936948e-14,
+        "discrete_relative_error": 1.8248079929132818e-13,
+        "tip_relative_error": 3.9127651735921314e-14,
+        "base_reaction": [
+          -1.0000000000000704,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          120.00000000000587
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          5.8690829973784275e-12
+        ],
+        "free_joint_residual": 1.2221335055073723e-12,
+        "max_yield_interaction": 3.6000000000003525e-17,
+        "reference_backward_error": 2.6861981473861503e-16
+      },
+      "max_yield_interaction": 3.6000000000003525e-17,
+      "geometric_arguments": [],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 1.2221335055073723e-12,
+      "max_reference_backward_error": 5.144935967775916e-16,
+      "max_deformed_moment_residual_kip_in": 5.8690829973784275e-12
+    },
+    {
+      "segments": 4,
+      "ratio": 0.0,
+      "steps": 100,
+      "path": "preload",
+      "variant": "raw",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.1986206896551802,
+        "reference_tip_in": 0.19862068965517243,
+        "compression_kip": 0.0,
+        "applied_compression_kip": 0.0,
+        "continuum_relative_error": 3.959112203936948e-14,
+        "discrete_relative_error": 1.8248079929132818e-13,
+        "tip_relative_error": 3.9127651735921314e-14,
+        "base_reaction": [
+          -1.0000000000000704,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          120.00000000000587
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          5.8690829973784275e-12
+        ],
+        "free_joint_residual": 1.2221335055073723e-12,
+        "max_yield_interaction": 3.6000000000003525e-17,
+        "reference_backward_error": 2.6861981473861503e-16
+      },
+      "max_yield_interaction": 3.6000000000003525e-17,
+      "geometric_arguments": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 1.2221335055073723e-12,
+      "max_reference_backward_error": 5.144935967775916e-16,
+      "max_deformed_moment_residual_kip_in": 5.8690829973784275e-12
+    },
+    {
+      "segments": 4,
+      "ratio": 0.0,
+      "steps": 100,
+      "path": "preload",
+      "variant": "half_axial_diagnostic",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.1986206896551802,
+        "reference_tip_in": 0.19862068965517243,
+        "compression_kip": 0.0,
+        "applied_compression_kip": 0.0,
+        "continuum_relative_error": 3.959112203936948e-14,
+        "discrete_relative_error": 1.8248079929132818e-13,
+        "tip_relative_error": 3.9127651735921314e-14,
+        "base_reaction": [
+          -1.0000000000000704,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          120.00000000000587
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          5.8690829973784275e-12
+        ],
+        "free_joint_residual": 1.2221335055073723e-12,
+        "max_yield_interaction": 3.6000000000003525e-17,
+        "reference_backward_error": 2.6861981473861503e-16
+      },
+      "max_yield_interaction": 3.6000000000003525e-17,
+      "geometric_arguments": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 1.2221335055073723e-12,
+      "max_reference_backward_error": 5.144935967775916e-16,
+      "max_deformed_moment_residual_kip_in": 5.8690829973784275e-12
+    },
+    {
+      "segments": 4,
+      "ratio": 0.0,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "raw",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.1986206896551802,
+        "reference_tip_in": 0.19862068965517243,
+        "compression_kip": 0.0,
+        "applied_compression_kip": 0.0,
+        "continuum_relative_error": 3.959112203936948e-14,
+        "discrete_relative_error": 1.8248079929132818e-13,
+        "tip_relative_error": 3.9127651735921314e-14,
+        "base_reaction": [
+          -1.0000000000000704,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          120.00000000000587
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          5.8690829973784275e-12
+        ],
+        "free_joint_residual": 1.2221335055073723e-12,
+        "max_yield_interaction": 3.6000000000003525e-17,
+        "reference_backward_error": 2.6861981473861503e-16
+      },
+      "max_yield_interaction": 3.6000000000003525e-17,
+      "geometric_arguments": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.1986206896551724,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 1.2221335055073723e-12,
+      "max_reference_backward_error": 5.144935967775916e-16,
+      "max_deformed_moment_residual_kip_in": 5.8690829973784275e-12
+    },
+    {
+      "segments": 4,
+      "ratio": 0.0,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "half_axial_diagnostic",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.1986206896551802,
+        "reference_tip_in": 0.19862068965517243,
+        "compression_kip": 0.0,
+        "applied_compression_kip": 0.0,
+        "continuum_relative_error": 3.959112203936948e-14,
+        "discrete_relative_error": 1.8248079929132818e-13,
+        "tip_relative_error": 3.9127651735921314e-14,
+        "base_reaction": [
+          -1.0000000000000704,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          120.00000000000587
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          5.8690829973784275e-12
+        ],
+        "free_joint_residual": 1.2221335055073723e-12,
+        "max_yield_interaction": 3.6000000000003525e-17,
+        "reference_backward_error": 2.6861981473861503e-16
+      },
+      "max_yield_interaction": 3.6000000000003525e-17,
+      "geometric_arguments": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.1986206896551724,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 1.2221335055073723e-12,
+      "max_reference_backward_error": 5.144935967775916e-16,
+      "max_deformed_moment_residual_kip_in": 5.8690829973784275e-12
+    },
+    {
+      "segments": 8,
+      "ratio": 0.0,
+      "steps": 1,
+      "path": "preload",
+      "variant": "elastic_p_delta",
+      "group": "ordinary_elastic_control",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.19862068965525487,
+        "reference_tip_in": 0.19862068965517243,
+        "compression_kip": 0.0,
+        "applied_compression_kip": 0.0,
+        "continuum_relative_error": 4.3225642791160737e-13,
+        "discrete_relative_error": 5.649582164869777e-13,
+        "tip_relative_error": 4.1503259162745105e-13,
+        "base_reaction": [
+          -1.000000000000881,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          120.00000000006526
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          6.52562448522076e-11
+        ],
+        "free_joint_residual": 3.524291969370097e-12,
+        "max_yield_interaction": 3.600000000003916e-17,
+        "reference_backward_error": 1.6148698540005396e-16
+      },
+      "max_yield_interaction": 3.600000000003916e-17,
+      "geometric_arguments": [],
+      "production_ready": false,
+      "accepted_steps": 1,
+      "max_free_joint_residual": 3.524291969370097e-12,
+      "max_reference_backward_error": 1.6148698540005396e-16,
+      "max_deformed_moment_residual_kip_in": 6.52562448522076e-11
+    },
+    {
+      "segments": 8,
+      "ratio": 0.0,
+      "steps": 100,
+      "path": "preload",
+      "variant": "first_order",
+      "group": "first_order_control",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.19862068965525465,
+        "reference_tip_in": 0.19862068965517243,
+        "compression_kip": 0.0,
+        "applied_compression_kip": 0.0,
+        "continuum_relative_error": 4.320331166447182e-13,
+        "discrete_relative_error": 5.647435218788404e-13,
+        "tip_relative_error": 4.1391465872071045e-13,
+        "base_reaction": [
+          -1.0000000000009002,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          120.00000000006558
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          6.558309451065725e-11
+        ],
+        "free_joint_residual": 8.625988812127616e-12,
+        "max_yield_interaction": 3.6000000000039344e-17,
+        "reference_backward_error": 1.6148698540005396e-16
+      },
+      "max_yield_interaction": 3.6000000000039344e-17,
+      "geometric_arguments": [],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 8.625988812127616e-12,
+      "max_reference_backward_error": 6.591305526532907e-16,
+      "max_deformed_moment_residual_kip_in": 6.558309451065725e-11
+    },
+    {
+      "segments": 8,
+      "ratio": 0.0,
+      "steps": 100,
+      "path": "preload",
+      "variant": "raw",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.19862068965525465,
+        "reference_tip_in": 0.19862068965517243,
+        "compression_kip": 0.0,
+        "applied_compression_kip": 0.0,
+        "continuum_relative_error": 4.320331166447182e-13,
+        "discrete_relative_error": 5.647435218788404e-13,
+        "tip_relative_error": 4.1391465872071045e-13,
+        "base_reaction": [
+          -1.0000000000009002,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          120.00000000006558
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          6.558309451065725e-11
+        ],
+        "free_joint_residual": 8.625988812127616e-12,
+        "max_yield_interaction": 3.6000000000039344e-17,
+        "reference_backward_error": 1.6148698540005396e-16
+      },
+      "max_yield_interaction": 3.6000000000039344e-17,
+      "geometric_arguments": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 8.625988812127616e-12,
+      "max_reference_backward_error": 6.591305526532907e-16,
+      "max_deformed_moment_residual_kip_in": 6.558309451065725e-11
+    },
+    {
+      "segments": 8,
+      "ratio": 0.0,
+      "steps": 100,
+      "path": "preload",
+      "variant": "half_axial_diagnostic",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.19862068965525465,
+        "reference_tip_in": 0.19862068965517243,
+        "compression_kip": 0.0,
+        "applied_compression_kip": 0.0,
+        "continuum_relative_error": 4.320331166447182e-13,
+        "discrete_relative_error": 5.647435218788404e-13,
+        "tip_relative_error": 4.1391465872071045e-13,
+        "base_reaction": [
+          -1.0000000000009002,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          120.00000000006558
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          6.558309451065725e-11
+        ],
+        "free_joint_residual": 8.625988812127616e-12,
+        "max_yield_interaction": 3.6000000000039344e-17,
+        "reference_backward_error": 1.6148698540005396e-16
+      },
+      "max_yield_interaction": 3.6000000000039344e-17,
+      "geometric_arguments": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 8.625988812127616e-12,
+      "max_reference_backward_error": 6.591305526532907e-16,
+      "max_deformed_moment_residual_kip_in": 6.558309451065725e-11
+    },
+    {
+      "segments": 8,
+      "ratio": 0.0,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "raw",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.19862068965525465,
+        "reference_tip_in": 0.19862068965517243,
+        "compression_kip": 0.0,
+        "applied_compression_kip": 0.0,
+        "continuum_relative_error": 4.320331166447182e-13,
+        "discrete_relative_error": 5.647435218788404e-13,
+        "tip_relative_error": 4.1391465872071045e-13,
+        "base_reaction": [
+          -1.0000000000009002,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          120.00000000006558
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          6.558309451065725e-11
+        ],
+        "free_joint_residual": 8.625988812127616e-12,
+        "max_yield_interaction": 3.6000000000039344e-17,
+        "reference_backward_error": 1.6148698540005396e-16
+      },
+      "max_yield_interaction": 3.6000000000039344e-17,
+      "geometric_arguments": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.1986206896551724,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 8.625988812127616e-12,
+      "max_reference_backward_error": 6.591305526532907e-16,
+      "max_deformed_moment_residual_kip_in": 6.558309451065725e-11
+    },
+    {
+      "segments": 8,
+      "ratio": 0.0,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "half_axial_diagnostic",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.19862068965525465,
+        "reference_tip_in": 0.19862068965517243,
+        "compression_kip": 0.0,
+        "applied_compression_kip": 0.0,
+        "continuum_relative_error": 4.320331166447182e-13,
+        "discrete_relative_error": 5.647435218788404e-13,
+        "tip_relative_error": 4.1391465872071045e-13,
+        "base_reaction": [
+          -1.0000000000009002,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          120.00000000006558
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          6.558309451065725e-11
+        ],
+        "free_joint_residual": 8.625988812127616e-12,
+        "max_yield_interaction": 3.6000000000039344e-17,
+        "reference_backward_error": 1.6148698540005396e-16
+      },
+      "max_yield_interaction": 3.6000000000039344e-17,
+      "geometric_arguments": [
+        0.0,
+        0.0,
+        0.0,
+        0.0
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.1986206896551724,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 8.625988812127616e-12,
+      "max_reference_backward_error": 6.591305526532907e-16,
+      "max_deformed_moment_residual_kip_in": 6.558309451065725e-11
+    },
+    {
+      "segments": 2,
+      "ratio": 0.1,
+      "steps": 1,
+      "path": "preload",
+      "variant": "elastic_p_delta",
+      "group": "ordinary_elastic_control",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.2203978225984588,
+        "reference_tip_in": 0.2203990453554216,
+        "compression_kip": 49.69071660256094,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 5.5309046937627945e-06,
+        "discrete_relative_error": 3.1734139041194433e-13,
+        "tip_relative_error": -5.54792313560759e-06,
+        "base_reaction": [
+          -0.9999999009483691,
+          49.69071660256094,
+          0.0,
+          0.0,
+          0.0,
+          130.95172480797962
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.0002046824966157601
+        ],
+        "free_joint_residual": 4.6422945843005436e-07,
+        "max_yield_interaction": 4.2873354742778535e-17,
+        "reference_backward_error": 7.550503661184812e-17
+      },
+      "max_yield_interaction": 4.2873354742778535e-17,
+      "geometric_arguments": [],
+      "production_ready": false,
+      "accepted_steps": 1,
+      "max_free_joint_residual": 4.6422945843005436e-07,
+      "max_reference_backward_error": 7.550503661184812e-17,
+      "max_deformed_moment_residual_kip_in": 0.0002046824966157601
+    },
+    {
+      "segments": 2,
+      "ratio": 0.1,
+      "steps": 100,
+      "path": "preload",
+      "variant": "raw",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.24760926446813994,
+        "reference_tip_in": 0.2203990453554216,
+        "compression_kip": 49.69071660256094,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 0.12290087962354133,
+        "discrete_relative_error": 0.12290709021497603,
+        "tip_relative_error": 0.12345887918361166,
+        "base_reaction": [
+          -1.0000000000000007,
+          49.69071660256094,
+          0.0,
+          0.0,
+          0.0,
+          144.60776357770888
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          12.304087405928527
+        ],
+        "free_joint_residual": 1.4588863450626377e-10,
+        "max_yield_interaction": 5.228098238468284e-17,
+        "reference_backward_error": 7.550503661184812e-17
+      },
+      "max_yield_interaction": 5.228098238468284e-17,
+      "geometric_arguments": [
+        -99.38143320512188,
+        -99.3814332051219,
+        -99.3814332051219,
+        -99.3814332051219
+      ],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 1.4588863450626377e-10,
+      "max_reference_backward_error": 1.1843927311662448e-16,
+      "max_deformed_moment_residual_kip_in": 12.304087405928527
+    },
+    {
+      "segments": 2,
+      "ratio": 0.1,
+      "steps": 100,
+      "path": "preload",
+      "variant": "half_axial_diagnostic",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.22039782259838678,
+        "reference_tip_in": 0.2203990453554216,
+        "compression_kip": 49.69071660256094,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 5.530905019148704e-06,
+        "discrete_relative_error": 8.065586842917545e-15,
+        "tip_relative_error": -5.547923462404462e-06,
+        "base_reaction": [
+          -0.999999999999998,
+          49.69071660256094,
+          0.0,
+          0.0,
+          0.0,
+          130.95172574255687
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.00020561707745514468
+        ],
+        "free_joint_residual": 1.4588863450626377e-10,
+        "max_yield_interaction": 4.287335535470106e-17,
+        "reference_backward_error": 7.550503661184812e-17
+      },
+      "max_yield_interaction": 4.287335535470106e-17,
+      "geometric_arguments": [
+        -99.38143320512188,
+        -99.3814332051219,
+        -99.3814332051219,
+        -99.3814332051219
+      ],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 1.4588863450626377e-10,
+      "max_reference_backward_error": 1.1843927311662448e-16,
+      "max_deformed_moment_residual_kip_in": 0.00020561707745514468
+    },
+    {
+      "segments": 2,
+      "ratio": 0.1,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "raw",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.221054290416555,
+        "reference_tip_in": 0.22039904535549262,
+        "compression_kip": 49.69071660270692,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 0.002958021817826766,
+        "discrete_relative_error": 0.00296356899023102,
+        "tip_relative_error": 0.002972994098071063,
+        "base_reaction": [
+          -1.0000000000000002,
+          49.69071660270692,
+          0.0,
+          0.0,
+          0.0,
+          131.27726416794542
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.2931236861510911
+        ],
+        "free_joint_residual": 8.526512829121202e-14,
+        "max_yield_interaction": 4.30867693858678e-17,
+        "reference_backward_error": 5.03366910745499e-17
+      },
+      "max_yield_interaction": 4.30867693858678e-17,
+      "geometric_arguments": [
+        -98.3876188733597,
+        -98.3876188733597,
+        -98.3876188733597,
+        -98.3876188733597
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.20912803030665272,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 8.526512829121202e-14,
+      "max_reference_backward_error": 2.215905427291152e-16,
+      "max_deformed_moment_residual_kip_in": 0.2931236861510911
+    },
+    {
+      "segments": 2,
+      "ratio": 0.1,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "half_axial_diagnostic",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.20901879661210326,
+        "reference_tip_in": 0.22039904535549262,
+        "compression_kip": 49.69071660270692,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 0.05140529742793254,
+        "discrete_relative_error": 0.05140005085706648,
+        "tip_relative_error": -0.05163474608083528,
+        "base_reaction": [
+          -1.0000000000000004,
+          49.69071660270692,
+          0.0,
+          0.0,
+          0.0,
+          125.23118863137208
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          -5.1548995387859975
+        ],
+        "free_joint_residual": 8.526512829121202e-14,
+        "max_yield_interaction": 3.920959568238223e-17,
+        "reference_backward_error": 5.03366910745499e-17
+      },
+      "max_yield_interaction": 3.920959568238223e-17,
+      "geometric_arguments": [
+        -98.3876188733597,
+        -98.3876188733597,
+        -98.3876188733597,
+        -98.3876188733597
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.20912803030665272,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 8.526512829121202e-14,
+      "max_reference_backward_error": 2.215905427291152e-16,
+      "max_deformed_moment_residual_kip_in": 5.1548995387859975
+    },
+    {
+      "segments": 4,
+      "ratio": 0.1,
+      "steps": 1,
+      "path": "preload",
+      "variant": "elastic_p_delta",
+      "group": "ordinary_elastic_control",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.22039896565518424,
+        "reference_tip_in": 0.220399045355422,
+        "compression_kip": 49.690716602560954,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 3.608714417463981e-07,
+        "discrete_relative_error": 2.765033913530285e-13,
+        "tip_relative_error": -3.616178901413566e-07,
+        "base_reaction": [
+          -0.9999999463494049,
+          49.69071660256095,
+          0.0,
+          0.0,
+          0.0,
+          130.9517822804582
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.00020535566738999478
+        ],
+        "free_joint_residual": 2.3104171731347378e-07,
+        "max_yield_interaction": 4.2873392373387794e-17,
+        "reference_backward_error": 3.224714531082586e-16
+      },
+      "max_yield_interaction": 4.2873392373387794e-17,
+      "geometric_arguments": [],
+      "production_ready": false,
+      "accepted_steps": 1,
+      "max_free_joint_residual": 2.3104171731347378e-07,
+      "max_reference_backward_error": 3.224714531082586e-16,
+      "max_deformed_moment_residual_kip_in": 0.00020535566738999478
+    },
+    {
+      "segments": 4,
+      "ratio": 0.1,
+      "steps": 100,
+      "path": "preload",
+      "variant": "raw",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.24761505685874996,
+        "reference_tip_in": 0.220399045355422,
+        "compression_kip": 49.690716602560954,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 0.12236047637794596,
+        "discrete_relative_error": 0.12236088137978454,
+        "tip_relative_error": 0.12348516056155598,
+        "base_reaction": [
+          -1.0000000000000704,
+          49.69071660256095,
+          0.0,
+          0.0,
+          0.0,
+          144.6083392337972
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          12.3043752339766
+        ],
+        "free_joint_residual": 1.4588152907890617e-10,
+        "max_yield_interaction": 5.228139860720891e-17,
+        "reference_backward_error": 3.224714531082586e-16
+      },
+      "max_yield_interaction": 5.228139860720891e-17,
+      "geometric_arguments": [
+        -99.38143320512187,
+        -99.38143320512191,
+        -99.38143320512191,
+        -99.38143320512191
+      ],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 1.4588152907890617e-10,
+      "max_reference_backward_error": 4.885931107700886e-16,
+      "max_deformed_moment_residual_kip_in": 12.3043752339766
+    },
+    {
+      "segments": 4,
+      "ratio": 0.1,
+      "steps": 100,
+      "path": "preload",
+      "variant": "half_axial_diagnostic",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.22039896565511358,
+        "reference_tip_in": 0.220399045355422,
+        "compression_kip": 49.690716602560954,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 3.6087175968385465e-07,
+        "discrete_relative_error": 4.1501747124688e-14,
+        "tip_relative_error": -3.616182107674982e-07,
+        "base_reaction": [
+          -0.999999999999989,
+          49.69071660256095,
+          0.0,
+          0.0,
+          0.0,
+          130.9517825418627
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.0002056170754372033
+        ],
+        "free_joint_residual": 1.4588152907890617e-10,
+        "max_yield_interaction": 4.2873392544544726e-17,
+        "reference_backward_error": 3.224714531082586e-16
+      },
+      "max_yield_interaction": 4.2873392544544726e-17,
+      "geometric_arguments": [
+        -99.38143320512187,
+        -99.38143320512191,
+        -99.38143320512191,
+        -99.38143320512191
+      ],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 1.4588152907890617e-10,
+      "max_reference_backward_error": 4.885931107700886e-16,
+      "max_deformed_moment_residual_kip_in": 0.0002056170754372033
+    },
+    {
+      "segments": 4,
+      "ratio": 0.1,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "raw",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.22105598130918624,
+        "reference_tip_in": 0.22039904535549262,
+        "compression_kip": 49.69071660270692,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 0.002950234370391138,
+        "discrete_relative_error": 0.0029505962720788033,
+        "tip_relative_error": 0.0029806660579405715,
+        "base_reaction": [
+          -0.9999999999999996,
+          49.69071660270692,
+          0.0,
+          0.0,
+          0.0,
+          131.27739235677154
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.29316785331067763
+        ],
+        "free_joint_residual": 1.5631940186722204e-13,
+        "max_yield_interaction": 4.3086853527300845e-17,
+        "reference_backward_error": 1.2092679491556877e-16
+      },
+      "max_yield_interaction": 4.3086853527300845e-17,
+      "geometric_arguments": [
+        -98.3876188733597,
+        -98.3876188733597,
+        -98.3876188733597,
+        -98.3876188733597
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.20912803030665272,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 1.5631940186722204e-13,
+      "max_reference_backward_error": 6.259586746050778e-16,
+      "max_deformed_moment_residual_kip_in": 0.29316785331067763
+    },
+    {
+      "segments": 4,
+      "ratio": 0.1,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "half_axial_diagnostic",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.20901915200115462,
+        "reference_tip_in": 0.22039904535549262,
+        "compression_kip": 49.690716602706914,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 0.05117126894369708,
+        "discrete_relative_error": 0.05117092656285746,
+        "tip_relative_error": -0.05163313360084118,
+        "base_reaction": [
+          -0.9999999999999927,
+          49.69071660270692,
+          0.0,
+          0.0,
+          0.0,
+          125.23120194810802
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          -5.154903881586691
+        ],
+        "free_joint_residual": 1.2079226507921703e-13,
+        "max_yield_interaction": 3.920960402073603e-17,
+        "reference_backward_error": 1.2092679491556877e-16
+      },
+      "max_yield_interaction": 3.920960402073603e-17,
+      "geometric_arguments": [
+        -98.3876188733597,
+        -98.3876188733597,
+        -98.3876188733597,
+        -98.3876188733597
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.20912803030665283,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 1.2079226507921703e-13,
+      "max_reference_backward_error": 6.259586746050778e-16,
+      "max_deformed_moment_residual_kip_in": 5.154903881586691
+    },
+    {
+      "segments": 8,
+      "ratio": 0.1,
+      "steps": 1,
+      "path": "preload",
+      "variant": "elastic_p_delta",
+      "group": "ordinary_elastic_control",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.22039904032324384,
+        "reference_tip_in": 0.220399045355422,
+        "compression_kip": 49.690716602560954,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 2.27961023514365e-08,
+        "discrete_relative_error": 2.846496172457316e-12,
+        "tip_relative_error": -2.2832123279132086e-08,
+        "base_reaction": [
+          -0.9999999721629393,
+          49.69071660256095,
+          0.0,
+          0.0,
+          0.0,
+          130.9517861834957
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.00020554839551323312
+        ],
+        "free_joint_residual": 2.3442058250111586e-07,
+        "max_yield_interaction": 4.287339492893642e-17,
+        "reference_backward_error": 1.0009041331553266e-16
+      },
+      "max_yield_interaction": 4.287339492893642e-17,
+      "geometric_arguments": [],
+      "production_ready": false,
+      "accepted_steps": 1,
+      "max_free_joint_residual": 2.3442058250111586e-07,
+      "max_reference_backward_error": 1.0009041331553266e-16,
+      "max_deformed_moment_residual_kip_in": 0.00020554839551323312
+    },
+    {
+      "segments": 8,
+      "ratio": 0.1,
+      "steps": 100,
+      "path": "preload",
+      "variant": "raw",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.24761543429714655,
+        "reference_tip_in": 0.220399045355422,
+        "compression_kip": 49.690716602560954,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 0.12198747744764936,
+        "discrete_relative_error": 0.12198750302546726,
+        "tip_relative_error": 0.12348687308438468,
+        "base_reaction": [
+          -0.9999999999998566,
+          49.69071660256095,
+          0.0,
+          0.0,
+          0.0,
+          144.60837674415356
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          12.304393989148565
+        ],
+        "free_joint_residual": 1.4593126707040938e-10,
+        "max_yield_interaction": 5.2281425728764105e-17,
+        "reference_backward_error": 1.0009041331553266e-16
+      },
+      "max_yield_interaction": 5.2281425728764105e-17,
+      "geometric_arguments": [
+        -99.38143320512187,
+        -99.38143320512181,
+        -99.38143320512181,
+        -99.38143320512181
+      ],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 1.4593126707040938e-10,
+      "max_reference_backward_error": 6.592494850211007e-16,
+      "max_deformed_moment_residual_kip_in": 12.304393989148565
+    },
+    {
+      "segments": 8,
+      "ratio": 0.1,
+      "steps": 100,
+      "path": "preload",
+      "variant": "half_axial_diagnostic",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.22039904032322621,
+        "reference_tip_in": 0.220399045355422,
+        "compression_kip": 49.690716602560954,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 2.279617204688775e-08,
+        "discrete_relative_error": 2.7770367559070553e-12,
+        "tip_relative_error": -2.2832203246767552e-08,
+        "base_reaction": [
+          -1.0000000000006197,
+          49.69071660256095,
+          0.0,
+          0.0,
+          0.0,
+          130.95178625225012
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.00020561715081157672
+        ],
+        "free_joint_residual": 1.4593126707040938e-10,
+        "max_yield_interaction": 4.287339497395398e-17,
+        "reference_backward_error": 1.0009041331553266e-16
+      },
+      "max_yield_interaction": 4.287339497395398e-17,
+      "geometric_arguments": [
+        -99.38143320512187,
+        -99.38143320512181,
+        -99.38143320512181,
+        -99.38143320512181
+      ],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 1.4593126707040938e-10,
+      "max_reference_backward_error": 6.592494850211007e-16,
+      "max_deformed_moment_residual_kip_in": 0.00020561715081157672
+    },
+    {
+      "segments": 8,
+      "ratio": 0.1,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "raw",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.22105609161879214,
+        "reference_tip_in": 0.22039904535549235,
+        "compression_kip": 49.690716602706885,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 0.002940555525827441,
+        "discrete_relative_error": 0.0029405783875737466,
+        "tip_relative_error": 0.002981166557414127,
+        "base_reaction": [
+          -0.9999999999999771,
+          49.69071660270685,
+          0.0,
+          0.0,
+          0.0,
+          131.27740071760064
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.29317073277638883
+        ],
+        "free_joint_residual": 7.176481631177012e-13,
+        "max_yield_interaction": 4.3086859015240224e-17,
+        "reference_backward_error": 6.62025272325381e-16
+      },
+      "max_yield_interaction": 4.3086859015240224e-17,
+      "geometric_arguments": [
+        -98.3876188733597,
+        -98.3876188733597,
+        -98.3876188733597,
+        -98.3876188733597
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.20912803030665264,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 7.176481631177012e-13,
+      "max_reference_backward_error": 1.0960161496388288e-15,
+      "max_deformed_moment_residual_kip_in": 0.29317073277638883
+    },
+    {
+      "segments": 8,
+      "ratio": 0.1,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "half_axial_diagnostic",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.20901917523083907,
+        "reference_tip_in": 0.22039904535549254,
+        "compression_kip": 49.69071660270686,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 0.05101738214838596,
+        "discrete_relative_error": 0.051017360515998804,
+        "tip_relative_error": -0.051633028202541946,
+        "base_reaction": [
+          -0.9999999999999842,
+          49.69071660270682,
+          0.0,
+          0.0,
+          0.0,
+          125.23120281843359
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          -5.154904165560794
+        ],
+        "free_joint_residual": 7.016609515630989e-13,
+        "max_yield_interaction": 3.920960456569561e-17,
+        "reference_backward_error": 6.62025272325381e-16
+      },
+      "max_yield_interaction": 3.920960456569561e-17,
+      "geometric_arguments": [
+        -98.38761887335963,
+        -98.3876188733597,
+        -98.3876188733597,
+        -98.3876188733597
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.20912803030665245,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 9.894307595459395e-13,
+      "max_reference_backward_error": 1.0960161496388288e-15,
+      "max_deformed_moment_residual_kip_in": 5.154904165560794
+    },
+    {
+      "segments": 2,
+      "ratio": 0.3,
+      "steps": 1,
+      "path": "preload",
+      "variant": "elastic_p_delta",
+      "group": "ordinary_elastic_control",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.2825820591717381,
+        "reference_tip_in": 0.2826002815515209,
+        "compression_kip": 149.07214980418138,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 6.43054010795982e-05,
+        "discrete_relative_error": 1.1175508467156019e-11,
+        "tip_relative_error": -6.448110979482816e-05,
+        "base_reaction": [
+          -0.9999988722964144,
+          149.07214980418135,
+          0.0,
+          0.0,
+          0.0,
+          162.1251043608773
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.0006061563867092445
+        ],
+        "free_joint_residual": 5.237473885699728e-06,
+        "max_yield_interaction": 6.573359616591062e-17,
+        "reference_backward_error": 4.174749304376162e-17
+      },
+      "max_yield_interaction": 6.573359616591062e-17,
+      "geometric_arguments": [],
+      "production_ready": false,
+      "accepted_steps": 1,
+      "max_free_joint_residual": 5.237473885699728e-06,
+      "max_reference_backward_error": 4.174749304376162e-17,
+      "max_deformed_moment_residual_kip_in": 0.0006061563867092445
+    },
+    {
+      "segments": 2,
+      "ratio": 0.3,
+      "steps": 100,
+      "path": "preload",
+      "variant": "raw",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.492199732050663,
+        "reference_tip_in": 0.2826002815515209,
+        "compression_kip": 149.07214980418138,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 0.7389105433545321,
+        "discrete_relative_error": 0.7390223695879533,
+        "tip_relative_error": 0.741681676141324,
+        "base_reaction": [
+          -0.999999999999998,
+          149.07214980418135,
+          0.0,
+          0.0,
+          0.0,
+          266.74654437966797
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          73.3738890413407
+        ],
+        "free_joint_residual": 3.939078396797413e-09,
+        "max_yield_interaction": 1.779065198520827e-16,
+        "reference_backward_error": 4.174749304376162e-17
+      },
+      "max_yield_interaction": 1.779065198520827e-16,
+      "geometric_arguments": [
+        -298.1442996083627,
+        -298.1442996083628,
+        -298.1442996083628,
+        -298.1442996083628
+      ],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 3.939078396797413e-09,
+      "max_reference_backward_error": 1.5289698429242185e-16,
+      "max_deformed_moment_residual_kip_in": 73.3738890413407
+    },
+    {
+      "segments": 2,
+      "ratio": 0.3,
+      "steps": 100,
+      "path": "preload",
+      "variant": "half_axial_diagnostic",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.28258205916856854,
+        "reference_tip_in": 0.2826002815515209,
+        "compression_kip": 149.07214980418138,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 6.430541225460312e-05,
+        "discrete_relative_error": 4.99049175250688e-16,
+        "tip_relative_error": -6.448112101058383e-05,
+        "base_reaction": [
+          -1.0000000000000009,
+          149.07214980418135,
+          0.0,
+          0.0,
+          0.0,
+          162.1251150563506
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.0006168523325413844
+        ],
+        "free_joint_residual": 3.939078396797413e-09,
+        "max_yield_interaction": 6.573360483593455e-17,
+        "reference_backward_error": 4.174749304376162e-17
+      },
+      "max_yield_interaction": 6.573360483593455e-17,
+      "geometric_arguments": [
+        -298.1442996083627,
+        -298.1442996083628,
+        -298.1442996083628,
+        -298.1442996083628
+      ],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 3.939078396797413e-09,
+      "max_reference_backward_error": 1.5289698429242185e-16,
+      "max_deformed_moment_residual_kip_in": 0.0006168523325413844
+    },
+    {
+      "segments": 2,
+      "ratio": 0.3,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "raw",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.3003909726669606,
+        "reference_tip_in": 0.2826002815546901,
+        "compression_kip": 149.07214980812026,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 0.06270775329545883,
+        "discrete_relative_error": 0.06277609486917982,
+        "tip_relative_error": 0.06295355055698187,
+        "base_reaction": [
+          -1.0000000000000004,
+          149.07214980812026,
+          0.0,
+          0.0,
+          0.0,
+          170.97920790937115
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          6.199896684369207
+        ],
+        "free_joint_residual": 2.2737367544323206e-13,
+        "max_yield_interaction": 7.310694634913832e-17,
+        "reference_backward_error": 3.9753215915603877e-17
+      },
+      "max_yield_interaction": 7.310694634913832e-17,
+      "geometric_arguments": [
+        -295.1628566200781,
+        -295.1628566200781,
+        -295.1628566200781,
+        -295.1628566200781
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.23564404224830027,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 2.2737367544323206e-13,
+      "max_reference_backward_error": 1.933533080547448e-16,
+      "max_deformed_moment_residual_kip_in": 6.199896684369207
+    },
+    {
+      "segments": 2,
+      "ratio": 0.3,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "half_axial_diagnostic",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.23521971349108117,
+        "reference_tip_in": 0.2826002815546901,
+        "compression_kip": 149.07214980812026,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 0.16706458946433117,
+        "discrete_relative_error": 0.1670110235770989,
+        "tip_relative_error": -0.16765930947750882,
+        "base_reaction": [
+          -1.0000000000000004,
+          149.07214980812026,
+          0.0,
+          0.0,
+          0.0,
+          138.38312025914146
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          -16.680971256379507
+        ],
+        "free_joint_residual": 2.2737367544323206e-13,
+        "max_yield_interaction": 4.789694243748843e-17,
+        "reference_backward_error": 3.9753215915603877e-17
+      },
+      "max_yield_interaction": 4.789694243748843e-17,
+      "geometric_arguments": [
+        -295.1628566200781,
+        -295.1628566200781,
+        -295.1628566200781,
+        -295.1628566200781
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.23564404224830027,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 2.2737367544323206e-13,
+      "max_reference_backward_error": 1.933533080547448e-16,
+      "max_deformed_moment_residual_kip_in": 16.680971256379507
+    },
+    {
+      "segments": 4,
+      "ratio": 0.3,
+      "steps": 1,
+      "path": "preload",
+      "variant": "elastic_p_delta",
+      "group": "ordinary_elastic_control",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.28259909926772775,
+        "reference_tip_in": 0.2826002815515209,
+        "compression_kip": 149.07214980418138,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 4.171328096957175e-06,
+        "discrete_relative_error": 1.1085787372857443e-11,
+        "tip_relative_error": -4.183590287501429e-06,
+        "base_reaction": [
+          -0.999999394979433,
+          149.07214980418135,
+          0.0,
+          0.0,
+          0.0,
+          162.1276523030151
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.000613894782418356
+        ],
+        "free_joint_residual": 2.687077227392365e-06,
+        "max_yield_interaction": 6.573566160906563e-17,
+        "reference_backward_error": 1.353643518852492e-16
+      },
+      "max_yield_interaction": 6.573566160906563e-17,
+      "geometric_arguments": [],
+      "production_ready": false,
+      "accepted_steps": 1,
+      "max_free_joint_residual": 2.687077227392365e-06,
+      "max_reference_backward_error": 1.353643518852492e-16,
+      "max_deformed_moment_residual_kip_in": 0.000613894782418356
+    },
+    {
+      "segments": 4,
+      "ratio": 0.3,
+      "steps": 100,
+      "path": "preload",
+      "variant": "raw",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.49240916655282063,
+        "reference_tip_in": 0.2826002815515209,
+        "compression_kip": 149.07214980418138,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 0.7367910809072228,
+        "discrete_relative_error": 0.7367983255063952,
+        "tip_relative_error": 0.7424227741367252,
+        "base_reaction": [
+          -1.0000000000001814,
+          149.07214980418135,
+          0.0,
+          0.0,
+          0.0,
+          266.8089860826434
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          73.40510989283553
+        ],
+        "free_joint_residual": 3.939106818506843e-09,
+        "max_yield_interaction": 1.7798981014196777e-16,
+        "reference_backward_error": 1.353643518852492e-16
+      },
+      "max_yield_interaction": 1.7798981014196777e-16,
+      "geometric_arguments": [
+        -298.14429960836276,
+        -298.14429960836276,
+        -298.14429960836276,
+        -298.14429960836276
+      ],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 3.939106818506843e-09,
+      "max_reference_backward_error": 6.191026651252864e-16,
+      "max_deformed_moment_residual_kip_in": 73.40510989283553
+    },
+    {
+      "segments": 4,
+      "ratio": 0.3,
+      "steps": 100,
+      "path": "preload",
+      "variant": "half_axial_diagnostic",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.28259909926457205,
+        "reference_tip_in": 0.2826002815515209,
+        "compression_kip": 149.07214980418138,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 4.1713391815758095e-06,
+        "discrete_relative_error": 1.7885930846118015e-15,
+        "tip_relative_error": -4.183601454149629e-06,
+        "base_reaction": [
+          -0.9999999999999758,
+          149.07214980418135,
+          0.0,
+          0.0,
+          0.0,
+          162.12765526008775
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.0006168523254928004
+        ],
+        "free_joint_residual": 3.939106818506843e-09,
+        "max_yield_interaction": 6.573566400618189e-17,
+        "reference_backward_error": 1.353643518852492e-16
+      },
+      "max_yield_interaction": 6.573566400618189e-17,
+      "geometric_arguments": [
+        -298.14429960836276,
+        -298.14429960836276,
+        -298.14429960836276,
+        -298.14429960836276
+      ],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 3.939106818506843e-09,
+      "max_reference_backward_error": 6.191026651252864e-16,
+      "max_deformed_moment_residual_kip_in": 0.0006168523254928004
+    },
+    {
+      "segments": 4,
+      "ratio": 0.3,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "raw",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.3004313701094658,
+        "reference_tip_in": 0.2826002815546901,
+        "compression_kip": 149.07214980812026,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 0.06259516396333843,
+        "discrete_relative_error": 0.06259959626907649,
+        "tip_relative_error": 0.0630964996095553,
+        "base_reaction": [
+          -0.9999999999999847,
+          149.07214980812026,
+          0.0,
+          0.0,
+          0.0,
+          170.9889971072494
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          6.2036637486464485
+        ],
+        "free_joint_residual": 2.2737367544323206e-13,
+        "max_yield_interaction": 7.311531533520576e-17,
+        "reference_backward_error": 9.895216626165682e-17
+      },
+      "max_yield_interaction": 7.311531533520576e-17,
+      "geometric_arguments": [
+        -295.1628566200781,
+        -295.1628566200781,
+        -295.1628566200781,
+        -295.1628566200781
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.23564404224830027,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 2.2737367544323206e-13,
+      "max_reference_backward_error": 7.819547505493488e-16,
+      "max_deformed_moment_residual_kip_in": 6.2036637486464485
+    },
+    {
+      "segments": 4,
+      "ratio": 0.3,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "half_axial_diagnostic",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.23522433265986822,
+        "reference_tip_in": 0.2826002815546901,
+        "compression_kip": 149.07214980812026,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 0.16643951056116843,
+        "discrete_relative_error": 0.16643603358441508,
+        "tip_relative_error": -0.16764296423977004,
+        "base_reaction": [
+          -1.0000000000000013,
+          149.07214980812026,
+          0.0,
+          0.0,
+          0.0,
+          138.3836523283951
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          -16.6811277765473
+        ],
+        "free_joint_residual": 2.2737367544323206e-13,
+        "max_yield_interaction": 4.789731058521375e-17,
+        "reference_backward_error": 9.895216626165682e-17
+      },
+      "max_yield_interaction": 4.789731058521375e-17,
+      "geometric_arguments": [
+        -295.1628566200781,
+        -295.1628566200781,
+        -295.1628566200781,
+        -295.1628566200781
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.23564404224830027,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 2.2737367544323206e-13,
+      "max_reference_backward_error": 7.819547505493488e-16,
+      "max_deformed_moment_residual_kip_in": 16.6811277765473
+    },
+    {
+      "segments": 8,
+      "ratio": 0.3,
+      "steps": 1,
+      "path": "preload",
+      "variant": "elastic_p_delta",
+      "group": "ordinary_elastic_control",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.2826002069897408,
+        "reference_tip_in": 0.2826002815515211,
+        "compression_kip": 149.0721498041816,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 2.630046374943478e-07,
+        "discrete_relative_error": 1.153303178800337e-11,
+        "tip_relative_error": -2.6384184720609343e-07,
+        "base_reaction": [
+          -0.9999996878564943,
+          149.07214980418166,
+          0.0,
+          0.0,
+          0.0,
+          162.12781961971967
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.0006160809851110116
+        ],
+        "free_joint_residual": 2.728018444031477e-06,
+        "max_yield_interaction": 6.573579724245814e-17,
+        "reference_backward_error": 3.2275726274972185e-16
+      },
+      "max_yield_interaction": 6.573579724245814e-17,
+      "geometric_arguments": [],
+      "production_ready": false,
+      "accepted_steps": 1,
+      "max_free_joint_residual": 2.728018444031477e-06,
+      "max_reference_backward_error": 3.2275726274972185e-16,
+      "max_deformed_moment_residual_kip_in": 0.0006160809851110116
+    },
+    {
+      "segments": 8,
+      "ratio": 0.3,
+      "steps": 100,
+      "path": "preload",
+      "variant": "raw",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.4924226968437428,
+        "reference_tip_in": 0.2826002815515211,
+        "compression_kip": 149.0721498041816,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 0.7349485890039362,
+        "discrete_relative_error": 0.7349490453101988,
+        "tip_relative_error": 0.7424706519762216,
+        "base_reaction": [
+          -1.0000000000010445,
+          149.07214980418166,
+          0.0,
+          0.0,
+          0.0,
+          266.81302006186087
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          73.40712688249769
+        ],
+        "free_joint_residual": 3.939192083635135e-09,
+        "max_yield_interaction": 1.7799519169217467e-16,
+        "reference_backward_error": 3.2275726274972185e-16
+      },
+      "max_yield_interaction": 1.7799519169217467e-16,
+      "geometric_arguments": [
+        -298.1442996083629,
+        -298.1442996083626,
+        -298.1442996083626,
+        -298.1442996083626
+      ],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 3.939192083635135e-09,
+      "max_reference_backward_error": 6.650755717266799e-16,
+      "max_deformed_moment_residual_kip_in": 73.40712688249769
+    },
+    {
+      "segments": 8,
+      "ratio": 0.3,
+      "steps": 100,
+      "path": "preload",
+      "variant": "half_axial_diagnostic",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.2826002069866717,
+        "reference_tip_in": 0.2826002815515211,
+        "compression_kip": 149.0721498041816,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 2.630153787546532e-07,
+        "discrete_relative_error": 7.925282132970635e-13,
+        "tip_relative_error": -2.638527074236149e-07,
+        "base_reaction": [
+          -1.0000000000007558,
+          149.07214980418166,
+          0.0,
+          0.0,
+          0.0,
+          162.12782039067864
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.0006168524016061383
+        ],
+        "free_joint_residual": 3.939192083635135e-09,
+        "max_yield_interaction": 6.573579786742762e-17,
+        "reference_backward_error": 3.2275726274972185e-16
+      },
+      "max_yield_interaction": 6.573579786742762e-17,
+      "geometric_arguments": [
+        -298.1442996083629,
+        -298.1442996083626,
+        -298.1442996083626,
+        -298.1442996083626
+      ],
+      "production_ready": false,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 3.939192083635135e-09,
+      "max_reference_backward_error": 6.650755717266799e-16,
+      "max_deformed_moment_residual_kip_in": 0.0006168524016061383
+    },
+    {
+      "segments": 8,
+      "ratio": 0.3,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "raw",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.3004339857452287,
+        "reference_tip_in": 0.28260028155469,
+        "compression_kip": 149.0721498081203,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 0.06243587080276675,
+        "discrete_relative_error": 0.062436150226678394,
+        "tip_relative_error": 0.06310575521166792,
+        "base_reaction": [
+          -0.9999999999999568,
+          149.07214980812026,
+          0.0,
+          0.0,
+          0.0,
+          170.9896306751083
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          6.203907398059073
+        ],
+        "free_joint_residual": 8.526512829121202e-13,
+        "max_yield_interaction": 7.311585700187325e-17,
+        "reference_backward_error": 1.2291206547848243e-16
+      },
+      "max_yield_interaction": 7.311585700187325e-17,
+      "geometric_arguments": [
+        -295.16285662007806,
+        -295.1628566200781,
+        -295.1628566200781,
+        -295.1628566200781
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.23564404224830027,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 8.739675649849232e-13,
+      "max_reference_backward_error": 1.0002274748570727e-15,
+      "max_deformed_moment_residual_kip_in": 6.203907398059073
+    },
+    {
+      "segments": 8,
+      "ratio": 0.3,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "half_axial_diagnostic",
+      "group": "mesh_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.23522463342444472,
+        "reference_tip_in": 0.28260028155469,
+        "compression_kip": 149.0721498081203,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 0.16603527753132322,
+        "discrete_relative_error": 0.16603505819507342,
+        "tip_relative_error": -0.1676418999641972,
+        "base_reaction": [
+          -0.9999999999999946,
+          149.0721498081203,
+          0.0,
+          0.0,
+          0.0,
+          138.3836869619529
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          -16.681137978611503
+        ],
+        "free_joint_residual": 3.588240815588506e-13,
+        "max_yield_interaction": 4.789733454880785e-17,
+        "reference_backward_error": 1.2291206547848243e-16
+      },
+      "max_yield_interaction": 4.789733454880785e-17,
+      "geometric_arguments": [
+        -295.16285662007806,
+        -295.16285662007806,
+        -295.16285662007806,
+        -295.16285662007806
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.23564404224830027,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 3.7481129311345285e-13,
+      "max_reference_backward_error": 1.0002274748570727e-15,
+      "max_deformed_moment_residual_kip_in": 16.681137978611503
+    },
+    {
+      "segments": 8,
+      "ratio": 0.3,
+      "steps": 20,
+      "path": "ramp",
+      "variant": "raw",
+      "group": "step_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.2946811870111035,
+        "reference_tip_in": 0.28260028155469,
+        "compression_kip": 149.0721498081205,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 0.04228135949357464,
+        "discrete_relative_error": 0.04228163361545187,
+        "tip_relative_error": 0.042749092074331654,
+        "base_reaction": [
+          -1.0000000000001035,
+          149.07214980812049,
+          0.0,
+          0.0,
+          0.0,
+          168.11462994275038
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          4.1864887402838065
+        ],
+        "free_joint_residual": 1.4637180356658064e-12,
+        "max_yield_interaction": 7.067854450781818e-17,
+        "reference_backward_error": 1.2291206547848243e-16
+      },
+      "max_yield_interaction": 7.067854450781818e-17,
+      "geometric_arguments": [
+        -283.237084635429,
+        -283.237084635429,
+        -283.237084635429,
+        -283.237084635429
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.2356440422483003,
+      "accepted_steps": 20,
+      "max_free_joint_residual": 1.4637180356658064e-12,
+      "max_reference_backward_error": 6.386630478789059e-16,
+      "max_deformed_moment_residual_kip_in": 4.1864887402838065
+    },
+    {
+      "segments": 8,
+      "ratio": 0.3,
+      "steps": 20,
+      "path": "ramp",
+      "variant": "half_axial_diagnostic",
+      "group": "step_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.23355726754746955,
+        "reference_tip_in": 0.28260028155469,
+        "compression_kip": 149.07214980812043,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 0.17187950723755674,
+        "discrete_relative_error": 0.1718792894384047,
+        "tip_relative_error": -0.17354198565343415,
+        "base_reaction": [
+          -1.0000000000001088,
+          149.0721498081204,
+          0.0,
+          0.0,
+          0.0,
+          137.54720974470158
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          -17.269057380128856
+        ],
+        "free_joint_residual": 7.176481631177012e-13,
+        "max_yield_interaction": 4.732030977723074e-17,
+        "reference_backward_error": 1.2291206547848243e-16
+      },
+      "max_yield_interaction": 4.732030977723074e-17,
+      "geometric_arguments": [
+        -283.2370846354289,
+        -283.23708463542897,
+        -283.23708463542897,
+        -283.23708463542897
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.23564404224830024,
+      "accepted_steps": 20,
+      "max_free_joint_residual": 1.1866063687193673e-12,
+      "max_reference_backward_error": 6.386630478789059e-16,
+      "max_deformed_moment_residual_kip_in": 17.269057380128856
+    },
+    {
+      "segments": 8,
+      "ratio": 0.3,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "raw",
+      "group": "step_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.3004339857452287,
+        "reference_tip_in": 0.28260028155469,
+        "compression_kip": 149.0721498081203,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 0.06243587080276675,
+        "discrete_relative_error": 0.062436150226678394,
+        "tip_relative_error": 0.06310575521166792,
+        "base_reaction": [
+          -0.9999999999999568,
+          149.07214980812026,
+          0.0,
+          0.0,
+          0.0,
+          170.9896306751083
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          6.203907398059073
+        ],
+        "free_joint_residual": 8.526512829121202e-13,
+        "max_yield_interaction": 7.311585700187325e-17,
+        "reference_backward_error": 1.2291206547848243e-16
+      },
+      "max_yield_interaction": 7.311585700187325e-17,
+      "geometric_arguments": [
+        -295.16285662007806,
+        -295.1628566200781,
+        -295.1628566200781,
+        -295.1628566200781
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.23564404224830027,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 8.739675649849232e-13,
+      "max_reference_backward_error": 1.0002274748570727e-15,
+      "max_deformed_moment_residual_kip_in": 6.203907398059073
+    },
+    {
+      "segments": 8,
+      "ratio": 0.3,
+      "steps": 100,
+      "path": "ramp",
+      "variant": "half_axial_diagnostic",
+      "group": "step_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.23522463342444472,
+        "reference_tip_in": 0.28260028155469,
+        "compression_kip": 149.0721498081203,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 0.16603527753132322,
+        "discrete_relative_error": 0.16603505819507342,
+        "tip_relative_error": -0.1676418999641972,
+        "base_reaction": [
+          -0.9999999999999946,
+          149.0721498081203,
+          0.0,
+          0.0,
+          0.0,
+          138.3836869619529
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          -16.681137978611503
+        ],
+        "free_joint_residual": 3.588240815588506e-13,
+        "max_yield_interaction": 4.789733454880785e-17,
+        "reference_backward_error": 1.2291206547848243e-16
+      },
+      "max_yield_interaction": 4.789733454880785e-17,
+      "geometric_arguments": [
+        -295.16285662007806,
+        -295.16285662007806,
+        -295.16285662007806,
+        -295.16285662007806
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.23564404224830027,
+      "accepted_steps": 100,
+      "max_free_joint_residual": 3.7481129311345285e-13,
+      "max_reference_backward_error": 1.0002274748570727e-15,
+      "max_deformed_moment_residual_kip_in": 16.681137978611503
+    },
+    {
+      "segments": 8,
+      "ratio": 0.3,
+      "steps": 400,
+      "path": "ramp",
+      "variant": "raw",
+      "group": "step_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.3015309260282591,
+        "reference_tip_in": 0.28260028155469047,
+        "compression_kip": 149.07214980812086,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 0.06627888001467883,
+        "discrete_relative_error": 0.06627916044948663,
+        "tip_relative_error": 0.06698735177977895,
+        "base_reaction": [
+          -1.0000000000000404,
+          149.07214980812086,
+          0.0,
+          0.0,
+          0.0,
+          171.5377849910102
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          6.588538467782286
+        ],
+        "free_joint_residual": 3.979039320256561e-13,
+        "max_yield_interaction": 7.358525170490351e-17,
+        "reference_backward_error": 1.2291206547848243e-16
+      },
+      "max_yield_interaction": 7.358525170490351e-17,
+      "geometric_arguments": [
+        -297.39893886720114,
+        -297.39893886720114,
+        -297.39893886720114,
+        -297.39893886720114
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.23564404224830057,
+      "accepted_steps": 400,
+      "max_free_joint_residual": 3.979039320256561e-13,
+      "max_reference_backward_error": 1.1026231633028006e-15,
+      "max_deformed_moment_residual_kip_in": 6.588538467782286
+    },
+    {
+      "segments": 8,
+      "ratio": 0.3,
+      "steps": 400,
+      "path": "ramp",
+      "variant": "half_axial_diagnostic",
+      "group": "step_refinement",
+      "supported": true,
+      "force_kip": 1.0,
+      "plane": "XY",
+      "origin": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.23553907906352262,
+        "reference_tip_in": 0.28260028155469036,
+        "compression_kip": 149.07214980812088,
+        "applied_compression_kip": 149.07214980812049,
+        "continuum_relative_error": 0.16493313113286537,
+        "discrete_relative_error": 0.16493291150673756,
+        "tip_relative_error": -0.1665292130364003,
+        "base_reaction": [
+          -0.9999999999999986,
+          149.07214980812088,
+          0.0,
+          0.0,
+          0.0,
+          138.54142880385277
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          -16.57027122411486
+        ],
+        "free_joint_residual": 5.506706202140776e-13,
+        "max_yield_interaction": 4.800654124338093e-17,
+        "reference_backward_error": 1.2291206547848243e-16
+      },
+      "max_yield_interaction": 4.800654124338093e-17,
+      "geometric_arguments": [
+        -297.39893886720114,
+        -297.39893886720114,
+        -297.39893886720114,
+        -297.39893886720114
+      ],
+      "production_ready": false,
+      "incomplete_compliance_integral_tip_in": 0.23564404224830063,
+      "accepted_steps": 400,
+      "max_free_joint_residual": 6.323830348264892e-13,
+      "max_reference_backward_error": 1.1026231633028006e-15,
+      "max_deformed_moment_residual_kip_in": 16.57027122411486
+    },
+    {
+      "segments": 4,
+      "ratio": 0.1,
+      "steps": 20,
+      "path": "preload",
+      "variant": "raw",
+      "force": -2.0,
+      "plane": "XY",
+      "origin": [
+        17.0,
+        -31.0,
+        49.0
+      ],
+      "group": "sign_plane_origin",
+      "supported": true,
+      "force_kip": -2.0,
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": -0.49523011371750075,
+        "reference_tip_in": -0.440798090710844,
+        "compression_kip": 49.690716602560954,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 0.1223604763779475,
+        "discrete_relative_error": 0.12236088137978608,
+        "tip_relative_error": -0.12348516056155788,
+        "base_reaction": [
+          2.0000000000001528,
+          49.69071660256095,
+          0.0,
+          0.0,
+          0.0,
+          -289.2166784675946
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          -24.60875046795337
+        ],
+        "free_joint_residual": 1.4588152907890617e-10,
+        "max_yield_interaction": 2.0911818692688648e-16,
+        "reference_backward_error": 3.224714531082586e-16
+      },
+      "max_yield_interaction": 2.0911818692688648e-16,
+      "geometric_arguments": [
+        -99.38143320512187,
+        -99.38143320512191,
+        -99.38143320512191,
+        -99.38143320512191
+      ],
+      "production_ready": false,
+      "accepted_steps": 20,
+      "max_free_joint_residual": 1.4588152907890617e-10,
+      "max_reference_backward_error": 4.651030573676806e-16,
+      "max_deformed_moment_residual_kip_in": 24.60875046795337
+    },
+    {
+      "segments": 4,
+      "ratio": 0.1,
+      "steps": 20,
+      "path": "preload",
+      "variant": "half_axial_diagnostic",
+      "force": -2.0,
+      "plane": "XY",
+      "origin": [
+        17.0,
+        -31.0,
+        49.0
+      ],
+      "group": "sign_plane_origin",
+      "supported": true,
+      "force_kip": -2.0,
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": -0.4407979313102265,
+        "reference_tip_in": -0.440798090710844,
+        "compression_kip": 49.690716602560954,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 3.6087176069423414e-07,
+        "discrete_relative_error": 4.249050238476701e-14,
+        "tip_relative_error": 3.616182122786976e-07,
+        "base_reaction": [
+          1.9999999999999751,
+          49.69071660256095,
+          0.0,
+          0.0,
+          0.0,
+          -261.9035650837258
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          -0.000411234151329154
+        ],
+        "free_joint_residual": 1.4588152907890617e-10,
+        "max_yield_interaction": 1.7148616267622998e-16,
+        "reference_backward_error": 3.224714531082586e-16
+      },
+      "max_yield_interaction": 1.7148616267622998e-16,
+      "geometric_arguments": [
+        -99.38143320512187,
+        -99.38143320512191,
+        -99.38143320512191,
+        -99.38143320512191
+      ],
+      "production_ready": false,
+      "accepted_steps": 20,
+      "max_free_joint_residual": 1.4588152907890617e-10,
+      "max_reference_backward_error": 4.651030573676806e-16,
+      "max_deformed_moment_residual_kip_in": 0.000411234151329154
+    },
+    {
+      "segments": 4,
+      "ratio": 0.1,
+      "steps": 20,
+      "path": "preload",
+      "variant": "raw",
+      "force": 0.0,
+      "plane": "XY",
+      "origin": [
+        17.0,
+        -31.0,
+        49.0
+      ],
+      "group": "sign_plane_origin",
+      "supported": true,
+      "force_kip": 0.0,
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": -0.0,
+        "reference_tip_in": 0.0,
+        "compression_kip": 49.690716602560954,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 0.0,
+        "discrete_relative_error": 0.0,
+        "tip_relative_error": -0.0,
+        "base_reaction": [
+          0.0,
+          49.69071660256095,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "free_joint_residual": 1.4588152907890617e-10,
+        "max_yield_interaction": 2.469167316476027e-21,
+        "reference_backward_error": 0.0
+      },
+      "max_yield_interaction": 2.469167316476027e-21,
+      "geometric_arguments": [
+        -99.38143320512187,
+        -99.38143320512191,
+        -99.38143320512191,
+        -99.38143320512191
+      ],
+      "production_ready": false,
+      "accepted_steps": 20,
+      "max_free_joint_residual": 1.4588152907890617e-10,
+      "max_reference_backward_error": 0.0,
+      "max_deformed_moment_residual_kip_in": 0.0
+    },
+    {
+      "segments": 4,
+      "ratio": 0.1,
+      "steps": 20,
+      "path": "preload",
+      "variant": "half_axial_diagnostic",
+      "force": 0.0,
+      "plane": "XY",
+      "origin": [
+        17.0,
+        -31.0,
+        49.0
+      ],
+      "group": "sign_plane_origin",
+      "supported": true,
+      "force_kip": 0.0,
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": -0.0,
+        "reference_tip_in": 0.0,
+        "compression_kip": 49.690716602560954,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 0.0,
+        "discrete_relative_error": 0.0,
+        "tip_relative_error": -0.0,
+        "base_reaction": [
+          0.0,
+          49.69071660256095,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "free_joint_residual": 1.4588152907890617e-10,
+        "max_yield_interaction": 2.469167316476027e-21,
+        "reference_backward_error": 0.0
+      },
+      "max_yield_interaction": 2.469167316476027e-21,
+      "geometric_arguments": [
+        -99.38143320512187,
+        -99.38143320512191,
+        -99.38143320512191,
+        -99.38143320512191
+      ],
+      "production_ready": false,
+      "accepted_steps": 20,
+      "max_free_joint_residual": 1.4588152907890617e-10,
+      "max_reference_backward_error": 0.0,
+      "max_deformed_moment_residual_kip_in": 0.0
+    },
+    {
+      "segments": 4,
+      "ratio": 0.1,
+      "steps": 20,
+      "path": "preload",
+      "variant": "raw",
+      "force": -2.0,
+      "plane": "YZ",
+      "origin": [
+        17.0,
+        -31.0,
+        49.0
+      ],
+      "group": "sign_plane_origin",
+      "supported": true,
+      "force_kip": -2.0,
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": -0.49523011371750075,
+        "reference_tip_in": -0.440798090710844,
+        "compression_kip": 49.690716602560954,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 0.1223604763779475,
+        "discrete_relative_error": 0.12236088137978608,
+        "tip_relative_error": -0.12348516056155788,
+        "base_reaction": [
+          0.0,
+          49.69071660256095,
+          2.0000000000001528,
+          289.2166784675946,
+          0.0,
+          0.0
+        ],
+        "deformed_moment_residual_kip_in": [
+          24.608750467953143,
+          0.0,
+          0.0
+        ],
+        "free_joint_residual": 1.4588152907890617e-10,
+        "max_yield_interaction": 2.4691673165197558e-21,
+        "reference_backward_error": 3.224714531082586e-16
+      },
+      "max_yield_interaction": 2.4691673165197558e-21,
+      "geometric_arguments": [
+        -99.38143320512187,
+        -99.38143320512191,
+        -99.38143320512191,
+        -99.38143320512191
+      ],
+      "production_ready": false,
+      "accepted_steps": 20,
+      "max_free_joint_residual": 1.4588152907890617e-10,
+      "max_reference_backward_error": 4.651030573676806e-16,
+      "max_deformed_moment_residual_kip_in": 24.608750467953143
+    },
+    {
+      "segments": 4,
+      "ratio": 0.1,
+      "steps": 20,
+      "path": "preload",
+      "variant": "half_axial_diagnostic",
+      "force": -2.0,
+      "plane": "YZ",
+      "origin": [
+        17.0,
+        -31.0,
+        49.0
+      ],
+      "group": "sign_plane_origin",
+      "supported": true,
+      "force_kip": -2.0,
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": -0.4407979313102265,
+        "reference_tip_in": -0.440798090710844,
+        "compression_kip": 49.690716602560954,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 3.6087176069423414e-07,
+        "discrete_relative_error": 4.249050238476701e-14,
+        "tip_relative_error": 3.616182122786976e-07,
+        "base_reaction": [
+          0.0,
+          49.69071660256095,
+          1.9999999999999751,
+          261.9035650837258,
+          0.0,
+          0.0
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0004112341511586237,
+          0.0,
+          0.0
+        ],
+        "free_joint_residual": 1.4588152907890617e-10,
+        "max_yield_interaction": 2.469167316505433e-21,
+        "reference_backward_error": 3.224714531082586e-16
+      },
+      "max_yield_interaction": 2.469167316505433e-21,
+      "geometric_arguments": [
+        -99.38143320512187,
+        -99.38143320512191,
+        -99.38143320512191,
+        -99.38143320512191
+      ],
+      "production_ready": false,
+      "accepted_steps": 20,
+      "max_free_joint_residual": 1.4588152907890617e-10,
+      "max_reference_backward_error": 4.651030573676806e-16,
+      "max_deformed_moment_residual_kip_in": 0.0004112341511586237
+    },
+    {
+      "segments": 4,
+      "ratio": 0.1,
+      "steps": 20,
+      "path": "preload",
+      "variant": "raw",
+      "force": 0.0,
+      "plane": "YZ",
+      "origin": [
+        17.0,
+        -31.0,
+        49.0
+      ],
+      "group": "sign_plane_origin",
+      "supported": true,
+      "force_kip": 0.0,
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.0,
+        "reference_tip_in": 0.0,
+        "compression_kip": 49.690716602560954,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 0.0,
+        "discrete_relative_error": 0.0,
+        "tip_relative_error": 0.0,
+        "base_reaction": [
+          0.0,
+          49.69071660256095,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "free_joint_residual": 1.4588152907890617e-10,
+        "max_yield_interaction": 2.469167316476027e-21,
+        "reference_backward_error": 0.0
+      },
+      "max_yield_interaction": 2.469167316476027e-21,
+      "geometric_arguments": [
+        -99.38143320512187,
+        -99.38143320512191,
+        -99.38143320512191,
+        -99.38143320512191
+      ],
+      "production_ready": false,
+      "accepted_steps": 20,
+      "max_free_joint_residual": 1.4588152907890617e-10,
+      "max_reference_backward_error": 0.0,
+      "max_deformed_moment_residual_kip_in": 0.0
+    },
+    {
+      "segments": 4,
+      "ratio": 0.1,
+      "steps": 20,
+      "path": "preload",
+      "variant": "half_axial_diagnostic",
+      "force": 0.0,
+      "plane": "YZ",
+      "origin": [
+        17.0,
+        -31.0,
+        49.0
+      ],
+      "group": "sign_plane_origin",
+      "supported": true,
+      "force_kip": 0.0,
+      "final": {
+        "factor": 1.0,
+        "tip_translation_in": 0.0,
+        "reference_tip_in": 0.0,
+        "compression_kip": 49.690716602560954,
+        "applied_compression_kip": 49.690716602706836,
+        "continuum_relative_error": 0.0,
+        "discrete_relative_error": 0.0,
+        "tip_relative_error": 0.0,
+        "base_reaction": [
+          0.0,
+          49.69071660256095,
+          0.0,
+          0.0,
+          0.0,
+          0.0
+        ],
+        "deformed_moment_residual_kip_in": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "free_joint_residual": 1.4588152907890617e-10,
+        "max_yield_interaction": 2.469167316476027e-21,
+        "reference_backward_error": 0.0
+      },
+      "max_yield_interaction": 2.469167316476027e-21,
+      "geometric_arguments": [
+        -99.38143320512187,
+        -99.38143320512191,
+        -99.38143320512191,
+        -99.38143320512191
+      ],
+      "production_ready": false,
+      "accepted_steps": 20,
+      "max_free_joint_residual": 1.4588152907890617e-10,
+      "max_reference_backward_error": 0.0,
+      "max_deformed_moment_residual_kip_in": 0.0
+    }
+  ]
+}

@@ -2901,6 +2901,70 @@ examples above are explicit first-order checks, not substitutes claiming identic
 source assumptions. See [PyNite's pushover description](https://pynite.readthedocs.io/en/latest/pushover.html)
 for its interaction/increment concepts; Brecon's accepted scope is the one above.
 
+**Combined P-Delta/plastic prerequisite (development study, 2026-11-03)**
+
+The locked PyNite 3.0.0 public pushover API has no P-Delta option. The newer
+3.2.1 API has it, but availability alone does not establish the combined workflow.
+Brecon continues to request first-order pushover explicitly when that option
+exists. Choosing P-Delta for the ordinary frame solve does not change the
+separate Steel Pushover workspace.
+
+A test-only study checks the elastic prerequisite before attempting plastic
+qualification. It uses a 120 in cantilever with EI=2,900,000 kip-in² and a 1 kip
+lateral tip force. Large axial area and deliberately high yield strength isolate
+bending/geometric response: every measured interaction stays below 1e-10, so these
+are mathematical elastic checks rather than a steel section/design example.
+Compression ratios N/Ncr=0, 0.1 and 0.3 use `Ncr=pi² EI/(4 L²)`. Two paths apply
+either constant compressive preload followed by lateral push, or simultaneous
+axial/lateral increments from zero.
+
+Independent references solve `EI*d4w/dy4 + N*d2w/dy2=0`: a closed-form
+trigonometric/hyperbolic field is cross-checked against a state-transfer solution
+and separately assembled Gauss-integrated Hermite energy. Controls include
+2/4/8 explicit members, 20/100/400 increments, signed/zero lateral forces, XY/YZ
+and translated origins. The ordinary elastic P-Delta solver and zero-axial
+first-order pushover are separate controls. Global moments use actual deformed
+lever arms, including axial shortening. The elastic displacement-field gate is
+0.1%; the independent moment residual gate is 0.012 kip-in for the 1 kip/120 in case.
+
+| Fine-mesh case, N/Ncr | Raw engine field error | Isolated half-axial diagnostic |
+| --- | --- | --- |
+| Constant preload, 0.1 | 12.20% | Below 0.000003% |
+| Constant preload, 0.3 | 73.49% | Below 0.00003% |
+| Simultaneous ramp, 0.3, 400 increments | 6.63% | 16.49% |
+
+The raw pushover geometric stiffness receives the **difference** between opposite
+member-end axial actions, twice the physical axial force for a uniform-force
+member. A test-only half-axial patch isolates this defect and restores constant-
+preload convergence, but does not fix the ramp. With changing N, that diagnostic
+approaches `integral_0^1 H*C(lambda*N) d lambda`, rather than the static equilibrium
+value `H*C(N)`. At N/Ncr=0.3 it is within 0.05% of that incomplete compliance
+integral after 400 increments, while remaining about 16.5% away from the correct
+displacement field. Joint force closure alone misses this error; deformed moment
+balance also fails. Increment refinement is insufficient.
+
+![Raw P-Delta pushover fails the elastic prerequisite; a half-axial diagnostic fixes constant preload but still fails changing-axial-load equilibrium](docs/assets/screenshots/combined-pushover-prerequisite.png)
+
+[Download the 62-record prerequisite report](docs/assets/combined-pushover-prerequisite.json).
+It records engine/source hashes, controls, moments and full-precision errors.
+`diagnostic_checks_passed: true` means the controls/reference checks succeeded;
+**`elastic_prerequisite_passed: false`**, **`combined_plastic_validated: false`**
+and **`production_ready: false`** retain the rejection. The patch is isolated and
+restored on normal and exceptional exits; application code never imports it.
+No installed dependency or production solver is modified. The two official
+P-Delta/plastic scripts remain pending, along with corrected equilibrium,
+plastic interaction/unloading/tangent/stability and accepted-step validation.
+See the [upstream API implementation](https://github.com/JWock82/Pynite/blob/main/Pynite/FEModel3D.py)
+for the optional engine path; the measured report is specifically for 3.2.1.
+
+Reproduce with a Python environment containing PyNite 3.2.1 and this project's
+dependencies (the locked 3.0 environment instead reports its missing API):
+
+```sh
+python -B scripts/benchmark_combined_pushover.py --output /tmp/combined-pushover.json --figure /tmp/combined-pushover.png
+python -B scripts/test.py test_combined_pushover test_pushover
+```
+
 MCP exposes `run_pushover_analysis` with session/revision, preload/push, control
 node/DOF, canonical stop limit (in or rad), reaction nodes/component and numerical
 controls. Poll `analysis_status` until `running=false`. Inspect Current/Partial

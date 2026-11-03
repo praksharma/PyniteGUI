@@ -92,8 +92,19 @@ table above in sync as methods are implemented.
   histories, capacity/end-yield plots, table/image/archive exports and explicit
   partial termination. Independent redistribution, mechanism, interior interaction,
   weak-axis and increment-refinement checks. No RC, surfaces or end releases.
-- [ ] Validate combined P-Delta/plastic response before adapting the two official
-  pushover scripts, both of which request `P_Delta=True` in the pinned source.
+- [x] Audit the combined P-Delta/plastic elastic prerequisite on the locked 3.0
+  API and newer 3.2.1 API. Add independent closed-form/state-transfer and Hermite
+  energy checks, mesh/step/sign/plane/origin controls, deformed moment balance and
+  a reproducible 62-record report/figure. Isolate doubled axial geometric force
+  and the changing-axial-load compliance path defect. Preserve explicit first-order
+  production calls; the diagnostic correction is never used by the application.
+- [ ] Correct and independently validate combined P-Delta/plastic response before
+  adapting the two official pushover scripts (`P_Delta=True` in the pinned source).
+  The 3.2.1 raw candidate fails before yield: ~12.2/73.5% displacement-field errors
+  at N/Ncr=0.1/0.3; an isolated half-axial diagnostic fixes constant preload but
+  still has ~16.5% ramp error after 400 steps. Resolve actual axial averaging and
+  re-equilibrate changing axial loads before checking plastic return/tangent,
+  unloading, interaction, stability, accepted histories and official source parity.
 - [x] **Modal analysis:** explicit mass-source combination, global load-to-mass
   direction and gravity; separate native mode workspace, frequencies/periods,
   normalized shapes and mass-source tables, image/table/archive exports and

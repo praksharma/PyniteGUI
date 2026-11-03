@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Add a reproducible combined P-Delta/plastic prerequisite study, independent
+  elastic cantilever fields/energy, mesh/step/sign/plane/origin controls and
+  deformed moment checks. Isolate doubled axial geometric force and an incomplete
+  changing-axial-load compliance path in PyNite 3.2.1. Publish 62 records and a
+  comparison figure; preserve production rejection and the first-order workflow.
+  The diagnostic correction is test-only, not a new solver or official adaptation.
+
 - Integrate bounded recovered Qx/Qy in the separate thin-Quad plate workspace:
   explicit eligibility, masked centre contours, centre-only probes, status/fit
   metadata and unit/snapshot-labelled CSV. Add thin-rectangle and free-opening

@@ -67,6 +67,9 @@ const server = http.createServer((request,response)=>{
         const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));
         assert(figures.some(image=>image.src.endsWith('steel-pushover.png'))&&figures.every(image=>image.ok),'Missing steel pushover screenshot');
         assert((await page.locator('article').innerText()).includes('Partial'),'Missing partial-history contract');
+        assert(figures.some(image=>image.src.endsWith('combined-pushover-prerequisite.png')),'Missing combined pushover prerequisite figure');
+        assert((await page.locator('article').innerText()).includes('elastic_prerequisite_passed: false'),'Missing elastic rejection gate');
+        assert((await page.locator('article').innerText()).includes('combined_plastic_validated: false'),'Missing combined-plastic scope');
       }
       if(url==='modeling/joint-springs/'){
         const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));

@@ -132,6 +132,10 @@ elastic preload plus nodal push increments, checked histories/capacity curves,
 unit-labelled tables, CSV/PNG/SVG/JSON and MCP jobs. Partial results are labelled;
 no P-Delta/plastic combination, nonlinear slabs or RC plasticity is claimed.
 Three editable examples have independent hand references and refinement checks.
+A [combined P-Delta/plastic prerequisite study](analysis/pushover.md) isolates
+pre-yield axial-force and changing-load equilibrium defects in PyNite 3.2.1.
+Its illustrated 62-record report retains rejection; both official combined
+pushover examples remain pending. The application keeps its checked first-order path.
 
 The separate plate workspace supports geometry-owned linear pressure along local
 width/height, centroid-load previews and pressure probes. The official hydrostatic

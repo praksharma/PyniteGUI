@@ -130,6 +130,7 @@ tests = [
   "test_modal",
   "test_plasticity",
   "test_pushover",
+  "test_combined_pushover",
 ]
 
 [groups.surfaces]

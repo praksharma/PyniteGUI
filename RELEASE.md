@@ -319,6 +319,43 @@ and public RC4 artifacts are unchanged. Quad shear remains disabled in productio
   classes** across nine primary groups. Strict docs/link checks cover **58 HTML
   pages**; browser QA checks the figure and explicit unresolved-production gate.
 
+
+## Post-RC4 Combined Pushover Prerequisite Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-03. This is test-only formulation
+validation; runtime code, formats, catalog and public RC4 artifacts are unchanged.
+
+- Audit the absent public option in pinned PyNite 3.0.0 and the optional path in
+  3.2.1. Preserve explicit first-order calls by the application on both APIs,
+  including when the frame project has ordinary P-Delta selected.
+- Add independent closed-form cantilever/state-transfer and Hermite-energy
+  references, compression/tension/zero limits and branch guards. Record 62 raw,
+  diagnostic and control solves across mesh/step/sign/plane/origin variations.
+  Deliberately prevent yielding to check the necessary elastic prerequisite first.
+- Reject the raw 3.2.1 path: fine constant-preload displacement-field errors are
+  12.20/73.49% at N/Ncr=0.1/0.3. Isolate doubled geometric axial force without
+  modifying an installed engine. The test-only half-axial diagnostic restores
+  constant-preload convergence but leaves 16.49% ramp error after 400 increments,
+  approaching an incomplete compliance integral rather than static equilibrium.
+- Publish the illustrated report with engine/source hashes and explicit separate
+  diagnostic, prerequisite and production flags. Retain combined/plastic rejection
+  and both pending official examples; no production solver or tolerance changed.
+- Verification: **27 focused tests**, no skips, with installed pinned PyNite
+  **3.0.0** / Qt **6.11.2** (**25.311 s**) and newer PyNite **3.2.1** / Qt
+  **6.12.0** (**28.713 s**). These include the eight new reference/diagnostic/
+  routing tests and existing plastic mechanics/native workspace checks. The old
+  API explicitly reports unsupported combined probes; its independent references,
+  elastic controls and production first-order routing are still tested.
+- Ownership checks cover **181 classes** across nine primary groups. The report
+  records 62 supported probes on 3.2.1; the locked engine records 12 elastic
+  controls and 50 explicit unsupported combined entries. No test is skipped to
+  disguise the missing API. Source hashes and figure provenance are checked.
+- Strict docs/link checks cover **58 HTML pages**; browser QA includes the new
+  figure and explicit rejection flags. Wheel/source auditing includes the study
+  and report. Production runtime files remain byte-identical to the previously
+  verified installed packages; no solver/model infrastructure changed.
+
+
 ## Post-RC4 Guarded Plate Shear Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-01. Public RC4 artifacts and all
