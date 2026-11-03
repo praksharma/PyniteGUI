@@ -136,6 +136,10 @@ A [combined P-Delta/plastic prerequisite study](analysis/pushover.md) isolates
 pre-yield axial-force and changing-load equilibrium defects in PyNite 3.2.1.
 Its illustrated 62-record report retains rejection; both official combined
 pushover examples remain pending. The application keeps its checked first-order path.
+A subsequent test-only total-state corrector resolves the bounded elastic
+preload/ramp defects, with independent fields, derivatives, stability and unit
+checks plus 36 reproducible records. Plastic yielding and production integration
+remain unvalidated; the original negative measurements are preserved.
 
 The separate plate workspace supports geometry-owned linear pressure along local
 width/height, centroid-load previews and pressure probes. The official hydrostatic

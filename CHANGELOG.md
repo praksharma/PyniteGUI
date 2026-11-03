@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Correct the bounded elastic P-Delta/pushover prerequisites in a separate
+  total-state research solver: physical mean axial action and complete nodal/
+  axial equilibrium at every load target, with full block derivatives and line
+  search. Restore independent-reference convergence and increment-independent
+  endpoints for both preload and axial/lateral ramp. Add derivative, sign/plane,
+  units, reversal, stability and rejection checks plus 36 illustrated records.
+  Preserve the original negative study. Plastic yielding remains rejected and
+  application solver behavior is unchanged.
+
 - Add a reproducible combined P-Delta/plastic prerequisite study, independent
   elastic cantilever fields/energy, mesh/step/sign/plane/origin controls and
   deformed moment checks. Isolate doubled axial geometric force and an incomplete

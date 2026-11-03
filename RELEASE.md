@@ -320,6 +320,46 @@ and public RC4 artifacts are unchanged. Quad shear remains disabled in productio
   pages**; browser QA checks the figure and explicit unresolved-production gate.
 
 
+
+## Post-RC4 Elastic Equilibrium Correction Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-03. Test-only elastic correction;
+production runtime, formats, catalog, public RC4 and prior research artifacts
+remain unchanged.
+
+- Own total-state nodal and physical-mean-axial equilibrium with analytical block
+  derivatives, equilibrated solves and line search. Do not patch an installed
+  engine or reuse its defective incremental pushover path. Store only bounded
+  state data, not dense Newton operators, in histories.
+- Both constant preload and simultaneous axial/lateral ramp match independent
+  continuum/Hermite references. At eight members and N/Ncr=0.3 the relative field
+  error is 2.63e-7, deformed-moment residual about 0.000617 kip-in, and tip motion
+  0.282600207 in. One through 400 increments give the same endpoint. Preserve the
+  unchanged 0.1% displacement-field and 0.012 kip-in moment gates.
+- Verify derivatives by central differences, rotations, physical axial closure,
+  tension/compression/zero, signed loads, planes/translations, scaled geometry/
+  forces and nonproportional elastic reversal. Reject yield, instability,
+  nonconvergence and unsupported inputs without exposing a trial state.
+- Publish 36 bounded corrected records and a comparison figure with source/engine
+  hashes and the frozen negative-report hash. Keep plastic_validated and
+  production_ready false; no material return map, plastic unloading, general-frame
+  or official combined-example qualification is implied.
+- Verification: **35 focused tests**, no skips, in the pinned source environment
+  (**22.485 s**) and with installed pinned PyNite **3.0.0** / Qt **6.11.2**
+  (**26.188 s**) and newer PyNite **3.2.1** / Qt **6.12.0** (**29.352 s**).
+  The eight new correction/scope/zero-field checks were rechecked after final
+  guards on both installed sets (**0.979 s** / **0.973 s**). Existing first-order
+  plastic mechanics, native workspace and routing checks retain their behavior.
+- Both engines pass all **36 corrected elastic records** without their public
+  combined-pushover API. Ownership covers **182 classes** across nine groups.
+  Frozen prerequisite hashes, new source hashes and qualification flags pass.
+- Strict docs/link checks cover **58 HTML pages**; browser QA checks the new
+  figure and separate elastic/plastic readiness flags. Visually inspected the
+  comparison figure; wheel/source contents pass distribution auditing. All **129 runtime files**
+  remain identical to the already tested installed packages; no app/model/solver
+  infrastructure changed.
+
+
 ## Post-RC4 Combined Pushover Prerequisite Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-03. This is test-only formulation

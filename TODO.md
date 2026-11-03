@@ -98,13 +98,21 @@ table above in sync as methods are implemented.
   a reproducible 62-record report/figure. Isolate doubled axial geometric force
   and the changing-axial-load compliance path defect. Preserve explicit first-order
   production calls; the diagnostic correction is never used by the application.
-- [ ] Correct and independently validate combined P-Delta/plastic response before
+- [x] Correct the bounded elastic prerequisites in a separate total-state prototype:
+  physical mean axial force, full nodal/axial residuals, consistent block Jacobian,
+  scaled solves and line search. Both preload and ramp converge to independent
+  continuum/Hermite references; 1/20/100/400 increments give the same endpoint.
+  Verify derivatives, rotations, tensile/compressive/zero loads, planes/origins,
+  units, elastic reversal, stability and fail-closed yield/nonconvergence. Preserve
+  the frozen negative report and publish 36 corrected records with explicit
+  elastic-only readiness. No production or installed-engine code is changed.
+- [ ] Extend and independently validate combined P-Delta/plastic response before
   adapting the two official pushover scripts (`P_Delta=True` in the pinned source).
-  The 3.2.1 raw candidate fails before yield: ~12.2/73.5% displacement-field errors
-  at N/Ncr=0.1/0.3; an isolated half-axial diagnostic fixes constant preload but
-  still has ~16.5% ramp error after 400 steps. Resolve actual axial averaging and
-  re-equilibrate changing axial loads before checking plastic return/tangent,
-  unloading, interaction, stability, accepted histories and official source parity.
+  The bounded total-state correction resolves elastic cases only and rejects yield.
+  Validate an actual plastic return map, geometric/material tangent, unloading,
+  axial/biaxial interaction, interior yielding, stability/limit points, accepted
+  histories and general-frame/source parity. Do not apply the elastic correction
+  to yielded members or count either official combined example as implemented.
 - [x] **Modal analysis:** explicit mass-source combination, global load-to-mass
   direction and gravity; separate native mode workspace, frequencies/periods,
   normalized shapes and mass-source tables, image/table/archive exports and

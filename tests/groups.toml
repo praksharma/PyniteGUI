@@ -131,6 +131,7 @@ tests = [
   "test_plasticity",
   "test_pushover",
   "test_combined_pushover",
+  "test_equilibrated_column",
 ]
 
 [groups.surfaces]

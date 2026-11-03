@@ -2965,6 +2965,59 @@ python -B scripts/benchmark_combined_pushover.py --output /tmp/combined-pushover
 python -B scripts/test.py test_combined_pushover test_pushover
 ```
 
+**Bounded elastic correction (development study, 2026-11-03)**
+
+A separate test-only candidate now resolves both identified defects for the
+elastic cantilever cases. It uses the physical tension-positive mean member-end
+axial action, `N=(f_jx-f_ix)/2`, and re-equilibrates the complete load target at
+each fraction. It does not sum displacement increments from a changing compliance.
+The original negative report, figure and hashed helper files remain unchanged.
+
+The unknowns are free joint motions and one mean axial action per explicit
+member. With the engine's elastic and unit geometric operators, the residuals are
+`r_u=assemble((Ke+N*Kg_unit)*u)-P` and `r_N=N-(f_jx-f_ix)/2`. A full analytical block
+Jacobian includes derivatives with respect to both motion and axial action.
+Scaled linear solves and a residual-decreasing line search close both equations;
+all stored states must have resolved positive effective elastic stiffness and
+remain strictly below endpoint yield. Failure returns no trial result. The
+candidate owns this solve and does not patch an installed dependency or call its
+incremental pushover path. This is an elastic algebraic correction, not a plastic
+return mapping or a general finite-rotation frame formulation.
+
+Independent checks retain the same 0.1% displacement-field and 0.012 kip-in
+moment gates. At N/Ncr=0.3, eight explicit members give **2.63e-7 relative field
+error** (about **0.0000263%**) for both constant preload and simultaneous ramp,
+and about **0.000617 kip-in** deformed-moment residual. The tip displacement is
+approximately **0.282600207 in**, versus the continuum **0.282600282 in**.
+One, 20, 100 and 400 increments give the same endpoint within numerical precision.
+The earlier half-axial ramp's approximately 16.5% error is removed in these cases.
+
+![Total-state elastic correction restores mesh convergence and increment-independent equilibrium while preserving the original negative baseline](docs/assets/screenshots/equilibrated-column.png)
+
+[Download the 36-record corrected elastic report](docs/assets/equilibrated-column.json).
+It records **`bounded_elastic_checks_passed: true`**, while retaining
+**`plastic_validated: false`** and **`production_ready: false`**. Source and engine
+hashes, plus the frozen prior-report hash, identify the measured implementations.
+The scope is a 120 in cantilever with EI=2,900,000 kip-in², deliberately large
+axial area and high strength, N/Ncr=-0.3/0/0.1/0.3, 2/4/8 members, XY/YZ and
+translated origins. Signed/zero loads, independent Hermite energy, rotations,
+axial closure, analytical-Jacobian central differences, nonproportional elastic
+load reversal and length/force scaling are separately checked. Yielding,
+nonpositive effective stiffness, nonconvergence, nonfinite loads, member loads,
+springs, releases and imposed motions are rejected. Dense Newton matrices are
+not retained in the bounded step history.
+
+Passing these elastic cases is necessary but does not validate plastic yielding,
+material unloading, biaxial interaction, plastic tangents, limit points or general
+frames. The application keeps its checked first-order workflow, and both official
+combined P-Delta/plastic examples remain pending. The elastic load-reversal test
+is not a material unloading test.
+
+```sh
+python -B scripts/benchmark_equilibrated_column.py --output /tmp/equilibrated-column.json --figure /tmp/equilibrated-column.png
+python -B scripts/test.py test_equilibrated_column test_combined_pushover test_pushover
+```
+
 MCP exposes `run_pushover_analysis` with session/revision, preload/push, control
 node/DOF, canonical stop limit (in or rad), reaction nodes/component and numerical
 controls. Poll `analysis_status` until `running=false`. Inspect Current/Partial

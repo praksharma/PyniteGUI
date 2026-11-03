@@ -70,6 +70,9 @@ const server = http.createServer((request,response)=>{
         assert(figures.some(image=>image.src.endsWith('combined-pushover-prerequisite.png')),'Missing combined pushover prerequisite figure');
         assert((await page.locator('article').innerText()).includes('elastic_prerequisite_passed: false'),'Missing elastic rejection gate');
         assert((await page.locator('article').innerText()).includes('combined_plastic_validated: false'),'Missing combined-plastic scope');
+        assert(figures.some(image=>image.src.endsWith('equilibrated-column.png')),'Missing corrected elastic comparison figure');
+        assert((await page.locator('article').innerText()).includes('bounded_elastic_checks_passed: true'),'Missing bounded elastic readiness');
+        assert((await page.locator('article').innerText()).includes('plastic_validated: false'),'Missing retained material-plastic gate');
       }
       if(url==='modeling/joint-springs/'){
         const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));
