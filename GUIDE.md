@@ -3018,6 +3018,77 @@ python -B scripts/benchmark_equilibrated_column.py --output /tmp/equilibrated-co
 python -B scripts/test.py test_equilibrated_column test_combined_pushover test_pushover
 ```
 
+**Local steel-section return map (development study, 2026-11-04)**
+
+The next prototype adds actual local yielding, elastic unloading and reverse
+yielding for the stated interaction polynomial. It operates at one force point,
+with resultants `(N, My, Mz)` conjugate to axial strain and two curvatures. These
+are section variables; no mapping to member-end rotations or a plastic-hinge
+length is supplied. Application Steel Pushover keeps its existing formulation.
+
+The local candidate uses an additive elastic/plastic strain decomposition and
+backward-Euler associated flow with a nonnegative plastic multiplier. Its four
+consistency equations solve the three normalized returned resultants plus that
+multiplier in the elastic compliance metric. Signed gradient and Hessian terms
+retain the force signs. The algorithmic material tangent is the derivative of
+that converged system at fixed committed history. These are standard local flow
+and complementarity concepts; see the [GetFEM small-strain plasticity theory](https://getfem.org/userdoc/model_plasticity_small_strain.html).
+
+Committed plastic strain and accumulated dissipation are immutable. A failed
+return leaves them untouched. Each successful plastic update checks consistency,
+strain decomposition, nonnegative plastic work, tangent symmetry/positivity and
+resolved positive tangential yield-surface curvature. The elastic stiffness and
+capacities are normalized before solving; length/force scaling and reflected
+force axes preserve the response. This is perfect plasticity without hardening,
+fracture, reinforced-concrete cracking or a general cyclic steel material model.
+
+**Measured scope:** C=diag(EA, EIy, EIz) for E=29000 ksi, A=10 in², Iy=30 in⁴,
+Iz=100 in⁴, with capacities `(500 kip, 500 kip-in, 1000 kip-in)`. Three pure-resultant
+cycles each use 1, 10 and 40 subdivisions per path segment. Across 927 local
+updates, forces, plastic strain and dissipation match independent scalar
+perfect-plastic references; normalized force error is below 3e-15. Endpoint work,
+elastic-energy change, plastic work and backward-Euler numerical dissipation
+close separately. Unloading recovers the elastic tangent; reversal reaches the
+opposite yield force with the correctly signed plastic strain increment.
+
+Twenty-four mixed returns cover three local branches in all eight sign octants.
+An independent SLSQP optimizer with numerical constraint derivatives converges
+from all 192 starts for these cases; normalized returned-force agreement is
+within 5e-8. Central-difference force derivatives agree with the algorithmic
+tangent to better than 2e-10 relative error. Multiple agreeing starts are a
+bounded cross-check, not a proof of global uniqueness.
+
+**Excluded region:** the original polynomial's elastic domain is not globally
+convex. Let `a=sqrt((sqrt(18)-2)/7)`. The two points
+`1.0002*(a+0.1, 0, a-0.1)` and `1.0002*(a-0.1, 0, a+0.1)` each have
+Phi approximately **0.998458**, while their midpoint has Phi approximately
+**1.000544**. Thus two elastic points can have an inelastic midpoint. Independent
+second differences also confirm negative tangential curvature near this region.
+The local return-map candidate explicitly rejects nonpositive/unresolved surface
+curvature. It preserves the given equation; no convexification or replacement
+law is silently introduced. A local curvature guard does not certify the global
+yield domain or all return-map branches.
+
+![Local steel-section yielding and reversal match exact scalar references; the nonconvex interaction region is explicitly excluded](docs/assets/screenshots/section-return.png)
+
+[Download the 33-record local section report](docs/assets/section-return.json).
+It records **`bounded_local_section_checks_passed: true`**, alongside
+**`global_yield_domain_convex: false`**, **`frame_plastic_validated: false`** and
+**`production_ready: false`**. New source hashes and frozen prior-report hashes
+preserve the earlier evidence. The research code imports no application solver
+and modifies no installed engine.
+
+General constitutive qualification, branch selection through the nonconvex region,
+member/hinge compatibility, geometric/material frame tangents, interior yielding,
+limit states and both official combined P-Delta/plastic examples remain pending.
+Existing first-order benchmarks establish their documented cases; they do not
+establish a globally convex associated section law or the new frame formulation.
+
+```sh
+python -B scripts/benchmark_section_return.py --output /tmp/section-return.json --figure /tmp/section-return.png
+python -B scripts/test.py test_section_return test_equilibrated_column test_pushover
+```
+
 MCP exposes `run_pushover_analysis` with session/revision, preload/push, control
 node/DOF, canonical stop limit (in or rad), reaction nodes/component and numerical
 controls. Poll `analysis_status` until `running=false`. Inspect Current/Partial

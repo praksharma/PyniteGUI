@@ -140,6 +140,11 @@ A subsequent test-only total-state corrector resolves the bounded elastic
 preload/ramp defects, with independent fields, derivatives, stability and unit
 checks plus 36 reproducible records. Plastic yielding and production integration
 remain unvalidated; the original negative measurements are preserved.
+A subsequent local section prototype adds backward-Euler yielding, unloading,
+reverse yield and consistent material tangents, checked against scalar cycles and
+independent mixed-return optimization. Its 33-record report also demonstrates
+and excludes a nonconvex interaction region. These remain local research checks;
+member/hinge compatibility and combined frame-plastic qualification are pending.
 
 The separate plate workspace supports geometry-owned linear pressure along local
 width/height, centroid-load previews and pressure probes. The official hydrostatic

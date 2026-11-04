@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Add a test-only local steel-section return map with signed yield derivatives,
+  backward-Euler flow/consistency, algorithmic material tangent and immutable
+  committed plastic history. Verify yielding, elastic unloading, reverse yield,
+  dissipation/energy, mixed-force optimization, unit scaling and failure handling.
+  Publish 33 records and a figure. Preserve and explicitly reject an unresolved
+  nonconvex region of the stated interaction law; global material/frame/P-Delta
+  qualification and application integration remain pending.
+
 - Correct the bounded elastic P-Delta/pushover prerequisites in a separate
   total-state research solver: physical mean axial action and complete nodal/
   axial equilibrium at every load target, with full block derivatives and line

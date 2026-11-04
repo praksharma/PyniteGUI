@@ -73,6 +73,10 @@ const server = http.createServer((request,response)=>{
         assert(figures.some(image=>image.src.endsWith('equilibrated-column.png')),'Missing corrected elastic comparison figure');
         assert((await page.locator('article').innerText()).includes('bounded_elastic_checks_passed: true'),'Missing bounded elastic readiness');
         assert((await page.locator('article').innerText()).includes('plastic_validated: false'),'Missing retained material-plastic gate');
+        assert(figures.some(image=>image.src.endsWith('section-return.png')),'Missing local section-return figure');
+        assert((await page.locator('article').innerText()).includes('bounded_local_section_checks_passed: true'),'Missing bounded local-section readiness');
+        assert((await page.locator('article').innerText()).includes('global_yield_domain_convex: false'),'Missing nonconvex-domain scope');
+        assert((await page.locator('article').innerText()).includes('frame_plastic_validated: false'),'Missing frame-plastic gate');
       }
       if(url==='modeling/joint-springs/'){
         const figures=await page.locator('article img').evaluateAll(nodes=>nodes.map(node=>({src:node.src,ok:node.complete&&node.naturalWidth>0})));

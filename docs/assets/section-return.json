@@ -1,0 +1,1158 @@
+{
+  "bounded_local_section_checks_passed": true,
+  "global_yield_domain_convex": false,
+  "frame_plastic_validated": false,
+  "production_ready": false,
+  "python": "3.12.13",
+  "pynite": "3.0.0",
+  "source_sha256": {
+    "tests/section_return_map.py": "e68c33f1d5bb57476c0c54904236cf470021362cb722d6689de350a84fa9b5fc",
+    "tests/section_return_reference.py": "058ad14a2fbf83bde1a9450c9f883ea623ad89c34a2a5f95c5bf9fd5cbdf0912",
+    "tests/section_return_cases.py": "9faffa88ca1d12ae69a1f1fb67a93c457dd28862e7fb7185ded8ca13b7be4f81",
+    "tests/test_section_return.py": "083ffe6caf90627ff36d053ed6924de01d54a323f8f95edc7ed434e88f4ea110",
+    "scripts/benchmark_section_return.py": "c8e70bc17098291ee3f715bf657ff965b64e209ebcdcffc9b75bbbb8cb0673fb"
+  },
+  "frozen_report_sha256": {
+    "docs/assets/combined-pushover-prerequisite.json": "10a8c380b807d144362c593c04f00cc5fae3279573878e127669bacdafcd75cf",
+    "docs/assets/equilibrated-column.json": "66eb4e7d6cd7b730299568b6268d2498b5fd2f1593892bde68ec15767c00ddf0"
+  },
+  "section_stiffness": [
+    [
+      290000.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      870000.0,
+      0.0
+    ],
+    [
+      0.0,
+      0.0,
+      2900000.0
+    ]
+  ],
+  "section_capacities": [
+    500.0,
+    500.0,
+    1000.0
+  ],
+  "force_order": [
+    "N",
+    "My",
+    "Mz"
+  ],
+  "strain_order": [
+    "axial_strain",
+    "curvature_y",
+    "curvature_z"
+  ],
+  "scope": "Local perfect-plastic force point only, same stated steel interaction polynomial with signed gradient/Hessian. Three scalar cyclic paths at three step refinements; 24 mixed returns on locally convex patches across all force-sign octants. Full backward-Euler consistency tangent. No hardening, finite frame, hinge length, P-Delta/plastic assembly, interior-yield or RC formulation.",
+  "method": "Normalize resultants by strengths and solve the four-variable backward-Euler consistency/flow KKT system in the elastic compliance metric. Frozen committed history is advanced only after residual, surface-curvature, tangent, strain-decomposition and dissipation checks. The tangent is the derivative at fixed old history, not an elastic stiffness reduction guess.",
+  "reference": "Exact scalar perfect-plastic clip/projection, endpoint-work/elastic-energy/plastic-dissipation identity, central differences of yield derivatives and algorithmic force derivatives, independent multistart SLSQP with numerical constraint derivatives. At least six converged feasible starts and matching objective levels are required per mixed case; this is not a proof of global uniqueness.",
+  "exclusion": "The original polynomial has a nonconvex elastic domain. The candidate rejects nonpositive or unresolved tangential yield-surface curvature. A positive result is local-branch validation only; this guard is not a global convexity certificate.",
+  "documentation_sources": [
+    "https://getfem.org/userdoc/model_plasticity_small_strain.html",
+    "https://pynite.readthedocs.io/en/latest/pushover.html"
+  ],
+  "nonconvex_witness": {
+    "first": [
+      0.6661519675910706,
+      0.0,
+      0.46611196759107076
+    ],
+    "second": [
+      0.46611196759107076,
+      0.0,
+      0.6661519675910706
+    ],
+    "midpoint": [
+      0.5661319675910708,
+      0.0,
+      0.5661319675910708
+    ],
+    "endpoint_phi": [
+      0.9984577375720521,
+      0.9984577375720521
+    ],
+    "midpoint_phi": 1.0005438100677861,
+    "boundary": [
+      0.5660187638383031,
+      0.0,
+      0.5660187638383031
+    ],
+    "tangential_second_difference": -0.24264062981060874,
+    "global_elastic_domain_convex": false
+  },
+  "records": [
+    {
+      "kind": "uniaxial_cycle",
+      "axis": "N",
+      "substeps": 1,
+      "states": 7,
+      "max_force_error": 0.0,
+      "max_plastic_strain_error": 0.0,
+      "max_dissipation_error": 0.0,
+      "max_incremental_energy_error": 1.1102230246251565e-16,
+      "max_yield_overshoot": 0.0,
+      "max_return_residual": 0.0,
+      "final_state": {
+        "plastic_strain": [
+          0.0008620689655172414,
+          0.0,
+          0.0
+        ],
+        "dissipation": 2.155172413793103
+      }
+    },
+    {
+      "kind": "uniaxial_cycle",
+      "axis": "N",
+      "substeps": 10,
+      "states": 61,
+      "max_force_error": 5.684341886080802e-16,
+      "max_plastic_strain_error": 5.266512052848338e-16,
+      "max_dissipation_error": 2.5757174171303635e-15,
+      "max_incremental_energy_error": 1.1102230246251564e-16,
+      "max_yield_overshoot": 0.0,
+      "max_return_residual": 1.1102230246251565e-15,
+      "final_state": {
+        "plastic_strain": [
+          0.0008620689655172408,
+          0.0,
+          0.0
+        ],
+        "dissipation": 2.155172413793102
+      }
+    },
+    {
+      "kind": "uniaxial_cycle",
+      "axis": "N",
+      "substeps": 40,
+      "states": 241,
+      "max_force_error": 3.410605131648481e-16,
+      "max_plastic_strain_error": 2.5153490401663703e-16,
+      "max_dissipation_error": 2.318145675417327e-15,
+      "max_incremental_energy_error": 1.318389841742374e-16,
+      "max_yield_overshoot": 0.0,
+      "max_return_residual": 2.220446049250313e-16,
+      "final_state": {
+        "plastic_strain": [
+          0.0008620689655172416,
+          0.0,
+          0.0
+        ],
+        "dissipation": 2.1551724137931045
+      }
+    },
+    {
+      "kind": "uniaxial_cycle",
+      "axis": "My",
+      "substeps": 1,
+      "states": 7,
+      "max_force_error": 0.0,
+      "max_plastic_strain_error": 0.0,
+      "max_dissipation_error": 0.0,
+      "max_incremental_energy_error": 2.7755575615628914e-17,
+      "max_yield_overshoot": 0.0,
+      "max_return_residual": 0.0,
+      "final_state": {
+        "plastic_strain": [
+          0.0,
+          0.00028735632183908046,
+          0.0
+        ],
+        "dissipation": 0.7183908045977011
+      }
+    },
+    {
+      "kind": "uniaxial_cycle",
+      "axis": "My",
+      "substeps": 10,
+      "states": 61,
+      "max_force_error": 2.0463630789890884e-15,
+      "max_plastic_strain_error": 2.039790862259916e-15,
+      "max_dissipation_error": 4.249933738265099e-15,
+      "max_incremental_energy_error": 6.765421556309548e-17,
+      "max_yield_overshoot": 7.993605777301127e-15,
+      "max_return_residual": 7.993605777301127e-15,
+      "final_state": {
+        "plastic_strain": [
+          0.0,
+          0.0002873563218390797,
+          0.0
+        ],
+        "dissipation": 0.7183908045977003
+      }
+    },
+    {
+      "kind": "uniaxial_cycle",
+      "axis": "My",
+      "substeps": 40,
+      "states": 241,
+      "max_force_error": 0.0,
+      "max_plastic_strain_error": 2.8297676701871666e-16,
+      "max_dissipation_error": 2.1249668691325497e-15,
+      "max_incremental_energy_error": 6.310056643865636e-17,
+      "max_yield_overshoot": 0.0,
+      "max_return_residual": 0.0,
+      "final_state": {
+        "plastic_strain": [
+          0.0,
+          0.00028735632183908046,
+          0.0
+        ],
+        "dissipation": 0.7183908045977013
+      }
+    },
+    {
+      "kind": "uniaxial_cycle",
+      "axis": "Mz",
+      "substeps": 1,
+      "states": 7,
+      "max_force_error": 4.547473508864641e-16,
+      "max_plastic_strain_error": 3.9302328752599536e-16,
+      "max_dissipation_error": 6.439293542825908e-16,
+      "max_incremental_energy_error": 1.6653345369377348e-16,
+      "max_yield_overshoot": 0.0,
+      "max_return_residual": 0.0,
+      "final_state": {
+        "plastic_strain": [
+          0.0,
+          0.0,
+          0.0001724137931034483
+        ],
+        "dissipation": 0.8620689655172418
+      }
+    },
+    {
+      "kind": "uniaxial_cycle",
+      "axis": "Mz",
+      "substeps": 10,
+      "states": 61,
+      "max_force_error": 5.684341886080802e-16,
+      "max_plastic_strain_error": 5.89534931288993e-16,
+      "max_dissipation_error": 5.634381849972669e-16,
+      "max_incremental_energy_error": 4.8572257327350494e-17,
+      "max_yield_overshoot": 0.0,
+      "max_return_residual": 1.1102230246251565e-15,
+      "final_state": {
+        "plastic_strain": [
+          0.0,
+          0.0,
+          0.00017241379310344826
+        ],
+        "dissipation": 0.8620689655172415
+      }
+    },
+    {
+      "kind": "uniaxial_cycle",
+      "axis": "Mz",
+      "substeps": 40,
+      "states": 241,
+      "max_force_error": 2.2737367544323206e-16,
+      "max_plastic_strain_error": 3.144186300207963e-16,
+      "max_dissipation_error": 3.2196467714129536e-15,
+      "max_incremental_energy_error": 8.590946964232016e-17,
+      "max_yield_overshoot": 0.0,
+      "max_return_residual": 2.220446049250313e-16,
+      "final_state": {
+        "plastic_strain": [
+          0.0,
+          0.0,
+          0.00017241379310344834
+        ],
+        "dissipation": 0.8620689655172411
+      }
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        -1.2,
+        -0.1,
+        -0.1
+      ],
+      "returned": [
+        -0.9959813505138676,
+        -0.036037384752533895,
+        -0.03070595740911255
+      ],
+      "reference": {
+        "point": [
+          -0.9959813542420944,
+          -0.036037349810268994,
+          -0.030705956848261346
+        ],
+        "objective": 0.022454006894923523,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 4.3108234405252445e-08
+      },
+      "reference_error": 3.514507228387942e-08,
+      "consistent_tangent_relative_error": 8.422729178645689e-11,
+      "yield_value": 1.0000000000000004,
+      "curvature": 5.547195709135713,
+      "return_residual": 4.440892098500626e-16,
+      "dissipation_increment": 0.1765674262688772,
+      "iterations": 4,
+      "plastic_strain": [
+        -0.00035175629221746946,
+        -3.676012370543979e-05,
+        -2.3894497445133654e-05
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        -1.2,
+        -0.1,
+        0.1
+      ],
+      "returned": [
+        -0.9959813505138676,
+        -0.036037384752533895,
+        0.03070595740911255
+      ],
+      "reference": {
+        "point": [
+          -0.9959813563081011,
+          -0.03603734986579546,
+          0.03070594159848837
+        ],
+        "objective": 0.02245400689492318,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 4.4701267097553274e-08
+      },
+      "reference_error": 3.8738011020910464e-08,
+      "consistent_tangent_relative_error": 8.422729178645689e-11,
+      "yield_value": 1.0000000000000004,
+      "curvature": 5.547195709135713,
+      "return_residual": 4.440892098500626e-16,
+      "dissipation_increment": 0.1765674262688772,
+      "iterations": 4,
+      "plastic_strain": [
+        -0.00035175629221746946,
+        -3.676012370543979e-05,
+        2.3894497445133654e-05
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        -1.2,
+        0.1,
+        -0.1
+      ],
+      "returned": [
+        -0.9959813505138676,
+        0.036037384752533895,
+        -0.03070595740911255
+      ],
+      "reference": {
+        "point": [
+          -0.9959813505544975,
+          0.0360373803455594,
+          -0.030705960505770524
+        ],
+        "objective": 0.022454006894845408,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 4.703878369164393e-08
+      },
+      "reference_error": 5.386312801482091e-09,
+      "consistent_tangent_relative_error": 8.422729178645689e-11,
+      "yield_value": 1.0000000000000004,
+      "curvature": 5.547195709135713,
+      "return_residual": 4.440892098500626e-16,
+      "dissipation_increment": 0.1765674262688772,
+      "iterations": 4,
+      "plastic_strain": [
+        -0.00035175629221746946,
+        3.676012370543979e-05,
+        -2.3894497445133654e-05
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        -1.2,
+        0.1,
+        0.1
+      ],
+      "returned": [
+        -0.9959813505138676,
+        0.036037384752533895,
+        0.03070595740911255
+      ],
+      "reference": {
+        "point": [
+          -0.9959813516687777,
+          0.03603737964462334,
+          0.030705952841405544
+        ],
+        "objective": 0.022454006894893987,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 4.598084598465844e-08
+      },
+      "reference_error": 6.948993792751034e-09,
+      "consistent_tangent_relative_error": 8.422729178645689e-11,
+      "yield_value": 1.0000000000000004,
+      "curvature": 5.547195709135713,
+      "return_residual": 4.440892098500626e-16,
+      "dissipation_increment": 0.1765674262688772,
+      "iterations": 4,
+      "plastic_strain": [
+        -0.00035175629221746946,
+        3.676012370543979e-05,
+        2.3894497445133654e-05
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        1.2,
+        -0.1,
+        -0.1
+      ],
+      "returned": [
+        0.9959813505138676,
+        -0.036037384752533895,
+        -0.03070595740911255
+      ],
+      "reference": {
+        "point": [
+          0.9959813538265675,
+          -0.036037351064636174,
+          -0.030705958941918948
+        ],
+        "objective": 0.022454006894923353,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 4.463963401677521e-08
+      },
+      "reference_error": 3.3885069410000965e-08,
+      "consistent_tangent_relative_error": 8.422729178645689e-11,
+      "yield_value": 1.0000000000000004,
+      "curvature": 5.547195709135713,
+      "return_residual": 4.440892098500626e-16,
+      "dissipation_increment": 0.1765674262688772,
+      "iterations": 4,
+      "plastic_strain": [
+        0.00035175629221746946,
+        -3.676012370543979e-05,
+        -2.3894497445133654e-05
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        1.2,
+        -0.1,
+        0.1
+      ],
+      "returned": [
+        0.9959813505138676,
+        -0.036037384752533895,
+        0.03070595740911255
+      ],
+      "reference": {
+        "point": [
+          0.9959813555138374,
+          -0.03603735219528475,
+          0.0307059456528749
+        ],
+        "objective": 0.022454006894923068,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 4.268934042260463e-08
+      },
+      "reference_error": 3.4974037419159304e-08,
+      "consistent_tangent_relative_error": 8.422729178645689e-11,
+      "yield_value": 1.0000000000000004,
+      "curvature": 5.547195709135713,
+      "return_residual": 4.440892098500626e-16,
+      "dissipation_increment": 0.1765674262688772,
+      "iterations": 4,
+      "plastic_strain": [
+        0.00035175629221746946,
+        -3.676012370543979e-05,
+        2.3894497445133654e-05
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        1.2,
+        0.1,
+        -0.1
+      ],
+      "returned": [
+        0.9959813505138676,
+        0.036037384752533895,
+        -0.03070595740911255
+      ],
+      "reference": {
+        "point": [
+          0.9959813552782911,
+          0.03603733773802784,
+          -0.030705958507242854
+        ],
+        "objective": 0.022454006894927936,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 4.523174188131492e-08
+      },
+      "reference_error": 4.726805899332588e-08,
+      "consistent_tangent_relative_error": 8.422729178645689e-11,
+      "yield_value": 1.0000000000000004,
+      "curvature": 5.547195709135713,
+      "return_residual": 4.440892098500626e-16,
+      "dissipation_increment": 0.1765674262688772,
+      "iterations": 4,
+      "plastic_strain": [
+        0.00035175629221746946,
+        3.676012370543979e-05,
+        -2.3894497445133654e-05
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        1.2,
+        0.1,
+        0.1
+      ],
+      "returned": [
+        0.9959813505138676,
+        0.036037384752533895,
+        0.03070595740911255
+      ],
+      "reference": {
+        "point": [
+          0.995981351280577,
+          0.03603738093329256,
+          0.030705954706450718
+        ],
+        "objective": 0.022454006894924005,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 4.8388830051731395e-08
+      },
+      "reference_error": 4.741184300950717e-09,
+      "consistent_tangent_relative_error": 8.422729178645689e-11,
+      "yield_value": 1.0000000000000004,
+      "curvature": 5.547195709135713,
+      "return_residual": 4.440892098500626e-16,
+      "dissipation_increment": 0.1765674262688772,
+      "iterations": 4,
+      "plastic_strain": [
+        0.00035175629221746946,
+        3.676012370543979e-05,
+        2.3894497445133654e-05
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        -0.1,
+        -1.2,
+        -0.1
+      ],
+      "returned": [
+        -0.09656222857480967,
+        -0.9954089725101952,
+        -0.09126942370192277
+      ],
+      "reference": {
+        "point": [
+          -0.09656223711790249,
+          -0.9954089720310255,
+          -0.09126942465180866
+        ],
+        "objective": 0.006997401816899133,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 1.3981002478805431e-08
+      },
+      "reference_error": 8.609083672766282e-09,
+      "consistent_tangent_relative_error": 7.373949254795583e-11,
+      "yield_value": 1.0000000000000004,
+      "curvature": 2.0464785014856686,
+      "return_residual": 4.440892098500626e-16,
+      "dissipation_increment": 0.05908155823840396,
+      "iterations": 3,
+      "plastic_strain": [
+        -5.9271921123970865e-06,
+        -0.00011758105028149653,
+        -3.0105435510611138e-06
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        -0.1,
+        -1.2,
+        0.1
+      ],
+      "returned": [
+        -0.09656222857480967,
+        -0.9954089725101952,
+        0.09126942370192277
+      ],
+      "reference": {
+        "point": [
+          -0.09656223679161544,
+          -0.9954089728106115,
+          0.09126940974915004
+        ],
+        "objective": 0.006997401816898958,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 1.4171876863925717e-08
+      },
+      "reference_error": 1.619524663910205e-08,
+      "consistent_tangent_relative_error": 7.373949254795583e-11,
+      "yield_value": 1.0000000000000004,
+      "curvature": 2.0464785014856686,
+      "return_residual": 4.440892098500626e-16,
+      "dissipation_increment": 0.05908155823840396,
+      "iterations": 3,
+      "plastic_strain": [
+        -5.9271921123970865e-06,
+        -0.00011758105028149653,
+        3.0105435510611138e-06
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        -0.1,
+        1.2,
+        -0.1
+      ],
+      "returned": [
+        -0.09656222857480967,
+        0.9954089725101952,
+        -0.09126942370192277
+      ],
+      "reference": {
+        "point": [
+          -0.09656223716185454,
+          0.9954089719561341,
+          -0.09126942607109322
+        ],
+        "objective": 0.0069974018168989386,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 1.3557485773511097e-08
+      },
+      "reference_error": 8.92509338158086e-09,
+      "consistent_tangent_relative_error": 7.373949254795583e-11,
+      "yield_value": 1.0000000000000004,
+      "curvature": 2.0464785014856686,
+      "return_residual": 4.440892098500626e-16,
+      "dissipation_increment": 0.05908155823840396,
+      "iterations": 3,
+      "plastic_strain": [
+        -5.9271921123970865e-06,
+        0.00011758105028149653,
+        -3.0105435510611138e-06
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        -0.1,
+        1.2,
+        0.1
+      ],
+      "returned": [
+        -0.09656222857480967,
+        0.9954089725101952,
+        0.09126942370192277
+      ],
+      "reference": {
+        "point": [
+          -0.09656223734011901,
+          0.9954089727272076,
+          0.09126941083787278
+        ],
+        "objective": 0.006997401816899148,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 1.3965125230894795e-08
+      },
+      "reference_error": 1.556796468379455e-08,
+      "consistent_tangent_relative_error": 7.373949254795583e-11,
+      "yield_value": 1.0000000000000004,
+      "curvature": 2.0464785014856686,
+      "return_residual": 4.440892098500626e-16,
+      "dissipation_increment": 0.05908155823840396,
+      "iterations": 3,
+      "plastic_strain": [
+        -5.9271921123970865e-06,
+        0.00011758105028149653,
+        3.0105435510611138e-06
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        0.1,
+        -1.2,
+        -0.1
+      ],
+      "returned": [
+        0.09656222857480967,
+        -0.9954089725101952,
+        -0.09126942370192277
+      ],
+      "reference": {
+        "point": [
+          0.09656222188415682,
+          -0.9954089727641372,
+          -0.09126942533182861
+        ],
+        "objective": 0.006997401816898444,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 1.4079537177140838e-08
+      },
+      "reference_error": 6.891002476824126e-09,
+      "consistent_tangent_relative_error": 7.373949254795583e-11,
+      "yield_value": 1.0000000000000004,
+      "curvature": 2.0464785014856686,
+      "return_residual": 4.440892098500626e-16,
+      "dissipation_increment": 0.05908155823840396,
+      "iterations": 3,
+      "plastic_strain": [
+        5.9271921123970865e-06,
+        -0.00011758105028149653,
+        -3.0105435510611138e-06
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        0.1,
+        -1.2,
+        0.1
+      ],
+      "returned": [
+        0.09656222857480967,
+        -0.9954089725101952,
+        0.09126942370192277
+      ],
+      "reference": {
+        "point": [
+          0.09656222212073136,
+          -0.9954089735428674,
+          0.09126940989165586
+        ],
+        "objective": 0.006997401816898763,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 1.3825235425608314e-08
+      },
+      "reference_error": 1.527890738837244e-08,
+      "consistent_tangent_relative_error": 7.373949254795583e-11,
+      "yield_value": 1.0000000000000004,
+      "curvature": 2.0464785014856686,
+      "return_residual": 4.440892098500626e-16,
+      "dissipation_increment": 0.05908155823840396,
+      "iterations": 3,
+      "plastic_strain": [
+        5.9271921123970865e-06,
+        -0.00011758105028149653,
+        3.0105435510611138e-06
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        0.1,
+        1.2,
+        -0.1
+      ],
+      "returned": [
+        0.09656222857480967,
+        0.9954089725101952,
+        -0.09126942370192277
+      ],
+      "reference": {
+        "point": [
+          0.09656222254066212,
+          0.9954089727049975,
+          -0.09126942584036021
+        ],
+        "objective": 0.006997401816898766,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 1.403159666567362e-08
+      },
+      "reference_error": 6.404826254833994e-09,
+      "consistent_tangent_relative_error": 7.373949254795583e-11,
+      "yield_value": 1.0000000000000004,
+      "curvature": 2.0464785014856686,
+      "return_residual": 4.440892098500626e-16,
+      "dissipation_increment": 0.05908155823840396,
+      "iterations": 3,
+      "plastic_strain": [
+        5.9271921123970865e-06,
+        0.00011758105028149653,
+        -3.0105435510611138e-06
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        0.1,
+        1.2,
+        0.1
+      ],
+      "returned": [
+        0.09656222857480967,
+        0.9954089725101952,
+        0.09126942370192277
+      ],
+      "reference": {
+        "point": [
+          0.09656222228047191,
+          0.9954089734856416,
+          0.0912694108519471
+        ],
+        "objective": 0.006997401816898674,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 1.4431544081206923e-08
+      },
+      "reference_error": 1.4341968418874128e-08,
+      "consistent_tangent_relative_error": 7.373949254795583e-11,
+      "yield_value": 1.0000000000000004,
+      "curvature": 2.0464785014856686,
+      "return_residual": 4.440892098500626e-16,
+      "dissipation_increment": 0.05908155823840396,
+      "iterations": 3,
+      "plastic_strain": [
+        5.9271921123970865e-06,
+        0.00011758105028149653,
+        3.0105435510611138e-06
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        -0.1,
+        -0.2,
+        -1.2
+      ],
+      "returned": [
+        -0.07290715112626088,
+        -0.09819468420187355,
+        -0.9689565972382653
+      ],
+      "reference": {
+        "point": [
+          -0.07290715768038648,
+          -0.09819469053788166,
+          -0.9689565929903561
+        ],
+        "objective": 0.01277060907611546,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 1.4743487388683426e-09
+      },
+      "reference_error": 1.0057151392144488e-08,
+      "consistent_tangent_relative_error": 1.5760799989795915e-10,
+      "yield_value": 1.0000000000000002,
+      "curvature": 4.653845860896256,
+      "return_residual": 2.220446049250313e-16,
+      "dissipation_increment": 0.08177234578791308,
+      "iterations": 4,
+      "plastic_strain": [
+        -4.671180840299846e-05,
+        -5.850880218283129e-05,
+        -7.967013888335679e-05
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        -0.1,
+        -0.2,
+        1.2
+      ],
+      "returned": [
+        -0.07290715112626088,
+        -0.09819468420187355,
+        0.9689565972382653
+      ],
+      "reference": {
+        "point": [
+          -0.07290715361606691,
+          -0.09819468819800815,
+          0.9689565950412924
+        ],
+        "objective": 0.012770609076091165,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 9.856976282333115e-09
+      },
+      "reference_error": 5.195663183287484e-09,
+      "consistent_tangent_relative_error": 1.5760799989795915e-10,
+      "yield_value": 1.0000000000000002,
+      "curvature": 4.653845860896256,
+      "return_residual": 2.220446049250313e-16,
+      "dissipation_increment": 0.08177234578791308,
+      "iterations": 4,
+      "plastic_strain": [
+        -4.671180840299846e-05,
+        -5.850880218283129e-05,
+        7.967013888335679e-05
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        -0.1,
+        0.2,
+        -1.2
+      ],
+      "returned": [
+        -0.07290715112626088,
+        0.09819468420187355,
+        -0.9689565972382653
+      ],
+      "reference": {
+        "point": [
+          -0.07290715846635464,
+          0.0981946762119944,
+          -0.968956598020552
+        ],
+        "objective": 0.01277060907609441,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 3.291919680639319e-09
+      },
+      "reference_error": 1.0877826877125739e-08,
+      "consistent_tangent_relative_error": 1.5760799989795915e-10,
+      "yield_value": 1.0000000000000002,
+      "curvature": 4.653845860896256,
+      "return_residual": 2.220446049250313e-16,
+      "dissipation_increment": 0.08177234578791308,
+      "iterations": 4,
+      "plastic_strain": [
+        -4.671180840299846e-05,
+        5.850880218283129e-05,
+        -7.967013888335679e-05
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        -0.1,
+        0.2,
+        1.2
+      ],
+      "returned": [
+        -0.07290715112626088,
+        0.09819468420187355,
+        0.9689565972382653
+      ],
+      "reference": {
+        "point": [
+          -0.07290715966677652,
+          0.09819467922372667,
+          0.9689565965625155
+        ],
+        "objective": 0.012770609076115996,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 1.578782952438709e-09
+      },
+      "reference_error": 9.908531252155206e-09,
+      "consistent_tangent_relative_error": 1.5760799989795915e-10,
+      "yield_value": 1.0000000000000002,
+      "curvature": 4.653845860896256,
+      "return_residual": 2.220446049250313e-16,
+      "dissipation_increment": 0.08177234578791308,
+      "iterations": 4,
+      "plastic_strain": [
+        -4.671180840299846e-05,
+        5.850880218283129e-05,
+        7.967013888335679e-05
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        0.1,
+        -0.2,
+        -1.2
+      ],
+      "returned": [
+        0.07290715112626088,
+        -0.09819468420187355,
+        -0.9689565972382653
+      ],
+      "reference": {
+        "point": [
+          0.07290714328794506,
+          -0.09819468980268159,
+          -0.9689565974795675
+        ],
+        "objective": 0.012770609076115724,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 7.437847815326349e-10
+      },
+      "reference_error": 9.63672518427247e-09,
+      "consistent_tangent_relative_error": 1.5760799989795915e-10,
+      "yield_value": 1.0000000000000002,
+      "curvature": 4.653845860896256,
+      "return_residual": 2.220446049250313e-16,
+      "dissipation_increment": 0.08177234578791308,
+      "iterations": 4,
+      "plastic_strain": [
+        4.671180840299846e-05,
+        -5.850880218283129e-05,
+        -7.967013888335679e-05
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        0.1,
+        -0.2,
+        1.2
+      ],
+      "returned": [
+        0.07290715112626088,
+        -0.09819468420187355,
+        0.9689565972382653
+      ],
+      "reference": {
+        "point": [
+          0.0729071449056485,
+          -0.09819469503383446,
+          0.9689565950844798
+        ],
+        "objective": 0.012770609076115491,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 2.3740944602762105e-09
+      },
+      "reference_error": 1.2675416662120122e-08,
+      "consistent_tangent_relative_error": 1.5760799989795915e-10,
+      "yield_value": 1.0000000000000002,
+      "curvature": 4.653845860896256,
+      "return_residual": 2.220446049250313e-16,
+      "dissipation_increment": 0.08177234578791308,
+      "iterations": 4,
+      "plastic_strain": [
+        4.671180840299846e-05,
+        -5.850880218283129e-05,
+        7.967013888335679e-05
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        0.1,
+        0.2,
+        -1.2
+      ],
+      "returned": [
+        0.07290715112626088,
+        0.09819468420187355,
+        -0.9689565972382653
+      ],
+      "reference": {
+        "point": [
+          0.07290714415129533,
+          0.09819468410017398,
+          -0.9689565993223576
+        ],
+        "objective": 0.012770609075934497,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 1.165474245666848e-08
+      },
+      "reference_error": 7.280379636489101e-09,
+      "consistent_tangent_relative_error": 1.5760799989795915e-10,
+      "yield_value": 1.0000000000000002,
+      "curvature": 4.653845860896256,
+      "return_residual": 2.220446049250313e-16,
+      "dissipation_increment": 0.08177234578791308,
+      "iterations": 4,
+      "plastic_strain": [
+        4.671180840299846e-05,
+        5.850880218283129e-05,
+        -7.967013888335679e-05
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    },
+    {
+      "kind": "mixed_return",
+      "trial": [
+        0.1,
+        0.2,
+        1.2
+      ],
+      "returned": [
+        0.07290715112626088,
+        0.09819468420187355,
+        0.9689565972382653
+      ],
+      "reference": {
+        "point": [
+          0.07290714606165634,
+          0.09819468371118185,
+          0.9689565989036252
+        ],
+        "objective": 0.012770609076075991,
+        "successful_starts": 8,
+        "failed_starts": 0,
+        "point_spread": 6.171690556621324e-09
+      },
+      "reference_error": 5.353916410443344e-09,
+      "consistent_tangent_relative_error": 1.5760799989795915e-10,
+      "yield_value": 1.0000000000000002,
+      "curvature": 4.653845860896256,
+      "return_residual": 2.220446049250313e-16,
+      "dissipation_increment": 0.08177234578791308,
+      "iterations": 4,
+      "plastic_strain": [
+        4.671180840299846e-05,
+        5.850880218283129e-05,
+        7.967013888335679e-05
+      ],
+      "qualification": "elastic_or_local_convex_branch_only"
+    }
+  ]
+}

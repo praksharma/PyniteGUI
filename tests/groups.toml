@@ -132,6 +132,7 @@ tests = [
   "test_pushover",
   "test_combined_pushover",
   "test_equilibrated_column",
+  "test_section_return",
 ]
 
 [groups.surfaces]

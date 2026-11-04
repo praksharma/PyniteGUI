@@ -106,10 +106,20 @@ table above in sync as methods are implemented.
   units, elastic reversal, stability and fail-closed yield/nonconvergence. Preserve
   the frozen negative report and publish 36 corrected records with explicit
   elastic-only readiness. No production or installed-engine code is changed.
+- [x] Implement a bounded local section return-map prototype for the stated steel
+  polynomial: signed derivatives, backward-Euler flow/consistency, exact algorithmic
+  tangent, immutable committed plastic strain and nonnegative dissipation. Verify
+  scalar yield/unload/reverse cycles, energy balance, 24 mixed sign branches,
+  independent multistart optimization, derivative/unit checks and rejected states.
+  Publish 33 records and an explicit nonconvex-domain counterexample. Reject
+  unresolved/nonpositive surface curvature; local checks are not global or frame
+  qualification and do not change the application or frozen prior evidence.
 - [ ] Extend and independently validate combined P-Delta/plastic response before
   adapting the two official pushover scripts (`P_Delta=True` in the pinned source).
-  The bounded total-state correction resolves elastic cases only and rejects yield.
-  Validate an actual plastic return map, geometric/material tangent, unloading,
+  The elastic correction and local section map remain separate research stages.
+  Resolve global constitutive/branch selection for the nonconvex interaction law;
+  do not silently convexify it and claim unchanged source parity. Validate member/
+  hinge compatibility, geometric/material frame tangent, actual frame unloading,
   axial/biaxial interaction, interior yielding, stability/limit points, accepted
   histories and general-frame/source parity. Do not apply the elastic correction
   to yielded members or count either official combined example as implemented.

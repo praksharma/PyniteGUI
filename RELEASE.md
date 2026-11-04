@@ -321,6 +321,43 @@ and public RC4 artifacts are unchanged. Quad shear remains disabled in productio
 
 
 
+
+## Post-RC4 Local Section Return Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-04. Test-only local plastic flow;
+production runtime, formats, catalog, public RC4 and frozen research remain unchanged.
+
+- Implement the stated steel interaction polynomial with signed gradient/Hessian,
+  a four-variable backward-Euler force return and its differentiated algorithmic
+  tangent. Commit plastic strain/dissipation only after local checks pass.
+- Verify three scalar yield/unload/reverse cycles at three refinements, 927 local
+  updates and exact independent force/plastic-strain/dissipation references.
+  Normalized force errors are below 3e-15. Check the endpoint-work, elastic-energy,
+  plastic-work and numerical-dissipation balance separately.
+- Verify 24 mixed returns across every force-sign octant against independent
+  numerical-constraint SLSQP from 192 converged starts. Normalized force agreement
+  is within 5e-8; algorithmic/central-difference tangent error is below 2e-10.
+  Check length/force scaling, reflected axes, invalid inputs and uncommitted failure.
+- Demonstrate a nonconvex elastic domain: endpoint Phi=0.998458 versus midpoint
+  Phi=1.000544. Reject nonpositive/unresolved local surface curvature without
+  changing the polynomial. Positive local checks are not a global branch or
+  associated-material qualification; combined frame and official examples stay open.
+- Publish 33 local records, an illustrated comparison, source hashes and preserved
+  prior-report hashes. No member-end/hinge compatibility or frame return mapping
+  is supplied by this material-point stage.
+- Verification: **42 focused tests**, no skips, with installed pinned PyNite
+  **3.0.0** / Qt **6.11.2** (**22.041 s**) and newer PyNite **3.2.1** / Qt
+  **6.12.0** (**28.425 s**). These include all seven new section checks plus the
+  existing elastic-correction, plastic mechanics, native workspace and routing tests.
+  Final immutable-history/rejection checks were rechecked on both sets (**0.424 s**
+  / **0.461 s**, seven tests each).
+- Ownership covers **183 classes** across nine groups. The 33-record source
+  hashes, frozen prior reports and wheel/source contents pass auditing; all **129
+  runtime files** match the two tested installed packages. Strict docs/link checks
+  cover **58 HTML pages**; browser QA checks the new figure and separate local/
+  global/frame readiness flags. Visually inspected the comparison figure.
+
+
 ## Post-RC4 Elastic Equilibrium Correction Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-03. Test-only elastic correction;
