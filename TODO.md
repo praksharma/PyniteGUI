@@ -126,6 +126,12 @@ table above in sync as methods are implemented.
   translation/rotation and virtual work. Check signed/multiple zones, splitting,
   units and invalid geometry. This is kinematic verification, not generated
   plastic flow, a nonlinear member or combined frame qualification.
+- [x] Implement a bounded planar pure-bending material element for imposed nodal
+  motion: generated plastic-curvature history, exact trial-yield-front splitting,
+  consistent internal nodal forces/tangent, stored energy and dissipation. Verify
+  independent clipped integration, uniform cycles, pointwise section-return parity,
+  nonuniform energy balance, derivatives, rigid modes and scaling. No global/member
+  boundary-value solve, axial/biaxial interaction or P-Delta/frame qualification.
 - [ ] Extend and independently validate combined P-Delta/plastic response before
   adapting the two official pushover scripts (`P_Delta=True` in the pinned source).
   The elastic correction and local section map remain separate research stages.

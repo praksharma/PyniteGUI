@@ -3161,6 +3161,44 @@ combined frame qualification remain open.
 python -B scripts/test.py test_beam_gradient test_segment_compatibility test_section_return
 ```
 
+**Generated pure-bending plasticity (member study, 2026-11-11)**
+
+A test-only two-node planar material element now generates plastic curvature
+from four imposed nodal bending coordinates. Cubic Hermite kinematics give a
+linear curvature field. The pure-Mz restriction of the section law reduces to
+elastic/perfect-plastic clipping at ±Mp; axial force and minor-axis moment are
+excluded. Unlike the preceding prescribed-curvature study, each update computes
+its plastic curvature and dissipation from the committed material history.
+
+Committed curvature is stored as an immutable continuous piecewise-linear field
+on normalized member coordinates. Each trial splits intervals exactly where the
+elastic trial curvature crosses ±Mp/EI. Three-point quadrature then integrates
+nodal internal forces, stored energy, dissipation and the consistent material
+tangent over those intervals. Only roundoff-collinear knots are merged; history
+size and imposed curvature are bounded. Changed member configurations, nonfinite
+motion and invalid history are rejected without advancing the input state.
+
+For L=120 in, EI=2,900,000 kip-in² and Mp=1000 kip-in, an imposed field
+`kappa(s)=(Mp/EI)*(1.8-2.6*s)` produces a positive plastic-loading region extending
+to x=36.9230769 in. Independent clipped-moment integration verifies the equivalent
+nodal forces and plastic work. Uniform-curvature cycles match exact scalar yield,
+unload and reverse-yield references. Nonuniform histories match the earlier full
+section return map pointwise and close the endpoint-work/elastic-energy/plastic-
+dissipation identity, including numerical dissipation. Moving-front force
+finite differences verify the material tangent away from branch-switch points.
+Rigid modes, symmetry, unit scaling and rejected-state ownership are also checked.
+
+These are displacement-based finite-element material integrations for imposed
+kinematics. A single element does not enforce pointwise stress equilibrium through
+a yielded front or solve a member boundary-value problem. A fully yielded tangent
+can vanish; it is not a certified stable frame solution. Global equilibrium,
+mesh refinement, axial/biaxial interaction, geometric tangent, P-Delta and official
+combined examples remain pending. Application analysis behavior is unchanged.
+
+```sh
+python -B scripts/test.py test_plastic_bending_member test_beam_gradient test_segment_compatibility test_section_return
+```
+
 MCP exposes `run_pushover_analysis` with session/revision, preload/push, control
 node/DOF, canonical stop limit (in or rad), reaction nodes/component and numerical
 controls. Poll `analysis_status` until `running=false`. Inspect Current/Partial

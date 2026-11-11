@@ -322,6 +322,28 @@ and public RC4 artifacts are unchanged. Quad shear remains disabled in productio
 
 
 
+## Post-RC4 Pure-Bending Material Element Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-11. Research-only material element;
+production runtime, project formats, official examples and prior reports are unchanged.
+
+- Add a two-node planar cubic-kinematic material element with the pure-Mz
+  perfect-plastic restriction, generated piecewise-linear plastic curvature,
+  exact moving-front splitting and consistent nodal force/tangent integration.
+  Bound history and motion; preserve immutable configuration-owned state.
+- Verify independent clipped-moment forces/work, exact scalar cycles, pointwise
+  agreement with the prior section return, nonuniform incremental energy balance,
+  moving-front derivatives away from branch switches, elastic matrix/rigid modes,
+  scaling and rejected history. For the stated 120 in reference, the first tested
+  front lies at x=36.9230769 in.
+- Validation covers 22 focused tests, including six new material-element checks.
+  Ownership covers 186 classes across nine groups; strict manual/link checks
+  cover 58 HTML pages and frozen study source hashes are preserved.
+- The kernel evaluates imposed kinematics; no member boundary-value or global
+  frame solve, mesh-refinement qualification, axial/biaxial interaction or P-Delta
+  is supplied. A vanishing fully yielded tangent is not a stable frame certificate.
+
+
 ## Post-RC4 Bending-Gradient Compatibility Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-11. Research-only planar kinematics;

@@ -172,3 +172,9 @@ A planar bending-gradient compatibility study additionally checks located
 prescribed-curvature zones, chord-relative rotations, elastic beam stiffness and
 virtual work against closed-form references. It supplies no generated plastic
 flow or combined frame solver. See [Steel Pushover](analysis/pushover.md).
+
+A subsequent pure-bending material-element study generates plastic curvature from
+imposed nodal motion and integrates moving fronts, forces, tangent and energy.
+Independent section-return/cycle references pass; global equilibrium, mesh
+refinement and combined nonlinear frame analysis remain pending. See [Steel
+Pushover](analysis/pushover.md).

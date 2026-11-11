@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add a test-only planar pure-bending material element with generated plastic
+  curvature, moving yield fronts, immutable history and consistent nodal force/
+  tangent integration. Verify clipped-moment references, cyclic and nonuniform
+  histories, energy balance, section-return parity, derivatives and scaling.
+  Global nonlinear member/frame equilibrium and P-Delta remain pending.
+
 - Add a research-only bending-gradient compatibility kernel with located
   prescribed-curvature zones, exact elastic beam stiffness and virtual-work checks.
   Verify zone-location effects on tip translation/rotation, signed/split zones,
