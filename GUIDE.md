@@ -3199,6 +3199,55 @@ combined examples remain pending. Application analysis behavior is unchanged.
 python -B scripts/test.py test_plastic_bending_member test_beam_gradient test_segment_compatibility test_section_return
 ```
 
+**Global propped-beam equilibrium and failed mesh gate (study, 2026-11-11)**
+
+A test-only assembly now solves the pure-bending elements together for nodal
+transverse loading on a fixed/pinned propped beam. Newton iterations assemble
+internal force and material tangent; a line search closes free-coordinate
+residuals. Every trial uses the previous committed element histories, and only
+a converged state with a resolved positive supported tangent returns a new
+immutable global history. Applied nodal couples are excluded from this bounded
+workflow. No axial force, frame geometry update or P-Delta is supplied.
+
+Elastic solutions match the independent central-load propped-beam displacement,
+reactions and moments on all tested meshes. After yielding, total force/moment
+balance closes, elastic unloading preserves plastic curvature/dissipation, and
+10/40 proportional load increments agree. However, the ideal-hinge reference
+is not yet reproduced accurately enough:
+
+| Segments | Midspan displacement at 24 kip (in) | Fixed-support moment (kip-in) |
+| --- | --- | --- |
+| 2 | -1.046001625 | 1077.337041 |
+| 8 | -1.048773831 | 1075.033044 |
+| 32 | -1.093774694 | 1037.943302 |
+| Independent ideal-hinge reference | -1.142068966 | 1000 |
+
+The reference uses L=240 in, EI=2,900,000 kip-in², Mp=1000 kip-in, first yield
+`16*Mp/(3*L)` and mechanism load `6*Mp/L`. The 32-segment displacement and support
+moment still miss separate **1% gates** by about 4.23% and 3.79% respectively.
+The regression explicitly retains these failed qualification gates; passing
+numerical equilibrium is not member validation. The displacement-based material
+field limits plastic localization and pointwise end-moment admissibility even
+when the assembled nodal equations close.
+
+A further check found that positive discrete tangent alone can accept a load
+above the physical mechanism. An independent kinematic work bound now rejects
+that overload: unit midspan displacement with base/interior hinge rotations
+2/L and 4/L has plastic work capacity `6*Mp/L`. For the central-load benchmark,
+the 26 kip request is rejected before committing a trial state. For other
+transverse nodal patterns this is only a necessary mechanism bound, not a general
+capacity certificate. Nonconvergence, invalid loads and mismatched mesh histories
+also leave committed histories untouched.
+
+Results retain `production_ready=false`. Resolving localization, pointwise
+stress admissibility and the 1% mesh gates remains required before broader
+member/frame integration or combined P-Delta/plastic qualification. Application
+analysis and both pending official combined examples remain unchanged.
+
+```sh
+python -B scripts/test.py test_plastic_beam_chain test_plastic_bending_member test_segment_compatibility test_section_return
+```
+
 MCP exposes `run_pushover_analysis` with session/revision, preload/push, control
 node/DOF, canonical stop limit (in or rad), reaction nodes/component and numerical
 controls. Poll `analysis_status` until `running=false`. Inspect Current/Partial

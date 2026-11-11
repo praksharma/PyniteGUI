@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add test-only global propped-beam equilibrium with frozen trial histories,
+  Newton/line search, unloading and an independent mechanism-work overload guard.
+  Preserve failed 1% mesh-accuracy gates despite closed nodal equilibrium:
+  32-segment displacement/support-moment errors remain 4.23/3.79%. Record the
+  localization/admissibility gap before member/frame or P-Delta integration.
+
 - Add a test-only planar pure-bending material element with generated plastic
   curvature, moving yield fronts, immutable history and consistent nodal force/
   tangent integration. Verify clipped-moment references, cyclic and nonuniform

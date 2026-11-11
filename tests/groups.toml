@@ -136,6 +136,7 @@ tests = [
   "test_segment_compatibility",
   "test_beam_gradient",
   "test_plastic_bending_member",
+  "test_plastic_beam_chain",
 ]
 
 [groups.surfaces]

@@ -132,10 +132,17 @@ table above in sync as methods are implemented.
   independent clipped integration, uniform cycles, pointwise section-return parity,
   nonuniform energy balance, derivatives, rigid modes and scaling. No global/member
   boundary-value solve, axial/biaxial interaction or P-Delta/frame qualification.
+- [x] Add bounded global propped-beam equilibrium assembly with frozen trial
+  histories, Newton/line search, supported-tangent checks, reactions, unloading
+  and independent mechanism-work overload rejection. Verify elastic references,
+  global balance, load increments and transactional history. Record failed 1%
+  mesh gates: at 32 segments displacement/moment errors remain 4.23/3.79%.
+  Numerical convergence is not member qualification; production_ready stays false.
 - [ ] Extend and independently validate combined P-Delta/plastic response before
   adapting the two official pushover scripts (`P_Delta=True` in the pinned source).
   The elastic correction and local section map remain separate research stages.
-  Resolve global constitutive/branch selection for the nonconvex interaction law;
+  Resolve the failed 1% propped-beam mesh/stress-admissibility gates and global
+  constitutive/branch selection for the nonconvex interaction law;
   do not silently convexify it and claim unchanged source parity. Validate member/
   general hinge/member compatibility, geometric/material frame tangent, actual frame unloading,
   axial/biaxial interaction, interior yielding, stability/limit points, accepted

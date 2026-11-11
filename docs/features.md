@@ -178,3 +178,8 @@ imposed nodal motion and integrates moving fronts, forces, tangent and energy.
 Independent section-return/cycle references pass; global equilibrium, mesh
 refinement and combined nonlinear frame analysis remain pending. See [Steel
 Pushover](analysis/pushover.md).
+
+A global propped-beam research assembly now closes equilibrium and checks unloading,
+committed history and an independent overload mechanism bound. Its 32-segment
+solution still fails the 1% displacement/moment gates; numerical convergence does
+not qualify the member or enable combined frame analysis. See [Steel Pushover](analysis/pushover.md).

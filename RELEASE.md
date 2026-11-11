@@ -322,6 +322,27 @@ and public RC4 artifacts are unchanged. Quad shear remains disabled in productio
 
 
 
+## Post-RC4 Global Beam Equilibrium Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-11. Test-only propped-beam assembly;
+production runtime, formats, prior reports and official examples are unchanged.
+
+- Assemble material-element internal forces/tangents and solve transverse nodal
+  loading with Newton, line search and frozen committed histories. Verify elastic
+  displacement/reaction references, global balance, proportional increments,
+  elastic unloading and uncommitted failure/mismatched histories.
+- Record the failed 1% member mesh gates. At 32 segments and 24 kip the displacement
+  is -1.093774694 in versus -1.142068966 in, and support moment 1037.943302 kip-in
+  versus 1000 kip-in: errors 4.23/3.79%. Production readiness remains false.
+- Reject loads reaching an independent kinematic mechanism-work bound. A positive
+  discrete tangent alone could otherwise accept the 26 kip overload beyond the
+  reference 25 kip mechanism. This bound does not certify arbitrary load patterns.
+- Verification: 23 focused tests, no skips, 1.545 s, including five new global
+  checks. Ownership covers 187 classes; strict manual/link checks cover 58 HTML
+  pages. Frozen study hashes are preserved. Localization, stress admissibility,
+  general frame and combined P-Delta/plastic validation remain open.
+
+
 ## Post-RC4 Pure-Bending Material Element Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-11. Research-only material element;
