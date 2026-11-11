@@ -322,6 +322,29 @@ and public RC4 artifacts are unchanged. Quad shear remains disabled in productio
 
 
 
+## Post-RC4 Constant-Resultant Compatibility Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-11. Research-only compatibility;
+application runtime, formats, official examples and prior measured reports are unchanged.
+
+- Add an explicit finite plastic-zone length and work-conjugate mapping from
+  section strains/curvatures to extension/rotations. Use C/L series flexibility,
+  partition zone/remainder deformation and elastic energy, and convert plastic
+  deformation/work to zone strain/dissipation density without double-counting.
+- Verify axial and pure-end-couple yield/unload/reverse references on all three
+  axes, four zone lengths, full-length-zone limit, mixed deformation tangent,
+  endpoint-work balance and immutable history after rejected trial updates.
+  At L=120 in, EI=2,900,000 kip-in², Mp=1000 kip-in and 1.5 yield rotation,
+  plastic rotation is 0.0206896552 rad and plastic work 20.6896552 kip-in.
+- Validation: **20 focused tests**, no skips, pinned PyNite 3.0.0 environment,
+  **1.302 s**. Includes five new compatibility tests plus prior local return and
+  elastic correction regressions. Ownership: **184 classes** across nine groups.
+  Strict documentation/link checks cover **58 HTML pages**. Frozen study source
+  hashes are preserved; production runtime has no changes.
+- General bending gradients, hinge locations, 12-DOF end transformations,
+  interior yielding and combined frame/P-Delta/plastic qualification remain open.
+
+
 ## Post-RC4 Local Section Return Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-04. Test-only local plastic flow;

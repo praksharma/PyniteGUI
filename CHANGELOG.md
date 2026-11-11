@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add a test-only constant-resultant segment adapter with explicit plastic-zone
+  length, section-to-extension/rotation compatibility and correct series elastic
+  flexibility. Verify scalar axial/pure-couple cycles, plastic work, energy
+  partition, mixed tangent and unchanged history after rejection. General member
+  and combined P-Delta/plastic integration remain pending.
+
 - Add a test-only local steel-section return map with signed yield derivatives,
   backward-Euler flow/consistency, algorithmic material tangent and immutable
   committed plastic history. Verify yielding, elastic unloading, reverse yield,

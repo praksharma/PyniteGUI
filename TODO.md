@@ -114,12 +114,18 @@ table above in sync as methods are implemented.
   Publish 33 records and an explicit nonconvex-domain counterexample. Reject
   unresolved/nonpositive surface curvature; local checks are not global or frame
   qualification and do not change the application or frozen prior evidence.
+- [x] Validate bounded constant-resultant segment compatibility with an explicit
+  plastic-zone length: C/L elastic flexibility, zone/remainder deformation and
+  energy partition, extension/rotation plastic history and work-conjugate length
+  scaling. Check axial and pure-couple yield/unload/reverse references for four
+  zone lengths, mixed material tangent and uncommitted rejection. Research-only;
+  no general member, bending-gradient, hinge-location or frame qualification.
 - [ ] Extend and independently validate combined P-Delta/plastic response before
   adapting the two official pushover scripts (`P_Delta=True` in the pinned source).
   The elastic correction and local section map remain separate research stages.
   Resolve global constitutive/branch selection for the nonconvex interaction law;
   do not silently convexify it and claim unchanged source parity. Validate member/
-  hinge compatibility, geometric/material frame tangent, actual frame unloading,
+  general hinge/member compatibility, geometric/material frame tangent, actual frame unloading,
   axial/biaxial interaction, interior yielding, stability/limit points, accepted
   histories and general-frame/source parity. Do not apply the elastic correction
   to yielded members or count either official combined example as implemented.

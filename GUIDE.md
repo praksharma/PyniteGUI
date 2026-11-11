@@ -3089,6 +3089,43 @@ python -B scripts/benchmark_section_return.py --output /tmp/section-return.json 
 python -B scripts/test.py test_section_return test_equilibrated_column test_pushover
 ```
 
+**Constant-resultant segment compatibility (development study, 2026-11-11)**
+
+A test-only adapter now connects section strains/curvatures to segment extension
+and rotations through an explicit plastic-zone length. This checks the next
+compatibility step without assuming a full frame element. The three conjugate
+pairs are N/extension, My/rotation-y and Mz/rotation-z. Resultants are constant
+along the segment: uniform axial force or pure end couples, not a transverse-load
+bending diagram.
+
+For segment length L, zone length lp and section stiffness C, compatibility is
+`u = L*C^-1*f + u_p`. The equivalent elastic stiffness is therefore `C/L`.
+The plastic zone contributes `lp*C^-1*f + u_p`; the elastic remainder contributes
+`(L-lp)*C^-1*f`. Adding a second full-length elastic beam would double-count
+flexibility. Plastic section strain/curvature is `u_p/lp`. Plastic dissipation
+is total segment work, while its zone density is that work divided by lp.
+
+Independent scalar bar and pure-couple references check all three axes through
+yield, unload and reverse yield for lp=3/12/60/120 in and L=120 in. For the
+strong-axis example, EI=2,900,000 kip-in² and Mp=1000 kip-in give elastic yield
+rotation 0.0413793103 rad. At 1.5 times that rotation, every tested lp gives
+M=1000 kip-in, plastic rotation 0.0206896552 rad and plastic work 20.6896552 kip-in.
+Plastic curvature varies with lp; total rotation, force and work remain identical
+for this perfect-plastic, constant-resultant problem.
+
+Checks cover elastic energy partition, endpoint-work balance, a mixed-force
+consistent tangent differentiated with respect to segment deformations, and
+immutable history when a return is rejected. The existing nonconvex-region
+rejection carries through. These are five new regression checks, not a general
+hinge-length calibration or a 12-DOF member. Moment gradients, hinge location,
+member-end sign/rotation transformations, interior yielding, geometric/material
+frame tangent and combined P-Delta/plastic qualification remain open. The
+application solver and official-example status are unchanged.
+
+```sh
+python -B scripts/test.py test_segment_compatibility test_section_return test_equilibrated_column
+```
+
 MCP exposes `run_pushover_analysis` with session/revision, preload/push, control
 node/DOF, canonical stop limit (in or rad), reaction nodes/component and numerical
 controls. Poll `analysis_status` until `running=false`. Inspect Current/Partial

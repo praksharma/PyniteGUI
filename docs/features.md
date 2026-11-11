@@ -161,3 +161,9 @@ Recovered Qx/Qy centre contours, missing-value masks and provenance exports.
 Finite edge-beam checks reject coupled recovery; main-model CSV/MCP reports null
 shear with explicit eligibility/status metadata. General source/interface and
 corner-peak validation remain pending.
+
+A subsequent constant-resultant segment study checks explicit plastic-zone length,
+section-to-extension/rotation compatibility, energy and plastic-work partition.
+Axial/pure-couple cycles and mixed tangents pass bounded references; general
+member geometry and combined frame plasticity remain pending. See [Steel
+Pushover](analysis/pushover.md).
