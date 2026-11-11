@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add a research-only bending-gradient compatibility kernel with located
+  prescribed-curvature zones, exact elastic beam stiffness and virtual-work checks.
+  Verify zone-location effects on tip translation/rotation, signed/split zones,
+  unit scaling and invalid geometry. General nonlinear member/frame integration
+  remains pending.
+
 - Add a test-only constant-resultant segment adapter with explicit plastic-zone
   length, section-to-extension/rotation compatibility and correct series elastic
   flexibility. Verify scalar axial/pure-couple cycles, plastic work, energy

@@ -120,6 +120,12 @@ table above in sync as methods are implemented.
   scaling. Check axial and pure-couple yield/unload/reverse references for four
   zone lengths, mixed material tangent and uncommitted rejection. Research-only;
   no general member, bending-gradient, hinge-location or frame qualification.
+- [x] Validate bounded planar bending-gradient compatibility: linear internal
+  moment basis, chord-relative basic rotations, elastic flexibility/nodal stiffness,
+  located piecewise-constant prescribed plastic curvature, independent cantilever
+  translation/rotation and virtual work. Check signed/multiple zones, splitting,
+  units and invalid geometry. This is kinematic verification, not generated
+  plastic flow, a nonlinear member or combined frame qualification.
 - [ ] Extend and independently validate combined P-Delta/plastic response before
   adapting the two official pushover scripts (`P_Delta=True` in the pinned source).
   The elastic correction and local section map remain separate research stages.

@@ -3126,6 +3126,41 @@ application solver and official-example status are unchanged.
 python -B scripts/test.py test_segment_compatibility test_section_return test_equilibrated_column
 ```
 
+**Bending-gradient and zone-location compatibility (study, 2026-11-11)**
+
+A separate test-only planar Euler–Bernoulli compatibility kernel now integrates
+linear internal bending moment with explicitly located, piecewise-constant
+prescribed plastic-curvature zones. For signed nodal end moments q, its internal
+moment basis is `B=[-(1-x/L), x/L]`. Basic rotations subtract chord rotation;
+flexibility is `integral(B^T*B/EI dx)` and prescribed plastic basic rotation is
+`integral(B^T*kappa_p dx)`. Elastic nodal stiffness recovered through the chord
+transformation matches the standard four-coordinate beam matrix and rigid modes.
+
+For a 120 in cantilever with a 12 in zone at prescribed curvature 0.001 rad/in:
+
+| Zone (in) | Plastic tip rotation (rad) | Plastic tip translation (in) |
+| --- | --- | --- |
+| 0–12 | 0.012 | 1.368 |
+| 54–66 | 0.012 | 0.720 |
+| 108–120 | 0.012 | 0.072 |
+
+These follow independent integrals `theta_p=integral(kappa_p dx)` and
+`w_p=integral((L-x)*kappa_p dx)`. Equal plastic rotation therefore does not imply
+equal translation. Splitting a zone into adjacent pieces preserves compatibility.
+Multiple signed zones, force/length scaling and `q dot v_p=integral(M*kappa_p dx)`
+are checked. This last quantity is prescribed-curvature work, not a claim of
+nonnegative constitutive dissipation; no flow rule generates these curvature fields.
+Overlapping, nonfinite and out-of-member zones are rejected.
+
+The kernel does not solve plastic section forces, distributed member loads,
+P-Delta, a nonlinear tangent or a frame. It verifies one planar kinematic bridge
+needed by later member integration; constitutive/global branch selection and
+combined frame qualification remain open.
+
+```sh
+python -B scripts/test.py test_beam_gradient test_segment_compatibility test_section_return
+```
+
 MCP exposes `run_pushover_analysis` with session/revision, preload/push, control
 node/DOF, canonical stop limit (in or rad), reaction nodes/component and numerical
 controls. Poll `analysis_status` until `running=false`. Inspect Current/Partial

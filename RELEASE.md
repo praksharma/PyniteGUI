@@ -322,6 +322,27 @@ and public RC4 artifacts are unchanged. Quad shear remains disabled in productio
 
 
 
+## Post-RC4 Bending-Gradient Compatibility Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-11. Research-only planar kinematics;
+production runtime, project formats and official-example status are unchanged.
+
+- Integrate a linear signed internal moment basis and explicitly located,
+  piecewise-constant prescribed-curvature zones. Recover chord-relative basic
+  compatibility and the standard elastic nodal stiffness matrix.
+- Verify independent cantilever integrals, rigid modes, multiple/signed zones,
+  adjacent-zone splitting, virtual work and unit scaling. Reject ambiguous zone
+  overlaps, invalid extents and nonfinite curvature. Prescribed-curvature work
+  is not a constitutive dissipation assertion.
+- At L=120 in, a 12 in zone with curvature 0.001 rad/in gives rotation 0.012 rad
+  and translation 1.368/0.720/0.072 in at base/middle/tip locations respectively.
+- Validation: 16 focused tests including four new bending-gradient checks and
+  prior segment/local-return regressions. Ownership covers 185 classes across
+  nine primary groups. Strict docs/link checks cover 58 HTML pages; prior frozen
+  study hashes are preserved. Nonlinear section-flow/member/frame assembly and
+  combined P-Delta/plastic qualification remain pending.
+
+
 ## Post-RC4 Constant-Resultant Compatibility Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-11. Research-only compatibility;

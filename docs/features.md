@@ -167,3 +167,8 @@ section-to-extension/rotation compatibility, energy and plastic-work partition.
 Axial/pure-couple cycles and mixed tangents pass bounded references; general
 member geometry and combined frame plasticity remain pending. See [Steel
 Pushover](analysis/pushover.md).
+
+A planar bending-gradient compatibility study additionally checks located
+prescribed-curvature zones, chord-relative rotations, elastic beam stiffness and
+virtual work against closed-form references. It supplies no generated plastic
+flow or combined frame solver. See [Steel Pushover](analysis/pushover.md).
