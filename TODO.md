@@ -138,11 +138,18 @@ table above in sync as methods are implemented.
   global balance, load increments and transactional history. Record failed 1%
   mesh gates: at 32 segments displacement/moment errors remain 4.23/3.79%.
   Numerical convergence is not member qualification; production_ready stays false.
+- [x] Validate a separate explicit base point-hinge formulation against the ideal
+  propped-beam reference: signed active-set plastic rotation, equilibrium, moment
+  admissibility, supported tangent, unloading/reversal, energy and mechanism
+  rejection. Both 1% gates pass across 2–32 segments and 1/20 load increments.
+  Preserve the distributed-curvature misses as a different localization model.
+  Research-only central-load scalar bending; no axial/biaxial or P-Delta exposure.
 - [ ] Extend and independently validate combined P-Delta/plastic response before
   adapting the two official pushover scripts (`P_Delta=True` in the pinned source).
   The elastic correction and local section map remain separate research stages.
-  Resolve the failed 1% propped-beam mesh/stress-admissibility gates and global
-  constitutive/branch selection for the nonconvex interaction law;
+  Qualify distributed-curvature localization separately from the passing bounded
+  point-hinge reference, and resolve global constitutive/branch selection for the
+  nonconvex interaction law;
   do not silently convexify it and claim unchanged source parity. Validate member/
   general hinge/member compatibility, geometric/material frame tangent, actual frame unloading,
   axial/biaxial interaction, interior yielding, stability/limit points, accepted

@@ -3248,6 +3248,51 @@ analysis and both pending official combined examples remain unchanged.
 python -B scripts/test.py test_plastic_beam_chain test_plastic_bending_member test_segment_compatibility test_section_return
 ```
 
+**Explicit point-hinge propped-beam formulation (study, 2026-11-11)**
+
+A separate concentrated-plasticity prototype now reproduces the ideal-hinge
+reference without the preceding distributed-curvature mesh error. It adds one
+zero-length plastic rotation at the fixed end of an otherwise elastic beam.
+The plastic end moment is work-conjugate to that rotation. An exact active-set
+solve enforces elastic unloading or signed yield at ±Mp, global equilibrium and
+nonnegative plastic rotation work. This is an explicit change of localization
+model; the earlier distributed-curvature implementation and its failed gates
+are preserved unchanged.
+
+The elastic strain energy is evaluated with the base hinge rotation subtracted
+from the first member's elastic end rotation. The supported elastic equations
+and active plastic consistency equation are solved together. Every recovered
+member-end moment is checked against capacity. A second hinge or the independent
+25 kip mechanism bound terminates this bounded formulation without returning a
+trial state. Positive supported tangent alone is not used as a capacity certificate.
+
+For the same L=240 in, EI=2,900,000 kip-in², Mp=1000 kip-in propped beam at 24 kip:
+
+| Segments | Midspan displacement (in) | Fixed-support moment (kip-in) |
+| --- | --- | --- |
+| 2 | -1.142068966 | 1000 |
+| 8 | -1.142068966 | 1000 |
+| 32 | -1.142068966 | 1000 |
+
+Both 1% gates pass; the largest measured relative displacement error in this
+comparison is below 2e-12. The result is independent of tested mesh and load-step
+count. Plastic base rotation is approximately 0.00220689655 rad and accumulated
+plastic work is 2.20689655 kip-in. Independent pre/post-yield displacement and
+reaction formulas, elastic unloading, reverse yield, the differentiated supported
+tangent and incremental energy balance are verified. A fixed committed history
+is used when differentiating or evaluating a trial.
+
+Scope remains central transverse loading of this planar propped beam, small
+deflection, scalar perfect-plastic base moment and elastic remaining members.
+There is no axial/biaxial interaction, arbitrary hinge placement, general frame,
+P-Delta or application integration. `production_ready=false` remains explicit.
+Passing this point-hinge benchmark does not qualify the distributed-curvature
+formulation or resolve the nonconvex general section-law region.
+
+```sh
+python -B scripts/test.py test_point_hinge_beam test_plastic_beam_chain test_plastic_bending_member test_section_return
+```
+
 MCP exposes `run_pushover_analysis` with session/revision, preload/push, control
 node/DOF, canonical stop limit (in or rad), reaction nodes/component and numerical
 controls. Poll `analysis_status` until `running=false`. Inspect Current/Partial

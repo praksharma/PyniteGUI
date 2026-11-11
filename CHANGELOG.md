@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add a separate test-only explicit point-hinge propped-beam formulation. Enforce
+  signed plastic rotation, equilibrium and moment admissibility with an active-set
+  solve; verify reactions, mesh/step independence, unloading/reversal, tangent and
+  energy. Pass both ideal-hinge 1% gates while preserving the earlier distributed-
+  curvature failures. General frame, interaction and P-Delta qualification remain open.
+
 - Add test-only global propped-beam equilibrium with frozen trial histories,
   Newton/line search, unloading and an independent mechanism-work overload guard.
   Preserve failed 1% mesh-accuracy gates despite closed nodal equilibrium:

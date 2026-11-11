@@ -322,6 +322,29 @@ and public RC4 artifacts are unchanged. Quad shear remains disabled in productio
 
 
 
+## Post-RC4 Explicit Point-Hinge Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-11. Research-only concentrated
+plasticity; application runtime, formats and official examples are unchanged.
+
+- Add one explicit zero-length base rotation hinge with signed active-set flow,
+  elastic members, simultaneous global equilibrium and plastic consistency.
+  Check recovered moments, supported tangent and nonnegative plastic work;
+  reject additional hinges and the ideal mechanism without committing a trial.
+- Reproduce the independent propped-beam reference at 24 kip: displacement
+  -1.14206896552 in, support moment 1000 kip-in, plastic rotation 0.00220689655 rad
+  and plastic work 2.20689655 kip-in. Both 1% gates pass across 2/4/8/16/32 segments
+  and 1/20 increments; measured relative displacement error is below 2e-12.
+- Verify pre/post-yield reactions, elastic unloading/reversal, global tangent and
+  energy. Preserve the distinct distributed-curvature implementation and its
+  failed mesh gates rather than relabelling them as passed.
+- Validation: 22 focused tests, no skips, 1.081 s, including four new point-hinge
+  tests and prior global/material/section checks. Ownership covers 188 classes.
+  Strict manual/link checks cover 58 HTML pages; frozen study hashes are preserved.
+  General frames, arbitrary hinges, interaction, P-Delta and production readiness
+  remain unqualified.
+
+
 ## Post-RC4 Global Beam Equilibrium Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-11. Test-only propped-beam assembly;

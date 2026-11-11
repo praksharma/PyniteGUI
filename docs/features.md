@@ -183,3 +183,9 @@ A global propped-beam research assembly now closes equilibrium and checks unload
 committed history and an independent overload mechanism bound. Its 32-segment
 solution still fails the 1% displacement/moment gates; numerical convergence does
 not qualify the member or enable combined frame analysis. See [Steel Pushover](analysis/pushover.md).
+
+A separate explicit base point-hinge research formulation now passes the ideal
+propped-beam displacement/moment gates across tested meshes and increments,
+including unloading, reversal and energy checks. This changes the localization
+model; distributed-curvature failures remain preserved. General frame and
+P-Delta integration remain pending. See [Steel Pushover](analysis/pushover.md).
