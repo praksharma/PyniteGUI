@@ -156,6 +156,13 @@ table above in sync as methods are implemented.
   two stable active base hinges and four-hinge collapse; check subdivision,
   unload/reverse cycles, energy, tangent, unequal capacities and coordinate/units
   invariance. Explicit interfaces only; no interaction/P-Delta/GUI integration.
+- [x] Add a separate bounded corotational scalar-hinge frame study: objective
+  axial/chord-relative bending energy, analytic material/geometric derivatives,
+  dead-load Newton/active-set equilibrium and immutable history. Verify continuum
+  column mesh convergence and physical axial force, gravity-loaded portal yield,
+  unload/reverse work, condensed tangent, refinement, units and coordinate changes.
+  Preserve coarse-column misses and distinguish this law from PyNite source parity.
+  No interaction, general stability/limit-point or production qualification.
 - [ ] Extend and independently validate combined P-Delta/plastic response before
   adapting the two official pushover scripts (`P_Delta=True` in the pinned source).
   The elastic correction and local section map remain separate research stages.
@@ -163,7 +170,7 @@ table above in sync as methods are implemented.
   point-hinge reference, and resolve global constitutive/branch selection for the
   nonconvex interaction law;
   do not silently convexify it and claim unchanged source parity. Validate member/
-  general hinge/member compatibility, geometric/material frame tangent, actual frame unloading,
+  general hinge/member compatibility, broader geometric/material frame qualification and loading paths,
   axial/biaxial interaction, interior yielding, stability/limit points, accepted
   histories and general-frame/source parity. Do not apply the elastic correction
   to yielded members or count either official combined example as implemented.

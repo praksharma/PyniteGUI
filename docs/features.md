@@ -202,3 +202,10 @@ and virtual work. Joint equilibrium, subdivision, cycles, energy, tangent and
 coordinate/unit invariance are checked. This remains first-order scalar configured
 hinges, with elastic spans and no axial–moment/P-Delta or GUI integration. See
 [Steel Pushover](analysis/pushover.md).
+
+A bounded corotational scalar-hinge research frame now checks geometric/material
+energy derivatives, independent compressed/tensioned-column references and a
+gravity-loaded yielding portal with unload/reverse work balance. Column refinement
+is required: the one-element compression result misses the continuum reference by
+4%. This distinct energy law does not qualify PyNite combined-source parity,
+interaction or production use. See [Steel Pushover](analysis/pushover.md).

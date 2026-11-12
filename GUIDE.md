@@ -3393,6 +3393,75 @@ separate open work. `production_ready=false` remains explicit.
 python -B scripts/test.py test_planar_hinge_frame test_configurable_point_hinges test_point_hinge_beam test_plastic_beam_chain test_plastic_bending_member test_section_return
 ```
 
+**Bounded corotational scalar-hinge frame (study, 2026-11-12)**
+
+A separate geometrically nonlinear research formulation now combines the configured
+scalar end hinges with a conservative corotational frame. Each member uses its
+current chord length l and change in chord angle φ. Elastic generalized strains
+are the extension l−L and the two end rotations β = θ−φ−α, where α is the
+configured plastic end rotation (zero at other ends). Its energy is
+EA(l−L)²/(2L) + βᵀ Kθ β/2, with Kθ = (EI/L)[[4,2],[2,4]].
+Axial force is EA(l−L)/L; it is not the sum of two signed end axial magnitudes.
+
+Nodal forces, hinge moments and the full material/geometric Hessian are analytic
+derivatives of that same energy, including current-chord length and angle
+second derivatives. Active-set Newton equations enforce dead nodal-load equilibrium
+and signed hinge moment consistency simultaneously. A fixed residual scaling and
+backtracking control trial steps. Supported stability, plastic increment signs,
+capacity bounds and immutable history are checked before a result is returned.
+A numerical failure is reported as unresolved stable equilibrium, not automatically
+classified as a physical collapse. Exactly singular yield-boundary states retain
+the earlier conservative rejection policy.
+
+Independent elastic evidence uses a cantilever under compression P=0.2Pcr with
+Pcr=π²EI/(4L²), L=120 in, EI=2,900,000 kip-in², EA=10,000,000 kip and a 0.01 kip
+lateral tip force. The continuum beam-column displacement is
+F(tan(kL)−kL)/(Pk), k=√(P/EI). The small-deflection reference and the finite-strain
+prototype are compared in a small-motion regime:
+
+| Column segments | Tip displacement (in) | Relative reference error |
+| --- | --- | --- |
+| 1 | 0.002377197 | 4.00% |
+| 2 | 0.002446161 | 1.21% |
+| 4 | 0.002468276 | 0.318% |
+| 8 | 0.002474122 | 0.0821% |
+| 16 | 0.002475604 | 0.0223% |
+
+The continuum value is 0.002476155 in. The one-element coarse result fails a 1%
+comparison; refinement is required because member geometry uses current chords.
+The remaining fine-mesh difference includes finite axial strain. Tension is also
+checked against the independent hyperbolic counterpart and reduces lateral drift.
+Recovered axial forces agree with the applied compression rather than doubling it.
+The unstable straight solution above 1.1Pcr is rejected by supported stability.
+
+For the preceding portal with 50 kip downward dead load at each roof node, a
+30 kip total lateral load gives approximately 1.334965741 in roof drift using one
+member per column. Both base moments yield at 1000 kip-in; column roof moments
+are approximately 866.307 and 866.355 kip-in. Column subdivision into 2/4/8 members
+gives drifts 1.331966528/1.333756694/1.334366429 in. The last refinement difference
+is below 0.1%; this is an internal consistency gate, not an independent nonlinear
+portal solution. The independent portal oracle remains the first-order study.
+
+Tests also check finite rigid-body objectivity, energy-gradient and complete
+Hessian differentiation, generalized work integration, elastic preload/ramp
+agreement at identical total loads, gravity-plus-hinge unloading/reverse cycles,
+external work versus stored energy/dissipation, frozen-history condensed tangent,
+deformed-coordinate force/moment equilibrium, units, coordinate changes and member
+reversal. Failed iteration/geometry/stability trials do not commit histories.
+
+Scope is bounded to dead nodal loads, straight planar Euler–Bernoulli members,
+zero support motions, at most four scalar hinges, axial strain magnitude ≤1% and
+nodal/chord/plastic rotation magnitude ≤0.25 rad. These are research limits, not
+material calibration. Remaining spans are elastic. There is no axial–moment yield
+interaction, biaxial law, distributed plasticity, follower loading, general limit-
+point continuation or GUI integration. This is a distinct corotational energy law,
+not a correction or parity claim for PyNite's combined polynomial P-Delta/plastic
+solver. Earlier negative evidence is preserved and `production_ready=false` remains.
+
+```sh
+python -B scripts/test.py test_corotational_hinge_frame test_planar_hinge_frame test_configurable_point_hinges test_point_hinge_beam test_plastic_beam_chain test_plastic_bending_member test_section_return test_equilibrated_column
+```
+
 MCP exposes `run_pushover_analysis` with session/revision, preload/push, control
 node/DOF, canonical stop limit (in or rad), reaction nodes/component and numerical
 controls. Poll `analysis_status` until `running=false`. Inspect Current/Partial

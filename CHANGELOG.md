@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add a separate test-only bounded corotational scalar-hinge frame formulation.
+  Derive forces and material/geometric tangent from objective member energy;
+  verify independent column convergence/axial force, gravity-loaded portal yield,
+  cycles, work, derivatives and invariance. Preserve the coarse-column 4% miss.
+  This is distinct from PyNite's interaction law and remains research-only.
+
 - Add a test-only connected planar configured-hinge frame assembly. Validate a
   portal against independent slope-deflection, simultaneous base yielding and
   four-hinge collapse, plus subdivision, cycles, equilibrium, tangent, energy,

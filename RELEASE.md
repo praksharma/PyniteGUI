@@ -322,6 +322,37 @@ and public RC4 artifacts are unchanged. Quad shear remains disabled in productio
 
 
 
+## Post-RC4 Corotational Scalar Hinge Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-12. Separate test-only conservative
+energy formulation; no application, release artifact or installed-engine change.
+
+- Combine current member chord extension/relative end rotations with configured
+  scalar plastic hinges. Derive nodal forces, physical axial force, hinge moments
+  and complete material/geometric Hessian from one energy. Solve signed active-set
+  dead-load equilibrium with Newton/backtracking and immutable history.
+- Verify finite rigid-body motion, analytic derivatives and generalized work;
+  compare compressed/tensioned columns to independent continuum references.
+  Compression errors for 1/2/4/8/16 segments are 4.00/1.21/0.318/0.0821/0.0223%.
+  Preserve the coarse miss rather than claiming mesh-independent qualification.
+- Verify a gravity-loaded portal with two active base hinges at 30 kip lateral
+  load: coarse drift 1.334965741 in. Column subdivisions 2/4/8 give drift
+  1.331966528/1.333756694/1.334366429 in; the last change is below 0.1%.
+  Refinement consistency is not an independent nonlinear portal oracle.
+- Check preload/ramp equivalence, unload/reverse work/dissipation, condensed
+  tangent, deformed moment balance, units, member direction and coordinate
+  invariance. Reject unstable straight compression, unresolved iterations and
+  out-of-bounds geometry without committing trial history.
+- Validation: **50 focused tests passed**, no skips, 2.834 s: eight new corotational
+  checks plus prior frame/hinge/global/material/section/elastic-column checks.
+  Test ownership covers 191 classes in nine groups. Earlier frozen study hashes
+  remain unchanged.
+- Research restrictions: planar dead nodal loads, elastic spans, at most four
+  scalar hinges, zero support motion, axial strain ≤1%, rotations ≤0.25 rad.
+  No axial/biaxial yield interaction, distributed plasticity, general stability/
+  limit-point continuation, PyNite combined-source parity or production readiness.
+
+
 ## Post-RC4 Connected Planar Hinge Frame Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-12. Test-only first-order research;
