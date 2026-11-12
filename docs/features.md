@@ -189,3 +189,9 @@ propped-beam displacement/moment gates across tested meshes and increments,
 including unloading, reversal and energy checks. This changes the localization
 model; distributed-curvature failures remain preserved. General frame and
 P-Delta integration remain pending. See [Steel Pushover](analysis/pushover.md).
+
+A research extension accepts up to four configured scalar hinge interfaces and
+nodal forces/couples, with signed active-set equilibrium and a detected two-hinge
+mechanism rather than a hardcoded load bound. Only configured interfaces yield;
+remaining spans are elastic. General frames and P-Delta remain pending. See
+[Steel Pushover](analysis/pushover.md).

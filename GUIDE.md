@@ -3293,6 +3293,48 @@ formulation or resolve the nonconvex general section-law region.
 python -B scripts/test.py test_point_hinge_beam test_plastic_beam_chain test_plastic_bending_member test_section_return
 ```
 
+**Configurable scalar point hinges (study, 2026-11-12)**
+
+A separate test-only extension accepts one to four configured `(element, end)`
+hinge interfaces and full nodal transverse-force/rotation-couple load vectors on
+this same propped beam. Each physical node may have one hinge interface. The
+chosen element's elastic end rotation subtracts its plastic rotation; the shared
+nodal rotation belongs to the other side. Therefore a couple applied at a split
+node acts on that shared side. Swapping element sides preserves translations and
+rotations away from the split node when no couple acts there; it changes the
+couple's physical attachment when one does. Duplicate node interfaces are rejected.
+
+All elastic, positive-yield and negative-yield active sets are enumerated (at most
+81). Each candidate solves global equilibrium and active moment consistency
+simultaneously, checking moment bounds, signed plastic increments and normalized
+supported stability. Elastic energy is computed from the actual span elastic
+rotations; dissipation is the sum of Mp times absolute plastic rotation increments.
+The algorithmic supported tangent condenses the active hinge equations. Trial
+histories are immutable and rejected candidates never replace committed history.
+
+With base and midspan interfaces configured, the same independent pre/post-yield
+reference passes across 2–32 segments and 1/20 load increments. At 25 kip the two
+hinges form a mechanism; the equations detect it without the previous prototype's
+hardcoded central-load bound. An exactly incipient mechanism is conservatively
+rejected when releasing every yield-boundary hinge makes the supported system
+singular; this does not distinguish all possible one-sided unloading branches.
+Nodal couples, an interior hinge, interface-side conventions, four configured
+interfaces, unit scaling, unloading/reversal, tangent differentiation and energy
+balance are tested. Four configured interfaces do not imply four stable active
+hinges: this propped beam loses stability when two relevant hinges release.
+
+Only specified interfaces have a yield capacity. Remaining spans are explicitly
+elastic, so this extension does not certify a uniformly plastic member or detect
+unconfigured interior yielding. Small-deflection planar scalar bending, common
+Mp, fixed/pinned supports and bounded enumeration remain research restrictions.
+General frames, axial/biaxial interaction, P-Delta and application integration
+remain open; `production_ready=false` is retained. Earlier distributed-curvature
+qualification failures remain unchanged.
+
+```sh
+python -B scripts/test.py test_configurable_point_hinges test_point_hinge_beam test_plastic_beam_chain test_plastic_bending_member test_section_return
+```
+
 MCP exposes `run_pushover_analysis` with session/revision, preload/push, control
 node/DOF, canonical stop limit (in or rad), reaction nodes/component and numerical
 controls. Poll `analysis_status` until `running=false`. Inspect Current/Partial

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Extend the test-only point-hinge propped beam to configurable scalar interfaces
+  and nodal forces/couples. Check signed active-set equilibrium, stability,
+  transactional history, tangent, energy and unit scaling; detect the two-hinge
+  mechanism without a benchmark-specific load bound. Elastic spans, small
+  deflections and research-only status remain explicit.
+
 - Add a separate test-only explicit point-hinge propped-beam formulation. Enforce
   signed plastic rotation, equilibrium and moment admissibility with an active-set
   solve; verify reactions, mesh/step independence, unloading/reversal, tangent and

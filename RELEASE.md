@@ -322,6 +322,28 @@ and public RC4 artifacts are unchanged. Quad shear remains disabled in productio
 
 
 
+## Post-RC4 Configurable Point-Hinge Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-12. Research-only; no release,
+application solver integration or general-frame qualification.
+
+- Extend the separate concentrated-hinge propped-beam study to one–four configured
+  scalar interfaces and arbitrary nodal transverse forces/couples. Reject duplicate
+  node interfaces and document the split-node couple attachment convention.
+- Enumerate signed active sets and solve equilibrium/material consistency together;
+  check supported stability, immutable history, tangent, energy and dissipation.
+  Base/midspan hinges detect the 25 kip mechanism without a benchmark load guard.
+  Exactly incipient singular yield-boundary states are conservatively rejected.
+- Verify independent mesh/load-step references, arbitrary interior interface,
+  unloading/reversal, tangent differentiation, four interfaces and unit scaling.
+  Remaining spans are explicitly elastic; unconfigured yielding is not certified.
+- Validation: **27 focused tests passed**, no skips, 1.803 s; five new configurable
+  hinge checks plus prior point-hinge/global/material/section checks. Ownership
+  covers 189 classes in nine groups. Frozen earlier study source hashes remain
+  unchanged. General frames, interaction, P-Delta and production readiness remain
+  open; earlier distributed-curvature mesh failures are preserved.
+
+
 ## Post-RC4 Explicit Point-Hinge Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-11. Research-only concentrated

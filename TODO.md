@@ -144,6 +144,12 @@ table above in sync as methods are implemented.
   rejection. Both 1% gates pass across 2–32 segments and 1/20 load increments.
   Preserve the distributed-curvature misses as a different localization model.
   Research-only central-load scalar bending; no axial/biaxial or P-Delta exposure.
+- [x] Extend the research propped beam to one–four configured scalar hinge
+  interfaces and arbitrary nodal transverse forces/couples. Enumerate signed
+  active sets, preserve frozen history, and detect the base/midspan mechanism
+  through supported equilibrium/stability without a benchmark load bound.
+  Verify side conventions, unit scaling, tangent, energy and mesh/step references.
+  Elastic spans have no implicit capacity; general frames/P-Delta remain pending.
 - [ ] Extend and independently validate combined P-Delta/plastic response before
   adapting the two official pushover scripts (`P_Delta=True` in the pinned source).
   The elastic correction and local section map remain separate research stages.
