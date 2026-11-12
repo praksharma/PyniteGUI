@@ -195,3 +195,10 @@ nodal forces/couples, with signed active-set equilibrium and a detected two-hing
 mechanism rather than a hardcoded load bound. Only configured interfaces yield;
 remaining spans are elastic. General frames and P-Delta remain pending. See
 [Steel Pushover](analysis/pushover.md).
+
+A separate connected planar-frame research assembly now verifies two stable active
+base hinges and the four-hinge portal collapse against independent slope-deflection
+and virtual work. Joint equilibrium, subdivision, cycles, energy, tangent and
+coordinate/unit invariance are checked. This remains first-order scalar configured
+hinges, with elastic spans and no axial–moment/P-Delta or GUI integration. See
+[Steel Pushover](analysis/pushover.md).

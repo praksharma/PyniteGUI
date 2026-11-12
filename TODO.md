@@ -150,6 +150,12 @@ table above in sync as methods are implemented.
   through supported equilibrium/stability without a benchmark load bound.
   Verify side conventions, unit scaling, tangent, energy and mesh/step references.
   Elastic spans have no implicit capacity; general frames/P-Delta remain pending.
+- [x] Assemble a separate first-order planar configured-hinge frame prototype:
+  transformed axial/flexural stiffness, joint equilibrium and simultaneous signed
+  hinge flow. Validate a connected portal against independent slope-deflection,
+  two stable active base hinges and four-hinge collapse; check subdivision,
+  unload/reverse cycles, energy, tangent, unequal capacities and coordinate/units
+  invariance. Explicit interfaces only; no interaction/P-Delta/GUI integration.
 - [ ] Extend and independently validate combined P-Delta/plastic response before
   adapting the two official pushover scripts (`P_Delta=True` in the pinned source).
   The elastic correction and local section map remain separate research stages.

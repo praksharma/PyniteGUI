@@ -139,6 +139,7 @@ tests = [
   "test_plastic_beam_chain",
   "test_point_hinge_beam",
   "test_configurable_point_hinges",
+  "test_planar_hinge_frame",
 ]
 
 [groups.surfaces]

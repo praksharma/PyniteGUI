@@ -3335,6 +3335,64 @@ qualification failures remain unchanged.
 python -B scripts/test.py test_configurable_point_hinges test_point_hinge_beam test_plastic_beam_chain test_plastic_bending_member test_section_return
 ```
 
+**Connected planar configured-hinge frame (study, 2026-11-12)**
+
+A separate research assembly extends the concentrated-hinge equations to connected
+straight-member planar frames. Nodes have two translations and one joint rotation;
+local axial EA/L and Euler–Bernoulli bending stiffness transform into the global
+coordinates. Specified member-end plastic rotations subtract from that member's
+joint rotation, with the corresponding local nodal forces assembled back at each
+joint. Only configured interfaces have plastic capacity; all spans remain elastic.
+A nodal couple acts on the shared joint rotation. Multiple distinct member-end
+hinges at a joint are permitted, but unresolved rotational gauges and mechanisms
+are rejected rather than regularized.
+
+The bounded implementation accepts 2–32 nodes, 1–48 members, zero prescribed
+support motions and up to four configured scalar hinges with individual positive
+capacities. Its signed active sets enforce moment consistency, nonnegative plastic
+increments, full free-DOF equilibrium and positive normalized supported stability.
+An exactly incipient singular state is conservatively rejected by releasing all
+yield-boundary hinges; this is not a general directional stability classification.
+Immutable histories, local-force recovery, elastic energy, dissipation and the
+condensed algorithmic tangent are checked separately.
+
+The independent reference is a symmetric one-storey portal with height/span 120 in,
+EA=290,000 kip, EI=2,900,000 kip-in² and four column-end Mp=1000 kip-in interfaces.
+Its slope-deflection reference reduces symmetry to roof drift, common roof rotation
+and opposite column axial extensions; it is not the assembled prototype matrix.
+First base yield occurs at approximately 29.11479945 kip total lateral load. At
+32 kip both bases yield, while both column roof moments remain 920 kip-in:
+
+| Quantity | Reference-matched prototype |
+| --- | --- |
+| Roof horizontal drift | 1.469241379 in |
+| Left/right roof vertical translation | +0.006344828 / -0.006344828 in |
+| Common roof rotation | -0.006450575 rad |
+| Each base plastic rotation | 0.004795402 rad |
+| Total plastic dissipation | 9.590804598 kip-in |
+| Each base horizontal reaction | -16 kip |
+| Each base moment reaction | 1000 kip-in |
+
+The four-hinge sway mechanism has independent virtual-work limit 4Mp/H, or
+33.33333333 kip; the active-set equations reject this limit and overloads without
+a portal-specific load guard. The reference holds for 1/20/100 monotonic load
+increments. Subdividing each column into 2/4/8 members preserves the response.
+Checks also cover joint and global force/moment balance, unloading and reverse
+yield, work/energy, frozen-history tangent differentiation, unequal-capacity
+sequential yield, hinge ordering, coordinate rotation/translation, member direction
+reversal, inch-kip/mm-N scaling and an independent axial/bending cantilever.
+
+This qualifies these first-order scalar-hinge benchmarks, not general plastic
+frame behaviour. There is no axial–moment interaction, biaxial response, distributed
+or unconfigured interior yielding, geometric stiffness, P-Delta, follower loading,
+general frame branch qualification or application integration. The earlier
+nonconvex section law and distributed-curvature qualification failures remain
+separate open work. `production_ready=false` remains explicit.
+
+```sh
+python -B scripts/test.py test_planar_hinge_frame test_configurable_point_hinges test_point_hinge_beam test_plastic_beam_chain test_plastic_bending_member test_section_return
+```
+
 MCP exposes `run_pushover_analysis` with session/revision, preload/push, control
 node/DOF, canonical stop limit (in or rad), reaction nodes/component and numerical
 controls. Poll `analysis_status` until `running=false`. Inspect Current/Partial

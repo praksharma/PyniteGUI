@@ -322,6 +322,33 @@ and public RC4 artifacts are unchanged. Quad shear remains disabled in productio
 
 
 
+## Post-RC4 Connected Planar Hinge Frame Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-12. Test-only first-order research;
+application solver behaviour, release tags and installed artifacts are unchanged.
+
+- Assemble planar axial/flexural member stiffness and configured scalar end hinges
+  into joint equilibrium. Bound enumeration to four interfaces, with individual
+  capacities, signed consistency, supported stability and immutable trial history.
+- Independently verify a connected portal against symmetric slope-deflection:
+  at 32 kip, roof drift 1.469241379 in, base plastic rotation 0.004795402 rad each,
+  roof column-end moments 920 kip-in and dissipation 9.590804598 kip-in. Two base
+  hinges remain stably active. Reject the four-hinge 4Mp/H mechanism at
+  33.33333333 kip and overloads without a benchmark-specific load guard.
+- Check 1/20/100 load increments, 2/4/8 column subdivisions, local/global force
+  and moment balance, unload/reverse cycles, work/energy, frozen-history tangent,
+  unequal-capacity sequential yield, hinge ordering, coordinate changes, member
+  reversal, units and an independent elastic cantilever reference.
+- Validation: **34 focused tests passed**, no skips, 1.139 s, including seven new
+  frame tests and previous hinge/global/material/section checks. Test ownership
+  covers 190 classes in nine groups. Earlier frozen source hashes are preserved.
+- Only configured interfaces yield; spans are elastic and axial/moment effects
+  are uncoupled. General frame plasticity, the nonconvex interaction law,
+  distributed yielding, P-Delta and GUI integration remain unqualified. Exactly
+  incipient singular states are rejected conservatively, not classified by a
+  general directional stability analysis. No production readiness is claimed.
+
+
 ## Post-RC4 Configurable Point-Hinge Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-12. Research-only; no release,

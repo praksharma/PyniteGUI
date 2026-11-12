@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add a test-only connected planar configured-hinge frame assembly. Validate a
+  portal against independent slope-deflection, simultaneous base yielding and
+  four-hinge collapse, plus subdivision, cycles, equilibrium, tangent, energy,
+  unequal capacities and coordinate/unit invariance. This is first-order scalar
+  research; interaction, P-Delta and application integration remain pending.
+
 - Extend the test-only point-hinge propped beam to configurable scalar interfaces
   and nodal forces/couples. Check signed active-set equilibrium, stability,
   transactional history, tangent, energy and unit scaling; detect the two-hinge
