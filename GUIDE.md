@@ -3522,6 +3522,78 @@ python -B scripts/test.py test_corotational_cantilever_reference test_corotation
 python -B scripts/benchmark_corotational_cantilever.py --output /tmp/corotational-cantilever.json
 ```
 
+**Single-actuator displacement continuation (study, 2026-11-12)**
+
+A separate research driver now prescribes one free global translational DOF and
+solves the remaining free DOFs together with signed scalar hinge consistency.
+Fixed dead preload is retained; the required additional nodal actuator force is
+recovered from equilibrium at the controlled DOF. A positive supported Hessian is
+required only on the remaining displacement/active-plastic unknowns. The actuator
+force derivative is its Schur complement and may be negative. This allows an
+imposed-displacement response beyond a load peak without claiming load-control
+stability.
+
+`constrained_stable` records this local constrained Hessian check.
+`load_control_stable` separately checks the fully free supported Hessian, releasing
+all yield-boundary hinges conservatively. Neither is a general stability proof.
+At an exact yield transition the actuator derivative belongs to the selected
+active set; there need not be a unique two-sided tangent. Prescribed support
+motions, rotational control, multiple actuators and arbitrary distributed pushover
+patterns are not implemented by this driver. Its inherited force-control entry is
+disabled to prevent mixing controlled and force-controlled histories.
+
+The independent imposed-drift cantilever reference eliminates the free-end moment
+and uses current-chord statics, not the frame energy or Jacobian. For vertical dead
+force T (positive in tension), M=K(ψ−α) on elastic unloading and M=±Mp on plastic
+loading, with K=3EI/L. The positive current-length root solves
+l²−A l−B=0, where A=L(1+T/(EA cosψ)) and B=LM tanψ/EA. A bracketed scalar solve
+then enforces x=l sinψ. Required force is F=(M/l+T sinψ)/cosψ and tip rotation is
+−ψ−M/(2K). Differentiating these relations gives actuator stiffness without dividing
+by a zero force-control tangent. The reference bounds |ψ|≤0.2 rad, axial strain
+magnitude ≤1% and plastic rotation magnitude ≤0.25 rad.
+
+For L=120 in, EA=290,000 kip, EI=2,900,000 kip-in², Mp=1000 kip-in and T=−40 kip
+(compression), the first-yield peak occurs at x=1.654892274 in and F=7.783513472 kip.
+On increasing positive drift:
+
+| Imposed x (in) | Required F (kip) | Actuator slope (kip/in) | Load-control tangent |
+| --- | --- | --- | --- |
+| 0.5 | 2.351393576 | 4.702897292 | Positive |
+| 1.0 | 4.702952370 | 4.703392970 | Positive |
+| 2.0 | 7.668786233 | -0.332361482 | Not positive |
+| 5.0 | 6.673376105 | -0.331348279 | Not positive |
+| 10.0 | 5.018139345 | -0.331033207 | Not positive |
+
+The independent statics reference agrees through compression, zero vertical load,
+tension, reverse cycles and 1/20 displacement increments. Work from the recovered
+actuator and fixed dead load matches stored energy plus plastic dissipation to the
+stated integration tolerance. Frozen-history finite differences check the actuator
+slope; deformed force/moment balance, unit scaling, elastic no-hinge behaviour and
+transactional failure are verified. The same force as a displacement-held softening
+pose also has a different stable pre-yield solution under force control; the driver
+does not conflate these branches.
+
+A connected portal check applies 50 kip downward at each roof node and controls
+only the left roof's horizontal displacement. Two base hinges yield before four
+column-end hinges become active. At 2 and 3 in controlled drift, required lateral
+loads are approximately 31.680033824 and 30.851639059 kip, with negative actuator
+slopes and nonpositive load-control tangent. Joint/deformed global balance and
+actuator derivatives are checked. This is numerical continuation evidence; there
+is still no independent nonlinear portal oracle. An unresolved larger step is a
+numerical rejection, not a certified collapse limit.
+
+Scope remains the frozen corotational scalar-hinge law, bounded geometry and
+elastic spans. One other free DOF is required besides the actuator. Histories
+include control and preload configuration; rejected candidates never commit them.
+There is no arc-length continuation, general snap-back/bifurcation following,
+axial–moment interaction, distributed plasticity, PyNite combined-source parity or
+GUI integration. All prior reports and negative evidence remain unchanged, and
+`production_ready=false` remains explicit.
+
+```sh
+python -B scripts/test.py test_displacement_hinge_frame test_corotational_cantilever_reference test_corotational_hinge_frame test_planar_hinge_frame
+```
+
 MCP exposes `run_pushover_analysis` with session/revision, preload/push, control
 node/DOF, canonical stop limit (in or rad), reaction nodes/component and numerical
 controls. Poll `analysis_status` until `running=false`. Inspect Current/Partial

@@ -322,6 +322,34 @@ and public RC4 artifacts are unchanged. Quad shear remains disabled in productio
 
 
 
+## Post-RC4 Displacement Continuation Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-12. Test-only single-actuator
+continuation; the frozen force-control law/reports and application remain unchanged.
+
+- Prescribe one free global translational DOF under fixed dead preload; solve
+  remaining motion and signed hinge consistency. Recover actuator force and its
+  Schur-complement slope. Check constrained Hessian positivity separately from
+  load-control tangent positivity; preserve immutable committed histories.
+- Independently verify a compressed cantilever's first-yield load peak at
+  x=1.654892274 in, F=7.783513472 kip. At x=5 in the softening branch requires
+  F=6.673376105 kip and has slope -0.331348279 kip/in. It is locally held by
+  displacement control; it is not reported as load-control stable.
+- Check compression/zero/tension cycles, 1/20 increments, reverse plasticity,
+  work/energy, frozen-history derivatives, deformed balance, units, elastic
+  no-hinge behaviour, invalid controls and failed-step transactional history.
+- Numerically follow a gravity-loaded portal with four active column-end hinges
+  past its lateral-load peak; verify actuator derivative and deformed balance.
+  This is not an independent nonlinear portal reference or collapse certificate.
+- Validation: **64 focused tests passed**, no skips, 5.241 s, including seven new
+  continuation checks. Ownership covers 193 test classes in nine groups. Earlier
+  study reports/source hashes remain unchanged. Strict documentation checks are
+  separate from engineering checks.
+- No rotational/multiple-actuator control, distributed pushover pattern, general
+  arc-length/snap-back/bifurcation following, axial/biaxial interaction, distributed
+  plasticity, PyNite combined-source parity, GUI integration or production claim.
+
+
 ## Post-RC4 Independent Corotational Cantilever Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-12. Research-only single-member

@@ -170,6 +170,13 @@ table above in sync as methods are implemented.
   Fix cold combined-load initialization using geometry-only elastic trial seeding;
   tighten equilibrium to retain the original moment comparison gate. No general
   nonlinear portal, continuum plastic-beam, interaction or source-parity claim.
+- [x] Add bounded single-actuator displacement continuation to the corotational
+  scalar-hinge study. Recover actuator force and condensed slope, distinguish
+  constrained stability from load-control tangent positivity, and verify a
+  compressed cantilever's peak/softening against independent imposed-drift statics.
+  Check cycles, energy, frozen-history derivatives, units, rejected histories and
+  a four-hinge portal's numerical balance. No general arc-length/snap-back,
+  nonlinear portal oracle, interaction or application qualification.
 - [ ] Extend and independently validate combined P-Delta/plastic response before
   adapting the two official pushover scripts (`P_Delta=True` in the pinned source).
   The elastic correction and local section map remain separate research stages.

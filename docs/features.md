@@ -216,3 +216,11 @@ hinge member's yielding, unloading and tip compliance. The
 tension levels, load increments and axial-load changes. Cold combined-load
 initialization is fixed; general nonlinear-frame, interaction and production
 qualification remain open. See [Steel Pushover](analysis/pushover.md).
+
+Single-actuator displacement continuation is now checked in the scalar-hinge
+research formulation, including an independently referenced compressed cantilever
+past its load peak. Constrained equilibrium and negative actuator stiffness are
+reported separately from load-control tangent checks. A four-hinge portal has
+numerical continuation checks; independent nonlinear portal, general arc-length,
+interaction and production qualification remain open. See
+[Steel Pushover](analysis/pushover.md).

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add a research-only single-actuator displacement driver for corotational scalar
+  hinges. Verify the compressed-cantilever load peak and negative post-yield slope
+  against independent imposed-drift statics; distinguish constrained from
+  load-control tangent checks. Cover cycles, work, units, rejected histories and
+  a numerically continued four-hinge portal. No GUI/general continuation claim.
+
 - Validate the bounded corotational hinge member against independent scalar
   current-chord statics and analytic compliance. Publish 48 yield/unload/reverse,
   tension-change and increment comparisons with explicit gates/source hashes.
