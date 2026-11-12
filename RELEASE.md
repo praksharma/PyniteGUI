@@ -322,6 +322,33 @@ and public RC4 artifacts are unchanged. Quad shear remains disabled in productio
 
 
 
+## Post-RC4 Independent Corotational Cantilever Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-12. Research-only single-member
+statics oracle; no application integration or release artifact change.
+
+- Independently eliminate the free-end moment of a tension-stabilized cantilever
+  and solve current-chord scalar force/moment balance. Derive implicit compliance,
+  signed yield/unload/reverse branches, energy and immutable plastic history
+  without importing the frame assembly or energy/Newton implementation.
+- Publish 48 reproducible comparisons with source hashes and original numerical
+  gates: three positive tension levels, 1/20 load increments, reverse cycles and
+  changing tension. Maximum translation/moment/compliance errors are below
+  1.5e-9 in / 8.6e-7 kip-in / 1.2e-9 in/kip or rad/kip respectively.
+- Fix cold combined-load initialization: use only a converged elastic trial's
+  geometry when the initial active tangent is unresolved. Always retain committed
+  plastic variables. Tighten equilibrium tolerance to pass the original unloading
+  moment gate; no constitutive/stability gate is relaxed.
+- Validate independent compliance differentiation, deformed moment balance,
+  work/energy, units, invalid histories and cold versus preloaded solutions.
+  **57 focused tests passed**, no skips. Test ownership covers 192 classes
+  in nine groups; prior frozen research source hashes remain unchanged.
+- The oracle requires positive tension and bounded chord rotation; this validates
+  the particular corotational scalar-hinge member law, not a continuum plastic
+  beam, independent nonlinear portal, general branch/limit-point analysis,
+  axial–moment interaction, PyNite source parity or production readiness.
+
+
 ## Post-RC4 Corotational Scalar Hinge Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-12. Separate test-only conservative

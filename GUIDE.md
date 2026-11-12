@@ -3462,6 +3462,66 @@ solver. Earlier negative evidence is preserved and `production_ready=false` rema
 python -B scripts/test.py test_corotational_hinge_frame test_planar_hinge_frame test_configurable_point_hinges test_point_hinge_beam test_plastic_beam_chain test_plastic_bending_member test_section_return test_equilibrated_column
 ```
 
+**Independent nonlinear hinged-cantilever statics (study, 2026-11-12)**
+
+An independent scalar oracle now checks yielding and unloading of one corotational
+member under positive upward tip tension T and lateral dead force F. A fixed base
+has one scalar plastic hinge and the free tip carries no moment. Let ψ be clockwise
+chord rotation from the initial vertical axis and K=3EI/L. Eliminating the free-end
+moment gives M=K(ψ−α), tip rotation θ=−ψ−M/(2K), and these current-chord balances:
+
+- N=F sinψ+T cosψ and Q=F cosψ−T sinψ.
+- l=L(1+N/EA), x=l sinψ and y=l cosψ.
+- M=lQ; elastic unloading keeps the committed α fixed, while signed plastic
+  loading enforces M=±Mp and α=ψ−M/K.
+
+A bracketed scalar root enforces moment equilibrium without importing the frame
+assembly, energy/Hessian implementation or Newton solver. Implicit differentiation
+uses dR/dψ=Kbranch+lN−LQ²/EA, with Kbranch=K during elastic unloading and zero
+during plastic flow, to obtain the full tip compliance for changes in F at fixed
+T/history. The oracle checks signed plastic increments and positive branch slope
+within |ψ|≤0.2 rad and 1% axial strain. T must be positive. These restrictions do
+not provide general branch uniqueness or a continuum plastic-column solution.
+
+For L=120 in, EA=290,000 kip, EI=2,900,000 kip-in², Mp=1000 kip-in and T=40 kip:
+
+| Load/history | Tip x (in) | Tip vertical displacement (in) | Base moment (kip-in) |
+| --- | --- | --- | --- |
+| F=5 kip, virgin | 0.931648336 | 0.012951195 | 562.798823 |
+| F=12 kip, yielded | 10.857442937 | -0.475190211 | 1000 |
+| F=0 after F=12 | 8.637457232 | -0.294708897 | -345.498289 |
+| F=-12 after unloading | -10.857442937 | -0.475190211 | -1000 |
+
+The prototype agrees with this independent statics/compliance oracle through
+three tension levels (20/40/80 kip), positive/reverse yield, unloading, changes in
+tension and 1/20 load increments. The [48-record comparison report](docs/assets/corotational-cantilever.json)
+includes source hashes, explicit gates, moments, plastic rotations, dissipation,
+energy, physical axial force, active branches and tip compliance. Maximum measured
+translation error is below 1.5e-9 in, moment error below 8.6e-7 kip-in and compliance
+error below 1.2e-9 in/kip or rad/kip. Separate tests verify numerical differentiation
+of the oracle, deformed moment balance, work/energy, unit scaling and rejected
+histories. These are numerical comparison errors, not engineering accuracy claims.
+
+The expanded comparisons exposed a cold-start issue: a released hinge candidate
+could start from an unresolved zero-tension tangent even when the combined applied
+load has a stable yielded solution. A converged elastic trial now supplies only
+initial geometry when that initial active tangent is unresolved. Plastic variables
+always restart from committed history; trial overstress is never accepted as a
+committed state. The accepted solution still passes equilibrium, yield, multiplier
+and supported stability gates. Tightened force equilibrium also keeps unloading
+moments inside the original comparison threshold.
+
+This independently validates the bounded single-member corotational hinge law.
+It does not supply an independent nonlinear portal oracle, axial–moment interaction,
+distributed plasticity, PyNite combined-source parity or GUI integration. Earlier
+coarse-column and distributed-curvature failures remain preserved.
+`production_ready=false` remains explicit.
+
+```sh
+python -B scripts/test.py test_corotational_cantilever_reference test_corotational_hinge_frame test_planar_hinge_frame
+python -B scripts/benchmark_corotational_cantilever.py --output /tmp/corotational-cantilever.json
+```
+
 MCP exposes `run_pushover_analysis` with session/revision, preload/push, control
 node/DOF, canonical stop limit (in or rad), reaction nodes/component and numerical
 controls. Poll `analysis_status` until `running=false`. Inspect Current/Partial

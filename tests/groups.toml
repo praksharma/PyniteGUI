@@ -141,6 +141,7 @@ tests = [
   "test_configurable_point_hinges",
   "test_planar_hinge_frame",
   "test_corotational_hinge_frame",
+  "test_corotational_cantilever_reference",
 ]
 
 [groups.surfaces]

@@ -163,6 +163,13 @@ table above in sync as methods are implemented.
   unload/reverse work, condensed tangent, refinement, units and coordinate changes.
   Preserve coarse-column misses and distinguish this law from PyNite source parity.
   No interaction, general stability/limit-point or production qualification.
+- [x] Independently validate the bounded corotational scalar-hinge member using
+  current-chord force/moment balance and closed-form compliance after eliminating
+  the free-end moment. Publish 48 tension-stabilized cantilever comparisons for
+  yield, unload/reverse, axial-load changes and load increments with source hashes.
+  Fix cold combined-load initialization using geometry-only elastic trial seeding;
+  tighten equilibrium to retain the original moment comparison gate. No general
+  nonlinear portal, continuum plastic-beam, interaction or source-parity claim.
 - [ ] Extend and independently validate combined P-Delta/plastic response before
   adapting the two official pushover scripts (`P_Delta=True` in the pinned source).
   The elastic correction and local section map remain separate research stages.

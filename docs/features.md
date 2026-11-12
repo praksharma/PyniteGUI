@@ -209,3 +209,10 @@ gravity-loaded yielding portal with unload/reverse work balance. Column refineme
 is required: the one-element compression result misses the continuum reference by
 4%. This distinct energy law does not qualify PyNite combined-source parity,
 interaction or production use. See [Steel Pushover](analysis/pushover.md).
+
+An independent current-chord statics oracle now checks the bounded corotational
+hinge member's yielding, unloading and tip compliance. The
+[48-record report](assets/corotational-cantilever.json) covers three positive
+tension levels, load increments and axial-load changes. Cold combined-load
+initialization is fixed; general nonlinear-frame, interaction and production
+qualification remain open. See [Steel Pushover](analysis/pushover.md).

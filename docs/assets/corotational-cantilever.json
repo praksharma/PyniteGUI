@@ -1,0 +1,2110 @@
+{
+  "bounded_member_reference_checks_passed": true,
+  "production_ready": false,
+  "general_frame_plastic_validated": false,
+  "pynite_combined_source_parity": false,
+  "python": "3.12.13",
+  "units": "inch, kip, rad",
+  "scope": "One corotational member, fixed base, free tip, one base scalar hinge, positive dead tip tension. Reference chord angle bounded to +/-0.2 rad and axial strain to 1%. Elastic axial/bending law; no axial-moment yield interaction or continuum plastic-beam claim.",
+  "reference": "Eliminate the free-end moment; solve scalar current-chord force/moment balance with a bracketed root, signed perfect-plastic return, and analytic implicit compliance. No assembled stiffness/Hessian/energy solver is imported by the reference.",
+  "sources_sha_note": "Includes prototype and its inherited assembly/elastic compatibility dependencies.",
+  "source_sha256": {
+    "tests/corotational_hinge_frame.py": "0db4bd9a26432ae8a0dc1a13ba2fa36791c3b95e0520aa5eb01b1be83d881e10",
+    "tests/planar_hinge_frame.py": "6162d2ae4f0a432a7160572d97b82dd3b0491291162808e49aafd13c648c629e",
+    "tests/beam_gradient_compatibility.py": "52fea88e614b89f0758219ea689719996167c619910c13049bd79520159f181f",
+    "tests/corotational_cantilever_reference.py": "1bea19824ffdd502057c50fe09f56692b8cb655841b518940a4d916de4470c98",
+    "tests/test_corotational_cantilever_reference.py": "d41983f1aeb892e527158edfd1434603cd7a5899e7838a026ea0380b78dde6f0",
+    "scripts/benchmark_corotational_cantilever.py": "8ff6b96e80f853c5c5a5c97ea191926a3a88596e9d7fd44a323e820dcbf9e789"
+  },
+  "frozen_report_sha256": {
+    "docs/assets/combined-pushover-prerequisite.json": "10a8c380b807d144362c593c04f00cc5fae3279573878e127669bacdafcd75cf",
+    "docs/assets/equilibrated-column.json": "66eb4e7d6cd7b730299568b6268d2498b5fd2f1593892bde68ec15767c00ddf0",
+    "docs/assets/section-return.json": "dab5698d17a1971447bcf0c03096f6208791b8d8734ea8c73052e2b1b551a002"
+  },
+  "gates": {
+    "translation_error": 1e-07,
+    "rotation_error": 1e-09,
+    "plastic_rotation_error": 1e-09,
+    "dissipation_error": 1e-05,
+    "elastic_energy_error": 1e-06,
+    "moment_error": 1e-06,
+    "axial_force_error": 1e-06,
+    "compliance_error": 1e-06
+  },
+  "maximum_errors": {
+    "translation_error": 1.4111414259332378e-09,
+    "rotation_error": 1.772194890836687e-11,
+    "plastic_rotation_error": 1.6120854651191507e-12,
+    "dissipation_error": 4.83652229377185e-09,
+    "elastic_energy_error": 4.064627523447939e-09,
+    "moment_error": 8.527466093255498e-07,
+    "axial_force_error": 1.0118498039446422e-08,
+    "compliance_error": 1.1806635669131538e-09
+  },
+  "records": [
+    {
+      "path": "cycle_tension_20",
+      "steps_per_stage": 1,
+      "stage": 0,
+      "lateral": 0.0,
+      "tension": 20.0,
+      "prototype_motion": [
+        0.0,
+        0.00827586206896552,
+        0.0
+      ],
+      "reference_motion": [
+        0.0,
+        0.008275862068970241,
+        -0.0
+      ],
+      "moment": 0.0,
+      "reference_moment": 0.0,
+      "plastic_rotation": 0.0,
+      "reference_plastic_rotation": 0.0,
+      "dissipation": 0.0,
+      "reference_dissipation": 0.0,
+      "reference_compliance": [
+        0.19228243590558197,
+        0.0,
+        -0.0024033646995301515
+      ],
+      "prototype_compliance": [
+        0.19228243590557856,
+        0.0,
+        -0.0024033646995301095
+      ],
+      "translation_error": 4.721917301608869e-15,
+      "rotation_error": 0.0,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 0.0,
+      "elastic_energy_error": 9.447997939560082e-14,
+      "moment_error": 0.0,
+      "axial_force_error": 1.141486904998601e-11,
+      "compliance_error": 3.4139358007223564e-15,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_20",
+      "steps_per_stage": 1,
+      "stage": 1,
+      "lateral": 5.0,
+      "tension": 20.0,
+      "prototype_motion": [
+        0.9613716339210163,
+        0.004441394142580112,
+        -0.012016443606047427
+      ],
+      "reference_motion": [
+        0.9613716339210163,
+        0.004441394142574495,
+        -0.01201644360604743
+      ],
+      "moment": 580.7947742922921,
+      "reference_moment": 580.7947742922923,
+      "plastic_rotation": 0.0,
+      "reference_plastic_rotation": 0.0,
+      "dissipation": 0.0,
+      "reference_dissipation": 0.0,
+      "reference_compliance": [
+        0.19225810976983268,
+        -0.0015336820309876553,
+        -0.002403136774936365
+      ],
+      "prototype_compliance": [
+        0.19225810976983182,
+        -0.0015336820309876486,
+        -0.0024031367749363544
+      ],
+      "translation_error": 5.617034615212901e-15,
+      "rotation_error": 1.734723475976807e-18,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 0.0,
+      "elastic_energy_error": 2.220446049250313e-14,
+      "moment_error": 2.2737367544323206e-13,
+      "axial_force_error": 2.7391422463551862e-12,
+      "compliance_error": 8.604228440844963e-16,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_20",
+      "steps_per_stage": 1,
+      "stage": 2,
+      "lateral": 10.0,
+      "tension": 20.0,
+      "prototype_motion": [
+        9.80373634686288,
+        -0.39252730627418214,
+        -0.08867964626804813
+      ],
+      "reference_motion": [
+        9.803736346862921,
+        -0.3925273062741894,
+        -0.08867964626804847
+      ],
+      "moment": 1000.0000000000001,
+      "reference_moment": 1000.0,
+      "plastic_rotation": 0.06798999109563433,
+      "reference_plastic_rotation": 0.06798999109563468,
+      "dissipation": 67.98999109563434,
+      "reference_dissipation": 67.98999109563468,
+      "reference_compliance": [
+        5.7450255320731305,
+        -0.4706962052263192,
+        -0.04803219323742688
+      ],
+      "prototype_compliance": [
+        5.745025532070591,
+        -0.4706962052261092,
+        -0.048032193237405645
+      ],
+      "translation_error": 4.085620730620576e-14,
+      "rotation_error": 3.469446951953614e-16,
+      "plastic_rotation_error": 3.469446951953614e-16,
+      "dissipation_error": 3.410605131648481e-13,
+      "elastic_energy_error": 8.881784197001252e-14,
+      "moment_error": 1.1368683772161603e-13,
+      "axial_force_error": 1.0246026249660645e-11,
+      "compliance_error": 2.539302101922658e-12,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "cycle_tension_20",
+      "steps_per_stage": 1,
+      "stage": 3,
+      "lateral": 0.0,
+      "tension": 20.0,
+      "prototype_motion": [
+        7.892377223209415,
+        -0.2515454924037506,
+        -0.06472417983085803
+      ],
+      "reference_motion": [
+        7.89237722320946,
+        -0.2515454924037641,
+        -0.0647241798308584
+      ],
+      "moment": -157.84754446419012,
+      "reference_moment": -157.84754446418708,
+      "plastic_rotation": 0.06798999109563433,
+      "reference_plastic_rotation": 0.06798999109563468,
+      "dissipation": 67.98999109563434,
+      "reference_dissipation": 67.98999109563468,
+      "reference_compliance": [
+        0.19146570369367047,
+        -0.012592715178718773,
+        -0.0023983270434563345
+      ],
+      "prototype_compliance": [
+        0.191465703693676,
+        -0.01259271517871907,
+        -0.002398327043456404
+      ],
+      "translation_error": 4.440892098500626e-14,
+      "rotation_error": 3.7470027081099033e-16,
+      "plastic_rotation_error": 3.469446951953614e-16,
+      "dissipation_error": 3.410605131648481e-13,
+      "elastic_energy_error": 1.411093464298574e-13,
+      "moment_error": 3.0411229090532288e-12,
+      "axial_force_error": 1.7617907133171684e-11,
+      "compliance_error": 5.523359547510154e-15,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_20",
+      "steps_per_stage": 1,
+      "stage": 4,
+      "lateral": -10.0,
+      "tension": 20.0,
+      "prototype_motion": [
+        -9.803736346752652,
+        -0.39252730626404014,
+        0.08867964626712573
+      ],
+      "reference_motion": [
+        -9.803736346862921,
+        -0.3925273062741894,
+        0.08867964626804847
+      ],
+      "moment": -1000.0000000000081,
+      "reference_moment": -1000.0,
+      "plastic_rotation": -0.06798999109471193,
+      "reference_plastic_rotation": -0.06798999109563468,
+      "dissipation": 203.96997328598061,
+      "reference_dissipation": 203.96997328690404,
+      "reference_compliance": [
+        5.7450255320731305,
+        0.4706962052263192,
+        -0.04803219323742688
+      ],
+      "prototype_compliance": [
+        5.745025531339056,
+        0.47069620516083527,
+        -0.04803219323128546
+      ],
+      "translation_error": 1.1026912716260995e-10,
+      "rotation_error": 9.22747989129391e-13,
+      "plastic_rotation_error": 9.22747989129391e-13,
+      "dissipation_error": 9.234213393938262e-10,
+      "elastic_energy_error": 2.2849278025205422e-11,
+      "moment_error": 8.071765478234738e-12,
+      "axial_force_error": 2.654648056932274e-09,
+      "compliance_error": 7.340741348116353e-10,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "cycle_tension_20",
+      "steps_per_stage": 1,
+      "stage": 5,
+      "lateral": 0.0,
+      "tension": 20.0,
+      "prototype_motion": [
+        -7.892377223102492,
+        -0.25154549239670615,
+        0.06472417982997987
+      ],
+      "reference_motion": [
+        -7.89237722320946,
+        -0.2515454924037641,
+        0.0647241798308584
+      ],
+      "moment": 157.8475444620504,
+      "reference_moment": 157.84754446418708,
+      "plastic_rotation": -0.06798999109471193,
+      "reference_plastic_rotation": -0.06798999109563468,
+      "dissipation": 203.96997328598061,
+      "reference_dissipation": 203.96997328690404,
+      "reference_compliance": [
+        0.19146570369367047,
+        0.012592715178718773,
+        -0.0023983270434563345
+      ],
+      "prototype_compliance": [
+        0.19146570369369853,
+        0.012592715178549216,
+        -0.0023983270434565457
+      ],
+      "translation_error": 1.0696776797658458e-10,
+      "rotation_error": 8.785333571736942e-13,
+      "plastic_rotation_error": 9.22747989129391e-13,
+      "dissipation_error": 9.234213393938262e-10,
+      "elastic_energy_error": 4.798272890127464e-12,
+      "moment_error": 2.1366872715589125e-09,
+      "axial_force_error": 1.7617907133171684e-11,
+      "compliance_error": 1.6955707671240106e-13,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_20",
+      "steps_per_stage": 1,
+      "stage": 6,
+      "lateral": 10.0,
+      "tension": 20.0,
+      "prototype_motion": [
+        9.803736346752657,
+        -0.3925273062640381,
+        -0.08867964626712577
+      ],
+      "reference_motion": [
+        9.803736346862921,
+        -0.3925273062741894,
+        -0.08867964626804847
+      ],
+      "moment": 1000.00000000001,
+      "reference_moment": 1000.0,
+      "plastic_rotation": 0.06798999109471197,
+      "reference_plastic_rotation": 0.06798999109563468,
+      "dissipation": 339.9499554754045,
+      "reference_dissipation": 339.94995547817337,
+      "reference_compliance": [
+        5.7450255320731305,
+        -0.4706962052263192,
+        -0.04803219323742688
+      ],
+      "prototype_compliance": [
+        5.7450255313391,
+        -0.47069620516083915,
+        -0.048032193231285825
+      ],
+      "translation_error": 1.1026379809209175e-10,
+      "rotation_error": 9.227063557659676e-13,
+      "plastic_rotation_error": 9.227063557659676e-13,
+      "dissipation_error": 2.7688429327099584e-09,
+      "elastic_energy_error": 2.2862600701500924e-11,
+      "moment_error": 1.000444171950221e-11,
+      "axial_force_error": 2.654648056932274e-09,
+      "compliance_error": 7.3403061406907e-10,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "cycle_tension_20",
+      "steps_per_stage": 20,
+      "stage": 0,
+      "lateral": 0.0,
+      "tension": 20.0,
+      "prototype_motion": [
+        0.0,
+        0.00827586206896552,
+        0.0
+      ],
+      "reference_motion": [
+        0.0,
+        0.008275862068970241,
+        -0.0
+      ],
+      "moment": 0.0,
+      "reference_moment": 0.0,
+      "plastic_rotation": 0.0,
+      "reference_plastic_rotation": 0.0,
+      "dissipation": 0.0,
+      "reference_dissipation": 0.0,
+      "reference_compliance": [
+        0.19228243590558197,
+        0.0,
+        -0.0024033646995301515
+      ],
+      "prototype_compliance": [
+        0.19228243590557856,
+        0.0,
+        -0.0024033646995301095
+      ],
+      "translation_error": 4.721917301608869e-15,
+      "rotation_error": 0.0,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 0.0,
+      "elastic_energy_error": 9.447997939560082e-14,
+      "moment_error": 0.0,
+      "axial_force_error": 1.141486904998601e-11,
+      "compliance_error": 3.4139358007223564e-15,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_20",
+      "steps_per_stage": 20,
+      "stage": 1,
+      "lateral": 5.0,
+      "tension": 20.0,
+      "prototype_motion": [
+        0.9613716339290471,
+        0.0044413941425065365,
+        -0.012016443606148024
+      ],
+      "reference_motion": [
+        0.9613716339210163,
+        0.004441394142574495,
+        -0.01201644360604743
+      ],
+      "moment": 580.7947742971338,
+      "reference_moment": 580.7947742922923,
+      "plastic_rotation": 0.0,
+      "reference_plastic_rotation": 0.0,
+      "dissipation": 0.0,
+      "reference_dissipation": 0.0,
+      "reference_compliance": [
+        0.19225810976983268,
+        -0.0015336820309876553,
+        -0.002403136774936365
+      ],
+      "prototype_compliance": [
+        0.1922581097698316,
+        -0.001533682031000459,
+        -0.0024031367749363527
+      ],
+      "translation_error": 8.03079824862607e-12,
+      "rotation_error": 1.0059487964841907e-13,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 0.0,
+      "elastic_energy_error": 3.8890668463409384e-11,
+      "moment_error": 4.84146767121274e-09,
+      "axial_force_error": 2.7391422463551862e-12,
+      "compliance_error": 1.2803560295315819e-14,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_20",
+      "steps_per_stage": 20,
+      "stage": 2,
+      "lateral": 10.0,
+      "tension": 20.0,
+      "prototype_motion": [
+        9.803736346862909,
+        -0.39252730627417615,
+        -0.08867964626804836
+      ],
+      "reference_motion": [
+        9.803736346862921,
+        -0.3925273062741894,
+        -0.08867964626804847
+      ],
+      "moment": 1000.0000000000001,
+      "reference_moment": 1000.0,
+      "plastic_rotation": 0.06798999109563457,
+      "reference_plastic_rotation": 0.06798999109563468,
+      "dissipation": 67.98999109563456,
+      "reference_dissipation": 67.98999109563468,
+      "reference_compliance": [
+        5.7450255320731305,
+        -0.4706962052263192,
+        -0.04803219323742688
+      ],
+      "prototype_compliance": [
+        5.745025532070712,
+        -0.47069620522612055,
+        -0.04803219323740666
+      ],
+      "translation_error": 1.326716514427062e-14,
+      "rotation_error": 1.1102230246251565e-16,
+      "plastic_rotation_error": 1.1102230246251565e-16,
+      "dissipation_error": 1.1368683772161603e-13,
+      "elastic_energy_error": 8.881784197001252e-14,
+      "moment_error": 1.1368683772161603e-13,
+      "axial_force_error": 1.0246026249660645e-11,
+      "compliance_error": 2.418509836843441e-12,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "cycle_tension_20",
+      "steps_per_stage": 20,
+      "stage": 3,
+      "lateral": 0.0,
+      "tension": 20.0,
+      "prototype_motion": [
+        7.892377223948769,
+        -0.2515454924523681,
+        -0.06472417984013916
+      ],
+      "reference_motion": [
+        7.89237722320946,
+        -0.2515454924037641,
+        -0.0647241798308584
+      ],
+      "moment": -157.847544017548,
+      "reference_moment": -157.84754446418708,
+      "plastic_rotation": 0.06798999109563457,
+      "reference_plastic_rotation": 0.06798999109563468,
+      "dissipation": 67.98999109563456,
+      "reference_dissipation": 67.98999109563468,
+      "reference_compliance": [
+        0.19146570369367047,
+        -0.012592715178718773,
+        -0.0023983270434563345
+      ],
+      "prototype_compliance": [
+        0.19146570369343666,
+        -0.012592715179885541,
+        -0.0023983270434543734
+      ],
+      "translation_error": 7.393090584173478e-10,
+      "rotation_error": 9.28075671868811e-12,
+      "plastic_rotation_error": 1.1102230246251565e-16,
+      "dissipation_error": 1.1368683772161603e-13,
+      "elastic_energy_error": 9.724107630226797e-10,
+      "moment_error": 4.4663909193332074e-07,
+      "axial_force_error": 2.5712409978950745e-10,
+      "compliance_error": 1.1667680710480965e-12,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_20",
+      "steps_per_stage": 20,
+      "stage": 4,
+      "lateral": -10.0,
+      "tension": 20.0,
+      "prototype_motion": [
+        -9.803736346670162,
+        -0.3925273062578463,
+        0.08867964626643639
+      ],
+      "reference_motion": [
+        -9.803736346862921,
+        -0.3925273062741894,
+        0.08867964626804847
+      ],
+      "moment": -1000.0000000000182,
+      "reference_moment": -1000.0,
+      "plastic_rotation": -0.0679899910940226,
+      "reference_plastic_rotation": -0.06798999109563468,
+      "dissipation": 203.9699732852917,
+      "reference_dissipation": 203.96997328690406,
+      "reference_compliance": [
+        5.7450255320731305,
+        0.4706962052263192,
+        -0.04803219323742688
+      ],
+      "prototype_compliance": [
+        5.745025531710421,
+        0.47069620518727745,
+        -0.048032193234387816
+      ],
+      "translation_error": 1.9275958607067878e-10,
+      "rotation_error": 1.6120854651191507e-12,
+      "plastic_rotation_error": 1.6120854651191507e-12,
+      "dissipation_error": 1.6123635759868193e-09,
+      "elastic_energy_error": 1.141842176366481e-11,
+      "moment_error": 1.8189894035458565e-11,
+      "axial_force_error": 1.315275000024485e-09,
+      "compliance_error": 3.6270986214503864e-10,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "cycle_tension_20",
+      "steps_per_stage": 20,
+      "stage": 5,
+      "lateral": 0.0,
+      "tension": 20.0,
+      "prototype_motion": [
+        -7.89237722376191,
+        -0.2515454924400672,
+        0.0647241798386045
+      ],
+      "reference_motion": [
+        -7.89237722320946,
+        -0.2515454924037641,
+        0.0647241798308584
+      ],
+      "moment": 157.84754401380712,
+      "reference_moment": 157.84754446418708,
+      "plastic_rotation": -0.0679899910940226,
+      "reference_plastic_rotation": -0.06798999109563468,
+      "dissipation": 203.9699732852917,
+      "reference_dissipation": 203.96997328690406,
+      "reference_compliance": [
+        0.19146570369367047,
+        0.012592715178718773,
+        -0.0023983270434563345
+      ],
+      "prototype_compliance": [
+        0.19146570369348673,
+        0.012592715179589408,
+        -0.002398327043454755
+      ],
+      "translation_error": 5.524505297671567e-10,
+      "rotation_error": 7.746095431748756e-12,
+      "plastic_rotation_error": 1.6120854651191507e-12,
+      "dissipation_error": 1.6123635759868193e-09,
+      "elastic_energy_error": 9.80834580222023e-10,
+      "moment_error": 4.503799573285505e-07,
+      "axial_force_error": 2.22780016656543e-10,
+      "compliance_error": 8.706351611875718e-13,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_20",
+      "steps_per_stage": 20,
+      "stage": 6,
+      "lateral": 10.0,
+      "tension": 20.0,
+      "prototype_motion": [
+        9.803736346670172,
+        -0.3925273062578385,
+        -0.08867964626643647
+      ],
+      "reference_motion": [
+        9.803736346862921,
+        -0.3925273062741894,
+        -0.08867964626804847
+      ],
+      "moment": 1000.0000000000161,
+      "reference_moment": 1000.0,
+      "plastic_rotation": 0.06798999109402268,
+      "reference_plastic_rotation": 0.06798999109563468,
+      "dissipation": 339.94995547333696,
+      "reference_dissipation": 339.9499554781735,
+      "reference_compliance": [
+        5.7450255320731305,
+        -0.4706962052263192,
+        -0.04803219323742688
+      ],
+      "prototype_compliance": [
+        5.745025531710407,
+        -0.4706962051872769,
+        -0.048032193234387704
+      ],
+      "translation_error": 1.9274892792964238e-10,
+      "rotation_error": 1.6120021983923039e-12,
+      "plastic_rotation_error": 1.6120021983923039e-12,
+      "dissipation_error": 4.83652229377185e-09,
+      "elastic_energy_error": 1.1404210908949608e-11,
+      "moment_error": 1.6143530956469476e-11,
+      "axial_force_error": 1.315275000024485e-09,
+      "compliance_error": 3.6272318482133414e-10,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "cycle_tension_40",
+      "steps_per_stage": 1,
+      "stage": 0,
+      "lateral": 0.0,
+      "tension": 40.0,
+      "prototype_motion": [
+        0.0,
+        0.01655172413793104,
+        0.0
+      ],
+      "reference_motion": [
+        0.0,
+        0.01655172413792627,
+        -0.0
+      ],
+      "moment": 0.0,
+      "reference_moment": 0.0,
+      "plastic_rotation": 0.0,
+      "reference_plastic_rotation": 0.0,
+      "dissipation": 0.0,
+      "reference_dissipation": 0.0,
+      "reference_compliance": [
+        0.18633698990704436,
+        0.0,
+        -0.002328891147472886
+      ],
+      "prototype_compliance": [
+        0.1863369899070477,
+        0.0,
+        -0.0023288911474729276
+      ],
+      "translation_error": 4.767020111984266e-15,
+      "rotation_error": 0.0,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 0.0,
+      "elastic_energy_error": 1.9051427102567686e-13,
+      "moment_error": 0.0,
+      "axial_force_error": 1.1510792319313623e-11,
+      "compliance_error": 3.3306690738754696e-15,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_40",
+      "steps_per_stage": 1,
+      "stage": 1,
+      "lateral": 6.0,
+      "tension": 40.0,
+      "prototype_motion": [
+        1.1179586735374112,
+        0.011367107574460165,
+        -0.013972755635254144
+      ],
+      "reference_motion": [
+        1.117958673537411,
+        0.011367107574457691,
+        -0.013972755635254143
+      ],
+      "moment": 675.3498557039502,
+      "reference_moment": 675.3498557039502,
+      "plastic_rotation": 0.0,
+      "reference_plastic_rotation": 0.0,
+      "dissipation": 0.0,
+      "reference_dissipation": 0.0,
+      "reference_compliance": [
+        0.18630535908904872,
+        -0.001728046836255067,
+        -0.0023285955406136894
+      ],
+      "prototype_compliance": [
+        0.18630535908905846,
+        -0.0017280468362551578,
+        -0.0023285955406138117
+      ],
+      "translation_error": 2.473715676742927e-15,
+      "rotation_error": 1.734723475976807e-18,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 0.0,
+      "elastic_energy_error": 5.635492072997295e-13,
+      "moment_error": 0.0,
+      "axial_force_error": 3.40278916155512e-11,
+      "compliance_error": 9.742207041085749e-15,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_40",
+      "steps_per_stage": 1,
+      "stage": 2,
+      "lateral": 12.0,
+      "tension": 40.0,
+      "prototype_motion": [
+        10.857442936602887,
+        -0.47519021078090884,
+        -0.09748633077867773
+      ],
+      "reference_motion": [
+        10.85744293676075,
+        -0.4751902107974928,
+        -0.09748633078000037
+      ],
+      "moment": 1000.0000000000282,
+      "reference_moment": 1000.0,
+      "plastic_rotation": 0.07679667560626394,
+      "reference_plastic_rotation": 0.07679667560758657,
+      "dissipation": 76.79667560626393,
+      "reference_dissipation": 76.79667560758658,
+      "reference_compliance": [
+        2.908885249630142,
+        -0.26411665033306686,
+        -0.024336991435952714
+      ],
+      "prototype_compliance": [
+        2.9088852492465525,
+        -0.2641166502943552,
+        -0.024336991432740054
+      ],
+      "translation_error": 1.5786305596066086e-10,
+      "rotation_error": 1.3226364448115646e-12,
+      "plastic_rotation_error": 1.3226364448115646e-12,
+      "dissipation_error": 1.322646880907996e-09,
+      "elastic_energy_error": 9.171863268875313e-11,
+      "moment_error": 2.8194335754960775e-11,
+      "axial_force_error": 5.405027536653506e-09,
+      "compliance_error": 3.8358960452455904e-10,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "cycle_tension_40",
+      "steps_per_stage": 1,
+      "stage": 3,
+      "lateral": 0.0,
+      "tension": 40.0,
+      "prototype_motion": [
+        8.637457231751046,
+        -0.2947088974700376,
+        -0.0696484351386079
+      ],
+      "reference_motion": [
+        8.637457231899628,
+        -0.2947088974807741,
+        -0.06964843513980842
+      ],
+      "moment": -345.4982892700412,
+      "reference_moment": -345.4982892759436,
+      "plastic_rotation": 0.07679667560626394,
+      "reference_plastic_rotation": 0.07679667560758657,
+      "dissipation": 76.79667560626393,
+      "reference_dissipation": 76.79667560758658,
+      "reference_compliance": [
+        0.1854034680357995,
+        -0.013349968217960497,
+        -0.0023232238423673227
+      ],
+      "prototype_compliance": [
+        0.18540346803582752,
+        -0.013349968217731673,
+        -0.0023232238423674663
+      ],
+      "translation_error": 1.4858159147479455e-10,
+      "rotation_error": 1.2005257898906052e-12,
+      "plastic_rotation_error": 1.3226364448115646e-12,
+      "dissipation_error": 1.322646880907996e-09,
+      "elastic_energy_error": 2.784639185904325e-11,
+      "moment_error": 5.902393240830861e-09,
+      "axial_force_error": 1.693933882052079e-11,
+      "compliance_error": 2.2882390426914867e-13,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_40",
+      "steps_per_stage": 1,
+      "stage": 4,
+      "lateral": -12.0,
+      "tension": 40.0,
+      "prototype_motion": [
+        -10.857442936760751,
+        -0.4751902107974881,
+        0.09748633078000037
+      ],
+      "reference_motion": [
+        -10.85744293676075,
+        -0.4751902107974928,
+        0.09748633078000037
+      ],
+      "moment": -1000.0000000000019,
+      "reference_moment": -1000.0,
+      "plastic_rotation": -0.07679667560758657,
+      "reference_plastic_rotation": -0.07679667560758657,
+      "dissipation": 230.39002682011443,
+      "reference_dissipation": 230.39002682275975,
+      "reference_compliance": [
+        2.908885249630142,
+        0.26411665033306686,
+        -0.024336991435952714
+      ],
+      "prototype_compliance": [
+        2.9088852496317608,
+        0.26411665033321396,
+        -0.024336991435966262
+      ],
+      "translation_error": 4.718447854656915e-15,
+      "rotation_error": 0.0,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 2.6453221835254226e-09,
+      "elastic_energy_error": 3.446132268436486e-13,
+      "moment_error": 1.9326762412674725e-12,
+      "axial_force_error": 2.114575181622058e-11,
+      "compliance_error": 1.6187051699034782e-12,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "cycle_tension_40",
+      "steps_per_stage": 1,
+      "stage": 5,
+      "lateral": 0.0,
+      "tension": 40.0,
+      "prototype_motion": [
+        -8.637457231899562,
+        -0.2947088974807595,
+        0.06964843513980762
+      ],
+      "reference_motion": [
+        -8.637457231899628,
+        -0.2947088974807741,
+        0.06964843513980842
+      ],
+      "moment": 345.4982892759828,
+      "reference_moment": 345.4982892759436,
+      "plastic_rotation": -0.07679667560758657,
+      "reference_plastic_rotation": -0.07679667560758657,
+      "dissipation": 230.39002682011443,
+      "reference_dissipation": 230.39002682275975,
+      "reference_compliance": [
+        0.1854034680357995,
+        0.013349968217960497,
+        -0.0023232238423673227
+      ],
+      "prototype_compliance": [
+        0.18540346803580476,
+        0.013349968217960778,
+        -0.0023232238423673886
+      ],
+      "translation_error": 6.572520305780927e-14,
+      "rotation_error": 8.049116928532385e-16,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 2.6453221835254226e-09,
+      "elastic_energy_error": 1.0036416142611415e-13,
+      "moment_error": 3.922195901395753e-11,
+      "axial_force_error": 1.7401191598764854e-11,
+      "compliance_error": 5.2735593669694936e-15,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_40",
+      "steps_per_stage": 1,
+      "stage": 6,
+      "lateral": 12.0,
+      "tension": 40.0,
+      "prototype_motion": [
+        10.857442936760748,
+        -0.4751902107974906,
+        -0.09748633078000034
+      ],
+      "reference_motion": [
+        10.85744293676075,
+        -0.4751902107974928,
+        -0.09748633078000037
+      ],
+      "moment": 1000.0000000000008,
+      "reference_moment": 1000.0,
+      "plastic_rotation": 0.07679667560758656,
+      "reference_plastic_rotation": 0.07679667560758657,
+      "dissipation": 383.9833780352876,
+      "reference_dissipation": 383.9833780379329,
+      "reference_compliance": [
+        2.908885249630142,
+        -0.26411665033306686,
+        -0.024336991435952714
+      ],
+      "prototype_compliance": [
+        2.9088852496317332,
+        -0.26411665033321136,
+        -0.02433699143596603
+      ],
+      "translation_error": 2.220446049250313e-15,
+      "rotation_error": 2.7755575615628914e-17,
+      "plastic_rotation_error": 1.3877787807814457e-17,
+      "dissipation_error": 2.6452653401065618e-09,
+      "elastic_energy_error": 3.561595462997502e-13,
+      "moment_error": 7.958078640513122e-13,
+      "axial_force_error": 2.114575181622058e-11,
+      "compliance_error": 1.5911716388927744e-12,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "cycle_tension_40",
+      "steps_per_stage": 20,
+      "stage": 0,
+      "lateral": 0.0,
+      "tension": 40.0,
+      "prototype_motion": [
+        0.0,
+        0.01655172413793104,
+        0.0
+      ],
+      "reference_motion": [
+        0.0,
+        0.01655172413792627,
+        -0.0
+      ],
+      "moment": 0.0,
+      "reference_moment": 0.0,
+      "plastic_rotation": 0.0,
+      "reference_plastic_rotation": 0.0,
+      "dissipation": 0.0,
+      "reference_dissipation": 0.0,
+      "reference_compliance": [
+        0.18633698990704436,
+        0.0,
+        -0.002328891147472886
+      ],
+      "prototype_compliance": [
+        0.1863369899070477,
+        0.0,
+        -0.0023288911474729276
+      ],
+      "translation_error": 4.767020111984266e-15,
+      "rotation_error": 0.0,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 0.0,
+      "elastic_energy_error": 1.9051427102567686e-13,
+      "moment_error": 0.0,
+      "axial_force_error": 1.1510792319313623e-11,
+      "compliance_error": 3.3306690738754696e-15,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_40",
+      "steps_per_stage": 20,
+      "stage": 1,
+      "lateral": 6.0,
+      "tension": 40.0,
+      "prototype_motion": [
+        1.117958673553781,
+        0.011367107574306012,
+        -0.013972755635459204
+      ],
+      "reference_motion": [
+        1.117958673537411,
+        0.011367107574457691,
+        -0.013972755635254143
+      ],
+      "moment": 675.3498557138176,
+      "reference_moment": 675.3498557039502,
+      "plastic_rotation": 0.0,
+      "reference_plastic_rotation": 0.0,
+      "dissipation": 0.0,
+      "reference_dissipation": 0.0,
+      "reference_compliance": [
+        0.18630535908904872,
+        -0.001728046836255067,
+        -0.0023285955406136894
+      ],
+      "prototype_compliance": [
+        0.18630535908905801,
+        -0.0017280468362804594,
+        -0.0023285955406138086
+      ],
+      "translation_error": 1.6370016453493008e-11,
+      "rotation_error": 2.0506166209521837e-13,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 0.0,
+      "elastic_energy_error": 9.155698421636771e-11,
+      "moment_error": 9.867449080047663e-09,
+      "axial_force_error": 3.40278916155512e-11,
+      "compliance_error": 2.5392448560479508e-14,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_40",
+      "steps_per_stage": 20,
+      "stage": 2,
+      "lateral": 12.0,
+      "tension": 40.0,
+      "prototype_motion": [
+        10.85744293676075,
+        -0.47519021079748247,
+        -0.09748633078000038
+      ],
+      "reference_motion": [
+        10.85744293676075,
+        -0.4751902107974928,
+        -0.09748633078000037
+      ],
+      "moment": 999.9999999999961,
+      "reference_moment": 1000.0,
+      "plastic_rotation": 0.07679667560758659,
+      "reference_plastic_rotation": 0.07679667560758657,
+      "dissipation": 76.79667560758658,
+      "reference_dissipation": 76.79667560758656,
+      "reference_compliance": [
+        2.908885249630142,
+        -0.26411665033306686,
+        -0.024336991435952714
+      ],
+      "prototype_compliance": [
+        2.9088852496293196,
+        -0.26411665033299225,
+        -0.024336991435945827
+      ],
+      "translation_error": 1.0325074129013956e-14,
+      "rotation_error": 1.3877787807814457e-17,
+      "plastic_rotation_error": 1.3877787807814457e-17,
+      "dissipation_error": 1.4210854715202004e-14,
+      "elastic_energy_error": 1.9628743075372768e-13,
+      "moment_error": 3.865352482534945e-12,
+      "axial_force_error": 1.319477860306506e-11,
+      "compliance_error": 8.22453216642316e-13,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "cycle_tension_40",
+      "steps_per_stage": 20,
+      "stage": 3,
+      "lateral": 0.0,
+      "tension": 40.0,
+      "prototype_motion": [
+        8.63745723331077,
+        -0.29470889758236474,
+        -0.06964843515753037
+      ],
+      "reference_motion": [
+        8.637457231899628,
+        -0.2947088974807741,
+        -0.06964843513980842
+      ],
+      "moment": -345.498288423197,
+      "reference_moment": -345.4982892759436,
+      "plastic_rotation": 0.07679667560758659,
+      "reference_plastic_rotation": 0.07679667560758657,
+      "dissipation": 76.79667560758658,
+      "reference_dissipation": 76.79667560758656,
+      "reference_compliance": [
+        0.1854034680357995,
+        -0.013349968217960497,
+        -0.0023232238423673227
+      ],
+      "prototype_compliance": [
+        0.18540346803534244,
+        -0.01334996822011504,
+        -0.0023232238423635545
+      ],
+      "translation_error": 1.4111414259332378e-09,
+      "rotation_error": 1.772194890836687e-11,
+      "plastic_rotation_error": 1.3877787807814457e-17,
+      "dissipation_error": 1.4210854715202004e-14,
+      "elastic_energy_error": 4.064627523447939e-09,
+      "moment_error": 8.527466093255498e-07,
+      "axial_force_error": 4.977422918273078e-10,
+      "compliance_error": 2.1545421696744782e-12,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_40",
+      "steps_per_stage": 20,
+      "stage": 4,
+      "lateral": -12.0,
+      "tension": 40.0,
+      "prototype_motion": [
+        -10.857442936760751,
+        -0.4751902107974912,
+        0.09748633078000038
+      ],
+      "reference_motion": [
+        -10.85744293676075,
+        -0.4751902107974928,
+        0.09748633078000037
+      ],
+      "moment": -1000.0000000000001,
+      "reference_moment": -1000.0,
+      "plastic_rotation": -0.07679667560758659,
+      "reference_plastic_rotation": -0.07679667560758657,
+      "dissipation": 230.39002682275975,
+      "reference_dissipation": 230.3900268227597,
+      "reference_compliance": [
+        2.908885249630142,
+        0.26411665033306686,
+        -0.024336991435952714
+      ],
+      "prototype_compliance": [
+        2.9088852496317608,
+        0.26411665033321396,
+        -0.024336991435966262
+      ],
+      "translation_error": 1.7763568394002505e-15,
+      "rotation_error": 1.3877787807814457e-17,
+      "plastic_rotation_error": 1.3877787807814457e-17,
+      "dissipation_error": 5.684341886080802e-14,
+      "elastic_energy_error": 3.5704772471945034e-13,
+      "moment_error": 1.1368683772161603e-13,
+      "axial_force_error": 2.114575181622058e-11,
+      "compliance_error": 1.6187051699034782e-12,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "cycle_tension_40",
+      "steps_per_stage": 20,
+      "stage": 5,
+      "lateral": 0.0,
+      "tension": 40.0,
+      "prototype_motion": [
+        -8.63745723331077,
+        -0.2947088975823737,
+        0.06964843515753037
+      ],
+      "reference_motion": [
+        -8.637457231899628,
+        -0.2947088974807741,
+        0.06964843513980842
+      ],
+      "moment": 345.498288423197,
+      "reference_moment": 345.4982892759436,
+      "plastic_rotation": -0.07679667560758659,
+      "reference_plastic_rotation": -0.07679667560758657,
+      "dissipation": 230.39002682275975,
+      "reference_dissipation": 230.3900268227597,
+      "reference_compliance": [
+        0.1854034680357995,
+        0.013349968217960497,
+        -0.0023232238423673227
+      ],
+      "prototype_compliance": [
+        0.18540346803534244,
+        0.01334996822011504,
+        -0.0023232238423635545
+      ],
+      "translation_error": 1.4111414259332378e-09,
+      "rotation_error": 1.772194890836687e-11,
+      "plastic_rotation_error": 1.3877787807814457e-17,
+      "dissipation_error": 5.684341886080802e-14,
+      "elastic_energy_error": 4.064627523447939e-09,
+      "moment_error": 8.527466093255498e-07,
+      "axial_force_error": 4.977422918273078e-10,
+      "compliance_error": 2.1545421696744782e-12,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_40",
+      "steps_per_stage": 20,
+      "stage": 6,
+      "lateral": 12.0,
+      "tension": 40.0,
+      "prototype_motion": [
+        10.857442936760746,
+        -0.47519021079748414,
+        -0.09748633078000034
+      ],
+      "reference_motion": [
+        10.85744293676075,
+        -0.4751902107974928,
+        -0.09748633078000037
+      ],
+      "moment": 999.9999999999982,
+      "reference_moment": 1000.0,
+      "plastic_rotation": 0.07679667560758655,
+      "reference_plastic_rotation": 0.07679667560758657,
+      "dissipation": 383.9833780379328,
+      "reference_dissipation": 383.9833780379329,
+      "reference_compliance": [
+        2.908885249630142,
+        -0.26411665033306686,
+        -0.024336991435952714
+      ],
+      "prototype_compliance": [
+        2.9088852496293174,
+        -0.264116650332992,
+        -0.02433699143594581
+      ],
+      "translation_error": 8.659739592076221e-15,
+      "rotation_error": 2.7755575615628914e-17,
+      "plastic_rotation_error": 2.7755575615628914e-17,
+      "dissipation_error": 5.684341886080802e-14,
+      "elastic_energy_error": 2.1049828546892968e-13,
+      "moment_error": 1.8189894035458565e-12,
+      "axial_force_error": 1.319477860306506e-11,
+      "compliance_error": 8.246736626915663e-13,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "cycle_tension_80",
+      "steps_per_stage": 1,
+      "stage": 0,
+      "lateral": 0.0,
+      "tension": 80.0,
+      "prototype_motion": [
+        0.0,
+        0.03310344827586208,
+        0.0
+      ],
+      "reference_motion": [
+        0.0,
+        0.033103448275866754,
+        -0.0
+      ],
+      "moment": 0.0,
+      "reference_moment": 0.0,
+      "plastic_rotation": 0.0,
+      "reference_plastic_rotation": 0.0,
+      "dissipation": 0.0,
+      "reference_dissipation": 0.0,
+      "reference_compliance": [
+        0.17548698155282755,
+        0.0,
+        -0.0021929823087734413
+      ],
+      "prototype_compliance": [
+        0.1754869815528247,
+        0.0,
+        -0.0021929823087734053
+      ],
+      "translation_error": 4.676814491233472e-15,
+      "rotation_error": 0.0,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 0.0,
+      "elastic_energy_error": 3.745892485085278e-13,
+      "moment_error": 0.0,
+      "axial_force_error": 1.1311840353300795e-11,
+      "compliance_error": 2.858824288409778e-15,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_80",
+      "steps_per_stage": 1,
+      "stage": 1,
+      "lateral": 8.0,
+      "tension": 80.0,
+      "prototype_motion": [
+        1.403772388223327,
+        0.024931147535486767,
+        -0.01754271016805002
+      ],
+      "reference_motion": [
+        1.4037723882233273,
+        0.024931147535482978,
+        -0.01754271016805002
+      ],
+      "moment": 847.8976581224175,
+      "reference_moment": 847.8976581224177,
+      "plastic_rotation": 0.0,
+      "reference_plastic_rotation": 0.0,
+      "dissipation": 0.0,
+      "reference_dissipation": 0.0,
+      "reference_compliance": [
+        0.175440687296211,
+        -0.0020427845692149466,
+        -0.0021925517355989976
+      ],
+      "prototype_compliance": [
+        0.17544068729621223,
+        -0.00204278456921496,
+        -0.0021925517355990127
+      ],
+      "translation_error": 3.788636071533347e-15,
+      "rotation_error": 0.0,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 0.0,
+      "elastic_energy_error": 1.4921397450962104e-13,
+      "moment_error": 2.2737367544323206e-13,
+      "axial_force_error": 4.476419235288631e-12,
+      "compliance_error": 1.2212453270876722e-15,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_80",
+      "steps_per_stage": 1,
+      "stage": 2,
+      "lateral": 16.0,
+      "tension": 80.0,
+      "prototype_motion": [
+        11.398235227073796,
+        -0.5088238646309968,
+        -0.10199856248463092
+      ],
+      "reference_motion": [
+        11.398235227073775,
+        -0.5088238646310117,
+        -0.10199856248463075
+      ],
+      "moment": 1000.0000000000001,
+      "reference_moment": 1000.0,
+      "plastic_rotation": 0.08130890731221713,
+      "reference_plastic_rotation": 0.08130890731221696,
+      "dissipation": 81.30890731221713,
+      "reference_dissipation": 81.30890731221696,
+      "reference_compliance": [
+        1.4656936566579113,
+        -0.13973022517100533,
+        -0.012266059783672345
+      ],
+      "prototype_compliance": [
+        1.465693656657517,
+        -0.13973022517096798,
+        -0.01226605978366904
+      ],
+      "translation_error": 2.1316282072803006e-14,
+      "rotation_error": 1.6653345369377348e-16,
+      "plastic_rotation_error": 1.6653345369377348e-16,
+      "dissipation_error": 1.7053025658242404e-13,
+      "elastic_energy_error": 7.300826609935029e-13,
+      "moment_error": 1.1368683772161603e-13,
+      "axial_force_error": 2.1685764295398258e-11,
+      "compliance_error": 3.943512183468556e-13,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "cycle_tension_80",
+      "steps_per_stage": 1,
+      "stage": 3,
+      "lateral": 0.0,
+      "tension": 80.0,
+      "prototype_motion": [
+        8.611723772284698,
+        -0.27630285568441565,
+        -0.06705501968912521
+      ],
+      "reference_motion": [
+        8.61172377228468,
+        -0.2763028556844205,
+        -0.06705501968912508
+      ],
+      "moment": -688.9379017827741,
+      "reference_moment": -688.937901782774,
+      "plastic_rotation": 0.08130890731221713,
+      "reference_plastic_rotation": 0.08130890731221696,
+      "dissipation": 81.30890731221713,
+      "reference_dissipation": 81.30890731221696,
+      "reference_compliance": [
+        0.17463776236428843,
+        -0.012535400797113277,
+        -0.002187986403210466
+      ],
+      "prototype_compliance": [
+        0.17463776236429582,
+        -0.012535400797113837,
+        -0.002187986403210559
+      ],
+      "translation_error": 1.7763568394002505e-14,
+      "rotation_error": 1.249000902703301e-16,
+      "plastic_rotation_error": 1.6653345369377348e-16,
+      "dissipation_error": 1.7053025658242404e-13,
+      "elastic_energy_error": 9.183764859699295e-13,
+      "moment_error": 1.1368683772161603e-13,
+      "axial_force_error": 2.8109070626669563e-11,
+      "compliance_error": 7.382983113757291e-15,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_80",
+      "steps_per_stage": 1,
+      "stage": 4,
+      "lateral": -16.0,
+      "tension": 80.0,
+      "prototype_motion": [
+        -11.398235227064564,
+        -0.5088238646299476,
+        0.10199856248455351
+      ],
+      "reference_motion": [
+        -11.398235227073775,
+        -0.5088238646310117,
+        0.10199856248463075
+      ],
+      "moment": -1000.000000000004,
+      "reference_moment": -1000.0,
+      "plastic_rotation": -0.08130890731213972,
+      "reference_plastic_rotation": -0.08130890731221696,
+      "dissipation": 243.92672193657398,
+      "reference_dissipation": 243.9267219366509,
+      "reference_compliance": [
+        1.4656936566579113,
+        0.13973022517100533,
+        -0.012266059783672345
+      ],
+      "prototype_compliance": [
+        1.4656936566501013,
+        0.13973022517014635,
+        -0.012266059783606875
+      ],
+      "translation_error": 9.210410212290299e-12,
+      "rotation_error": 7.724376693829527e-14,
+      "plastic_rotation_error": 7.724376693829527e-14,
+      "dissipation_error": 7.690914571867324e-11,
+      "elastic_energy_error": 1.4596324149351858e-11,
+      "moment_error": 3.979039320256561e-12,
+      "axial_force_error": 4.3380055103625637e-10,
+      "compliance_error": 7.809974889028126e-12,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "cycle_tension_80",
+      "steps_per_stage": 1,
+      "stage": 5,
+      "lateral": 0.0,
+      "tension": 80.0,
+      "prototype_motion": [
+        -8.61172377227651,
+        -0.2763028556838211,
+        0.06705501968906136
+      ],
+      "reference_motion": [
+        -8.61172377228468,
+        -0.2763028556844205,
+        0.06705501968912508
+      ],
+      "moment": 688.9379017821215,
+      "reference_moment": 688.937901782774,
+      "plastic_rotation": -0.08130890731213972,
+      "reference_plastic_rotation": -0.08130890731221696,
+      "dissipation": 243.92672193657398,
+      "reference_dissipation": 243.9267219366509,
+      "reference_compliance": [
+        0.17463776236428843,
+        0.012535400797113277,
+        -0.002187986403210466
+      ],
+      "prototype_compliance": [
+        0.1746377623642974,
+        0.012535400797101973,
+        -0.002187986403210568
+      ],
+      "translation_error": 8.169465104401752e-12,
+      "rotation_error": 6.372680161348399e-14,
+      "plastic_rotation_error": 7.724376693829527e-14,
+      "dissipation_error": 7.690914571867324e-11,
+      "elastic_energy_error": 7.132960888611706e-12,
+      "moment_error": 6.52562448522076e-10,
+      "axial_force_error": 2.8109070626669563e-11,
+      "compliance_error": 1.1303458169464875e-14,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_80",
+      "steps_per_stage": 1,
+      "stage": 6,
+      "lateral": 16.0,
+      "tension": 80.0,
+      "prototype_motion": [
+        11.398235227064564,
+        -0.5088238646299396,
+        -0.10199856248455352
+      ],
+      "reference_motion": [
+        11.398235227073775,
+        -0.5088238646310117,
+        -0.10199856248463075
+      ],
+      "moment": 1000.0000000000019,
+      "reference_moment": 1000.0,
+      "plastic_rotation": 0.08130890731213973,
+      "reference_plastic_rotation": 0.08130890731221696,
+      "dissipation": 406.54453656085343,
+      "reference_dissipation": 406.5445365610848,
+      "reference_compliance": [
+        1.4656936566579113,
+        -0.13973022517100533,
+        -0.012266059783672345
+      ],
+      "prototype_compliance": [
+        1.4656936566501013,
+        -0.13973022517014635,
+        -0.012266059783606875
+      ],
+      "translation_error": 9.210410212290299e-12,
+      "rotation_error": 7.722988915048745e-14,
+      "plastic_rotation_error": 7.722988915048745e-14,
+      "dissipation_error": 2.3135271476348862e-10,
+      "elastic_energy_error": 1.4582113294636656e-11,
+      "moment_error": 1.9326762412674725e-12,
+      "axial_force_error": 4.3380055103625637e-10,
+      "compliance_error": 7.809974889028126e-12,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "cycle_tension_80",
+      "steps_per_stage": 20,
+      "stage": 0,
+      "lateral": 0.0,
+      "tension": 80.0,
+      "prototype_motion": [
+        0.0,
+        0.03310344827586208,
+        0.0
+      ],
+      "reference_motion": [
+        0.0,
+        0.033103448275866754,
+        -0.0
+      ],
+      "moment": 0.0,
+      "reference_moment": 0.0,
+      "plastic_rotation": 0.0,
+      "reference_plastic_rotation": 0.0,
+      "dissipation": 0.0,
+      "reference_dissipation": 0.0,
+      "reference_compliance": [
+        0.17548698155282755,
+        0.0,
+        -0.0021929823087734413
+      ],
+      "prototype_compliance": [
+        0.1754869815528247,
+        0.0,
+        -0.0021929823087734053
+      ],
+      "translation_error": 4.676814491233472e-15,
+      "rotation_error": 0.0,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 0.0,
+      "elastic_energy_error": 3.745892485085278e-13,
+      "moment_error": 0.0,
+      "axial_force_error": 1.1311840353300795e-11,
+      "compliance_error": 2.858824288409778e-15,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_80",
+      "steps_per_stage": 20,
+      "stage": 1,
+      "lateral": 8.0,
+      "tension": 80.0,
+      "prototype_motion": [
+        1.4037723882704864,
+        0.02493114753492936,
+        -0.017542710168640785
+      ],
+      "reference_motion": [
+        1.4037723882233273,
+        0.024931147535482978,
+        -0.01754271016805002
+      ],
+      "moment": 847.8976581508366,
+      "reference_moment": 847.8976581224177,
+      "plastic_rotation": 0.0,
+      "reference_plastic_rotation": 0.0,
+      "dissipation": 0.0,
+      "reference_dissipation": 0.0,
+      "reference_compliance": [
+        0.175440687296211,
+        -0.0020427845692149466,
+        -0.0021925517355989976
+      ],
+      "prototype_compliance": [
+        0.17544068729621037,
+        -0.002042784569283576,
+        -0.0021925517355989997
+      ],
+      "translation_error": 4.71591654616077e-11,
+      "rotation_error": 5.907635491908536e-13,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 0.0,
+      "elastic_energy_error": 3.3300207036290885e-10,
+      "moment_error": 2.8418867259460967e-08,
+      "axial_force_error": 4.476419235288631e-12,
+      "compliance_error": 6.862956383746344e-14,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_80",
+      "steps_per_stage": 20,
+      "stage": 2,
+      "lateral": 16.0,
+      "tension": 80.0,
+      "prototype_motion": [
+        11.398235227039285,
+        -0.5088238646235121,
+        -0.10199856248433872
+      ],
+      "reference_motion": [
+        11.398235227073775,
+        -0.5088238646310117,
+        -0.10199856248463075
+      ],
+      "moment": 1000.0000000000081,
+      "reference_moment": 1000.0,
+      "plastic_rotation": 0.08130890731192493,
+      "reference_plastic_rotation": 0.08130890731221696,
+      "dissipation": 81.30890731192494,
+      "reference_dissipation": 81.30890731221696,
+      "reference_compliance": [
+        1.4656936566579113,
+        -0.13973022517100533,
+        -0.012266059783672345
+      ],
+      "prototype_compliance": [
+        1.4656936564753091,
+        -0.13973022515316053,
+        -0.012266059782143415
+      ],
+      "translation_error": 3.448974439379526e-11,
+      "rotation_error": 2.920302888398396e-13,
+      "plastic_rotation_error": 2.920302888398396e-13,
+      "dissipation_error": 2.92018853542686e-10,
+      "elastic_energy_error": 3.398614722982529e-10,
+      "moment_error": 8.071765478234738e-12,
+      "axial_force_error": 1.0118498039446422e-08,
+      "compliance_error": 1.8260215561838322e-10,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "cycle_tension_80",
+      "steps_per_stage": 20,
+      "stage": 3,
+      "lateral": 0.0,
+      "tension": 80.0,
+      "prototype_motion": [
+        8.611723772253796,
+        -0.2763028556821937,
+        -0.06705501968888417
+      ],
+      "reference_motion": [
+        8.61172377228468,
+        -0.2763028556844205,
+        -0.06705501968912508
+      ],
+      "moment": -688.9379017803044,
+      "reference_moment": -688.937901782774,
+      "plastic_rotation": 0.08130890731192493,
+      "reference_plastic_rotation": 0.08130890731221696,
+      "dissipation": 81.30890731192494,
+      "reference_dissipation": 81.30890731221696,
+      "reference_compliance": [
+        0.17463776236428843,
+        -0.012535400797113277,
+        -0.002187986403210466
+      ],
+      "prototype_compliance": [
+        0.17463776236430176,
+        -0.012535400797069047,
+        -0.0021879864032105932
+      ],
+      "translation_error": 3.0883740009812755e-11,
+      "rotation_error": 2.4091839634365897e-13,
+      "plastic_rotation_error": 2.920302888398396e-13,
+      "dissipation_error": 2.92018853542686e-10,
+      "elastic_energy_error": 2.440003754600184e-11,
+      "moment_error": 2.469619175826665e-09,
+      "axial_force_error": 2.8109070626669563e-11,
+      "compliance_error": 4.423024446698065e-14,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_80",
+      "steps_per_stage": 20,
+      "stage": 4,
+      "lateral": -16.0,
+      "tension": 80.0,
+      "prototype_motion": [
+        -11.3982352270738,
+        -0.5088238646309952,
+        0.10199856248463095
+      ],
+      "reference_motion": [
+        -11.398235227073775,
+        -0.5088238646310117,
+        0.10199856248463075
+      ],
+      "moment": -1000.0000000000019,
+      "reference_moment": -1000.0,
+      "plastic_rotation": -0.08130890731221715,
+      "reference_plastic_rotation": -0.08130890731221696,
+      "dissipation": 243.92672193606703,
+      "reference_dissipation": 243.9267219366509,
+      "reference_compliance": [
+        1.4656936566579113,
+        0.13973022517100533,
+        -0.012266059783672345
+      ],
+      "prototype_compliance": [
+        1.4656936566575232,
+        0.13973022517096864,
+        -0.01226605978366909
+      ],
+      "translation_error": 2.4868995751603507e-14,
+      "rotation_error": 1.942890293094024e-16,
+      "plastic_rotation_error": 1.942890293094024e-16,
+      "dissipation_error": 5.838671768287895e-10,
+      "elastic_energy_error": 7.425171588693047e-13,
+      "moment_error": 1.9326762412674725e-12,
+      "axial_force_error": 2.1685764295398258e-11,
+      "compliance_error": 3.8813396940895473e-13,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "cycle_tension_80",
+      "steps_per_stage": 20,
+      "stage": 5,
+      "lateral": 0.0,
+      "tension": 80.0,
+      "prototype_motion": [
+        -8.611723772284702,
+        -0.276302855684411,
+        0.06705501968912524
+      ],
+      "reference_motion": [
+        -8.61172377228468,
+        -0.2763028556844205,
+        0.06705501968912508
+      ],
+      "moment": 688.9379017827761,
+      "reference_moment": 688.937901782774,
+      "plastic_rotation": -0.08130890731221715,
+      "reference_plastic_rotation": -0.08130890731221696,
+      "dissipation": 243.92672193606703,
+      "reference_dissipation": 243.9267219366509,
+      "reference_compliance": [
+        0.17463776236428843,
+        0.012535400797113277,
+        -0.002187986403210466
+      ],
+      "prototype_compliance": [
+        0.17463776236428707,
+        0.012535400797113211,
+        -0.002187986403210449
+      ],
+      "translation_error": 2.1316282072803006e-14,
+      "rotation_error": 1.5265566588595902e-16,
+      "plastic_rotation_error": 1.942890293094024e-16,
+      "dissipation_error": 5.838671768287895e-10,
+      "elastic_energy_error": 2.2470914018413168e-13,
+      "moment_error": 2.0463630789890885e-12,
+      "axial_force_error": 6.224354365258478e-12,
+      "compliance_error": 1.3600232051658168e-15,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "cycle_tension_80",
+      "steps_per_stage": 20,
+      "stage": 6,
+      "lateral": 16.0,
+      "tension": 80.0,
+      "prototype_motion": [
+        11.3982352270738,
+        -0.5088238646309942,
+        -0.10199856248463095
+      ],
+      "reference_motion": [
+        11.398235227073775,
+        -0.5088238646310117,
+        -0.10199856248463075
+      ],
+      "moment": 1000.0000000000019,
+      "reference_moment": 1000.0,
+      "plastic_rotation": 0.08130890731221715,
+      "reference_plastic_rotation": 0.08130890731221696,
+      "dissipation": 406.54453656050134,
+      "reference_dissipation": 406.5445365610847,
+      "reference_compliance": [
+        1.4656936566579113,
+        -0.13973022517100533,
+        -0.012266059783672345
+      ],
+      "prototype_compliance": [
+        1.4656936566575232,
+        -0.13973022517096864,
+        -0.01226605978366909
+      ],
+      "translation_error": 2.4868995751603507e-14,
+      "rotation_error": 1.942890293094024e-16,
+      "plastic_rotation_error": 1.942890293094024e-16,
+      "dissipation_error": 5.833840077684727e-10,
+      "elastic_energy_error": 7.425171588693047e-13,
+      "moment_error": 1.9326762412674725e-12,
+      "axial_force_error": 2.1685764295398258e-11,
+      "compliance_error": 3.8813396940895473e-13,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "changing_tension",
+      "steps_per_stage": 1,
+      "stage": 0,
+      "lateral": 12.0,
+      "tension": 40.0,
+      "prototype_motion": [
+        10.857442936760755,
+        -0.4751902107974948,
+        -0.09748633078000042
+      ],
+      "reference_motion": [
+        10.85744293676075,
+        -0.4751902107974928,
+        -0.09748633078000037
+      ],
+      "moment": 1000.0000000000001,
+      "reference_moment": 1000.0,
+      "plastic_rotation": 0.07679667560758663,
+      "reference_plastic_rotation": 0.07679667560758657,
+      "dissipation": 76.79667560758662,
+      "reference_dissipation": 76.79667560758658,
+      "reference_compliance": [
+        2.908885249630142,
+        -0.26411665033306686,
+        -0.024336991435952714
+      ],
+      "prototype_compliance": [
+        2.90888524963173,
+        -0.26411665033321124,
+        -0.024336991435966005
+      ],
+      "translation_error": 5.329070518200751e-15,
+      "rotation_error": 5.551115123125783e-17,
+      "plastic_rotation_error": 5.551115123125783e-17,
+      "dissipation_error": 4.263256414560601e-14,
+      "elastic_energy_error": 3.5704772471945034e-13,
+      "moment_error": 1.1368683772161603e-13,
+      "axial_force_error": 2.114575181622058e-11,
+      "compliance_error": 1.588063014423824e-12,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "changing_tension",
+      "steps_per_stage": 1,
+      "stage": 1,
+      "lateral": 0.0,
+      "tension": 40.0,
+      "prototype_motion": [
+        8.63745723189957,
+        -0.2947088974807521,
+        -0.06964843513980767
+      ],
+      "reference_motion": [
+        8.637457231899628,
+        -0.2947088974807741,
+        -0.06964843513980842
+      ],
+      "moment": -345.4982892759828,
+      "reference_moment": -345.4982892759436,
+      "plastic_rotation": 0.07679667560758663,
+      "reference_plastic_rotation": 0.07679667560758657,
+      "dissipation": 76.79667560758662,
+      "reference_dissipation": 76.79667560758658,
+      "reference_compliance": [
+        0.1854034680357995,
+        -0.013349968217960497,
+        -0.0023232238423673227
+      ],
+      "prototype_compliance": [
+        0.18540346803579486,
+        -0.013349968217960072,
+        -0.0023232238423672637
+      ],
+      "translation_error": 5.861977570020827e-14,
+      "rotation_error": 7.494005416219807e-16,
+      "plastic_rotation_error": 5.551115123125783e-17,
+      "dissipation_error": 4.263256414560601e-14,
+      "elastic_energy_error": 4.665157149474908e-13,
+      "moment_error": 3.922195901395753e-11,
+      "axial_force_error": 1.693933882052079e-11,
+      "compliance_error": 4.6351811278100286e-15,
+      "active": false,
+      "reference_active": false
+    },
+    {
+      "path": "changing_tension",
+      "steps_per_stage": 1,
+      "stage": 2,
+      "lateral": -12.0,
+      "tension": 40.0,
+      "prototype_motion": [
+        -10.857442936760751,
+        -0.4751902107974841,
+        0.09748633078000037
+      ],
+      "reference_motion": [
+        -10.85744293676075,
+        -0.4751902107974928,
+        0.09748633078000037
+      ],
+      "moment": -1000.0000000000019,
+      "reference_moment": -1000.0,
+      "plastic_rotation": -0.07679667560758657,
+      "reference_plastic_rotation": -0.07679667560758657,
+      "dissipation": 230.39002682275984,
+      "reference_dissipation": 230.39002682275975,
+      "reference_compliance": [
+        2.908885249630142,
+        0.26411665033306686,
+        -0.024336991435952714
+      ],
+      "prototype_compliance": [
+        2.9088852496292974,
+        0.2641166503329903,
+        -0.024336991435945646
+      ],
+      "translation_error": 8.715250743307479e-15,
+      "rotation_error": 0.0,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 8.526512829121202e-14,
+      "elastic_energy_error": 2.362554596402333e-13,
+      "moment_error": 1.9326762412674725e-12,
+      "axial_force_error": 1.319477860306506e-11,
+      "compliance_error": 8.446576771348191e-13,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "changing_tension",
+      "steps_per_stage": 1,
+      "stage": 3,
+      "lateral": 8.0,
+      "tension": 80.0,
+      "prototype_motion": [
+        -0.4967938607810709,
+        0.032061392366353254,
+        -0.0027577323257959342
+      ],
+      "reference_motion": [
+        -0.4967938607634969,
+        0.03206139236635863,
+        -0.002757732325942384
+      ],
+      "moment": 1000.0000000000059,
+      "reference_moment": 1000.0,
+      "plastic_rotation": -0.01793192284661786,
+      "reference_plastic_rotation": -0.01793192284647141,
+      "dissipation": 289.2547795837286,
+      "reference_dissipation": 289.2547795838749,
+      "reference_compliance": [
+        1.5010261582976745,
+        0.006253908930952294,
+        -0.012505211626125001
+      ],
+      "prototype_compliance": [
+        1.5010261582945321,
+        0.006253908931158904,
+        -0.012505211626098819
+      ],
+      "translation_error": 1.757399781254776e-11,
+      "rotation_error": 1.46449692650652e-13,
+      "plastic_rotation_error": 1.46448825288914e-13,
+      "dissipation_error": 1.4631496014771983e-10,
+      "elastic_energy_error": 5.567102334680385e-12,
+      "moment_error": 5.9117155615240335e-12,
+      "axial_force_error": 1.6694912119419314e-10,
+      "compliance_error": 3.142375248899043e-12,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "changing_tension",
+      "steps_per_stage": 1,
+      "stage": 4,
+      "lateral": 10.0,
+      "tension": 20.0,
+      "prototype_motion": [
+        9.803736346687923,
+        -0.39252730625807064,
+        -0.08867964626658406
+      ],
+      "reference_motion": [
+        9.803736346862921,
+        -0.3925273062741894,
+        -0.08867964626804847
+      ],
+      "moment": 1000.0000000000161,
+      "reference_moment": 1000.0,
+      "plastic_rotation": 0.06798999109417027,
+      "reference_plastic_rotation": 0.06798999109563468,
+      "dissipation": 375.17669352451674,
+      "reference_dissipation": 375.17669352598097,
+      "reference_compliance": [
+        5.7450255320731305,
+        -0.4706962052263192,
+        -0.04803219323742688
+      ],
+      "prototype_compliance": [
+        5.745025530892467,
+        -0.47069620512111066,
+        -0.04803219322754927
+      ],
+      "translation_error": 1.7499779403351567e-10,
+      "rotation_error": 1.4644119250561971e-12,
+      "plastic_rotation_error": 1.4644119250561971e-12,
+      "dissipation_error": 1.4642296264355537e-09,
+      "elastic_energy_error": 3.6763481148227584e-11,
+      "moment_error": 1.6143530956469476e-11,
+      "axial_force_error": 4.268766673476421e-09,
+      "compliance_error": 1.1806635669131538e-09,
+      "active": true,
+      "reference_active": true
+    },
+    {
+      "path": "changing_tension",
+      "steps_per_stage": 1,
+      "stage": 5,
+      "lateral": 0.0,
+      "tension": 40.0,
+      "prototype_motion": [
+        7.648296070247966,
+        -0.22743144023740391,
+        -0.06166036676017072
+      ],
+      "reference_motion": [
+        7.648296070412631,
+        -0.2274314402479405,
+        -0.06166036676150074
+      ],
+      "moment": -305.9318428099782,
+      "reference_moment": -305.9318428164739,
+      "plastic_rotation": 0.06798999109417027,
+      "reference_plastic_rotation": 0.06798999109563468,
+      "dissipation": 375.17669352451674,
+      "reference_dissipation": 375.17669352598097,
+      "reference_compliance": [
+        0.18560505767826088,
+        -0.0118273642287688,
+        -0.0023244489569507923
+      ],
+      "prototype_compliance": [
+        0.18560505767829538,
+        -0.011827364228515321,
+        -0.002324448956951021
+      ],
+      "translation_error": 1.6466472629872442e-10,
+      "rotation_error": 1.330019427925322e-12,
+      "plastic_rotation_error": 1.4644119250561971e-12,
+      "dissipation_error": 1.4642296264355537e-09,
+      "elastic_energy_error": 2.7523539003482256e-11,
+      "moment_error": 6.495668003481114e-09,
+      "axial_force_error": 6.87805368215777e-12,
+      "compliance_error": 2.5347952903320703e-13,
+      "active": false,
+      "reference_active": false
+    }
+  ]
+}

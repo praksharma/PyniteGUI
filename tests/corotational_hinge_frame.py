@@ -67,6 +67,9 @@ class CorotationalHingeFrame(PlanarHingeFrame):
             raise ValueError('Invalid committed frame history.')
         if np.any(initial[self.fixed]!=0.):raise ValueError('Prescribed support motion is unsupported.')
         statuses=sorted(product((0,-1,1),repeat=count),key=lambda s:sum(v!=0 for v in s))
+        # A converged elastic trial can seed geometric coordinates for yielded
+        # candidates. Its trial hinge state is never committed or transferred.
+        seed=initial.copy()
         for status in statuses:
             signs=np.asarray(status);active=np.flatnonzero(signs)
             u=initial.copy();alpha=previous.copy();converged=False
@@ -84,10 +87,14 @@ class CorotationalHingeFrame(PlanarHingeFrame):
             for iteration in range(max_iterations):
                 try:e,residual,matrix=equations(u,alpha)
                 except ValueError:break
-                if np.max(abs(residual[:len(self.free)]))<=1e-7+1e-10*np.max(abs(loads)) and (not active.size or np.all(abs(residual[len(self.free):])<=1e-9*self.capacity[active])):
+                if np.max(abs(residual[:len(self.free)]))<=1e-8+1e-11*np.max(abs(loads)) and (not active.size or np.all(abs(residual[len(self.free):])<=1e-9*self.capacity[active])):
                     converged=True;break
                 scale=self._scaling(matrix)
-                if scale is None:break
+                if scale is None:
+                    if iteration==0 and active.size and not np.array_equal(u,seed):
+                        u=seed.copy()
+                        continue
+                    break
                 step=np.linalg.solve(matrix*np.outer(scale,scale),-residual*scale)*scale
                 norm=np.linalg.norm(residual*merit_scale);accepted=False
                 for factor in 2.**-np.arange(16):
@@ -100,6 +107,8 @@ class CorotationalHingeFrame(PlanarHingeFrame):
                         u,alpha=trial_u,trial_alpha;accepted=True;break
                 if not accepted:break
             if not converged:continue
+            if not active.size and self._scaling(matrix) is not None:
+                seed=u.copy()
             q=e['hinge_moments']
             if np.any(abs(q)>self.capacity*(1+1e-9)) or np.any(signs[active]*(alpha-previous)[active]<-1e-10):continue
             # Check both the accepted active tangent and all yield-boundary releases.

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Validate the bounded corotational hinge member against independent scalar
+  current-chord statics and analytic compliance. Publish 48 yield/unload/reverse,
+  tension-change and increment comparisons with explicit gates/source hashes.
+  Fix cold combined-load geometry initialization and tighten force convergence
+  without relaxing moment gates. Research-only; no general interaction/frame or
+  PyNite combined-source qualification.
+
 - Add a separate test-only bounded corotational scalar-hinge frame formulation.
   Derive forces and material/geometric tangent from objective member energy;
   verify independent column convergence/axial force, gravity-loaded portal yield,
