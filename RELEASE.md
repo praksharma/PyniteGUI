@@ -322,6 +322,35 @@ and public RC4 artifacts are unchanged. Quad shear remains disabled in productio
 
 
 
+## Post-RC4 Independent Nonlinear Portal Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-12. Test-only three-member reference
+for the bounded corotational scalar-hinge law; no application/release change.
+
+- Compute current-chord axial/end-moment forces directly and balance roof joints
+  with a separate numerical root/Jacobian. The reference imports no frame energy,
+  stiffness, tangent or solver. Check signed plastic flow, final geometry and local
+  constrained Jacobian positivity without claiming global branch uniqueness.
+- Publish **23 comparisons**: yielding, four-hinge softening, reverse cycles,
+  1/10 displacement increments, cold 5-inch and staged 3→5-inch steps. Maximum
+  roof translation/actuator load/moment/slope discrepancies are below
+  8.3e-12 in / 1.7e-8 kip / 7.0e-9 kip-in / 3.0e-7 kip/in respectively.
+  Source hashes and explicit numerical gates accompany the report.
+- Resolve large-step initialization when a newly imposed left-roof movement
+  stretches the still-unmoved connecting beam beyond the trial strain bound.
+  An elastic predictor updates only initial geometry; all committed plastic
+  variables and acceptance bounds remain unchanged. The independent reference
+  confirms the verified formerly unresolved cases, not an asserted collapse limit.
+- **69 focused tests passed**, no skips, 9.595 s, including five new portal-reference
+  checks and the earlier continuation/frame/hinge/material/section/column tests.
+  Ownership covers 194 classes in nine groups. Earlier frozen reports and source
+  hashes remain unchanged.
+- Qualification is limited to the tested three-member geometry, scalar hinge law
+  and loading paths. Arbitrary nonlinear frames, axial/biaxial yield interaction,
+  distributed plasticity, global uniqueness/bifurcations, continuum plastic-beam
+  accuracy, PyNite combined-source parity and GUI integration remain open.
+
+
 ## Post-RC4 Displacement Continuation Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-12. Test-only single-actuator

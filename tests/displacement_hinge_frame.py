@@ -61,7 +61,20 @@ class DisplacementHingeFrame(CorotationalHingeFrame):
                 return e,residual,matrix(e,self.unknown,active)
             for iteration in range(max_iterations):
                 try:e,residual,H=equations(u,alpha)
-                except ValueError:break
+                except ValueError:
+                    # A large imposed step can stretch a connecting beam before
+                    # other translations move. Retry with an elastic geometric
+                    # predictor; never transfer predicted plastic variables.
+                    if iteration==0:
+                        elastic=self.K[np.ix_(self.unknown,self.unknown)]
+                        scale=self._scaling(elastic)
+                        if scale is not None:
+                            rhs=-self.K[self.unknown,self.control]*(target-initial[self.control])
+                            correction=np.linalg.solve(elastic*np.outer(scale,scale),rhs*scale)*scale
+                            u=initial.copy();u[self.control]=target;u[self.unknown]+=correction
+                            alpha=previous.copy()
+                            continue
+                    break
                 if np.max(abs(residual),initial=0.)<=1e-8+1e-11*max(np.max(abs(self.preload)),np.max(self.capacity,initial=0.)):
                     converged=True;break
                 scale=self._scaling(H)

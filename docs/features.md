@@ -221,6 +221,15 @@ Single-actuator displacement continuation is now checked in the scalar-hinge
 research formulation, including an independently referenced compressed cantilever
 past its load peak. Constrained equilibrium and negative actuator stiffness are
 reported separately from load-control tangent checks. A four-hinge portal has
-numerical continuation checks; independent nonlinear portal, general arc-length,
-interaction and production qualification remain open. See
+numerical continuation checks; general nonlinear-frame, arc-length, interaction
+and production qualification remain open. See
+[Steel Pushover](analysis/pushover.md).
+
+The bounded three-member nonlinear portal now has an independent implementation
+from current-chord end forces and roof joint balance. The
+[23-record comparison](assets/portal-joint-statics.json) covers yield, softening,
+reverse cycles and cold/staged larger steps, with explicit gates/source hashes.
+An elastic geometry predictor resolves the verified large-step initialization
+failure. This remains one scalar-hinge law and geometry; arbitrary frames,
+interaction, PyNite source parity and production use remain unqualified. See
 [Steel Pushover](analysis/pushover.md).

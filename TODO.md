@@ -176,7 +176,14 @@ table above in sync as methods are implemented.
   compressed cantilever's peak/softening against independent imposed-drift statics.
   Check cycles, energy, frozen-history derivatives, units, rejected histories and
   a four-hinge portal's numerical balance. No general arc-length/snap-back,
-  nonlinear portal oracle, interaction or application qualification.
+  general nonlinear-frame oracle, interaction or application qualification.
+- [x] Independently check the bounded nonlinear three-member portal using direct
+  current-chord member-end forces, roof joint balance and a finite-difference root
+  solver, without importing the energy/frame implementation. Publish 23 comparisons
+  for yielding, softening, reverse cycles, increments and cold/staged large steps.
+  Add an elastic geometry-only predictor for imposed steps whose initial beam
+  stretch violates trial bounds. Preserve limits/history and prior frozen reports.
+  This validates one scalar-hinge portal law, not general interaction/source parity.
 - [ ] Extend and independently validate combined P-Delta/plastic response before
   adapting the two official pushover scripts (`P_Delta=True` in the pinned source).
   The elastic correction and local section map remain separate research stages.

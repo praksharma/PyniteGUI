@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Independently check the bounded nonlinear portal using direct member-end forces
+  and joint balance with a separate numerical root/Jacobian. Publish 23 yielding,
+  softening, reversal and increment comparisons with gates/source hashes. Fix
+  large-step initial geometry using an elastic predictor without changing trial
+  limits or plastic history. General-frame/interaction qualification remains open.
+
 - Add a research-only single-actuator displacement driver for corotational scalar
   hinges. Verify the compressed-cantilever load peak and negative post-yield slope
   against independent imposed-drift statics; distinguish constrained from

@@ -3579,7 +3579,8 @@ column-end hinges become active. At 2 and 3 in controlled drift, required latera
 loads are approximately 31.680033824 and 30.851639059 kip, with negative actuator
 slopes and nonpositive load-control tangent. Joint/deformed global balance and
 actuator derivatives are checked. This is numerical continuation evidence; there
-is still no independent nonlinear portal oracle. An unresolved larger step is a
+was no independent nonlinear portal oracle at that checkpoint (the following
+study adds a bounded three-member reference). An unresolved larger step is a
 numerical rejection, not a certified collapse limit.
 
 Scope remains the frozen corotational scalar-hinge law, bounded geometry and
@@ -3592,6 +3593,70 @@ GUI integration. All prior reports and negative evidence remain unchanged, and
 
 ```sh
 python -B scripts/test.py test_displacement_hinge_frame test_corotational_cantilever_reference test_corotational_hinge_frame test_planar_hinge_frame
+```
+
+**Independent nonlinear portal joint statics (study, 2026-11-12)**
+
+An independent reference now checks the same bounded three-member portal law
+through yielding, displacement-held softening and reverse cycles. It forms each
+member's current chord directly. With unit chord n, transverse unit vector t,
+current length l, extension force N=EA(l/L−1) and end moments Mi/Mj from the two
+chord-relative elastic end rotations, its j-end force is
+N n−(Mi+Mj)t/l. The i-end force is opposite; the two end couples remain Mi and Mj.
+No assembled frame stiffness, energy gradient/Hessian or prototype solver is
+imported by the reference.
+
+Column and beam end forces/couples balance independently at the two roof joints.
+One left-roof horizontal displacement is prescribed; five remaining roof DOFs
+and active plastic rotations are solved by a separate numerical root method.
+Signed moment consistency and plastic increments, final geometry bounds and a
+finite-difference constrained Jacobian positivity check select a resolved local
+branch. The actuator force and its implicit derivative come from those joint
+balances. This is independent numerical implementation of the stated member law,
+not an independent continuum-plasticity model or proof of branch uniqueness.
+
+The [23-record comparison](docs/assets/portal-joint-statics.json) uses the 120×120 in
+portal, EA=290,000 kip, EI=2,900,000 kip-in², Mp=1000 kip-in at all four column ends,
+50 kip roof gravity at each node and a left-roof horizontal actuator:
+
+| Left-roof x (in) | Required actuator force (kip) | Slope (kip/in) | Active hinges |
+| --- | --- | --- | --- |
+| 0.5 | 13.587640667 | 27.1767002 | None |
+| 1.3 | 29.778652150 | 5.8456159 | Both bases |
+| 1.5 | 30.947857890 | 5.8464522 | Both bases |
+| 2.0 | 31.680033824 | -0.8293528 | All four column ends |
+| 3.0 | 30.851639059 | -0.8274647 | All four column ends |
+| 5.0 | 29.200088633 | -0.8241987 | All four column ends |
+
+Both implementations agree on all six roof motions, support forces/couples,
+hinge moments, active sets, committed plastic rotations, energy, dissipation and
+actuator slope. Positive/reverse cycles use 1/10 displacement increments. Cold
+5-inch and staged 3→5-inch steps are checked separately. Maximum recorded roof
+translation discrepancy is below 8.3e-12 in, actuator-force discrepancy below
+1.7e-8 kip, moment discrepancy below 7.0e-9 kip-in and slope discrepancy below
+3.0e-7 kip/in. These are numerical agreement measures, not engineering accuracy
+claims. The report contains explicit gates and source hashes; earlier reports
+and their source hashes remain preserved.
+
+The reference exposed a prototype initialization failure at larger imposed
+steps. Updating only the controlled joint could stretch the still-unmoved beam
+past the trial strain bound before Newton could move its other end. On an invalid
+initial trial, an elastic displacement predictor now updates the remaining
+geometry. Plastic variables always restart from committed history. The same
+unchanged geometry, equilibrium, capacity, multiplier and constrained stability
+checks must then pass. This resolves the verified cold/staged 5-inch cases without
+relaxing bounds or treating a numerical rejection as a physical collapse.
+
+Qualification remains the particular three-member corotational scalar-hinge
+portal and tested loading paths. There is no validation of arbitrary portal
+proportions/frames, axial–moment interaction, biaxial or distributed plasticity,
+global branch uniqueness, general bifurcation/arc-length behaviour, continuum
+plastic-beam accuracy, PyNite combined-source parity or GUI integration.
+`production_ready=false` and `general_frame_plastic_validated=false` remain explicit.
+
+```sh
+python -B scripts/test.py test_portal_statics_reference test_displacement_hinge_frame test_corotational_cantilever_reference test_corotational_hinge_frame
+python -B scripts/benchmark_portal_statics.py --output /tmp/portal-joint-statics.json
 ```
 
 MCP exposes `run_pushover_analysis` with session/revision, preload/push, control

@@ -1,0 +1,1060 @@
+{
+  "bounded_portal_joint_statics_checks_passed": true,
+  "production_ready": false,
+  "general_frame_plastic_validated": false,
+  "pynite_combined_source_parity": false,
+  "scope": "One three-member planar portal, equal 50 kip roof gravity, one left-roof horizontal actuator, four scalar column-end hinges. Same bounded corotational elastic-span law; no axial-moment yield interaction, continuum plasticity, general branch uniqueness or source parity claim.",
+  "reference": "Independent local end-force/current-chord formulas and roof joint balance. Finite-difference root/Jacobian with local constrained positivity, signed plastic increments and final geometry bounds. No frame energy/tangent/assembly imports.",
+  "units": "inch, kip, rad",
+  "gates": {
+    "translation_error": 1e-07,
+    "rotation_error": 1e-09,
+    "load_error": 1e-06,
+    "slope_error": 2e-06,
+    "moment_error": 1e-06,
+    "support_error": 1e-06,
+    "plastic_rotation_error": 1e-09,
+    "dissipation_error": 1e-05,
+    "energy_error": 1e-06
+  },
+  "maximum_errors": {
+    "translation_error": 8.199538270581286e-12,
+    "rotation_error": 1.6109856504353814e-13,
+    "load_error": 1.6797720547856443e-08,
+    "slope_error": 2.98712805490986e-07,
+    "moment_error": 6.993673196120653e-09,
+    "support_error": 1.9753684910028824e-08,
+    "plastic_rotation_error": 2.2351565043265964e-13,
+    "dissipation_error": 4.5287151806405745e-10,
+    "energy_error": 1.929905124598008e-10
+  },
+  "source_sha256": {
+    "tests/displacement_hinge_frame.py": "de627ec965b70baee7228ebddeba69361b08e3e845b769e092783e389548a017",
+    "tests/corotational_hinge_frame.py": "0db4bd9a26432ae8a0dc1a13ba2fa36791c3b95e0520aa5eb01b1be83d881e10",
+    "tests/planar_hinge_frame.py": "6162d2ae4f0a432a7160572d97b82dd3b0491291162808e49aafd13c648c629e",
+    "tests/beam_gradient_compatibility.py": "52fea88e614b89f0758219ea689719996167c619910c13049bd79520159f181f",
+    "tests/portal_statics_reference.py": "2a0941a3f078dc975a2cae64f48da93536512fd95f732297b00f86d777a60393",
+    "tests/test_portal_statics_reference.py": "1c0bd24bf6bfb95638f2d3bbd7b694802fc4b2ccc7bea5159b929540a3dce1e8",
+    "scripts/benchmark_portal_statics.py": "fb8eb8b3fb0a08335576cc196b6ac65f4f75afa7e6e8d97bb2c5ade034d3697c"
+  },
+  "frozen_report_sha256": {
+    "docs/assets/combined-pushover-prerequisite.json": "10a8c380b807d144362c593c04f00cc5fae3279573878e127669bacdafcd75cf",
+    "docs/assets/equilibrated-column.json": "66eb4e7d6cd7b730299568b6268d2498b5fd2f1593892bde68ec15767c00ddf0",
+    "docs/assets/section-return.json": "dab5698d17a1971447bcf0c03096f6208791b8d8734ea8c73052e2b1b551a002",
+    "docs/assets/corotational-cantilever.json": "77b99062e020df27b2ef4f4eb7f44a21c8ffe00d493c97d0fe0ae47c4eb798c3"
+  },
+  "records": [
+    {
+      "path": "yield_soften_reverse",
+      "stage": 0,
+      "steps_per_stage": 1,
+      "target": 0.0,
+      "prototype_roof_motion": [
+        0.0,
+        -0.0206896551724138,
+        -6.01849069564905e-21,
+        -6.010319834229603e-21,
+        -0.0206896551724138,
+        1.2120811665696366e-20
+      ],
+      "reference_roof_motion": [
+        0.0,
+        -0.020689655172406424,
+        0.0,
+        3.1401192056686464e-28,
+        -0.020689655172406424,
+        -2.1644593207011506e-30
+      ],
+      "prototype_load": -7.273596992356227e-18,
+      "reference_load": 0.0,
+      "prototype_slope": 27.17416559748699,
+      "reference_slope": 27.17416568478359,
+      "active": [],
+      "reference_active": [],
+      "load_control_tangent_positive": true,
+      "translation_error": 7.376044219853384e-15,
+      "rotation_error": 1.2120811667860825e-20,
+      "load_error": 7.273596992356227e-18,
+      "slope_error": 8.729659839445958e-08,
+      "moment_error": 1.164414739060962e-15,
+      "support_error": 2.5757174171303632e-11,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 0.0,
+      "energy_error": 1.0655920590352252e-12
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 1,
+      "steps_per_stage": 1,
+      "target": 0.5,
+      "prototype_roof_motion": [
+        0.5,
+        -0.019242401431514945,
+        -0.0025297273433250098,
+        0.4972043391371809,
+        -0.024185269040498975,
+        -0.002506597562056251
+      ],
+      "reference_roof_motion": [
+        0.5,
+        -0.019242401431505487,
+        -0.002529727343324886,
+        0.4972043391371832,
+        -0.024185269040496712,
+        -0.0025065975620564684
+      ],
+      "prototype_load": 13.58764066676207,
+      "reference_load": 13.587640666749055,
+      "prototype_slope": 27.176700233855627,
+      "reference_slope": 27.17670020103332,
+      "active": [],
+      "reference_active": [],
+      "load_control_tangent_positive": true,
+      "translation_error": 9.457712391025552e-15,
+      "rotation_error": 2.172741153660951e-16,
+      "load_error": 1.3015366562285635e-11,
+      "slope_error": 3.282230665035968e-08,
+      "moment_error": 3.586819730116986e-11,
+      "support_error": 2.5295321393059567e-11,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 0.0,
+      "energy_error": 3.197442310920451e-13
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 2,
+      "steps_per_stage": 1,
+      "target": 1.0,
+      "prototype_roof_motion": [
+        1.0,
+        -0.01985430624704336,
+        -0.005059186705710675,
+        0.9944282716418894,
+        -0.02971870413236532,
+        -0.00501343260599712
+      ],
+      "reference_roof_motion": [
+        1.0,
+        -0.01985430624704132,
+        -0.005059186705710696,
+        0.9944282716418709,
+        -0.02971870413235655,
+        -0.005013432605996969
+      ],
+      "prototype_load": 27.177003486617373,
+      "reference_load": 27.177003486677286,
+      "prototype_slope": 27.18105440285626,
+      "reference_slope": 27.181054422091105,
+      "active": [],
+      "reference_active": [],
+      "load_control_tangent_positive": true,
+      "translation_error": 1.8540724511240114e-14,
+      "rotation_error": 1.5092094240998222e-16,
+      "load_error": 5.991296347929165e-11,
+      "slope_error": 1.923484305166312e-08,
+      "moment_error": 1.5802470443304628e-11,
+      "support_error": 2.7910118660656735e-11,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 0.0,
+      "energy_error": 6.519229600598919e-13
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 3,
+      "steps_per_stage": 1,
+      "target": 1.3,
+      "prototype_roof_motion": [
+        1.3,
+        -0.021793429355009983,
+        -0.005981987345431121,
+        1.2939028872981377,
+        -0.03347051473283665,
+        -0.005952129566010324
+      ],
+      "reference_roof_motion": [
+        1.3,
+        -0.02179342935500549,
+        -0.0059819873454311015,
+        1.293902887298138,
+        -0.0334705147328329,
+        -0.005952129566010239
+      ],
+      "prototype_load": 29.7786521500877,
+      "reference_load": 29.77865215009215,
+      "prototype_slope": 5.8456159496909095,
+      "reference_slope": 5.845615916388881,
+      "active": [
+        0,
+        1
+      ],
+      "reference_active": [
+        0,
+        1
+      ],
+      "load_control_tangent_positive": true,
+      "translation_error": 4.49293380277993e-15,
+      "rotation_error": 8.500145032286355e-17,
+      "load_error": 4.447997525858227e-12,
+      "slope_error": 3.330202869022969e-08,
+      "moment_error": 1.8189894035458565e-11,
+      "support_error": 4.509104201133596e-11,
+      "plastic_rotation_error": 9.280770596475918e-17,
+      "dissipation_error": 5.240252676230739e-14,
+      "energy_error": 1.9610979506978765e-12
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 4,
+      "steps_per_stage": 1,
+      "target": 1.5,
+      "prototype_roof_motion": [
+        1.5,
+        -0.023560849633478254,
+        -0.006543913490920457,
+        1.493677454357382,
+        -0.03633053936711625,
+        -0.006513094490596232
+      ],
+      "reference_roof_motion": [
+        1.5,
+        -0.023560849633485016,
+        -0.0065439134909204355,
+        1.4936774543573936,
+        -0.036330539367114334,
+        -0.006513094490596234
+      ],
+      "prototype_load": 30.947857890009466,
+      "reference_load": 30.94785788996458,
+      "prototype_slope": 5.846452318122374,
+      "reference_slope": 5.846452238259896,
+      "active": [
+        0,
+        1
+      ],
+      "reference_active": [
+        0,
+        1
+      ],
+      "load_control_tangent_positive": true,
+      "translation_error": 1.1546319456101628e-14,
+      "rotation_error": 2.168404344971009e-17,
+      "load_error": 4.488498461796553e-11,
+      "slope_error": 7.986247840818805e-08,
+      "moment_error": 2.1373125491663814e-11,
+      "support_error": 2.1373125491663814e-11,
+      "plastic_rotation_error": 1.5699247457590104e-16,
+      "dissipation_error": 2.682298827494378e-13,
+      "energy_error": 4.654054919228656e-13
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 5,
+      "steps_per_stage": 1,
+      "target": 2.0,
+      "prototype_roof_motion": [
+        2.0,
+        -0.030348654640441154,
+        -0.007010659785321695,
+        1.9935578238070861,
+        -0.04404088693768475,
+        -0.007010659785321692
+      ],
+      "reference_roof_motion": [
+        2.0,
+        -0.030348654640451986,
+        -0.007010659785321634,
+        1.993557823807089,
+        -0.04404088693768836,
+        -0.007010659785321627
+      ],
+      "prototype_load": 31.680033824326536,
+      "reference_load": 31.680033824289943,
+      "prototype_slope": -0.8293531229514883,
+      "reference_slope": -0.8293528242386828,
+      "active": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "reference_active": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "load_control_tangent_positive": false,
+      "translation_error": 1.0831613383999183e-14,
+      "rotation_error": 6.505213034913027e-17,
+      "load_error": 3.659295089164516e-11,
+      "slope_error": 2.98712805490986e-07,
+      "moment_error": 2.3874235921539366e-11,
+      "support_error": 3.4361846701358445e-11,
+      "plastic_rotation_error": 1.5959455978986625e-16,
+      "dissipation_error": 1.1723955140041653e-13,
+      "energy_error": 1.0409451078885468e-12
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 6,
+      "steps_per_stage": 1,
+      "target": 3.0,
+      "prototype_roof_motion": [
+        3.0,
+        -0.05113396706894908,
+        -0.007010298375400019,
+        2.9937867874568846,
+        -0.06478285854714369,
+        -0.007010298375400018
+      ],
+      "reference_roof_motion": [
+        3.0,
+        -0.05113396706893515,
+        -0.007010298375400099,
+        2.993786787456887,
+        -0.06478285854713772,
+        -0.0070102983754001
+      ],
+      "prototype_load": 30.851639058820233,
+      "reference_load": 30.851639058825107,
+      "prototype_slope": -0.8274648756196257,
+      "reference_slope": -0.8274647346280991,
+      "active": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "reference_active": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "load_control_tangent_positive": false,
+      "translation_error": 1.3926360065141807e-14,
+      "rotation_error": 8.153200337090993e-17,
+      "load_error": 4.874323167314287e-12,
+      "slope_error": 1.40991526564882e-07,
+      "moment_error": 1.77351466845721e-11,
+      "support_error": 4.293099209462525e-11,
+      "plastic_rotation_error": 8.673617379884035e-17,
+      "dissipation_error": 1.8474111129762605e-13,
+      "energy_error": 1.609379296496627e-12
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 7,
+      "steps_per_stage": 1,
+      "target": 0.0,
+      "prototype_roof_motion": [
+        0.0,
+        -0.026636976209174105,
+        0.006078112328873907,
+        0.0064176908852441785,
+        -0.01474284907531142,
+        0.006016663177078043
+      ],
+      "reference_roof_motion": [
+        0.0,
+        -0.026636976209196944,
+        0.0060781123288741025,
+        0.006417690885256144,
+        -0.014742849075312484,
+        0.006016663177078151
+      ],
+      "prototype_load": -31.048925289080536,
+      "reference_load": -31.048925289123304,
+      "prototype_slope": 5.840147583807266,
+      "reference_slope": 5.840147461870042,
+      "active": [
+        0,
+        1
+      ],
+      "reference_active": [
+        0,
+        1
+      ],
+      "load_control_tangent_positive": true,
+      "translation_error": 2.2839369284710642e-14,
+      "rotation_error": 1.951563910473908e-16,
+      "load_error": 4.276756726540043e-11,
+      "slope_error": 1.2193722387365824e-07,
+      "moment_error": 2.034994395216927e-11,
+      "support_error": 6.438938271458028e-11,
+      "plastic_rotation_error": 3.122502256758253e-16,
+      "dissipation_error": 6.394884621840902e-13,
+      "energy_error": 2.4584778657299466e-12
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 8,
+      "steps_per_stage": 1,
+      "target": -3.0,
+      "prototype_roof_motion": [
+        -3.0,
+        -0.0649355856185805,
+        0.007012901927821907,
+        -2.9934463811156484,
+        -0.05097279860157387,
+        0.007012901927821906
+      ],
+      "reference_roof_motion": [
+        -3.0,
+        -0.06493558561559383,
+        0.0070129019277300935,
+        -2.993446381118762,
+        -0.050972798606640585,
+        0.007012901927730097
+      ],
+      "prototype_load": -30.85000450096166,
+      "reference_load": -30.850004493592444,
+      "prototype_slope": -0.8273710266107628,
+      "reference_slope": -0.827370837797048,
+      "active": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "reference_active": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "load_control_tangent_positive": false,
+      "translation_error": 5.066717878587923e-12,
+      "rotation_error": 9.181370941302447e-14,
+      "load_error": 7.369216348251939e-09,
+      "slope_error": 1.888137147743052e-07,
+      "moment_error": 2.2637323127128184e-09,
+      "support_error": 1.200933752443234e-08,
+      "plastic_rotation_error": 1.3438208879001934e-13,
+      "dissipation_error": 2.672209120646585e-10,
+      "energy_error": 1.63176139267307e-10
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 9,
+      "steps_per_stage": 1,
+      "target": 0.0,
+      "prototype_roof_motion": [
+        0.0,
+        -0.01474177898237297,
+        -0.0060793703384729786,
+        -0.006420214785314478,
+        -0.026638046615051203,
+        -0.006012754623199375
+      ],
+      "reference_roof_motion": [
+        0.0,
+        -0.014741778982324068,
+        -0.006079370338498497,
+        -0.006420214785341044,
+        -0.026638046615123843,
+        -0.006012754623250557
+      ],
+      "prototype_load": 31.04718997220751,
+      "reference_load": 31.04718997231586,
+      "prototype_slope": 5.842116888720284,
+      "reference_slope": 5.842117018965236,
+      "active": [
+        0,
+        1
+      ],
+      "reference_active": [
+        0,
+        1
+      ],
+      "load_control_tangent_positive": true,
+      "translation_error": 7.263981083305282e-14,
+      "rotation_error": 5.1182148796957705e-14,
+      "load_error": 1.0835066177605768e-10,
+      "slope_error": 1.302449517126547e-07,
+      "moment_error": 6.009031494613737e-09,
+      "support_error": 1.4165379980113357e-10,
+      "plastic_rotation_error": 1.3438208879001934e-13,
+      "dissipation_error": 3.830393779935548e-10,
+      "energy_error": 1.2112622016502428e-10
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 0,
+      "steps_per_stage": 10,
+      "target": 0.0,
+      "prototype_roof_motion": [
+        0.0,
+        -0.0206896551724138,
+        -6.01849069564905e-21,
+        -6.010319834229603e-21,
+        -0.0206896551724138,
+        1.2120811665696366e-20
+      ],
+      "reference_roof_motion": [
+        0.0,
+        -0.020689655172406424,
+        0.0,
+        3.1401192056686464e-28,
+        -0.020689655172406424,
+        -2.1644593207011506e-30
+      ],
+      "prototype_load": -7.273596992356227e-18,
+      "reference_load": 0.0,
+      "prototype_slope": 27.17416559748699,
+      "reference_slope": 27.17416568478359,
+      "active": [],
+      "reference_active": [],
+      "load_control_tangent_positive": true,
+      "translation_error": 7.376044219853384e-15,
+      "rotation_error": 1.2120811667860825e-20,
+      "load_error": 7.273596992356227e-18,
+      "slope_error": 8.729659839445958e-08,
+      "moment_error": 1.164414739060962e-15,
+      "support_error": 2.5757174171303632e-11,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 0.0,
+      "energy_error": 1.0655920590352252e-12
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 1,
+      "steps_per_stage": 10,
+      "target": 0.5,
+      "prototype_roof_motion": [
+        0.5,
+        -0.019242401431498597,
+        -0.0025297273433245995,
+        0.4972043391375462,
+        -0.024185269040508512,
+        -0.0025065975620587773
+      ],
+      "reference_roof_motion": [
+        0.5,
+        -0.019242401431514577,
+        -0.002529727343324874,
+        0.49720433913718975,
+        -0.024185269040492896,
+        -0.0025065975620562797
+      ],
+      "prototype_load": 13.587640665903994,
+      "reference_load": 13.58764066674907,
+      "prototype_slope": 27.176700233855627,
+      "reference_slope": 27.176700468226993,
+      "active": [],
+      "reference_active": [],
+      "load_control_tangent_positive": true,
+      "translation_error": 3.564371020559065e-13,
+      "rotation_error": 2.497568124537608e-15,
+      "load_error": 8.450768973489176e-10,
+      "slope_error": 2.3437136675852344e-07,
+      "moment_error": 3.3566038837307133e-10,
+      "support_error": 3.3566038837307133e-10,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 0.0,
+      "energy_error": 9.78772618509538e-13
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 2,
+      "steps_per_stage": 10,
+      "target": 1.0,
+      "prototype_roof_motion": [
+        1.0,
+        -0.019854306247037542,
+        -0.005059186705710289,
+        0.9944282716422339,
+        -0.029718704132382735,
+        -0.005013432605999471
+      ],
+      "reference_roof_motion": [
+        1.0,
+        -0.01985430624704447,
+        -0.005059186705710674,
+        0.9944282716418735,
+        -0.02971870413237417,
+        -0.005013432605997077
+      ],
+      "prototype_load": 27.17700348579361,
+      "reference_load": 27.177003486645113,
+      "prototype_slope": 27.181054402855807,
+      "reference_slope": 27.181054421987486,
+      "active": [],
+      "reference_active": [],
+      "load_control_tangent_positive": true,
+      "translation_error": 3.603783937933258e-13,
+      "rotation_error": 2.3939183968479938e-15,
+      "load_error": 8.515037563938677e-10,
+      "slope_error": 1.913167935185811e-08,
+      "moment_error": 3.240074875066057e-10,
+      "support_error": 3.240074875066057e-10,
+      "plastic_rotation_error": 0.0,
+      "dissipation_error": 0.0,
+      "energy_error": 3.517186542012496e-13
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 3,
+      "steps_per_stage": 10,
+      "target": 1.3,
+      "prototype_roof_motion": [
+        1.3,
+        -0.021793429355009924,
+        -0.005981987345431082,
+        1.2939028872981935,
+        -0.03347051473283991,
+        -0.005952129566010558
+      ],
+      "reference_roof_motion": [
+        1.3,
+        -0.02179342935500475,
+        -0.00598198734543114,
+        1.2939028872981395,
+        -0.03347051473284037,
+        -0.0059521295660103215
+      ],
+      "prototype_load": 29.778652149950354,
+      "reference_load": 29.778652150060033,
+      "prototype_slope": 5.8456159496909095,
+      "reference_slope": 5.845615916359274,
+      "active": [
+        0,
+        1
+      ],
+      "reference_active": [
+        0,
+        1
+      ],
+      "load_control_tangent_positive": true,
+      "translation_error": 5.395683899678261e-14,
+      "rotation_error": 2.3678975447083417e-16,
+      "load_error": 1.0967937669192906e-10,
+      "slope_error": 3.3331635229671974e-08,
+      "moment_error": 1.693933882052079e-11,
+      "support_error": 4.078515303262975e-11,
+      "plastic_rotation_error": 6.609296443471635e-16,
+      "dissipation_error": 7.407408020299044e-13,
+      "energy_error": 7.922551503725117e-13
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 4,
+      "steps_per_stage": 10,
+      "target": 1.5,
+      "prototype_roof_motion": [
+        1.5,
+        -0.02356084963346889,
+        -0.0065439134909205466,
+        1.493677454357395,
+        -0.03633053936712536,
+        -0.006513094490596383
+      ],
+      "reference_roof_motion": [
+        1.5,
+        -0.02356084963347416,
+        -0.006543913490920537,
+        1.4936774543573796,
+        -0.03633053936712494,
+        -0.006513094490596305
+      ],
+      "prototype_load": 30.94785788997549,
+      "reference_load": 30.947857889996975,
+      "prototype_slope": 5.846452318122829,
+      "reference_slope": 5.846452239947435,
+      "active": [
+        0,
+        1
+      ],
+      "reference_active": [
+        0,
+        1
+      ],
+      "load_control_tangent_positive": true,
+      "translation_error": 1.532107773982716e-14,
+      "rotation_error": 7.719519468096792e-17,
+      "load_error": 2.148325961570663e-11,
+      "slope_error": 7.81753941581087e-08,
+      "moment_error": 2.0804691303055733e-11,
+      "support_error": 1.546140993013978e-11,
+      "plastic_rotation_error": 1.8561541192951836e-16,
+      "dissipation_error": 2.3803181647963356e-13,
+      "energy_error": 3.907985046680551e-14
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 5,
+      "steps_per_stage": 10,
+      "target": 2.0,
+      "prototype_roof_motion": [
+        2.0,
+        -0.03034865464044538,
+        -0.0070106597853217285,
+        1.9935578238075258,
+        -0.044040886937693265,
+        -0.0070106597853217285
+      ],
+      "reference_roof_motion": [
+        2.0,
+        -0.03034865464043282,
+        -0.00701065978532185,
+        1.9935578238070952,
+        -0.044040886937698386,
+        -0.00701065978532185
+      ],
+      "prototype_load": 31.680033823261333,
+      "reference_load": 31.68003382429006,
+      "prototype_slope": -0.8293531229519431,
+      "reference_slope": -0.8293529605888732,
+      "active": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "reference_active": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "load_control_tangent_positive": false,
+      "translation_error": 4.305444889496357e-13,
+      "rotation_error": 1.214306433183765e-16,
+      "load_error": 1.0287273255471518e-09,
+      "slope_error": 1.6236306987771343e-07,
+      "moment_error": 2.6830093702301383e-11,
+      "support_error": 3.6486369481281145e-11,
+      "plastic_rotation_error": 3.687588429057698e-15,
+      "dissipation_error": 7.364775456153438e-12,
+      "energy_error": 5.7838178690872155e-12
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 6,
+      "steps_per_stage": 10,
+      "target": 3.0,
+      "prototype_roof_motion": [
+        3.0,
+        -0.05113396706895275,
+        -0.007010298375401289,
+        2.9937867874638378,
+        -0.06478285854730162,
+        -0.007010298375401289
+      ],
+      "reference_roof_motion": [
+        3.0,
+        -0.051133967068946413,
+        -0.007010298375400045,
+        2.993786787456891,
+        -0.06478285854713381,
+        -0.007010298375400041
+      ],
+      "prototype_load": 30.851639042026534,
+      "reference_load": 30.851639058824254,
+      "prototype_slope": -0.8274648756191709,
+      "reference_slope": -0.8274647346280991,
+      "active": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "reference_active": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "load_control_tangent_positive": false,
+      "translation_error": 6.9468875096845295e-12,
+      "rotation_error": 1.2481335409653127e-15,
+      "load_error": 1.6797720547856443e-08,
+      "slope_error": 1.4099107181753112e-07,
+      "moment_error": 4.488356353249401e-10,
+      "support_error": 4.488356353249401e-10,
+      "plastic_rotation_error": 5.50046119762726e-14,
+      "dissipation_error": 1.0748379963843036e-10,
+      "energy_error": 9.919531862578879e-11
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 7,
+      "steps_per_stage": 10,
+      "target": 0.0,
+      "prototype_roof_motion": [
+        0.0,
+        -0.02663697620920214,
+        0.006078112328866465,
+        0.00641769088525879,
+        -0.014742849075303675,
+        0.006016663177103456
+      ],
+      "reference_roof_motion": [
+        0.0,
+        -0.02663697620919598,
+        0.006078112328874077,
+        0.006417690885252754,
+        -0.014742849075314927,
+        0.0060166631770781605
+      ],
+      "prototype_load": -31.04892528911862,
+      "reference_load": -31.048925289123357,
+      "prototype_slope": 5.840147583806811,
+      "reference_slope": 5.840147461870042,
+      "active": [
+        0,
+        1
+      ],
+      "reference_active": [
+        0,
+        1
+      ],
+      "load_control_tangent_positive": true,
+      "translation_error": 1.1251416465185571e-14,
+      "rotation_error": 2.52957377266938e-14,
+      "load_error": 4.735767333841068e-12,
+      "slope_error": 1.2193676912630735e-07,
+      "moment_error": 2.0668267097789794e-09,
+      "support_error": 4.078515303262975e-11,
+      "plastic_rotation_error": 5.375908052052125e-14,
+      "dissipation_error": 1.7962520360015333e-10,
+      "energy_error": 2.7860380669153528e-11
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 8,
+      "steps_per_stage": 10,
+      "target": -3.0,
+      "prototype_roof_motion": [
+        -3.0,
+        -0.06493558561560557,
+        0.007012901927730242,
+        -2.9934463811187513,
+        -0.05097279860663068,
+        0.007012901927730243
+      ],
+      "reference_roof_motion": [
+        -3.0,
+        -0.06493558561560718,
+        0.007012901927730089,
+        -2.9934463811187437,
+        -0.050972798606647315,
+        0.0070129019277300865
+      ],
+      "prototype_load": -30.85000449361841,
+      "reference_load": -30.850004493656726,
+      "prototype_slope": -0.8273710266525995,
+      "reference_slope": -0.8273711060861426,
+      "active": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "reference_active": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "load_control_tangent_positive": false,
+      "translation_error": 1.6632528687665626e-14,
+      "rotation_error": 1.5612511283791264e-16,
+      "load_error": 3.83160170258634e-11,
+      "slope_error": 7.943354307649031e-08,
+      "moment_error": 3.069544618483633e-12,
+      "support_error": 2.574296331658843e-11,
+      "plastic_rotation_error": 2.0990154059319366e-16,
+      "dissipation_error": 2.1452706278068945e-10,
+      "energy_error": 9.769962616701378e-13
+    },
+    {
+      "path": "yield_soften_reverse",
+      "stage": 9,
+      "steps_per_stage": 10,
+      "target": 0.0,
+      "prototype_roof_motion": [
+        0.0,
+        -0.014741778982315084,
+        -0.006079370338498483,
+        -0.0064202147853461245,
+        -0.026638046615125744,
+        -0.00601275462325047
+      ],
+      "reference_roof_motion": [
+        0.0,
+        -0.014741778982307678,
+        -0.006079370338498614,
+        -0.006420214785348472,
+        -0.026638046615139598,
+        -0.0060127546232506155
+      ],
+      "prototype_load": 31.047189972350147,
+      "reference_load": 31.047189972348008,
+      "prototype_slope": 5.842116888720284,
+      "reference_slope": 5.842116884791083,
+      "active": [
+        0,
+        1
+      ],
+      "reference_active": [
+        0,
+        1
+      ],
+      "load_control_tangent_positive": true,
+      "translation_error": 1.3853501679150781e-14,
+      "rotation_error": 1.457167719820518e-16,
+      "load_error": 2.1387336346379016e-12,
+      "slope_error": 3.929200964591928e-09,
+      "moment_error": 7.958078640513122e-12,
+      "support_error": 3.650768576335395e-11,
+      "plastic_rotation_error": 2.0990154059319366e-16,
+      "dissipation_error": 2.1447021936182864e-10,
+      "energy_error": 1.1191048088221578e-12
+    },
+    {
+      "path": "cold_large_step",
+      "stage": 0,
+      "steps_per_stage": 1,
+      "target": 5.0,
+      "prototype_roof_motion": [
+        5.0,
+        -0.11774010789201077,
+        -0.007009718094441531,
+        4.994243744724915,
+        -0.1313194209637383,
+        -0.007009718094441533
+      ],
+      "reference_roof_motion": [
+        5.0,
+        -0.1177401079002103,
+        -0.007009718094280437,
+        4.994243744726763,
+        -0.13131942096076582,
+        -0.007009718094280434
+      ],
+      "prototype_load": 29.20008863791531,
+      "reference_load": 29.200088632661576,
+      "prototype_slope": -0.8241985556933287,
+      "reference_slope": -0.8241987155580925,
+      "active": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "reference_active": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "load_control_tangent_positive": false,
+      "translation_error": 8.199538270581286e-12,
+      "rotation_error": 1.6109856504353814e-13,
+      "load_error": 5.253735224641787e-09,
+      "slope_error": 1.5986476387119808e-07,
+      "moment_error": 6.993673196120653e-09,
+      "support_error": 1.9753684910028824e-08,
+      "plastic_rotation_error": 2.2351565043265964e-13,
+      "dissipation_error": 4.5287151806405745e-10,
+      "energy_error": 1.929905124598008e-10
+    },
+    {
+      "path": "staged_large_step",
+      "stage": 0,
+      "steps_per_stage": 1,
+      "target": 3.0,
+      "prototype_roof_motion": [
+        3.0,
+        -0.05113396706855899,
+        -0.007010298375407528,
+        2.993786787456796,
+        -0.06478285854727187,
+        -0.007010298375407528
+      ],
+      "reference_roof_motion": [
+        3.0,
+        -0.051133967068944054,
+        -0.007010298375399995,
+        2.9937867874568855,
+        -0.06478285854713149,
+        -0.007010298375399997
+      ],
+      "prototype_load": 30.851639059049354,
+      "reference_load": 30.85163905882427,
+      "prototype_slope": -0.8274648756141687,
+      "reference_slope": -0.8274648687578435,
+      "active": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "reference_active": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "load_control_tangent_positive": false,
+      "translation_error": 3.8506697830342773e-13,
+      "rotation_error": 7.533036694429285e-15,
+      "load_error": 2.2508572783408454e-10,
+      "slope_error": 6.8563251742759235e-09,
+      "moment_error": 3.1604940886609256e-10,
+      "support_error": 9.355645147479663e-10,
+      "plastic_rotation_error": 1.029558382992235e-14,
+      "dissipation_error": 2.078337502098293e-11,
+      "energy_error": 8.803624496067641e-12
+    },
+    {
+      "path": "staged_large_step",
+      "stage": 1,
+      "steps_per_stage": 1,
+      "target": 5.0,
+      "prototype_roof_motion": [
+        5.0,
+        -0.11774010789957774,
+        -0.007009718094293033,
+        4.994243744726618,
+        -0.13131942096102175,
+        -0.007009718094293031
+      ],
+      "reference_roof_motion": [
+        5.0,
+        -0.11774010790020582,
+        -0.007009718094280427,
+        4.994243744726765,
+        -0.13131942096075755,
+        -0.0070097180942804245
+      ],
+      "prototype_load": 29.20008863306775,
+      "reference_load": 29.200088632661235,
+      "prototype_slope": -0.8241985557888256,
+      "reference_slope": -0.8241987154840776,
+      "active": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "reference_active": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "load_control_tangent_positive": false,
+      "translation_error": 6.280809206060667e-13,
+      "rotation_error": 1.2606235499923457e-14,
+      "load_error": 4.065157099830685e-10,
+      "slope_error": 1.5969525202219614e-07,
+      "moment_error": 5.330775820766576e-10,
+      "support_error": 1.4647341117779433e-09,
+      "plastic_rotation_error": 1.7218865222545787e-14,
+      "dissipation_error": 3.498712430882733e-11,
+      "energy_error": 1.823607931328297e-11
+    }
+  ]
+}

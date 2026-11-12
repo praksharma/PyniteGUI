@@ -143,6 +143,7 @@ tests = [
   "test_corotational_hinge_frame",
   "test_corotational_cantilever_reference",
   "test_displacement_hinge_frame",
+  "test_portal_statics_reference",
 ]
 
 [groups.surfaces]
