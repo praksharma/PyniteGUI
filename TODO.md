@@ -184,6 +184,12 @@ table above in sync as methods are implemented.
   Add an elastic geometry-only predictor for imposed steps whose initial beam
   stretch violates trial bounds. Preserve limits/history and prior frozen reports.
   This validates one scalar-hinge portal law, not general interaction/source parity.
+- [x] Extend the research displacement driver to fixed work-conjugate translational
+  load patterns: loads=preload+factor*p, q=pᵀu. Use an orthogonal coordinate change
+  without changing the frozen energy law; return physical loads/motion/history.
+  Check single-actuator parity, distributed roof softening, mixed directions,
+  force-control parity, virtual work, cycles, tangent, scaling/sign, units and
+  history rejection. No independent control-DOF/load-pattern pair or GUI exposure.
 - [ ] Extend and independently validate combined P-Delta/plastic response before
   adapting the two official pushover scripts (`P_Delta=True` in the pinned source).
   The elastic correction and local section map remain separate research stages.

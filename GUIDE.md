@@ -3659,6 +3659,56 @@ python -B scripts/test.py test_portal_statics_reference test_displacement_hinge_
 python -B scripts/benchmark_portal_statics.py --output /tmp/portal-joint-statics.json
 ```
 
+**Work-conjugate load-pattern continuation (study, 2026-11-17)**
+
+The research displacement driver now supports a fixed translational dead-load
+pattern p on free DOFs. Physical loads are preload + λp and the prescribed
+work-conjugate displacement is q=pᵀu. Pattern weights are dimensionless, λ has
+force units, and incremental external work is λ dq + preloadᵀdu. The pattern
+cannot contain nodal moments or loads on restrained DOFs and must be finite and
+nonzero. It remains constant throughout the history; changing the pattern or
+preload requires a new history.
+
+An orthogonal change of supported translation coordinates aligns the normalized
+pattern with the existing single-actuator coordinate. The frozen member energy,
+plastic variables, acceptance limits and constrained solver are reused. Internal
+residuals, stiffness and hinge couplings transform consistently. Physical nodal
+loads, motion, reactions, residuals and committed history are returned after the
+solve. The reported pattern tangent is dλ/dq, not the internal transformed
+coordinate's slope. Plastic rotations and dissipation do not change basis.
+
+For equal roof forces, set each roof horizontal pattern weight to 0.5. Then q is
+the average roof horizontal displacement and λ is total applied lateral load.
+For the preceding 120×120 in portal under 50 kip downward at each roof node:
+
+| Average roof q (in) | Total lateral λ (kip) | dλ/dq (kip/in) | Active hinges |
+| --- | --- | --- | --- |
+| 0.5 | 13.625462016 | 27.251536841 | None |
+| 1.3 | 29.795327170 | 5.848032865 | Both bases |
+| 2.0 | 31.676451547 | -0.829228265 | All four column ends |
+| 2.5 | 31.262080393 | -0.828263474 | All four column ends |
+
+The softening states pass the local constrained check and fail the load-control
+tangent-positivity check, as expected. The earlier independent portal reference
+uses one left-roof actuator; it does not independently certify this distributed
+pattern. Tests instead verify exact single-actuator equivalence, physical force-
+control parity on stable branches, deformed global equilibrium, frozen-history
+pattern derivatives, reverse cycles and work/energy. Mixed horizontal/vertical
+patterns and inch-kip/mm-N conversion are checked. Under p→cp and q→cq, physical
+response is unchanged, λ→λ/c and dλ/dq→(dλ/dq)/c², including negative c. This
+scaling/sign check prevents silently changing the physical force distribution.
+
+This is deliberately work-conjugate control, not an arbitrary load pattern with
+an independently selected top-drift DOF. It remains a bounded planar scalar-hinge
+research adapter: no rotational patterns, follower loads, arc-length/snap-back,
+axial–moment yield interaction, distributed plasticity, general-frame/source
+qualification or GUI/MCP integration. `production_ready=false` remains explicit;
+earlier source-hashed reports and negative evidence remain unchanged.
+
+```sh
+python -B scripts/test.py test_pattern_displacement_frame test_portal_statics_reference test_displacement_hinge_frame test_corotational_cantilever_reference test_corotational_hinge_frame
+```
+
 MCP exposes `run_pushover_analysis` with session/revision, preload/push, control
 node/DOF, canonical stop limit (in or rad), reaction nodes/component and numerical
 controls. Poll `analysis_status` until `running=false`. Inspect Current/Partial

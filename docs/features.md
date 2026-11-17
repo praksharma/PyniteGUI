@@ -233,3 +233,9 @@ An elastic geometry predictor resolves the verified large-step initialization
 failure. This remains one scalar-hinge law and geometry; arbitrary frames,
 interaction, PyNite source parity and production use remain unqualified. See
 [Steel Pushover](analysis/pushover.md).
+
+The research continuation adapter now supports fixed translational load patterns
+with work-conjugate displacement control, including equal roof forces and mixed
+directions. Physical loads/history, work, tangent, pattern scaling/sign and units
+are checked. This does not provide an independently chosen control DOF, general
+solver qualification or GUI/MCP exposure. See [Steel Pushover](analysis/pushover.md).

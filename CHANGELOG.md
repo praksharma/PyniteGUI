@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Add research-only fixed translational load-pattern continuation with
+  work-conjugate displacement q=pᵀu. Reuse the frozen scalar-hinge energy through
+  an orthogonal coordinate transformation; return physical loads and histories.
+  Verify distributed roof softening, mixed directions, force/energy/tangent
+  checks, pattern scaling/sign, units and rejection. No GUI/MCP exposure.
+
 - Independently check the bounded nonlinear portal using direct member-end forces
   and joint balance with a separate numerical root/Jacobian. Publish 23 yielding,
   softening, reversal and increment comparisons with gates/source hashes. Fix

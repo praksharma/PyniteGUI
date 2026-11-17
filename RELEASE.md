@@ -322,6 +322,33 @@ and public RC4 artifacts are unchanged. Quad shear remains disabled in productio
 
 
 
+## Post-RC4 Work-Conjugate Pattern Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-17. Research-only translational
+pattern adapter; frozen energy/reference sources and application remain unchanged.
+
+- Extend fixed dead preload with loads=preload+λp and prescribed q=pᵀu. Use an
+  orthogonal supported-coordinate change to reuse single-actuator continuation;
+  transform residuals/tangent/couplings and return physical loads/motion/history.
+  Require finite nonzero translational patterns on free DOFs; reject moments.
+- Verify equal roof-force continuation through four active hinges and softening.
+  At average roof drift 2.5 in, total lateral force is 31.262080393 kip and pattern
+  slope is -0.828263474 kip/in. Local constrained and load-control tangent checks
+  remain distinct. This case is not an independent distributed-pattern oracle.
+- Check single-actuator equivalence, stable-branch physical force-control parity,
+  deformed balance, frozen-history derivatives, cyclic virtual work/energy,
+  mixed directions, pattern scaling/sign, units and transactional failure.
+  Under p→cp and q→cq, loads/motion are invariant, λ→λ/c and slope→slope/c².
+- **75 focused tests passed**, no skips, 17.050 s, including six new pattern checks
+  and prior portal/continuation/frame/hinge/material/section/column checks.
+  Ownership covers 195 classes in nine groups. Earlier source-hashed reports
+  and negative evidence remain unchanged.
+- Scope remains work-conjugate control, not an independent control-DOF/load-pattern
+  pair. No rotational/follower patterns, general arc-length, axial/biaxial yield
+  interaction, distributed plasticity, general-frame/source qualification or
+  GUI/MCP exposure. No production readiness is claimed.
+
+
 ## Post-RC4 Independent Nonlinear Portal Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-12. Test-only three-member reference
