@@ -322,6 +322,32 @@ and public RC4 artifacts are unchanged. Quad shear remains disabled in productio
 
 
 
+## Post-RC4 Reinforced-Concrete Foundation Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-17. Separate test-only monotonic
+RC section foundation; no application solver or dependency change.
+
+- Add positive-area concrete/steel fibres with strain compatibility ε=ε0−κy,
+  axial force/moment and consistent section tangent. Concrete is zero-tension
+  with ascending compression parabola only; reinforcement is a bilinear monotonic
+  envelope. Reject post-peak concrete and reinforcement strains beyond the bound.
+- Add a bracketed fixed-N moment–curvature solve and condensed flexural tangent;
+  reject unattainable axial forces and unresolved zero axial stiffness.
+- Verify hand compression/tension resultants, independent continuous bending and
+  moment–curvature integration, tangent derivatives, yield, refinement, signs,
+  origin covariance and units. Benchmark fibre areas are explicitly mathematical
+  inputs, not inferred gross-section/bar-hole geometry or design strengths.
+- **82 focused engineering tests passed**, no skips, 16.870 s, including seven new
+  RC checks and prior research regressions. Seven documentation tests also pass.
+  Ownership covers 196 classes in nine groups. Earlier source-hashed research
+  remains unchanged.
+- Add a dedicated RC research topic and explicit backend/cyclic-frame/slab gates.
+  OpenSees is a documented candidate, not installed or cross-validated. No cyclic
+  concrete/steel hysteresis, tensile cracking evolution, crushing, confinement,
+  shear/bond failure, member/frame/slab solver, design-code capacity, GUI/MCP or
+  production readiness is claimed. The main RC TODO remains open.
+
+
 ## Post-RC4 Work-Conjugate Pattern Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-17. Research-only translational

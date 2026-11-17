@@ -216,6 +216,22 @@ Separate solver/formulation work:
   formulation/solver for cracking, reinforcement and plasticity. The locked
   PyNite steel pushover and elastic concrete presets do not supply RC plasticity.
 
+### Reinforced-Concrete Milestones
+
+- [x] Establish a test-only monotonic RC fibre-section envelope: ascending
+  compression parabola, zero concrete tension, bilinear reinforcement envelope,
+  strain compatibility, N/M resultants/tangent and fixed-N moment–curvature solve.
+  Verify hand and independently integrated references, derivatives, signs,
+  refinement, units/origin and fail-closed strain/axial-load bounds. Document
+  OpenSees as a candidate, not an installed/validated backend. No cyclic law,
+  crushing, crack evolution, member/frame/slab or production qualification.
+- [ ] Evaluate a pinned external RC backend on supported platforms: packaging,
+  distribution/licensing, isolated solver sessions and material-cycle parity.
+- [ ] Define physical reinforcement/confinement geometry and validate cyclic
+  sections and nonlinear members/frames before UI/MCP/persistence integration.
+- [ ] Independently qualify RC slab membrane/bending, cracking and reinforcement
+  layers; do not infer slab behaviour from a beam fibre section.
+
 ### Joint-Spring Milestone
 
 - [x] Add explicit planar/spatial joint-to-joint axial spring entities, entered

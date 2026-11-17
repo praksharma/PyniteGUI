@@ -239,3 +239,12 @@ with work-conjugate displacement control, including equal roof forces and mixed
 directions. Physical loads/history, work, tangent, pattern scaling/sign and units
 are checked. This does not provide an independently chosen control DOF, general
 solver qualification or GUI/MCP exposure. See [Steel Pushover](analysis/pushover.md).
+
+## Reinforced-concrete research
+
+A separate monotonic fibre-section prototype now checks concrete compression,
+reinforcement yielding, strain-compatible N/M response and fixed-axial-force
+moment–curvature against hand and continuously integrated references. It has no
+cyclic concrete, crushing, crack evolution, member/frame/slab or application
+integration. The [RC research guide](analysis/rc-research.md) documents explicit
+laws, test geometry, limitations and the provisional external-backend evaluation.

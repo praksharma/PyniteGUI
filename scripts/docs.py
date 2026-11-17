@@ -40,6 +40,7 @@ SECTION_PAGES = {
     "Load Cases and Combinations": ("analysis/combinations.md", "Load Cases and Combinations"),
     "Materials and Sections": ("modeling/properties.md", "Materials and Sections"),
     "Steel Pushover": ("analysis/pushover.md", "Steel Pushover"),
+    "Reinforced Concrete Research": ("analysis/rc-research.md", "Reinforced Concrete Research"),
     "Vibration Modes": ("analysis/modal.md", "Vibration Modes"),
     "Analysis and Force Diagrams": ("analysis/solve.md", "Analysis, Deformation and Force Diagrams"),
     "Combination Envelopes": ("results/envelopes.md", "Combination Envelopes"),

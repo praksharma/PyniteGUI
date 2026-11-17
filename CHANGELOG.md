@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Start the major RC formulation work with a separate test-only monotonic
+  fibre-section envelope and fixed-N moment–curvature solver. Check hand and
+  continuous section references, tangents, yielding, refinement, units and bounds.
+  Add a dedicated RC research guide and backend-evaluation gates. No cyclic
+  concrete, crushing, slab/frame solver, OpenSees dependency or GUI feature.
+
 - Add research-only fixed translational load-pattern continuation with
   work-conjugate displacement q=pᵀu. Reuse the frozen scalar-hinge energy through
   an orthogonal coordinate transformation; return physical loads and histories.

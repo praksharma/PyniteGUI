@@ -3717,6 +3717,94 @@ and snapshot `complete`/`termination` before calling
 Step defaults to the last accepted; pagination and snapshot guards apply. The
 existing `cancel_analysis` cancels this job. No arbitrary code execution is added.
 
+### Reinforced Concrete Research
+
+**Research milestone, 2026-11-17 — no RC solver or workspace is exposed.**
+
+Reinforced-concrete frames and slabs need a material and section formulation
+separate from the steel interaction-law study. Existing concrete presets remain
+elastic. A test-only monotonic fibre-section envelope now provides a bounded
+starting point for that work; it is not full concrete plasticity.
+
+Each supplied fibre has a positive area A, coordinate y and concrete/steel material.
+Plane sections use ε(y)=ε0−κy. Resultants are N=ΣAσ and M=−ΣAyσ; their consistent
+2×2 tangent is ΣAEt[1,−y]ᵀ[1,−y]. Stress and axial strain are tension-positive.
+Moment is work-conjugate to the stated curvature convention. Fibre areas must
+represent the intended material geometry: the helper does not generate bar holes,
+remove displaced concrete or infer reinforcement from a section catalogue.
+
+The explicit benchmark material laws are:
+
+- Concrete compression magnitude fc>0 and peak strain magnitude εc>0. For
+  −εc≤ε<0, r=−ε/εc and σ=−fc(2r−r²); Et=2fc(1−r)/εc. Tensile stress is zero
+  from the outset. Strains beyond the compressive peak are rejected.
+- Reinforcement has elastic modulus E, yield magnitude fy and post-yield tangent
+  bE, 0≤b<1. Its monotonic stress envelope is elastic up to |ε|=fy/E and then
+  sign(ε)[fy+bE(|ε|−fy/E)]. Steel strain magnitude is bounded to 0.02.
+
+These are stateless envelope queries. Reversing curvature checks mathematical
+symmetry, **not** cyclic unloading or hysteresis. Zero concrete tensile strength
+does not simulate crack initiation or tension stiffening. No plastic dissipation,
+confinement, crushing, bond slip, shear failure or design-code resistance is claimed.
+The peak compression limit applies at entered fibres, not all unsampled points.
+
+For a prescribed curvature and axial force, a bracketed scalar solve determines
+ε0 inside every fibre's admissible strain interval. It rejects unattainable axial
+loads and zero axial tangent rather than continuing onto an unqualified branch.
+The fixed-N flexural tangent is the Schur complement Kκκ−KκεKεκ/Kεε. There is
+no member, geometric-nonlinearity or structural equilibrium solver in this module.
+
+**Independent checks and illustrative section**
+
+The benchmark has a concrete rectangle of area 240 in² distributed over y=±10 in
+and two additional 1 in² steel fibres at y=±8 in. Total supplied area is 242 in²;
+this is a mathematical composite-section benchmark, not a gross 12×20 in RC
+section with correctly displaced bar concrete. Defaults fc=4 ksi, εc=0.002,
+E=29,000 ksi, fy=60 ksi and b=0.01 are test inputs, not recommended design data.
+With 96-point concrete integration and N=0:
+
+| Curvature (1/in) | Axial strain ε0 | Moment (kip-in) |
+| --- | --- | --- |
+| 0.00005 | 0.0003048894 | 339.227283 |
+| 0.00010 | 0.0006045792 | 674.788682 |
+| 0.00020 | 0.0013024410 | 1005.092720 |
+| 0.00030 | 0.0021221580 | 1023.083047 |
+
+Tests compare uniform compression/tension to hand resultants, fully compressed
+bending to independent continuous integration, and N=0 moment–curvature points
+to a separately integrated continuous section/root solve (0.2% comparison gate).
+They also check material/section/condensed derivatives, reinforcement yield,
+24/48/96-fibre refinement, signs, reference-origin covariance, inch-kip/mm-N
+conversion and rejection beyond the stated domain. No ultimate section capacity
+or experimental calibration is inferred from these numerical checks.
+
+**Backend evaluation and next gates**
+
+OpenSees is a candidate for a separate RC backend because its documented
+[fibre sections](https://opensees.berkeley.edu/wiki/index.php/Fiber_Section)
+combine uniaxial materials with fibre areas/locations. Its
+[Concrete01](https://opensees.github.io/OpenSeesDocumentation/user/manual/material/uniaxialMaterials/Concrete01.html)
+includes degraded unloading/reloading and no tensile strength;
+[Concrete02](https://opensees.github.io/OpenSeesDocumentation/user/manual/material/uniaxialMaterials/Concrete02.html)
+adds tensile-softening parameters. Its
+[Steel01](https://opensees.github.io/OpenSeesDocumentation/user/manual/material/uniaxialMaterials/Steel01.html)
+includes cyclic hardening behaviour. Those full models have **not** been
+implemented, installed, cross-checked or substituted by this envelope prototype.
+No OpenSees dependency is added to Brecon.
+
+Before selecting a production backend: verify supported-platform packaging and
+licensing/distribution, isolate mutable solver sessions, compare material cycles
+and section results against a pinned engine, define physical reinforcement and
+confinement input, and qualify member/frame equilibrium and stability. RC slabs
+need separate membrane/plate/shell, cracking-direction and reinforcement-layer
+benchmarks; a beam fibre section does not qualify slab behaviour. Persistence,
+undo, UI, MCP, exports and design interpretation must follow those engineering
+gates. `production_ready=false` remains explicit; the main RC TODO stays open.
+
+```sh
+python -B scripts/test.py test_rc_fibre_section
+```
+
 ### Vibration Modes
 
 **Tools > Vibration Modes** opens a separate native workspace for small free
