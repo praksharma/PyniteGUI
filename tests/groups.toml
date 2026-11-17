@@ -146,6 +146,7 @@ tests = [
   "test_portal_statics_reference",
   "test_pattern_displacement_frame",
   "test_rc_fibre_section",
+  "test_opensees_rc_evaluation",
 ]
 
 [groups.surfaces]

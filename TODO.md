@@ -225,6 +225,12 @@ Separate solver/formulation work:
   refinement, units/origin and fail-closed strain/axial-load bounds. Document
   OpenSees as a candidate, not an installed/validated backend. No cyclic law,
   crushing, crack evolution, member/frame/slab or production qualification.
+- [x] Assess pinned OpenSeesPy/openseespymac 3.8.0.0 on native macOS arm64 in
+  isolated processes. Verify independent steel cycles, concrete envelope/history
+  characterization and eight N=0 section/constant-couple member cases with actual
+  FE models and all integration-point forces. Publish source-hashed evidence and
+  package licence-notice hashes. No full concrete cyclic oracle, general RC frame,
+  other-platform, distribution approval or application dependency is claimed.
 - [ ] Evaluate a pinned external RC backend on supported platforms: packaging,
   distribution/licensing, isolated solver sessions and material-cycle parity.
 - [ ] Define physical reinforcement/confinement geometry and validate cyclic

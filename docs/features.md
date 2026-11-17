@@ -248,3 +248,11 @@ moment–curvature against hand and continuously integrated references. It has n
 cyclic concrete, crushing, crack evolution, member/frame/slab or application
 integration. The [RC research guide](analysis/rc-research.md) documents explicit
 laws, test geometry, limitations and the provisional external-backend evaluation.
+
+The RC research now includes a real pinned OpenSees assessment on macOS arm64,
+run in isolated external processes. Steel cycles, concrete envelope/history
+characterization and eight section/constant-couple member cases pass explicit
+gates. The [recorded evidence](assets/opensees-rc-evaluation.json) retains raw
+results and source/licence hashes. No engine is bundled or added as a dependency;
+full concrete-cycle, general frame/slab, distribution and other-platform gates
+remain open. See [RC research](analysis/rc-research.md).

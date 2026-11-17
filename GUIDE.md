@@ -3788,8 +3788,8 @@ includes degraded unloading/reloading and no tensile strength;
 [Concrete02](https://opensees.github.io/OpenSeesDocumentation/user/manual/material/uniaxialMaterials/Concrete02.html)
 adds tensile-softening parameters. Its
 [Steel01](https://opensees.github.io/OpenSeesDocumentation/user/manual/material/uniaxialMaterials/Steel01.html)
-includes cyclic hardening behaviour. Those full models have **not** been
-implemented, installed, cross-checked or substituted by this envelope prototype.
+includes cyclic hardening behaviour. Those full models are **not** implemented or substituted by the envelope
+prototype. The following assessment separately exercises a pinned external engine.
 No OpenSees dependency is added to Brecon.
 
 Before selecting a production backend: verify supported-platform packaging and
@@ -3804,6 +3804,73 @@ gates. `production_ready=false` remains explicit; the main RC TODO stays open.
 ```sh
 python -B scripts/test.py test_rc_fibre_section
 ```
+
+**Pinned external RC backend assessment (2026-11-17)**
+
+An optional, isolated research assessment now runs **OpenSeesPy 3.8.0.0** with
+**openseespymac 3.8.0.0**, engine **3.8.0**, on native macOS arm64 / Python 3.12.13.
+This is a real external-engine run, not a stub or an application dependency.
+Each bounded JSON request launches a fresh Python process with a 30-second timeout;
+only fixed material/section/member jobs are accepted, with no user program text.
+The host rejects failure codes, malformed JSON and unexpected engine contracts.
+No session or mutable material state is shared across jobs.
+
+The [recorded assessment](docs/assets/opensees-rc-evaluation.json) includes engine,
+package, platform and licence-notice hashes, raw results, source hashes and explicit
+gates. Its checks are:
+
+- Steel01 signed yield/unload/reverse cycles match a separately implemented
+  linear kinematic-hardening return calculation. No optional isotropic hardening
+  is enabled.
+- Concrete01 virgin compression matches the ascending parabola and one descending
+  linear point. Zero tensile stress, changed reloading response after compression
+  and exact fresh-process replay are checked. The concrete cycle is characterized,
+  **not** certified against an independent Karsan–Jirsa unloading oracle.
+- Four zeroLengthSection cases at N=0 and curvatures 0.00005/0.0001/0.0002/0.0003
+  1/in match the same 20 concrete fibres plus two steel fibres used by the local
+  monotonic reference. These are virgin single-increment comparisons; they do not
+  assert parity for arbitrary cyclic section paths.
+- Four 120-inch, five-point Lobatto forceBeamColumn cantilevers under constant
+  end couple match section moment, axial extension ε0L, tip rotation κL and
+  transverse displacement κL²/2. A Linear geometric transformation is used.
+  Global axial/shear reactions and section N/M at **all five** integration points
+  are checked; solver success status alone is insufficient.
+
+Maximum sampled section/member moment discrepancy from the local envelope is
+below 3.2e-11 kip-in. Internal force-based section moments have residual up to
+2.51e-5 kip-in and axial force up to 3.20e-6 kip; their explicit gates are 1e-4
+kip-in and 1e-5 kip respectively. These residuals are reported rather than hidden
+behind the much smaller global reaction errors. This verifies the constant-couple
+benchmark, not general nonlinear members, RC frames or geometric instability.
+The same area/geometry limitations of the mathematical section benchmark above
+still apply.
+
+The installed build does not expose `testSection`; actual finite-element section
+and member models are used instead. Rotations are imposed with the solver's
+DisplacementControl integrator under a reference end moment, following the
+[official RC moment–curvature workflow](https://opensees.berkeley.edu/OpenSees/manuals/ExamplesManual/HTML/3886.htm).
+The ordinary test suite validates the stored report, source records and host
+failure/timeout handling. It **does not rerun OpenSees**. Reproduction requires a
+separate native macOS arm64 environment, for example:
+
+```sh
+uv venv --python 3.12 /tmp/brecon-opensees
+uv pip install --python /tmp/brecon-opensees/bin/python openseespy==3.8.0.0 openseespymac==3.8.0.0
+python -B scripts/benchmark_opensees_rc.py --python /tmp/brecon-opensees/bin/python --output /tmp/opensees-rc-evaluation.json
+python -B scripts/test.py test_opensees_rc_evaluation test_rc_fibre_section
+```
+
+The packaged OpenSeesPy notice states conditions for commercial redistribution;
+the [upstream licensing documentation](https://opensees.github.io/OpenSeesDocumentation/developer/license.html)
+also distinguishes redistribution rights. This assessment records those notices
+but does not approve bundling, compatibility or distribution. No engine, wheel or
+licence grant is bundled with Brecon, and no OpenSees dependency is added.
+Windows/Linux, other Python versions, distribution terms, independent concrete
+cycle parity, physical reinforcement/confinement, lateral-load members, frames,
+RC slabs and app integration remain explicit gates. The assessment is scoped to
+macOS arm64 and rejects other platforms rather than claiming untested support.
+`production_ready=false`, `bundling_approved=false` and
+`other_platforms_validated=false` remain explicit.
 
 ### Vibration Modes
 

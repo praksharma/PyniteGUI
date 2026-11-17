@@ -1,0 +1,751 @@
+{
+  "checks": {
+    "steel_kinematic_cycle": true,
+    "concrete_hand_envelope": true,
+    "fresh_process_replay": true,
+    "concrete_has_history": true,
+    "concrete_zero_tension": true,
+    "section_member_checks": true
+  },
+  "passed": true,
+  "production_ready": false,
+  "scope": "Pinned external macOS arm64 evaluation only. Independent steel kinematic cycle, concrete envelope/descending line and history characterization, N=0 section and constant-couple linear-geometry force-based member. No full concrete cyclic oracle, general RC frame, geometric instability or slab validation.",
+  "bundling_approved": false,
+  "other_platforms_validated": false,
+  "metadata": {
+    "package": "3.8.0.0",
+    "engine": "3.8.0",
+    "python": "3.12.13",
+    "platform": "macOS-27.2.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "licences": {
+      "openseespy": {
+        "version": "3.8.0.0",
+        "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+      },
+      "openseespymac": {
+        "version": "3.8.0.0",
+        "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+      }
+    }
+  },
+  "steel_cycle": {
+    "job": "steel",
+    "engine": "3.8.0",
+    "package": "3.8.0.0",
+    "python": "3.12.13",
+    "platform": "macOS-27.2.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "licences": {
+      "openseespy": {
+        "version": "3.8.0.0",
+        "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+      },
+      "openseespymac": {
+        "version": "3.8.0.0",
+        "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+      }
+    },
+    "rows": [
+      {
+        "strain": 0.0,
+        "stress": 0.0,
+        "tangent": 29000.0
+      },
+      {
+        "strain": 0.001,
+        "stress": 29.0,
+        "tangent": 29000.0
+      },
+      {
+        "strain": 0.004,
+        "stress": 60.559999999999995,
+        "tangent": 290.0
+      },
+      {
+        "strain": 0.001,
+        "stress": -26.44000000000001,
+        "tangent": 29000.0
+      },
+      {
+        "strain": -0.004,
+        "stress": -60.559999999999995,
+        "tangent": 290.0
+      },
+      {
+        "strain": 0.0,
+        "stress": 55.440000000000005,
+        "tangent": 29000.0
+      },
+      {
+        "strain": 0.004,
+        "stress": 60.559999999999995,
+        "tangent": 290.0
+      }
+    ],
+    "production_ready": false
+  },
+  "concrete_cycle": {
+    "job": "concrete",
+    "engine": "3.8.0",
+    "package": "3.8.0.0",
+    "python": "3.12.13",
+    "platform": "macOS-27.2.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "licences": {
+      "openseespy": {
+        "version": "3.8.0.0",
+        "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+      },
+      "openseespymac": {
+        "version": "3.8.0.0",
+        "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+      }
+    },
+    "rows": [
+      {
+        "strain": 0.0,
+        "stress": 0.0,
+        "tangent": 4000.0
+      },
+      {
+        "strain": -0.0005,
+        "stress": -1.75,
+        "tangent": 3000.0
+      },
+      {
+        "strain": -0.001,
+        "stress": -3.0,
+        "tangent": 2000.0
+      },
+      {
+        "strain": -0.0015,
+        "stress": -3.75,
+        "tangent": 1000.0
+      },
+      {
+        "strain": -0.002,
+        "stress": -4.0,
+        "tangent": -750.0
+      },
+      {
+        "strain": -0.003,
+        "stress": -3.25,
+        "tangent": -750.0
+      },
+      {
+        "strain": -0.001,
+        "stress": 0.0,
+        "tangent": 0.0
+      },
+      {
+        "strain": 0.0,
+        "stress": 0.0,
+        "tangent": 0.0
+      },
+      {
+        "strain": -0.002,
+        "stress": -1.5897190293742016,
+        "tangent": 1660.280970625798
+      }
+    ],
+    "production_ready": false
+  },
+  "virgin_concrete": {
+    "job": "concrete",
+    "engine": "3.8.0",
+    "package": "3.8.0.0",
+    "python": "3.12.13",
+    "platform": "macOS-27.2.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "licences": {
+      "openseespy": {
+        "version": "3.8.0.0",
+        "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+      },
+      "openseespymac": {
+        "version": "3.8.0.0",
+        "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+      }
+    },
+    "rows": [
+      {
+        "strain": -0.002,
+        "stress": -4.0,
+        "tangent": -750.0
+      },
+      {
+        "strain": 0.001,
+        "stress": 0.0,
+        "tangent": 0.0
+      }
+    ],
+    "production_ready": false
+  },
+  "steel_max_error": 7.105427357601002e-15,
+  "concrete_envelope_max_error": 0.0,
+  "gates": {
+    "moment_error": 0.0001,
+    "axial_strain_error": 1e-09,
+    "transverse_error": 1e-07,
+    "rotation_error": 1e-10,
+    "axial_reaction_error": 1e-06,
+    "shear_reaction_error": 1e-06,
+    "section_moment_error": 0.0001,
+    "section_axial_error": 1e-05
+  },
+  "maximum_errors": {
+    "moment_error": 3.171862772433087e-11,
+    "axial_strain_error": 2.233456475320139e-17,
+    "transverse_error": 3.1086244689504383e-15,
+    "rotation_error": 9.020562075079397e-17,
+    "axial_reaction_error": 3.363474552678662e-14,
+    "shear_reaction_error": 1.8947806286936005e-15,
+    "section_moment_error": 2.504826011318073e-05,
+    "section_axial_error": 3.1904719612896315e-06
+  },
+  "records": [
+    {
+      "job": "section",
+      "curvature": 5e-05,
+      "moment": 338.48521907760846,
+      "reference_moment": 338.4852190776084,
+      "moment_error": 5.684341886080802e-14,
+      "axial_strain_error": 1.6263032587282567e-19,
+      "transverse_error": 0.0,
+      "rotation_error": 1.3552527156068805e-20,
+      "axial_reaction_error": 3.1086244689504383e-15,
+      "shear_reaction_error": 0.0,
+      "section_moment_error": 0.0,
+      "section_axial_error": 3.1086244689504383e-15,
+      "raw": {
+        "job": "section",
+        "engine": "3.8.0",
+        "package": "3.8.0.0",
+        "python": "3.12.13",
+        "platform": "macOS-27.2.1-arm64-arm-64bit",
+        "machine": "arm64",
+        "licences": {
+          "openseespy": {
+            "version": "3.8.0.0",
+            "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+          },
+          "openseespymac": {
+            "version": "3.8.0.0",
+            "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+          }
+        },
+        "rows": [
+          {
+            "displacement": [
+              0.00030486216825023084,
+              0.0,
+              4.999999999999999e-05
+            ],
+            "reaction": [
+              -3.1086244689504383e-15,
+              0.0,
+              -338.48521907760846
+            ],
+            "element_forces": [
+              -3.1086244689504383e-15,
+              0.0,
+              -338.48521907760846,
+              3.1086244689504383e-15,
+              0.0,
+              338.48521907760846
+            ],
+            "section_forces": [
+              3.1086244689504383e-15,
+              338.48521907760846
+            ],
+            "all_section_forces": [
+              3.1086244689504383e-15,
+              338.48521907760846
+            ]
+          }
+        ],
+        "production_ready": false
+      }
+    },
+    {
+      "job": "member",
+      "curvature": 5e-05,
+      "moment": 338.48521907760846,
+      "reference_moment": 338.4852190776084,
+      "moment_error": 5.684341886080802e-14,
+      "axial_strain_error": 1.0842021724855044e-19,
+      "transverse_error": 0.0,
+      "rotation_error": 8.673617379884035e-19,
+      "axial_reaction_error": 7.019061684409174e-15,
+      "shear_reaction_error": 1.4210854715202005e-15,
+      "section_moment_error": 2.8256863515707664e-09,
+      "section_axial_error": 4.67131222592343e-10,
+      "raw": {
+        "job": "member",
+        "engine": "3.8.0",
+        "package": "3.8.0.0",
+        "python": "3.12.13",
+        "platform": "macOS-27.2.1-arm64-arm-64bit",
+        "machine": "arm64",
+        "licences": {
+          "openseespy": {
+            "version": "3.8.0.0",
+            "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+          },
+          "openseespymac": {
+            "version": "3.8.0.0",
+            "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+          }
+        },
+        "rows": [
+          {
+            "displacement": [
+              0.03658346019002771,
+              0.36000000000000004,
+              0.005999999999999999
+            ],
+            "reaction": [
+              7.019061684409174e-15,
+              1.4210854715202005e-15,
+              -338.48521907760846
+            ],
+            "element_forces": [
+              7.019061684409174e-15,
+              1.4210854715202005e-15,
+              -338.48521907760846,
+              -7.019061684409174e-15,
+              -1.4210854715202005e-15,
+              338.48521907760863
+            ],
+            "section_forces": [
+              -4.671276698786642e-10,
+              338.485219080434
+            ],
+            "all_section_forces": [
+              -4.67131222592343e-10,
+              338.4852190804339,
+              -4.67131222592343e-10,
+              338.4852190804339,
+              -4.671276698786642e-10,
+              338.485219080434,
+              -4.671241171649854e-10,
+              338.485219080434,
+              -4.671294462355036e-10,
+              338.48521908043415
+            ]
+          }
+        ],
+        "production_ready": false
+      }
+    },
+    {
+      "job": "section",
+      "curvature": 0.0001,
+      "moment": 673.4252195787367,
+      "reference_moment": 673.4252195787383,
+      "moment_error": 1.5916157281026244e-12,
+      "axial_strain_error": 1.1926223897340549e-18,
+      "transverse_error": 0.0,
+      "rotation_error": 0.0,
+      "axial_reaction_error": 8.881784197001252e-16,
+      "shear_reaction_error": 0.0,
+      "section_moment_error": 0.0,
+      "section_axial_error": 8.881784197001252e-16,
+      "raw": {
+        "job": "section",
+        "engine": "3.8.0",
+        "package": "3.8.0.0",
+        "python": "3.12.13",
+        "platform": "macOS-27.2.1-arm64-arm-64bit",
+        "machine": "arm64",
+        "licences": {
+          "openseespy": {
+            "version": "3.8.0.0",
+            "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+          },
+          "openseespymac": {
+            "version": "3.8.0.0",
+            "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+          }
+        },
+        "rows": [
+          {
+            "displacement": [
+              0.000604674831047766,
+              0.0,
+              0.0001
+            ],
+            "reaction": [
+              -8.881784197001252e-16,
+              0.0,
+              -673.4252195787367
+            ],
+            "element_forces": [
+              -8.881784197001252e-16,
+              0.0,
+              -673.4252195787367,
+              8.881784197001252e-16,
+              0.0,
+              673.4252195787367
+            ],
+            "section_forces": [
+              8.881784197001252e-16,
+              673.4252195787367
+            ],
+            "all_section_forces": [
+              8.881784197001252e-16,
+              673.4252195787367
+            ]
+          }
+        ],
+        "production_ready": false
+      }
+    },
+    {
+      "job": "member",
+      "curvature": 0.0001,
+      "moment": 673.4252195787366,
+      "reference_moment": 673.4252195787383,
+      "moment_error": 1.7053025658242404e-12,
+      "axial_strain_error": 1.3010426069826053e-18,
+      "transverse_error": 2.220446049250313e-16,
+      "rotation_error": 0.0,
+      "axial_reaction_error": 3.363474552678662e-14,
+      "shear_reaction_error": 1.8947806286936005e-15,
+      "section_moment_error": 2.11863380172872e-08,
+      "section_axial_error": 3.5657405916822427e-09,
+      "raw": {
+        "job": "member",
+        "engine": "3.8.0",
+        "package": "3.8.0.0",
+        "python": "3.12.13",
+        "platform": "macOS-27.2.1-arm64-arm-64bit",
+        "machine": "arm64",
+        "licences": {
+          "openseespy": {
+            "version": "3.8.0.0",
+            "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+          },
+          "openseespymac": {
+            "version": "3.8.0.0",
+            "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+          }
+        },
+        "rows": [
+          {
+            "displacement": [
+              0.07256097972573193,
+              0.7200000000000003,
+              0.012
+            ],
+            "reaction": [
+              -3.363474552678662e-14,
+              -1.8947806286936005e-15,
+              -673.4252195787366
+            ],
+            "element_forces": [
+              -3.363474552678662e-14,
+              -1.8947806286936005e-15,
+              -673.4252195787366,
+              3.363474552678662e-14,
+              1.8947806286936005e-15,
+              673.4252195787363
+            ],
+            "section_forces": [
+              -3.5657263808275275e-09,
+              673.4252195999227
+            ],
+            "all_section_forces": [
+              -3.565737038968564e-09,
+              673.4252195999229,
+              -3.5657263808275275e-09,
+              673.4252195999227,
+              -3.5657263808275275e-09,
+              673.4252195999227,
+              -3.5657405916822427e-09,
+              673.4252195999227,
+              -3.5657405916822427e-09,
+              673.4252195999227
+            ]
+          }
+        ],
+        "production_ready": false
+      }
+    },
+    {
+      "job": "section",
+      "curvature": 0.0002,
+      "moment": 1004.5575674659109,
+      "reference_moment": 1004.5575674658793,
+      "moment_error": 3.1604940886609256e-11,
+      "axial_strain_error": 2.233456475320139e-17,
+      "transverse_error": 0.0,
+      "rotation_error": 1.6263032587282567e-19,
+      "axial_reaction_error": 8.881784197001252e-15,
+      "shear_reaction_error": 0.0,
+      "section_moment_error": 0.0,
+      "section_axial_error": 8.881784197001252e-15,
+      "raw": {
+        "job": "section",
+        "engine": "3.8.0",
+        "package": "3.8.0.0",
+        "python": "3.12.13",
+        "platform": "macOS-27.2.1-arm64-arm-64bit",
+        "machine": "arm64",
+        "licences": {
+          "openseespy": {
+            "version": "3.8.0.0",
+            "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+          },
+          "openseespymac": {
+            "version": "3.8.0.0",
+            "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+          }
+        },
+        "rows": [
+          {
+            "displacement": [
+              0.0012965631098432657,
+              0.0,
+              0.00019999999999999985
+            ],
+            "reaction": [
+              -8.881784197001252e-15,
+              0.0,
+              -1004.5575674659109
+            ],
+            "element_forces": [
+              -8.881784197001252e-15,
+              0.0,
+              -1004.5575674659109,
+              8.881784197001252e-15,
+              0.0,
+              1004.5575674659109
+            ],
+            "section_forces": [
+              8.881784197001252e-15,
+              1004.5575674659109
+            ],
+            "all_section_forces": [
+              8.881784197001252e-15,
+              1004.5575674659109
+            ]
+          }
+        ],
+        "production_ready": false
+      }
+    },
+    {
+      "job": "member",
+      "curvature": 0.0002,
+      "moment": 1004.557567465911,
+      "reference_moment": 1004.5575674658793,
+      "moment_error": 3.171862772433087e-11,
+      "axial_strain_error": 2.1250362580715887e-17,
+      "transverse_error": 2.220446049250313e-16,
+      "rotation_error": 6.938893903907228e-18,
+      "axial_reaction_error": 2.4050991470484558e-14,
+      "shear_reaction_error": 1.8947806286936005e-15,
+      "section_moment_error": 2.504826011318073e-05,
+      "section_axial_error": 3.1904719612896315e-06,
+      "raw": {
+        "job": "member",
+        "engine": "3.8.0",
+        "package": "3.8.0.0",
+        "python": "3.12.13",
+        "platform": "macOS-27.2.1-arm64-arm-64bit",
+        "machine": "arm64",
+        "licences": {
+          "openseespy": {
+            "version": "3.8.0.0",
+            "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+          },
+          "openseespymac": {
+            "version": "3.8.0.0",
+            "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+          }
+        },
+        "rows": [
+          {
+            "displacement": [
+              0.155587573181192,
+              1.4400000000000004,
+              0.023999999999999994
+            ],
+            "reaction": [
+              -2.4050991470484558e-14,
+              -1.8947806286936005e-15,
+              -1004.557567465911
+            ],
+            "element_forces": [
+              -2.4050991470484558e-14,
+              -1.8947806286936005e-15,
+              -1004.557567465911,
+              2.4050991470484558e-14,
+              1.8947806286936005e-15,
+              1004.5575674659108
+            ],
+            "section_forces": [
+              -3.1904719612896315e-06,
+              1004.5575925141711
+            ],
+            "all_section_forces": [
+              -3.190471947078777e-06,
+              1004.5575925141711,
+              -3.1904719612896315e-06,
+              1004.5575925141711,
+              -3.1904719612896315e-06,
+              1004.5575925141711,
+              -3.190471932867922e-06,
+              1004.5575925141709,
+              -3.1904719399733494e-06,
+              1004.5575925141708
+            ]
+          }
+        ],
+        "production_ready": false
+      }
+    },
+    {
+      "job": "section",
+      "curvature": 0.0003,
+      "moment": 1020.3974531108487,
+      "reference_moment": 1020.3974531108682,
+      "moment_error": 1.9554136088117957e-11,
+      "axial_strain_error": 1.431146867680866e-17,
+      "transverse_error": 0.0,
+      "rotation_error": 2.710505431213761e-19,
+      "axial_reaction_error": 7.105427357601002e-15,
+      "shear_reaction_error": 0.0,
+      "section_moment_error": 0.0,
+      "section_axial_error": 7.105427357601002e-15,
+      "raw": {
+        "job": "section",
+        "engine": "3.8.0",
+        "package": "3.8.0.0",
+        "python": "3.12.13",
+        "platform": "macOS-27.2.1-arm64-arm-64bit",
+        "machine": "arm64",
+        "licences": {
+          "openseespy": {
+            "version": "3.8.0.0",
+            "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+          },
+          "openseespymac": {
+            "version": "3.8.0.0",
+            "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+          }
+        },
+        "rows": [
+          {
+            "displacement": [
+              0.0021235996173622853,
+              0.0,
+              0.0002999999999999997
+            ],
+            "reaction": [
+              7.105427357601002e-15,
+              0.0,
+              -1020.3974531108487
+            ],
+            "element_forces": [
+              7.105427357601002e-15,
+              0.0,
+              -1020.3974531108487,
+              -7.105427357601002e-15,
+              0.0,
+              1020.3974531108487
+            ],
+            "section_forces": [
+              -7.105427357601002e-15,
+              1020.3974531108487
+            ],
+            "all_section_forces": [
+              -7.105427357601002e-15,
+              1020.3974531108487
+            ]
+          }
+        ],
+        "production_ready": false
+      }
+    },
+    {
+      "job": "member",
+      "curvature": 0.0003,
+      "moment": 1020.3974531108485,
+      "reference_moment": 1020.3974531108682,
+      "moment_error": 1.978150976356119e-11,
+      "axial_strain_error": 1.0842021724855044e-17,
+      "transverse_error": 3.1086244689504383e-15,
+      "rotation_error": 9.020562075079397e-17,
+      "axial_reaction_error": 1.4740614107886787e-14,
+      "shear_reaction_error": 9.473903143468002e-16,
+      "section_moment_error": 1.6075437201834575e-05,
+      "section_axial_error": 1.945292858351877e-06,
+      "raw": {
+        "job": "member",
+        "engine": "3.8.0",
+        "package": "3.8.0.0",
+        "python": "3.12.13",
+        "platform": "macOS-27.2.1-arm64-arm-64bit",
+        "machine": "arm64",
+        "licences": {
+          "openseespy": {
+            "version": "3.8.0.0",
+            "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+          },
+          "openseespymac": {
+            "version": "3.8.0.0",
+            "sha256": "a9af9d6dee58c0e551efb4c43eeb20205d57cbd3352b7d49a76c0b4724c5af7f"
+          }
+        },
+        "rows": [
+          {
+            "displacement": [
+              0.2548319540834738,
+              2.1599999999999966,
+              0.03599999999999991
+            ],
+            "reaction": [
+              -1.4740614107886787e-14,
+              -9.473903143468002e-16,
+              -1020.3974531108485
+            ],
+            "element_forces": [
+              -1.4740614107886787e-14,
+              -9.473903143468002e-16,
+              -1020.3974531108485,
+              1.4740614107886787e-14,
+              9.473903143468002e-16,
+              1020.3974531108483
+            ],
+            "section_forces": [
+              -1.945292858351877e-06,
+              1020.3974691862854
+            ],
+            "all_section_forces": [
+              -1.9452928530228064e-06,
+              1020.3974691862857,
+              -1.945292845917379e-06,
+              1020.3974691862857,
+              -1.945292858351877e-06,
+              1020.3974691862854,
+              -1.945292858351877e-06,
+              1020.3974691862852,
+              -1.945292858351877e-06,
+              1020.3974691862852
+            ]
+          }
+        ],
+        "production_ready": false
+      }
+    }
+  ],
+  "source_sha256": {
+    "scripts/opensees_rc_worker.py": "84d8f5903974d07ce95cb13e1a3bb34dfb5bb78bf0b273e1f3c71f7f9a5b6753",
+    "scripts/benchmark_opensees_rc.py": "01a21083c01df634f3e62d5277d39b08ee57588834b92dd1c2e98f4960feebdd",
+    "tests/rc_fibre_section.py": "f6e5ef1730a308a3a8f0de16251ec66633e101db161116437b364e83c228cfd5",
+    "tests/test_opensees_rc_evaluation.py": "beeece3a060dd2bee3c014801bc41a910b76ebbb18e6769091f8276d8a7391a8"
+  }
+}

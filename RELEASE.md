@@ -322,6 +322,36 @@ and public RC4 artifacts are unchanged. Quad shear remains disabled in productio
 
 
 
+## Post-RC4 External RC Backend Assessment Checkpoint
+
+Development **1.0.0rc5.dev0**, checked 2026-11-17. Optional research assessment,
+not a bundled backend or application dependency.
+
+- Install OpenSeesPy/openseespymac **3.8.0.0**, engine **3.8.0**, in a temporary
+  Python **3.12.13** native macOS arm64 environment. Each fixed-schema material,
+  section or member request uses a fresh isolated process with a timeout.
+- Verify signed Steel01 cycles against an independent kinematic return and
+  Concrete01 virgin/descending envelope points. Characterize concrete reloading
+  and process replay; do not claim an independent full concrete cyclic oracle.
+- Run four real zeroLengthSection cases and four five-point forceBeamColumn
+  constant-couple cantilevers. Compare N=0 section moment/strain, axial extension,
+  rotation and transverse displacement; inspect all integration-point N/M and
+  global axial/shear reactions rather than trusting analyze status alone.
+- All external gates pass. Global moment discrepancy is below 3.2e-11 kip-in;
+  internal section moment/axial residuals reach 2.51e-5 kip-in / 3.20e-6 kip,
+  below explicit 1e-4 / 1e-5 gates. Record raw results, sources, engine/platform
+  and packaged licence-notice hashes in opensees-rc-evaluation.json.
+- **92 selected tests passed**, no skips, 17.355 s, including three new evidence/
+  host-failure/timeout/schema checks, prior engineering checks and documentation
+  tests. These ordinary tests inspect recorded external evidence; the live
+  external assessment was run separately. Ownership covers 197 classes.
+- Commercial-redistribution conditions in the packaged notices/upstream terms
+  remain an integration gate, not an approval or compatibility determination.
+  No engine is bundled. Other platforms, concrete cycle parity, physical bars/
+  confinement, general lateral-load members/frames, geometric instability, slabs
+  and UI/MCP integration remain unqualified. Production readiness stays false.
+
+
 ## Post-RC4 Reinforced-Concrete Foundation Checkpoint
 
 Development **1.0.0rc5.dev0**, checked 2026-11-17. Separate test-only monotonic

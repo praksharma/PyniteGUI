@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Assess an actual pinned OpenSees RC backend in isolated native macOS arm64
+  processes. Record independent reinforcing-steel cycle checks, concrete
+  envelope/history characterization and eight section/nonlinear constant-couple
+  member comparisons, including every integration point. Add reproducible
+  evidence and failure/timeout tests; retain licensing/platform gates. No engine
+  dependency, bundle or application feature is added.
+
 - Start the major RC formulation work with a separate test-only monotonic
   fibre-section envelope and fixed-N moment–curvature solver. Check hand and
   continuous section references, tangents, yielding, refinement, units and bounds.
