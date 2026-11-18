@@ -2,10 +2,13 @@
 
 ## Unreleased
 
-- Add step-by-step authored tutorials (`docs/tutorials/portal-frame.md`,
-  `docs/tutorials/spatial-slab-frame.md`, `docs/tutorials/nonlinear-and-modal.md`,
-  `docs/tutorials/mcp-recipes.md`) and practical Python/MCP code snippets across
-  `GUIDE.md`, `docs/index.md`, `docs/features.md` and `docs/start/first-model.md`.
+- Add ten step-by-step authored tutorials under `docs/tutorials/` (`portal-frame.md`,
+  `continuous-beams-and-releases.md`, `supports-settlements-and-springs.md`,
+  `trusses-and-mixed-structures.md`, `geometry-transforms-and-connections.md`,
+  `spatial-slab-frame.md`, `nonlinear-and-modal.md`,
+  `rectangular-plates-and-shear.md`, `surface-meshing-catalog.md`,
+  `mcp-recipes.md`) and practical Python/MCP code snippets across `GUIDE.md`,
+  `docs/index.md`, `docs/features.md` and `docs/start/first-model.md`.
 
 - Fix nine verified bugs across construction connections (preserving split-member
   group membership), memberless joint-spring post-processing and deformation

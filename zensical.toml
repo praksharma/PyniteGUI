@@ -17,8 +17,14 @@ nav = [
   ] },
   { "Tutorials" = [
     { "2D Portal Frame Walkthrough" = "tutorials/portal-frame.md" },
+    { "Continuous Beams & End Releases" = "tutorials/continuous-beams-and-releases.md" },
+    { "Inclined Rollers, Settlements & Springs" = "tutorials/supports-settlements-and-springs.md" },
+    { "2D/3D Trusses & Mixed Frames" = "tutorials/trusses-and-mixed-structures.md" },
+    { "Transforms, Arrays, Merging & Connections" = "tutorials/geometry-transforms-and-connections.md" },
     { "3D Frame, Coupled Slab & Springs" = "tutorials/spatial-slab-frame.md" },
     { "Iterative, Modal & Pushover" = "tutorials/nonlinear-and-modal.md" },
+    { "Rectangular Plates & Recovered Shear" = "tutorials/rectangular-plates-and-shear.md" },
+    { "Surface Mesh Generators Catalog" = "tutorials/surface-meshing-catalog.md" },
     { "MCP & Python Cookbook" = "tutorials/mcp-recipes.md" }
   ] },
   { "Modeling" = [

@@ -18,8 +18,14 @@ properties and loads, running analysis, interpreting results and using automatio
 2. [Run your first beam model](start/first-model.md) and check its reactions.
 3. Follow a step-by-step tutorial with copy-pasteable code and MCP snippets:
    - [2D Portal Frame Walkthrough: From Scratch to Envelopes & Reports](tutorials/portal-frame.md)
+   - [Continuous Beams, Gerber Hinges & Member End Releases](tutorials/continuous-beams-and-releases.md)
+   - [Inclined Rollers, Support Settlements & Ground Springs](tutorials/supports-settlements-and-springs.md)
+   - [2D/3D Axial-Only Trusses & Mixed Frame-Truss Models](tutorials/trusses-and-mixed-structures.md)
+   - [Geometry Transforms, Arrays, Merging & Construction Connections](tutorials/geometry-transforms-and-connections.md)
    - [3D Space Frame, Coupled Slab & Joint Springs Tutorial](tutorials/spatial-slab-frame.md)
    - [Iterative Elastic, Vibration Modes & Steel Pushover Tutorial](tutorials/nonlinear-and-modal.md)
+   - [Rectangular Plate Analysis, Linear Pressure Profiles & Recovered Shear](tutorials/rectangular-plates-and-shear.md)
+   - [Surface Mesh Generators Catalog (Rectangle, Annulus, Cylinder & Frustum)](tutorials/surface-meshing-catalog.md)
    - [MCP Automation & Headless Scripting Cookbook (Snippets)](tutorials/mcp-recipes.md)
 4. Use the [feature index](features.md) to find a workflow, or search for a tool name.
 5. Read the [engineering limits](reference/engineering.md) and
