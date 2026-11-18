@@ -219,6 +219,12 @@ is not automatically a shared joint.
 ## Next Step-by-Step Tutorials
 
 - [2D Portal Frame Walkthrough](../tutorials/portal-frame.md): build a planar steel portal frame, assign groups/levels and factored load combinations, compare Linear vs. P-Delta analysis, and inspect governing stations, storey drift, and reports.
+- [Continuous Beams, Gerber Hinges & Member End Releases](../tutorials/continuous-beams-and-releases.md): model multi-span beams with partial trapezoidal loads, one-sided discontinuity probes, internal moment hinges, and 2D/3D axial, shear, and rotational end releases.
+- [Inclined Rollers, Support Settlements & Ground Springs](../tutorials/supports-settlements-and-springs.md): configure 2D inclined rollers, 3D oblique normal supports, prescribed support settlements/rotations, and bilateral or one-way ground springs.
+- [2D/3D Axial-Only Trusses & Mixed Frame-Truss Models](../tutorials/trusses-and-mixed-structures.md): analyze planar trusses, 3D space trusses, lumped truss self-weight, inactive rotational joints, and braced frame-truss structures.
+- [Geometry Transforms, Arrays, Merging & Construction Connections](../tutorials/geometry-transforms-and-connections.md): use previewed move/copy/array/rotate/mirror tools, merge duplicate joints, split/subdivide/connect intersecting members, and build perpendicular or midpoint connections.
 - [3D Space Frame, Coupled Slab & Joint Springs](../tutorials/spatial-slab-frame.md): model a 3D frame bay, fit and couple an experimental rectangular Quad floor slab, probe natural-coordinate slab moments, and animate a 3D joint-spring network.
 - [Iterative Elastic, Vibration Modes & Steel Pushover](../tutorials/nonlinear-and-modal.md): solve tension-only bracing and compression-only soil springs, compute frame vibration modes, and trace a first-order steel plastic capacity history.
+- [Rectangular Plate Analysis, Linear Pressure Profiles & Recovered Shear](../tutorials/rectangular-plates-and-shear.md): solve clamped, simply supported, hydrostatic-wall, and opening plates in the standalone workspace and inspect guarded recovered centre shear.
+- [Surface Mesh Generators Catalog](../tutorials/surface-meshing-catalog.md): generate and check all seven PyNite mesh families (`Rectangle`, `Annulus`, `Cylinder`, `Frustum`, and ring helpers) and export `.pynitemesh` recipes or neutral connectivity JSON.
 - [MCP Automation & Headless Scripting Cookbook](../tutorials/mcp-recipes.md): copy-pasteable JSON batch payloads (`apply_batch`, `run_analysis`, `read_results`) and headless Python scripts.

@@ -5028,7 +5028,7 @@ The GUIDE remains the maintained detailed reference. `scripts/docs.py` maps ever
 GUIDE heading into a topic page and copies the roadmaps, changelog and release
 record, rewriting repository-document links. Unmapped or duplicate headings and
 navigation omissions fail preparation. `docs/` contains authored entry pages,
-the first-model tutorial, four step-by-step workflow and MCP cookbook tutorials
+the first-model tutorial, ten step-by-step workflow and MCP cookbook tutorials
 under `docs/tutorials/`, the feature index, custom styles and screenshot assets. Add or update detailed
 workflows here in GUIDE.md, not in generated topic files. Update the topic map and
 `zensical.toml` navigation if you add a heading. Keep the feature index and tutorials

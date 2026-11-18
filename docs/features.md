@@ -11,8 +11,14 @@ when comparing with the published RC4 wheel.
 | --- | --- |
 | [Your First Model](start/first-model.md) | Starter beam, official PyNite beams/frames/trusses, internal hinges, 3D coupled slabs and P-Delta column |
 | [2D Portal Frame Walkthrough](tutorials/portal-frame.md) | Building a planar steel portal frame, groups/levels, load cases/combinations, Linear vs. P-Delta, envelopes, governing stations and storey drift |
+| [Continuous Beams, Gerber Hinges & End Releases](tutorials/continuous-beams-and-releases.md) | Multi-span beams, partial/trapezoidal distributed loads, one-sided jump probes, Gerber hinges, three-hinged arches and 2D/3D translational/rotational releases |
+| [Inclined Rollers, Settlements & Ground Springs](tutorials/supports-settlements-and-springs.md) | 2D roller tangents, 3D oblique support normals, imposed settlements/rotations in linear and P-Delta solves, and bilateral/one-way support springs |
+| [2D/3D Axial-Only Trusses & Mixed Frames](tutorials/trusses-and-mixed-structures.md) | Planar trusses, 3D space trusses/tripods, inactive rotational DOFs, lumped truss self-weight and braced frame-truss structures |
+| [Geometry Transforms, Arrays, Merging & Connections](tutorials/geometry-transforms-and-connections.md) | Move/copy, linear repeat arrays, rotate/mirror, two-node merging, member splitting/subdivision, intersections and perpendicular/midpoint connections |
 | [3D Space Frame, Coupled Slab & Joint Springs](tutorials/spatial-slab-frame.md) | 3D frame bays, fitting and coupling rectangular Quad floor slabs, probing local slab moments and animating 3D joint-spring networks |
 | [Iterative Elastic, Vibration Modes & Steel Pushover](tutorials/nonlinear-and-modal.md) | Tension-only bracing, compression-only foundations, physical mass-source modal analysis and first-order steel plastic capacity histories |
+| [Rectangular Plates & Guarded Recovered Shear](tutorials/rectangular-plates-and-shear.md) | Standalone Quad/Rect plates, hydrostatic/linear pressure profiles, rectangular openings, natural-coordinate probes and masked recovered centre shear |
+| [Surface Mesh Generators Catalog](tutorials/surface-meshing-catalog.md) | All seven PyNite mesh generators (Rectangle, Annulus, Cylinder, Frustum, rings), quality checks, `.pynitemesh` recipes and neutral JSON connectivity exports |
 | [MCP Automation & Headless Scripting Cookbook](tutorials/mcp-recipes.md) | Copy-pasteable MCP `apply_batch` / solver JSON payloads and headless Python scripts |
 
 ## Modeling
