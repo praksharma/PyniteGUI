@@ -33,8 +33,9 @@ class ModalWindow(QWidget):
         self.modes=QSpinBox();self.modes.setRange(1,50);self.modes.setValue(3);self.modes.setObjectName('modal_mode_count')
         from .app import unit_number
         self.gravity=unit_number(STANDARD_GRAVITY,self.units,'length',1e-9,decimals=10);self.gravity.setObjectName('modal_gravity')
+        self.gravity_label=QLabel(f'Gravity ({self.units.length}/s²)')
         form.addRow('Mass-source combination',self.combination);form.addRow('Weight component (global)',self.direction)
-        form.addRow('Modes to request',self.modes);form.addRow(f'Gravity ({self.units.length}/s²)',self.gravity)
+        form.addRow('Modes to request',self.modes);form.addRow(self.gravity_label,self.gravity)
         controls=QVBoxLayout();inputs.addLayout(controls)
         self.solve=QPushButton('Analyze modes');self.solve.setObjectName('modal_solve');self.solve.clicked.connect(self.start)
         self.cancel=QPushButton('Cancel');self.cancel.clicked.connect(controller.cancel)
@@ -77,7 +78,11 @@ class ModalWindow(QWidget):
 
     def set_inputs(self,settings):
         self.refresh_choices();self.combination.setCurrentText(settings.combination);self.modes.setValue(settings.modes)
-        self.direction.setCurrentText(settings.direction);self.gravity.setValue(self.units.to_display(settings.gravity,'length'))
+        self.direction.setCurrentText(settings.direction)
+        self.gravity.setRange(self.units.to_display(1e-9,'length'),self.units.to_display(1e9,'length'))
+        self.gravity.setValue(self.units.to_display(settings.gravity,'length'))
+        self.gravity.setProperty('original_value',settings.gravity)
+        self.gravity.setProperty('initial_value',self.gravity.value())
 
     def start(self):
         from .app import unit_value
@@ -87,6 +92,31 @@ class ModalWindow(QWidget):
         except ValueError as error:QMessageBox.information(self,'Modal Analysis',str(error))
 
     def refresh(self):
+        from shiboken6 import isValid
+        if not isValid(self) or not isValid(self.solve) or not isValid(self.combination):return
+        if self.window.project.units!=self.units:
+            from .app import unit_value
+            old_units=self.units
+            gravity_base=unit_value(self.gravity,old_units,'length')
+            rotation=(self.result is not None and 0<=self.mode.currentIndex()<len(self.result.normalization)
+                      and self.result.normalization[self.mode.currentIndex()]=='rotation')
+            amplitude_base=self.amplitude.value() if rotation else unit_value(self.amplitude,old_units,'length')
+            self.units=self.window.project.units
+            self.gravity_label.setText(f'Gravity ({self.units.length}/s²)')
+            self.gravity.setRange(self.units.to_display(1e-9,'length'),self.units.to_display(1e9,'length'))
+            self.gravity.setValue(self.units.to_display(gravity_base,'length'))
+            self.gravity.setProperty('original_value',gravity_base)
+            self.gravity.setProperty('initial_value',self.gravity.value())
+            self.amplitude.blockSignals(True)
+            self.amplitude.setRange(0.,1e9 if rotation else self.units.to_display(1e9,'length'))
+            self.amplitude.setValue(amplitude_base if rotation else self.units.to_display(amplitude_base,'length'))
+            self.amplitude.setProperty('original_value',amplitude_base)
+            self.amplitude.setProperty('initial_value',self.amplitude.value())
+            self.amplitude.blockSignals(False)
+            self.amplitude_label.setText('Display rotation (rad)' if rotation else f'Display amplitude ({self.units.length})')
+            if self.result is not None:
+                for kind in ('frequencies','shapes','mass_sources'):self.fill(kind)
+                self.draw()
         self.refresh_choices();status=self.controller.status();running=self.window.thread is not None
         self.solve.setEnabled(not running and not self.window.mcp_mode)
         self.cancel.setEnabled(status['running'] and status['state']!='Cancelling' and not self.window.mcp_mode)
@@ -121,7 +151,10 @@ class ModalWindow(QWidget):
         span=max(float(np.linalg.norm(np.ptp(coords,axis=0))),1.)
         self.amplitude.blockSignals(True)
         self.amplitude.setProperty('quantity','rotation' if rotation else 'length')
-        self.amplitude.setValue(.05 if rotation else self.units.to_display(.08*span,'length'))
+        base_amp=.05 if rotation else .08*span
+        self.amplitude.setValue(.05 if rotation else self.units.to_display(base_amp,'length'))
+        self.amplitude.setProperty('original_value',base_amp)
+        self.amplitude.setProperty('initial_value',self.amplitude.value())
         self.amplitude.blockSignals(False)
         self.amplitude_label.setText('Display rotation (rad)' if rotation else f'Display amplitude ({self.units.length})')
         self.fill('shapes');self.draw()

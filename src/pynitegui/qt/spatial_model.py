@@ -310,7 +310,7 @@ class SpatialProject(Project):
         for name, node in self.nodes.items():
             if math.dist(node.coords, (x, y, z)) <= 1e-8:
                 return name
-        name = self.next_name("N", set(self.nodes)|set(self.members)|set(self.joint_springs))
+        name = self.next_name("N", {*self.nodes, *self.members, *self.joint_springs, *self.surfaces})
         self.nodes[name] = SpatialNode(name, x, y, z=z)
         return name
 
@@ -320,7 +320,7 @@ class SpatialProject(Project):
         a, b = self.node_at(*start), self.node_at(*end)
         if any({member.start, member.end} == {a, b} for member in self.members.values()):
             raise ValueError("A member already connects these nodes.")
-        name = self.next_name("M", set(self.nodes)|set(self.members)|set(self.joint_springs))
+        name = self.next_name("M", {*self.nodes, *self.members, *self.joint_springs, *self.surfaces})
         self.members[name] = SpatialMember(name, a, b, self.default_material, self.default_section)
         return name
 
@@ -443,7 +443,7 @@ class SpatialProject(Project):
     def connect_intersections(self):
         candidate = self.clone()
         candidate.validate()
-        Project.connect_intersections(candidate)
+        candidate._connect_intersections()
         candidate.validate()
         self.nodes, self.members, self.loads, self.groups = candidate.nodes, candidate.members, candidate.loads, candidate.groups
 

@@ -157,10 +157,30 @@ class TopologyTests(unittest.TestCase):
     def test_invalid_split_does_not_mutate(self):
         project = beam()
         before = project.to_dict()
-        for fraction in (0, 1, -0.5, float("nan"), 1e-12):
+        for fraction in (0, 1, -0.5, float("nan"), float("inf"), 1e-12, True, "bad"):
             with self.assertRaises(ValueError):
                 project.split_member("M1", fraction)
             self.assertEqual(project.to_dict(), before)
+        with self.assertRaisesRegex(ValueError, "Unknown"):
+            project.split_member("missing", 0.5)
+        self.assertEqual(project.to_dict(), before)
+        duplicate = Project()
+        duplicate.add_member((0, 0), (120, 0))
+        duplicate.add_member((0, 0), (60, 0))
+        before_dup = duplicate.to_dict()
+        with self.assertRaisesRegex(ValueError, "Duplicate"):
+            duplicate.split_member("M1", 0.5)
+        self.assertEqual(duplicate.to_dict(), before_dup)
+        near = Project()
+        near.add_member((0, 0), (100, 0))
+        near.nodes["N3"] = near.nodes["N1"].__class__("N3", 50.0, 5e-9)
+        near.nodes["N4"] = near.nodes["N1"].__class__("N4", 50.0, -50.0)
+        near.members["M2"] = near.members["M1"].__class__("M2", "N3", "N4")
+        near.members["M3"] = near.members["M1"].__class__("M3", "N1", "N3")
+        before_near = near.to_dict()
+        with self.assertRaisesRegex(ValueError, "Duplicate"):
+            near.connect_intersections()
+        self.assertEqual(near.to_dict(), before_near)
 
 
 class TopologyEditorTests(unittest.TestCase):

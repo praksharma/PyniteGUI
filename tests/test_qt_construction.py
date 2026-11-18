@@ -269,6 +269,21 @@ class ConstructionWindowTests(unittest.TestCase):
         self.assertEqual(len(window.project.members), 6)
         self.assertEqual(window.selected, ("members", "M6"))
 
+    def test_connection_preserves_split_member_groups_in_2d_and_3d(self):
+        for spatial in (False, True):
+            with self.subTest(spatial=spatial):
+                project = perpendicular(spatial)
+                project.groups["G1"] = {"nodes": ["N1", "N2"], "members": ["M1"]}
+                self.window.load_project(project)
+                self.window.select_many([("nodes", "N3"), ("members", "M1")])
+                with patch.object(ConnectionPreview, "exec", return_value=QDialog.DialogCode.Accepted):
+                    self.window.construct_connection("perpendicular")
+                self.assertEqual(self.window.project.groups["G1"]["members"], ["M1", "M3"])
+                self.window.undo.undo()
+                self.assertEqual(self.window.project.groups["G1"]["members"], ["M1"])
+                self.window.undo.redo()
+                self.assertEqual(self.window.project.groups["G1"]["members"], ["M1", "M3"])
+
 
 if __name__ == "__main__":
     unittest.main()

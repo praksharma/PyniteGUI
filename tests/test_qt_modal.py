@@ -121,3 +121,21 @@ class ModalEditorTests(unittest.TestCase):
             w.cancel_analysis();self.wait(lambda:w.thread is None)
         self.assertFalse(w.live_analysis.pending)
         w.live_analysis.enabled=False
+
+    def test_modal_window_unit_changes_and_teardown(self):
+        w=self.window;self.modal.show();panel=self.modal.panel
+        settings=ModalSettings('Mass',3,gravity=386.4)
+        panel.set_inputs(settings)
+        self.modal.start(settings);self.wait(lambda:w.thread is None)
+        self.assertEqual(panel.units.key,'imperial')
+        self.assertIn('in/s²',panel.gravity_label.text())
+        w.set_units('si_mm')
+        self.assertEqual(panel.units.key,'si_mm')
+        self.assertIn('mm/s²',panel.gravity_label.text())
+        self.assertAlmostEqual(panel.gravity.value(),386.4*25.4,places=3)
+        self.assertIn('mm',panel.amplitude_label.text())
+        self.assertIn('RZ (rad/mm)',[panel.tables['shapes'].horizontalHeaderItem(i).text() for i in range(panel.tables['shapes'].columnCount())])
+        # Verify teardown with non-empty undo stack and open ModalWindow does not access deleted C++ buttons.
+        extra=MainWindow();extra.set_units('si');controller(extra).show()
+        extra.saved=extra.project.to_dict();extra.close();extra.deleteLater()
+        self.app.sendPostedEvents(None,0);self.app.processEvents()

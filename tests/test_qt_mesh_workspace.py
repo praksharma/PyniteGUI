@@ -106,6 +106,19 @@ class MeshWorkspaceTests(unittest.TestCase):
             dialog.reject()
             dialog.deleteLater()
 
+    def test_analyze_rectangle_handles_control_lines_and_warns_on_invalid_plate(self):
+        self.window.parameter_fields["width"].setValue(100.)
+        self.window.parameter_fields["height"].setValue(4.)
+        self.window.common_fields["mesh_size"].setValue(100.)
+        with patch("pynitegui.qt.mesh_workspace.QMessageBox.warning") as warning:
+            self.window.analyze_rectangle()
+        warning.assert_called_once()
+        for coord in (20., 40., 60., 80.):
+            self.window.add_control(axis="x", coordinate=coord)
+        with patch("pynitegui.qt.plate_workspace.PlateWorkspace.exec") as run_plate:
+            self.window.analyze_rectangle()
+        run_plate.assert_called_once()
+
 
 if __name__ == "__main__":
     unittest.main()

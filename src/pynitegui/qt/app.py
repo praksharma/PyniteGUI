@@ -1585,7 +1585,12 @@ class MainWindow(QMainWindow):
         revision = self.revision
         def mutate(project):
             candidate = plan.definition.clone()
-            project.nodes, project.members, project.loads = candidate.nodes, candidate.members, candidate.loads
+            project.nodes, project.members, project.loads, project.groups = (
+                candidate.nodes,
+                candidate.members,
+                candidate.loads,
+                candidate.groups,
+            )
         self.edit(title, mutate)
         if self.revision != revision:
             self.select(("members", plan.connector))
@@ -1972,7 +1977,7 @@ class MainWindow(QMainWindow):
         if spatial:
             from .spatial_surfaces import put_surface
             definition = self.project.surfaces[previous] if previous is not None else MeshDefinition(
-                name=self.project.next_name("S", {*self.project.surfaces, *self.project.nodes, *self.project.members, *self.project.loads}), unit_system=self.project.unit_system)
+                name=self.project.next_name("S", {*self.project.surfaces, *self.project.nodes, *self.project.members, *self.project.loads, *self.project.joint_springs}), unit_system=self.project.unit_system)
             definition = MeshDefinition.from_dict(definition.to_dict())
             definition.unit_system = self.project.unit_system
             def validator(mesh):

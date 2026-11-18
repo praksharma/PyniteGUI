@@ -368,6 +368,24 @@ class PlateWorkspaceTests(unittest.TestCase):
         self.assertEqual(window.definition.self_weight_case, "Permanent")
         self.assertEqual(window.definition.combinations["Service"], {"Permanent": 1.2, "Live": 1.6})
 
+    def test_configure_loading_allows_disabling_self_weight_after_plane_change(self):
+        from pynitegui.qt.plate_loads import PlateLoadsDialog
+        window = self.window
+        definition = PlateDefinition(plane="XZ", load_case="Dead", self_weight_case="Dead", mesh_size=30.)
+        window.install(definition.to_dict())
+        window.plane.setCurrentText("XY")
+        orig_init = PlateLoadsDialog.__init__
+        def init_and_disable_weight(dlg, parent, draft):
+            orig_init(dlg, parent, draft)
+            self.assertTrue(dlg.weight_case.isEnabled())
+            dlg.weight_case.setCurrentIndex(dlg.weight_case.findData(None))
+            dlg.read_inputs()
+        with patch.object(PlateLoadsDialog, "__init__", init_and_disable_weight), \
+             patch.object(PlateLoadsDialog, "exec", return_value=PlateLoadsDialog.DialogCode.Accepted):
+            window.configure_loading()
+        self.assertEqual(window.definition.plane, "XY")
+        self.assertIsNone(window.definition.self_weight_case)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -68,6 +68,42 @@ class SpatialSurfaceModelTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "distinct"):
             project.validate()
 
+    def test_surface_and_spring_ids_reserved_across_geometry_and_tables(self):
+        from pynitegui.qt.joint_springs import JointSpring
+        from pynitegui.qt.joint_spring_editor import JointSpringsDialog, JointSpringEditor
+        project = SpatialProject()
+        project.node_at(0, 0, 0)
+        project.node_at(120, 0, 0)
+        for surface_id in ("M1", "N3", "L1", "S1"):
+            put_surface(project, MeshDefinition(name=surface_id))
+        member_id = project.add_member((0, 0, 0), (0, 120, 0))
+        self.assertEqual(member_id, "M2")
+        self.assertIn("N4", project.nodes)
+        project.validate()
+        tables = ModelTablesDialog(None, project)
+        try:
+            tables.add_row("loads")
+            self.assertEqual(tables.names("loads"), ["L2"])
+        finally:
+            tables.deleteLater()
+        springs_dialog = JointSpringsDialog(None, project)
+        created_names = []
+        def capture_init(editor_self, parent, proj, spring, previous=None):
+            created_names.append(spring.name)
+            QDialog.__init__(editor_self, parent)
+            editor_self.definition = None
+        try:
+            with patch.object(JointSpringEditor, "__init__", capture_init), \
+                 patch.object(JointSpringEditor, "exec", return_value=QDialog.DialogCode.Rejected):
+                springs_dialog.perform("add")
+            self.assertEqual(created_names, ["S2"])
+        finally:
+            springs_dialog.deleteLater()
+        project.joint_springs["S2"] = JointSpring("S2", "N1", "N2", 10.0)
+        put_surface(project, MeshDefinition(name="S2"))
+        with self.assertRaisesRegex(ValueError, "distinct"):
+            project.validate()
+
     def test_duplicate_names_edit_rename_and_independent_deletion(self):
         project = example_project("3d_cantilever")
         put_surface(project, MeshDefinition(name="S1"))

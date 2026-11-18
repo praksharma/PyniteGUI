@@ -114,6 +114,16 @@ class SpatialDiagramDialog(QDialog):
         if name != self.inspection_member:
             self.inspection_x = 0.
             self.inspection_member = name
+        if name not in self.project.members:
+            self.distance.blockSignals(True)
+            self.distance.setRange(0, 0)
+            self.distance.setSuffix(f" {units.length}")
+            self.distance.setValue(0.)
+            self.distance.blockSignals(False)
+            self.probes = []
+            self.setWindowTitle(f"Force Diagrams | {self.result.combination}")
+            self.update_inspection()
+            return
         length, _ = member_breaks(self.project, name)
         self.distance.blockSignals(True)
         self.distance.setRange(0, units.to_display(length, "length"))
@@ -135,7 +145,11 @@ class SpatialDiagramDialog(QDialog):
         self.canvas.draw_idle()
 
     def inspect_distance(self):
-        length, _ = member_breaks(self.project, self.member.currentText())
+        name = self.member.currentText()
+        if name not in self.project.members:
+            self.inspection_x = 0.
+            return
+        length, _ = member_breaks(self.project, name)
         self.inspection_x = min(length, max(0., self.project.units.from_display(self.distance.value(), "length")))
         self.update_inspection()
 
@@ -147,11 +161,16 @@ class SpatialDiagramDialog(QDialog):
         self.distance.setValue(min(self.distance.maximum(), max(0., event.xdata)))
 
     def update_inspection(self):
+        name = self.member.currentText()
         units = self.project.units
-        values = inspect_member(self.project, self.result, self.member.currentText(), self.inspection_x,
-                                self.inspection_side.currentData())
         self.inspection_values.setHorizontalHeaderLabels([f"{label} ({getattr(units, quantity)})"
                                                           for label, quantity in zip(LABELS, UNITS)])
+        if name not in self.project.members:
+            self.inspection_values.clearContents()
+            self.canvas.draw_idle()
+            return
+        values = inspect_member(self.project, self.result, name, self.inspection_x,
+                                self.inspection_side.currentData())
         for col, (value, quantity) in enumerate(zip(values, UNITS)):
             item = QTableWidgetItem(f"{units.to_display(value, quantity):.6g}")
             item.setToolTip("Local rolled member axes; N positive compression. Numerical solver signs, without display amplification.")

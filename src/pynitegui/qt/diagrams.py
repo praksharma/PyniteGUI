@@ -491,6 +491,20 @@ class DiagramDialog(QDialog):
         self.member_canvas.setPalette(self.palette())
         self.member_figure.clear()
         name = self.member.currentText()
+        units = self.project.units
+        if name not in self.project.members:
+            self.member_context.setText("No members in model")
+            self.member_context.setToolTip("No members in model")
+            self.inspection_member = ""
+            self.inspection_x = 0
+            self.distance.blockSignals(True)
+            self.distance.setRange(0, 0)
+            self.distance.setSuffix(f" {units.length}")
+            self.distance.setValue(0)
+            self.distance.blockSignals(False)
+            self.probes = []
+            self.update_inspection()
+            return
         member = self.project.members[name]
         context = [support_label(self.project, self.project.nodes[node]) for node in (member.start, member.end)]
         context.append("Local releases: start " + member.release_labels[0] + " | end " + member.release_labels[1])
@@ -547,8 +561,12 @@ class DiagramDialog(QDialog):
         self.comparison.apply_theme()
 
     def inspect_distance(self):
+        name = self.member.currentText()
+        if name not in self.project.members:
+            self.inspection_x = 0
+            return
         self.inspection_x = self.project.units.from_display(self.distance.value(), "length")
-        length, _ = member_breaks(self.project, self.member.currentText())
+        length, _ = member_breaks(self.project, name)
         self.inspection_x = min(length, max(0, self.inspection_x))
         self.update_inspection()
 
@@ -560,11 +578,16 @@ class DiagramDialog(QDialog):
         self.distance.setValue(min(self.distance.maximum(), max(0, event.xdata)))
 
     def update_inspection(self):
+        name = self.member.currentText()
         units = self.project.units
-        values = member_values(self.project, self.result, self.member.currentText(), self.inspection_x,
-                               self.inspection_side.currentData())
         self.inspection_values.setHorizontalHeaderLabels([f"N ({units.force})", f"Fy ({units.force})",
                                                           f"Mz ({units.moment})", f"dy ({units.length})"])
+        if name not in self.project.members:
+            self.inspection_values.clearContents()
+            self.member_canvas.draw_idle()
+            return
+        values = member_values(self.project, self.result, name, self.inspection_x,
+                               self.inspection_side.currentData())
         for col, (value, quantity) in enumerate(zip(values, ("force", "force", "moment", "length"))):
             self.inspection_values.setItem(0, col, QTableWidgetItem(f"{units.to_display(value, quantity):.6g}"))
         self.inspection_values.resizeColumnsToContents()

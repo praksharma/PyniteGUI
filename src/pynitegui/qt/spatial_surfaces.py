@@ -60,8 +60,8 @@ def validate_surfaces(project):
         if (not identifier(name) or not isinstance(definition, MeshDefinition)
                 or name != definition.name):
             raise ValueError("Surface keys must match their mesh names and be valid identifiers.")
-        if name in {*project.nodes, *project.members, *project.loads}:
-            raise ValueError(f"Surface {name}: choose a name distinct from nodes, members and loads.")
+        if name in {*project.nodes, *project.members, *project.loads, *getattr(project, "joint_springs", {})}:
+            raise ValueError(f"Surface {name}: choose a name distinct from nodes, members, loads and joint springs.")
         total += definition.validate()
     if total > MAX_PROJECT_SURFACE_ELEMENTS:
         raise ValueError(f"Combined surface meshes exceed {MAX_PROJECT_SURFACE_ELEMENTS} elements.")

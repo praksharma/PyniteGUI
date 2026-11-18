@@ -31,11 +31,19 @@ def static_paths(project, result):
                 nodes = [mesh["nodes"][i] for i in (*cell, cell[0])]
                 paths.append((np.array([n["position"] for n in nodes]),
                               np.array([n.get("displacement", (0., 0., 0.)) for n in nodes])))
+        for spring in project.joint_springs.values():
+            a, b = project.nodes[spring.start], project.nodes[spring.end]
+            paths.append((np.array([a.coords, b.coords], dtype=float),
+                          np.array([result.displacements[spring.start][:3], result.displacements[spring.end][:3]], dtype=float)))
     else:
         from .app import deformation_paths
         for path in deformation_paths(project, result):
             data = np.array(path)
             paths.append((data[:, :2], data[:, 2:]))
+        for spring in project.joint_springs.values():
+            a, b = project.nodes[spring.start], project.nodes[spring.end]
+            paths.append((np.array([(a.x, a.y), (b.x, b.y)], dtype=float),
+                          np.array([result.displacements[spring.start][:2], result.displacements[spring.end][:2]], dtype=float)))
     return paths
 
 
@@ -139,7 +147,12 @@ class StaticDeformationDialog(QDialog):
         self.fraction.setValue(0.)
         self.fraction.blockSignals(False)
         peak = max((float(np.linalg.norm(motion, axis=1).max()) for _, motion in self.paths), default=0.)
-        base = np.vstack([p for p, _ in self.paths])
+        if self.paths:
+            base = np.vstack([p for p, _ in self.paths])
+        elif self.project.nodes:
+            base = np.array([n.coords if self.spatial else (n.x, n.y) for n in self.project.nodes.values()], dtype=float)
+        else:
+            base = np.zeros((1, 3 if self.spatial else 2), dtype=float)
         extent = max(float(np.ptp(base, axis=0).max()), 1.)
         mode = self.mode.currentData()
         self.factor = .15*extent/peak if mode == "auto" and peak else self.scale.value() if mode == "custom" else 1.
@@ -157,7 +170,12 @@ class StaticDeformationDialog(QDialog):
         self.project.unit_system = key
         u = self.project.units
         self.reference.set_segments([u.to_display(base, "length") for base, _ in self.paths])
-        full = np.vstack([point for base, motion in self.paths for point in (base, base+self.factor*motion)])
+        if self.paths:
+            full = np.vstack([point for base, motion in self.paths for point in (base, base+self.factor*motion)])
+        elif self.project.nodes:
+            full = np.array([n.coords if self.spatial else (n.x, n.y) for n in self.project.nodes.values()], dtype=float)
+        else:
+            full = np.zeros((1, 3 if self.spatial else 2), dtype=float)
         low, high = full.min(axis=0), full.max(axis=0)
         padding = max(float((high-low).max())*.08, 1.)
         for index, axis in enumerate(("x", "y", "z") if self.spatial else ("x", "y")):
@@ -169,7 +187,7 @@ class StaticDeformationDialog(QDialog):
             self.ax.set_aspect("equal", adjustable="box")
         self.apply_theme()
         # Rebuild/update labels without resampling the solver or resetting phase.
-        peak = max(float(np.linalg.norm(m, axis=1).max()) for _, m in self.paths)
+        peak = max((float(np.linalg.norm(m, axis=1).max()) for _, m in self.paths), default=0.)
         self.status.setText(f"{self.result.combination} | Factor {self.factor:.6g}x | Sampled peak {u.to_display(peak, 'length'):.6g} {u.length} (unamplified). Dashed reference; coloured shape animated.")
         self.draw_fraction()
 

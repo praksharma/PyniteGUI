@@ -229,7 +229,7 @@ class PlateWorkspace(QDialog):
         self.draw()
         self.status.setText("Unapplied changes | Results cleared")
 
-    def candidate(self):
+    def candidate(self, *, allow_pending_self_weight_plane=False):
         definition = PlateDefinition.from_dict(self.definition.to_dict())
         for key, widget in self.fields.items():
             widget.interpretText()
@@ -242,7 +242,13 @@ class PlateWorkspace(QDialog):
         if self.case.text() != definition.load_case:
             definition.rename_case(definition.load_case, self.case.text())
         definition.edges = {edge: box.currentText() for edge, box in self.supports.items()}
-        definition.validate()
+        if allow_pending_self_weight_plane and definition.plane != "XZ" and definition.self_weight_case is not None:
+            saved_weight_case = definition.self_weight_case
+            definition.self_weight_case = None
+            definition.validate()
+            definition.self_weight_case = saved_weight_case
+        else:
+            definition.validate()
         return definition
 
     def apply(self):
@@ -441,10 +447,20 @@ class PlateWorkspace(QDialog):
             self.undo.push(PlateEdit(self, self.definition.to_dict(), after))
 
     def configure_loading(self):
-        if self.thread is not None or not self.apply():
+        if self.thread is not None:
             return
+        if self.plane.currentText() != "XZ" and self.definition.self_weight_case is not None:
+            try:
+                draft = self.candidate(allow_pending_self_weight_plane=True)
+            except ValueError as error:
+                QMessageBox.warning(self, "Invalid Plate", str(error))
+                return
+        else:
+            if not self.apply():
+                return
+            draft = self.definition
         from .plate_loads import PlateLoadsDialog
-        dialog = PlateLoadsDialog(self, self.definition)
+        dialog = PlateLoadsDialog(self, draft)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             before, after = self.definition.to_dict(), dialog.definition.to_dict()
             if before != after:

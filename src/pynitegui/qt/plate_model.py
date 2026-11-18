@@ -127,15 +127,25 @@ class PlateDefinition:
         if not isinstance(self.edges, dict) or set(self.edges) != set(EDGES) or any(
                 support not in ("Free", "Simply supported", "Clamped") for support in self.edges.values()):
             raise ValueError("Invalid plate edge supports.")
-        nx, ny = math.ceil(self.width / self.mesh_size), math.ceil(self.height / self.mesh_size)
-        if nx * ny > MAX_ELEMENTS:
-            raise ValueError(f"Plate pilot is limited to {MAX_ELEMENTS} quads; increase the mesh size.")
-        ratio = (self.width / nx) / (self.height / ny)
-        if max(ratio, 1 / ratio) > 20:
-            raise ValueError("Element aspect ratio exceeds 20; use a smaller mesh size or revise the geometry.")
         if not finite_number(self.width / self.height) or max(self.width / self.height, self.height / self.width) > 1e6:
             raise ValueError("Plate dimensions are too disproportionate.")
-        self.mesh_definition().validate()
+        count = self.mesh_definition().validate()
+        if count > MAX_ELEMENTS:
+            raise ValueError(f"Plate pilot is limited to {MAX_ELEMENTS} quads; increase the mesh size.")
+        x_points = [0., *self.x_control, self.width]
+        y_points = [0., *self.y_control, self.height]
+        for opening in self.openings:
+            x_points.extend((opening["x_left"], opening["x_left"] + opening["width"]))
+            y_points.extend((opening["y_bott"], opening["y_bott"] + opening["height"]))
+        def cell_sizes(points):
+            ordered = []
+            for value in sorted(set(points)):
+                if not ordered or not math.isclose(ordered[-1], value):
+                    ordered.append(value)
+            return [float(span) / math.ceil(float(span) / self.mesh_size) for span in np.diff(ordered)]
+        widths, heights = cell_sizes(x_points), cell_sizes(y_points)
+        if max(max(w / h, h / w) for w in widths for h in heights) > 20:
+            raise ValueError("Element aspect ratio exceeds 20; use a smaller mesh size or revise the geometry.")
         if not isinstance(self.additional_pressures, dict) or len(self.additional_pressures) > 31:
             raise ValueError("Use at most 32 plate pressure cases including the primary case.")
         if self.load_case in self.additional_pressures:
