@@ -2448,7 +2448,35 @@ MCP exposes typed `joint_springs` in `read_schema`/`read_model` and atomic
 Use `read_results(kind="joint_springs")` with the usual snapshot, combination and
 pagination checks. Atomic node deletions must explicitly remove or update every
 incident spring in the same batch. Native and MCP edits share validation,
-revision checks, undo and analysis identity.
+revision checks, undo and analysis identity. Memberless spring-only networks also
+support static deformation animation (**Tools > Animate Static Deformation…**),
+orthographic 3D report rendering, and opening the Diagrams dialog for combination
+comparisons and drift checks.
+
+Programmatic Python example for creating and solving a 2D joint-spring network:
+
+```python
+from pynitegui.qt.analysis import analyze
+from pynitegui.qt.joint_springs import JointSpring, result_table
+from pynitegui.qt.model import Load, Project
+
+project = Project()
+a = project.node_at(0.0, 0.0)
+b = project.node_at(60.0, 0.0)
+c = project.node_at(120.0, 0.0)
+project.nodes[a].support = "pin"
+project.nodes[b].support = "roller"
+project.nodes[c].support = "roller"
+project.joint_springs["S1"] = JointSpring("S1", a, b, stiffness=100.0, behavior="bilateral")
+project.joint_springs["S2"] = JointSpring("S2", b, c, stiffness=200.0, behavior="bilateral")
+project.loads["L1"] = Load("L1", c, "FX", 10.0)
+project.validate()
+
+result = analyze(project)
+headers, rows = result_table(project, result)
+for row in rows:
+    print(dict(zip(headers, row)))
+```
 
 ### Moving Nodes
 
@@ -3954,7 +3982,23 @@ is `modal`, with a modal snapshot and `available_modes`. Read
 `read_modal_results(kind="frequencies"|"shapes"|"mass_sources", mode=1, ... )`
 using snapshot ID and pagination. The existing `cancel_analysis` cancels either
 job kind. Static `run_analysis`/`read_results` remain separate. A model edit or
-failed/incomplete modal job cannot supply current modal results.
+failed/incomplete modal job cannot supply current modal results. Switching display
+units in the main window dynamically updates the open Vibration Modes workspace's
+gravity and amplitude spinboxes, unit labels, tables and mode-shape plot axes.
+
+Headless Python snippet for running modal analysis and formatting unit-aware tables:
+
+```python
+from pynitegui.qt.examples import example_project
+from pynitegui.qt.modal import ModalSettings, analyze_modal
+from pynitegui.qt.modal_results import modal_table
+
+project = example_project("official_modal")
+result = analyze_modal(project, ModalSettings(combination="Mass", modes=3, direction="Y", gravity=386.4))
+headers, rows = modal_table(result, project.units, "frequencies")
+for row in rows:
+    print(dict(zip(headers, row)))
+```
 
 ### Combination Envelopes
 
@@ -4285,13 +4329,31 @@ and the new member's material/section. Spatial previews offer isometric, XY,
 XZ and YZ projections. **Apply** makes one undoable engineering edit; **Cancel**
 keeps the model and results. A changed model invalidates an open preview.
 
-Original segments retain assignments, rolled axes and outer-end releases.
+Original segments retain assignments, rolled axes, outer-end releases and saved
+group memberships (both split segments remain in any group that contained the
+original member).
 Existing coincident joints keep their supports, springs and nodal loads.
 Manual load cases, physical stations and partial distributed intensity profiles
 follow the existing split rules, including rolled local spatial loads at cuts.
 The new connector is a frame using project defaults, without releases or manual
 loads and with zero spatial roll. Enabled self-weight includes its added length.
 Adding the connection changes stiffness and invalidates results; analyze again.
+
+Programmatic Python snippet for planning and validating a perpendicular or midpoint connection:
+
+```python
+from pynitegui.qt.construction import plan_connection
+from pynitegui.qt.model import Project
+
+project = Project()
+project.add_member((0.0, 0.0), (120.0, 0.0))  # M1
+project.node_at(60.0, 60.0)                   # N3
+project.groups["Girder"] = {"nodes": [], "members": ["M1"]}
+
+plan = plan_connection(project, "perpendicular", [("nodes", "N3"), ("members", "M1")])
+print("Connector:", plan.connector, "| Split segments:", plan.splits["M1"])
+print("Updated group members:", plan.definition.groups["Girder"]["members"])
+```
 
 ## Linked Results
 
@@ -4966,9 +5028,10 @@ The GUIDE remains the maintained detailed reference. `scripts/docs.py` maps ever
 GUIDE heading into a topic page and copies the roadmaps, changelog and release
 record, rewriting repository-document links. Unmapped or duplicate headings and
 navigation omissions fail preparation. `docs/` contains authored entry pages,
-the first-model tutorial, feature index, custom styles and screenshot assets. Add or update detailed
+the first-model tutorial, four step-by-step workflow and MCP cookbook tutorials
+under `docs/tutorials/`, the feature index, custom styles and screenshot assets. Add or update detailed
 workflows here in GUIDE.md, not in generated topic files. Update the topic map and
-`zensical.toml` navigation if you add a heading. Keep the feature index and tutorial
+`zensical.toml` navigation if you add a heading. Keep the feature index and tutorials
 accurate when workflows change. This avoids two competing copies of the manual.
 
 Generated Markdown/assets live under `.docs-build/docs`; built HTML lives under

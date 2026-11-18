@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- Add step-by-step authored tutorials (`docs/tutorials/portal-frame.md`,
+  `docs/tutorials/spatial-slab-frame.md`, `docs/tutorials/nonlinear-and-modal.md`,
+  `docs/tutorials/mcp-recipes.md`) and practical Python/MCP code snippets across
+  `GUIDE.md`, `docs/index.md`, `docs/features.md` and `docs/start/first-model.md`.
+
+- Fix nine verified bugs across construction connections (preserving split-member
+  group membership), memberless joint-spring post-processing and deformation
+  animation, live display-unit synchronization and teardown safety in the
+  Vibration Modes and Steel Pushover workspaces, surface/joint-spring identifier
+  reservation, transactional 2D member splitting and intersection connection,
+  control-line aspect-ratio validation in rectangular plates, disabling plate
+  self-weight after plane changes, and bulk custom/inclined restraint editing.
+
 - Assess an actual pinned OpenSees RC backend in isolated native macOS arm64
   processes. Record independent reinforcing-steel cycle checks, concrete
   envelope/history characterization and eight section/nonlinear constant-couple
