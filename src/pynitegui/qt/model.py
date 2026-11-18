@@ -689,7 +689,7 @@ class Project:
         for node in self.nodes.values():
             if math.isclose(node.x, x, rel_tol=0, abs_tol=1e-8) and math.isclose(node.y, y, rel_tol=0, abs_tol=1e-8):
                 return node.name
-        name = self.next_name("N", set(self.nodes)|set(self.members)|set(self.joint_springs))
+        name = self.next_name("N", {*self.nodes, *self.members, *self.joint_springs, *getattr(self, "surfaces", {})})
         self.nodes[name] = Node(name, x, y)
         return name
 
@@ -699,7 +699,7 @@ class Project:
         a, b = self.node_at(*start), self.node_at(*end)
         if any({m.start, m.end} == {a, b} for m in self.members.values()):
             raise ValueError("A member already connects these nodes.")
-        name = self.next_name("M", set(self.nodes)|set(self.members)|set(self.joint_springs))
+        name = self.next_name("M", {*self.nodes, *self.members, *self.joint_springs, *getattr(self, "surfaces", {})})
         self.members[name] = Member(name, a, b, self.default_material, self.default_section)
         return name
 
@@ -748,9 +748,16 @@ class Project:
         return None
 
     def split_member(self, name, fraction):
-        if not math.isfinite(fraction) or not 0 < fraction < 1:
+        if not finite_number(fraction) or not 0 < fraction < 1:
             raise ValueError("Split fraction must be strictly between 0 and 1.")
-        return self._split_member(name, [fraction])
+        candidate = self.clone()
+        candidate.validate()
+        if name not in candidate.members:
+            raise ValueError("Unknown member.")
+        segments = candidate._split_member(name, [fraction])
+        candidate.validate()
+        self.nodes, self.members, self.loads, self.groups = candidate.nodes, candidate.members, candidate.loads, candidate.groups
+        return segments
 
     def subdivide_members(self, names, count):
         """Atomically split selected members into equal physical segments."""
@@ -798,7 +805,7 @@ class Project:
         nodes.append(original.end)
         segments = []
         for index, (start, end) in enumerate(zip(nodes, nodes[1:])):
-            segment = name if index == 0 else self.next_name("M", set(self.nodes)|set(self.members)|set(self.joint_springs))
+            segment = name if index == 0 else self.next_name("M", {*self.nodes, *self.members, *self.joint_springs, *getattr(self, "surfaces", {})})
             self.members[segment] = replace(original, name=segment, start=start, end=end,
                                             release_start=original.release_start if index == 0 else False,
                                             release_end=original.release_end if index == len(nodes) - 2 else False,
@@ -817,7 +824,7 @@ class Project:
                     if start >= end:
                         continue
                     slope = (load.end_magnitude - load.magnitude) / (load.end_position - load.position)
-                    identifier = load.name if not pieces else self.next_name("L", self.loads)
+                    identifier = load.name if not pieces else self.next_name("L", {*self.loads, *getattr(self, "surfaces", {})})
                     piece = replace(load, name=identifier, target=segments[index],
                                     position=(start - left) / (right - left),
                                     end_position=(end - left) / (right - left),
@@ -855,6 +862,13 @@ class Project:
         return segments
 
     def connect_intersections(self):
+        candidate = self.clone()
+        candidate.validate()
+        candidate._connect_intersections()
+        candidate.validate()
+        self.nodes, self.members, self.loads, self.groups = candidate.nodes, candidate.members, candidate.loads, candidate.groups
+
+    def _connect_intersections(self):
         names = list(self.members)
         cuts = {name: [] for name in names}
         # Collect every split first so IDs and original load fractions stay stable.

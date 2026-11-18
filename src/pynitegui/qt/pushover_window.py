@@ -108,6 +108,16 @@ class PushoverWindow(QWidget):
         except ValueError as error:QMessageBox.information(self,'Steel Pushover',str(error))
 
     def refresh(self):
+        from shiboken6 import isValid
+        if not isValid(self) or not isValid(self.solve) or not isValid(self.preload):return
+        if self.window.project.units!=self.units:
+            old_units=self.units
+            quantity='rotation' if self.direction.currentText().startswith('R') else 'length'
+            limit_base=old_units.from_display(self.limit.value(),quantity)
+            self.units=self.window.project.units
+            self.limit_unit()
+            self.limit.setValue(self.units.to_display(limit_base,quantity))
+            if self.result is not None:self.step_changed()
         self.refresh_choices();status=self.controller.status();idle=self.window.thread is None and not self.window.mcp_mode
         for widget in (self.solve,self.materials,self.sections):widget.setEnabled(idle)
         self.cancel.setEnabled(status['running'] and status['state']!='Cancelling' and not self.window.mcp_mode)

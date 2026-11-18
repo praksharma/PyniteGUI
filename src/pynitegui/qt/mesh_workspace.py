@@ -499,7 +499,12 @@ class MeshWorkspace(QDialog):
         from .plate_model import PlateDefinition
         from .plate_workspace import PlateWorkspace
         definition = PlateDefinition()
-        transfer_rectangle(self.definition, definition)
+        try:
+            transfer_rectangle(self.definition, definition)
+            definition.validate()
+        except ValueError as error:
+            QMessageBox.warning(self, "Transverse Plate Pilot", str(error))
+            return
         PlateWorkspace(self, definition=definition).exec()
 
     def reject(self):

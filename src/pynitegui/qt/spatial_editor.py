@@ -393,6 +393,6 @@ def add_load(window):
     if dialog.exec():
         values = state["values"]()
         def mutate(project):
-            name = project.next_name("L", project.loads)
+            name = project.next_name("L", {*project.loads, *getattr(project, "surfaces", {})})
             project.loads[name] = SpatialLoad(name=name, kind=load_type.currentText(), **values)
         window.edit("Add spatial load", mutate)

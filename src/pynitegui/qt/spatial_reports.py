@@ -45,8 +45,8 @@ def samples(project, result):
 
 def diagram_geometry(rows, kind, amplitude, span, side=1, sign=1):
     index = QUANTITIES.index(kind)
-    low = min(float(values[:, index].min()) for _, _, values, _ in rows)
-    high = max(float(values[:, index].max()) for _, _, values, _ in rows)
+    low = min((float(values[:, index].min()) for _, _, values, _ in rows), default=0.)
+    high = max((float(values[:, index].max()) for _, _, values, _ in rows), default=0.)
     peak = max(abs(low), abs(high))
     factor = amplitude / 100 * span / peak if peak else 0.
     return [(name, points, points + values[:, index, None] * axes[DIAGRAM_AXES[index]] * factor * side * sign,

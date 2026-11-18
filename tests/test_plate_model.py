@@ -42,6 +42,11 @@ class PlateModelTests(unittest.TestCase):
         for changes in ({"version": 5}, {"version": True}, {"nodes": {}}, {"units": "m-N"}):
             with self.assertRaises(ValueError):
                 PlateDefinition.from_dict({**PlateDefinition().to_dict(), **changes})
+        # Control lines that subdivide a high-aspect rectangle into bounded cells are valid.
+        controlled = PlateDefinition(width=100., height=4., mesh_size=100., x_control=[20., 40., 60., 80.])
+        controlled.validate()
+        with self.assertRaisesRegex(ValueError, "aspect ratio"):
+            PlateDefinition(width=100., height=4., mesh_size=100.).validate()
 
     def test_unstable_supports_rejected(self):
         for edges in (dict.fromkeys(PlateDefinition().edges, "Free"),

@@ -98,3 +98,8 @@ class PushoverEditorTests(unittest.TestCase):
         self.assertEqual(self.job.state,'Current',self.job.error);panel.canvas.draw();self.assertEqual(panel.figure.axes[1].name,'3d')
         panel.direction.setCurrentText('RZ');self.assertIn('rad',panel.limit_label.text())
         panel.set_inputs(s);self.assertAlmostEqual(panel.limit.value(),76.2)
+        w.set_units('imperial')
+        self.assertEqual(panel.units.key,'imperial')
+        self.assertIn('(in)',panel.limit_label.text())
+        self.assertAlmostEqual(panel.limit.value(),3.0)
+        self.assertIn('in',panel.tables['capacity'].horizontalHeaderItem(2).text())

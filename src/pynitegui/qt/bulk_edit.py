@@ -62,9 +62,16 @@ def populate_bulk_inspector(window):
             window.form.addRow(enabled, widget)
             angles[key] = enabled, widget
         restraints = [boolean(key, "Restrain " + dof) for key, dof in zip(restraint_fields, dofs)]
+        custom_supports = ("custom", "inclined") if spatial else ("custom",)
+        selected_nodes = [window.project.nodes[name] for kind, name in selections if kind == "nodes"]
         def update_support():
+            current = support.currentData()
+            enabled = current in custom_supports or (
+                current is None and bool(selected_nodes)
+                and all(node.support in custom_supports for node in selected_nodes)
+            )
             for widget in restraints:
-                widget.setEnabled(support.currentData() in (("custom", "inclined") if spatial else ("custom",)))
+                widget.setEnabled(enabled)
         support.currentIndexChanged.connect(update_support)
         update_support()
         for key, dof in zip(spring_fields, dofs):

@@ -281,8 +281,10 @@ class ModelTablesDialog(QDialog):
                     widget.setCurrentText(value)
 
     def add_row(self, kind):
+        used = {*self.names("nodes"), *self.names("members"), *self.names("loads"),
+                *self.original.joint_springs, *getattr(self.original, "surfaces", {})}
         name = self.original.next_name({"nodes": "N", "members": "M", "loads": "L"}[kind],
-                                       {*self.names("nodes"), *self.names("members"), *self.names("loads")})
+                                       used)
         if kind == "nodes":
             entity = self.constructors[kind](name, (len(self.names("nodes")) + 1) * self.original.grid, 0)
         elif kind == "members":

@@ -10,7 +10,15 @@ from .plate_model import PlateDefinition
 class PlateLoadsDialog(QDialog):
     def __init__(self, parent, definition):
         super().__init__(parent)
-        self.definition = PlateDefinition.from_dict(definition.to_dict())
+        from dataclasses import replace
+        self.definition = replace(definition, material=replace(definition.material),
+                                  origin=list(definition.origin), x_control=list(definition.x_control),
+                                  y_control=list(definition.y_control),
+                                  openings=[dict(item) for item in definition.openings],
+                                  edges=dict(definition.edges),
+                                  additional_pressures=dict(definition.additional_pressures),
+                                  combinations={k: dict(v) for k, v in definition.combinations.items()},
+                                  pressure_profiles={k: dict(v) for k, v in definition.pressure_profiles.items()})
         self.setWindowTitle("Plate Load Cases and Combinations")
         self.resize(1000, 650)
         layout = QVBoxLayout(self)
@@ -55,7 +63,7 @@ class PlateLoadsDialog(QDialog):
         form.addRow("Self-weight multiplier", self.weight_factor)
         density = self.definition.units.to_display(self.definition.material.rho, "density")
         form.addRow("Material weight density", QLabel(f"{density:.8g} {self.definition.units.density}"))
-        self.weight_case.setEnabled(self.definition.plane == "XZ")
+        self.weight_case.setEnabled(self.definition.plane == "XZ" or self.definition.self_weight_case is not None)
         self.weight_factor.setEnabled(self.definition.plane == "XZ")
         self.weight_case.setToolTip("Choose the horizontal XZ plane and set material weight density in the main plate controls before enabling self-weight.")
         layout.addLayout(form)

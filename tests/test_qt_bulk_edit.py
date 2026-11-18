@@ -129,6 +129,14 @@ class BulkEditTests(unittest.TestCase):
         self.assertEqual(self.window.project.nodes["N1"].restraints, (False, True, True))
         self.assertEqual(self.window.project.nodes["N2"].restraints, (False, False, False))
         self.assertEqual(self.window.project.nodes["N1"].support, "custom")
+        # Re-selecting already-custom nodes keeps restraint checkboxes enabled under "Keep existing".
+        self.window.select_many([("nodes", "N1"), ("nodes", "N2")])
+        self.assertIsNone(self.field("support", QComboBox).currentData())
+        self.assertTrue(self.field("restraint_x", QCheckBox).isEnabled())
+        self.field("restraint_x", QCheckBox).setCheckState(Qt.CheckState.Checked)
+        self.apply()
+        self.assertEqual(self.window.project.nodes["N1"].restraints, (True, True, True))
+        self.assertEqual(self.window.project.nodes["N2"].restraints, (True, False, False))
 
     def test_load_case_and_scaling_all_quantities(self):
         project = example_project("cantilever", "si")

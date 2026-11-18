@@ -79,3 +79,26 @@ class JointSpringEditorTests(unittest.TestCase):
         q=batch_candidate(w.project,[{'op':'put','collection':'joint_springs','key':'S1','value':{'stiffness':250.}}])
         self.assertEqual(q.joint_springs['S1'].stiffness,250.)
         with self.assertRaises(AutomationError):batch_candidate(w.project,[{'op':'put','collection':'joint_springs','key':'S1','value':{'stiffness':True}}])
+
+    def test_joint_spring_only_postprocessing_dialogs_and_reports(self):
+        from matplotlib.figure import Figure
+        from types import SimpleNamespace
+        from pynitegui.qt.spatial_reports import draw_report,samples
+        w=self.window
+        for key in ('joint_spring_series','3d_joint_spring_network'):
+            w.load_project(example_project(key))
+            w.run_analysis();self.wait(lambda:w.thread is None)
+            self.assertIsNotNone(w.result,w.analysis_error)
+            dlg=w.diagrams()
+            self.assertIsNotNone(dlg)
+            dlg.inspect_distance()
+            dlg.envelopes.inspect_distance()
+            anim=w.animate_deformation()
+            self.assertIsNotNone(anim)
+            self.assertEqual(len(anim.paths),len(w.project.joint_springs))
+            w.refresh()
+            if key.startswith('3d_'):
+                fig=Figure();ax=fig.add_subplot(111)
+                opts=SimpleNamespace(amplitude=20,side=1,sign=1,supports=True,loads=True,ids=True,end_values=True,extrema=True)
+                draw_report(ax,w.project,w.result,samples(w.project,w.result),'axial','isometric',opts)
+            anim.close();dlg.close()

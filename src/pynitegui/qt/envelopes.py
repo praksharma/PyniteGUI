@@ -340,7 +340,8 @@ class EnvelopeWidget(QWidget):
         from .diagrams import member_breaks
         if self.spatial:
             from .spatial_results import member_breaks
-        length = member_breaks(self.project, self.member.currentText())[0]
+        member = self.member.currentText()
+        length = member_breaks(self.project, member)[0] if member in self.project.members else 0
         self.inspection_x = min(length, max(0, self.project.units.from_display(self.distance.value(), "length")))
         self.update_plot()
 

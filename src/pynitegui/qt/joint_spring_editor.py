@@ -65,7 +65,7 @@ class JointSpringsDialog(QDialog):
         if action=='delete':del self.project.joint_springs[name];self.refresh();return
         if len(self.project.nodes)<2:QMessageBox.information(self,'Joint Springs','Add two distinct joints first.');return
         nodes=list(self.project.nodes)
-        spring=self.project.joint_springs[name] if action=='edit' else JointSpring(self.project.next_name('S',set(self.project.nodes)|set(self.project.members)|set(self.project.joint_springs)),nodes[0],nodes[1],1.)
+        spring=self.project.joint_springs[name] if action=='edit' else JointSpring(self.project.next_name('S',{*self.project.nodes,*self.project.members,*self.project.joint_springs,*getattr(self.project,'surfaces',{})}),nodes[0],nodes[1],1.)
         editor=JointSpringEditor(self,self.project,spring,name if action=='edit' else None)
         if editor.exec()==QDialog.DialogCode.Accepted:
             if action=='edit':del self.project.joint_springs[name]
