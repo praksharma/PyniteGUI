@@ -15,6 +15,12 @@ nav = [
     { "Examples and Preferences" = "start/examples.md" }, { "Platform Validation" = "start/platforms.md" },
     { "3D Graphics Recovery" = "start/graphics.md" }, { "NVIDIA and Wayland" = "start/nvidia.md" }
   ] },
+  { "Tutorials" = [
+    { "2D Portal Frame Walkthrough" = "tutorials/portal-frame.md" },
+    { "3D Frame, Coupled Slab & Springs" = "tutorials/spatial-slab-frame.md" },
+    { "Iterative, Modal & Pushover" = "tutorials/nonlinear-and-modal.md" },
+    { "MCP & Python Cookbook" = "tutorials/mcp-recipes.md" }
+  ] },
   { "Modeling" = [
     { "Workflows" = "modeling/index.md" }, { "Drawing and Selection" = "modeling/drawing.md" },
     { "Moving Nodes" = "modeling/moving.md" }, { "Model Tables" = "modeling/tables.md" },

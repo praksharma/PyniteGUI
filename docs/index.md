@@ -16,8 +16,13 @@ properties and loads, running analysis, interpreting results and using automatio
 
 1. [Install and launch](start/install.md).
 2. [Run your first beam model](start/first-model.md) and check its reactions.
-3. Use the [feature index](features.md) to find a workflow, or search for a tool name.
-4. Read the [engineering limits](reference/engineering.md) and
+3. Follow a step-by-step tutorial with copy-pasteable code and MCP snippets:
+   - [2D Portal Frame Walkthrough: From Scratch to Envelopes & Reports](tutorials/portal-frame.md)
+   - [3D Space Frame, Coupled Slab & Joint Springs Tutorial](tutorials/spatial-slab-frame.md)
+   - [Iterative Elastic, Vibration Modes & Steel Pushover Tutorial](tutorials/nonlinear-and-modal.md)
+   - [MCP Automation & Headless Scripting Cookbook (Snippets)](tutorials/mcp-recipes.md)
+4. Use the [feature index](features.md) to find a workflow, or search for a tool name.
+5. Read the [engineering limits](reference/engineering.md) and
    [PyNite capability coverage](project/roadmap.md#pynite-capability-coverage)
    before relying on results.
 

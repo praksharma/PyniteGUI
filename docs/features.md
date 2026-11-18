@@ -5,6 +5,16 @@ the PyNite engine can do. Use the [capability audit](project/roadmap.md#pynite-c
 for Done/Partial/Pending status, and the [version scope](reference/version-scope.md)
 when comparing with the published RC4 wheel.
 
+## Tutorials and Cookbooks
+
+| Tutorial | Scope |
+| --- | --- |
+| [Your First Model](start/first-model.md) | Starter beam, official PyNite beams/frames/trusses, internal hinges, 3D coupled slabs and P-Delta column |
+| [2D Portal Frame Walkthrough](tutorials/portal-frame.md) | Building a planar steel portal frame, groups/levels, load cases/combinations, Linear vs. P-Delta, envelopes, governing stations and storey drift |
+| [3D Space Frame, Coupled Slab & Joint Springs](tutorials/spatial-slab-frame.md) | 3D frame bays, fitting and coupling rectangular Quad floor slabs, probing local slab moments and animating 3D joint-spring networks |
+| [Iterative Elastic, Vibration Modes & Steel Pushover](tutorials/nonlinear-and-modal.md) | Tension-only bracing, compression-only foundations, physical mass-source modal analysis and first-order steel plastic capacity histories |
+| [MCP Automation & Headless Scripting Cookbook](tutorials/mcp-recipes.md) | Copy-pasteable MCP `apply_batch` / solver JSON payloads and headless Python scripts |
+
 ## Modeling
 
 | Features | Workflow and reference |
