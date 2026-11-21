@@ -36,7 +36,7 @@ workspace. Select any generator from the **Generator** dropdown:
    - **Origin `[X, Y, Z]` & Numbering Starts:** Uniformly numbers generated nodes from `N<node_start>`
      and elements from `Q<element_start>` (or `R<element_start>` for `Rect`) after translating from the origin.
 2. **Automatic Quality Checks (`mesh_quality`):**
-   - Before any mesh is accepted, Brecon checks that total element count is at most `1,024`
+   - Before any mesh is accepted, Brecon checks that total element count is at most `1,600`
      (and `4,096` combined across up to `16` surfaces in a 3D project), all coordinates are finite,
      no edge is shorter than `1e-8 in`, every element's max/min edge ratio is at most `20`, every
      four-node face is coplanar, and all four Gauss points have strictly positive Jacobians.

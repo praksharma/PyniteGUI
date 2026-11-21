@@ -13,7 +13,8 @@ import numpy as np
 from Pynite import FEModel3D
 from PySide6.QtWidgets import QApplication, QDialog
 from pynitegui.qt.official_plate import PLATE_CATEGORY, PLATE_EXAMPLES, example_definition
-from pynitegui.qt.plate_model import PlateDefinition, analyze_plate
+from pynitegui.qt.plate_inspection import inspect_plate
+from pynitegui.qt.plate_model import PlateDefinition, analyze_plate, select_plate_combination
 from pynitegui.qt.units import UNIT_SYSTEMS
 
 
@@ -51,17 +52,64 @@ class OfficialPlateTests(unittest.TestCase):
         self.assertGreater(result["displacement"].max(), thin)  # Transverse shear retained.
 
     def test_all_unit_persistence_and_fresh_definitions(self):
-        for units in UNIT_SYSTEMS:
-            d = example_definition(unit_system=units)
-            with tempfile.TemporaryDirectory() as directory:
-                path = Path(directory)/"official.pyniteplate"
-                import json
-                path.write_text(json.dumps(d.to_dict()))
-                self.assertEqual(PlateDefinition.open(path).to_dict(), d.to_dict())
-            d.edges["Left"] = "Free"
-            self.assertEqual(example_definition(unit_system=units).edges["Left"], "Clamped")
+        for key in ("official_plate_quad", "official_mat_foundation"):
+            for units in UNIT_SYSTEMS:
+                d = example_definition(key, unit_system=units)
+                with tempfile.TemporaryDirectory() as directory:
+                    path = Path(directory)/"official.pyniteplate"
+                    import json
+                    path.write_text(json.dumps(d.to_dict()))
+                    self.assertEqual(PlateDefinition.open(path).to_dict(), d.to_dict())
+                d.edges["Left"] = "Simply supported"
+                self.assertNotEqual(example_definition(key, unit_system=units).edges["Left"], "Simply supported")
         with self.assertRaises(ValueError):
             example_definition("unknown")
+
+    def test_official_mat_foundation_upstream_parity_soil_pressure_and_equilibrium(self):
+        definition = example_definition("official_mat_foundation")
+        with contextlib.redirect_stdout(io.StringIO()):
+            result = select_plate_combination(analyze_plate(definition), "D")
+            model = FEModel3D()
+            E = 0.35*57.*(4000.)**0.5*144.
+            model.add_material("Concrete", E, .4*E, .17, .150)
+            ks = 100./1000.*12**3
+            model.add_mat_foundation("MAT1", mesh_size=1., length_X=50., length_Z=25., thickness=1.,
+                                     material_name="Concrete", ks=ks, origin=[0, 0, 0])
+            model.mats["MAT1"].add_mat_pt_load((10., 10.), "FY", -10., "D")
+            model.mats["MAT1"].add_mat_pt_load((10., 10.), "MZ", 15., "D")
+            model.mats["MAT1"].add_rect_opening("OPNG1", 5., 5., 10., 15.)
+            model.mats["MAT1"].generate()
+            model.mats["MAT1"].needs_update = False
+            for q in model.quads.values():
+                ke = q.Ke()
+                q.Ke = lambda ke=ke: ke
+            model.add_load_combo("D", {"D": 1.})
+            model.analyze(log=False, check_statics=False, num_steps=1)
+        self.assertEqual(len(result["cells"]), 1200)
+        self.assertEqual(len(result["names"]), 1290)
+        upstream_nodes = list(model.nodes.values())
+        np.testing.assert_allclose(result["points"], [(n.X*12., n.Z*12.) for n in upstream_nodes], atol=1e-10)
+        expected_disp = [-n.DY["D"]*12. for n in upstream_nodes]
+        expected_rxn = [-n.RxnFY["D"] for n in upstream_nodes]
+        expected_moments = [q.moment(0, 0, combo_name="D").ravel() for q in model.quads.values()]
+        np.testing.assert_allclose(result["displacement"], expected_disp, rtol=1e-9, atol=1e-11)
+        np.testing.assert_allclose(result["reactions"], expected_rxn, atol=1e-10)
+        np.testing.assert_allclose(result["moments"], expected_moments, atol=1e-9)
+        self.assertAlmostEqual(result["applied"], 10., places=9)
+        self.assertAlmostEqual(result["reactions"].sum(), -10., places=8)
+        rows = {row["component"]: row for row in result["equilibrium"]}
+        self.assertAlmostEqual(rows["FY"]["applied"], -10., places=9)
+        self.assertAlmostEqual(rows["MX"]["applied"], 1200., places=7)
+        self.assertAlmostEqual(rows["MZ"]["applied"], -1020., places=7)
+        self.assertLess(result["active_soil_springs"], result["total_soil_springs"])
+        self.assertGreater(len(result["uplift_nodes"]), 0)
+        for idx in (0, 15, 210, 500, 1199):
+            ename = result["element_names"][idx]
+            for xi, eta in ((0., 0.), (.4, -.3)):
+                probe = inspect_plate(result, ename, xi, eta)
+                x_ft, z_ft = probe["position"][0]/12., probe["position"][1]/12.
+                upstream_p = model.mats["MAT1"].soil_pressure(x_ft, z_ft, "D")/144.
+                self.assertAlmostEqual(probe["soil_bearing_pressure"], upstream_p, places=11)
 
 
 class OfficialPlateUITests(unittest.TestCase):

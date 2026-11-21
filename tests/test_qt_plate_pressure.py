@@ -85,7 +85,7 @@ class PlatePressureEditorTests(unittest.TestCase):
                 with probe.open() as stream:row=next(csv.DictReader(stream))
                 self.assertIn('Target profile pressure (N/mm2)',row)
                 with patch.object(QFileDialog,'getSaveFileName',return_value=(str(project),'Plate')):w.save_file()
-                saved=PlateDefinition.open(project);self.assertEqual(saved.pressure_profiles,d.pressure_profiles);self.assertEqual(saved.to_dict()['version'],4)
+                saved=PlateDefinition.open(project);self.assertEqual(saved.pressure_profiles,d.pressure_profiles);self.assertEqual(saved.to_dict()['version'],5)
             w.fields['height'].setValue(5000.);self.assertIsNone(w.result);self.assertFalse(inspector.export_probe.isEnabled())
         finally:
             self.close(w);host.saved=host.project.to_dict();host.close();host.deleteLater();self.app.processEvents()

@@ -386,6 +386,79 @@ class PlateWorkspaceTests(unittest.TestCase):
         self.assertEqual(window.definition.plane, "XY")
         self.assertIsNone(window.definition.self_weight_case)
 
+    def test_subgrade_and_point_loads_ui_contours_inspector_and_csv(self):
+        import numpy as np
+        from pynitegui.qt.plate_loads import PlateLoadsDialog
+        window = self.window
+        definition = PlateDefinition(
+            plane="XZ", width=120., height=120., thickness=6., mesh_size=30.,
+            pressure=0., load_case="Dead", additional_pressures={"Live": 0.},
+            edges=dict.fromkeys(("Left", "Right", "Bottom", "Top"), "Free"))
+        window.install(definition.to_dict())
+        self.assertFalse(window.component.model().item(10).isEnabled())
+        window.fields["subgrade_modulus"].setValue(.05)
+        self.assertTrue(window.apply())
+        self.assertEqual(window.definition.subgrade_modulus, .05)
+        self.assertTrue(window.component.model().item(10).isEnabled())
+        dialog = PlateLoadsDialog(window, window.definition)
+        dialog.perform("point_loads", "add")
+        dialog.perform("point_loads", "add")
+        self.assertEqual(dialog.point_loads.rowCount(), 2)
+        dialog.point_loads.cellWidget(0, 0).setCurrentText("Dead")
+        dialog.point_loads.cellWidget(0, 1).setValue(30.)
+        dialog.point_loads.cellWidget(0, 2).setValue(30.)
+        dialog.point_loads.cellWidget(0, 3).setCurrentText("FY")
+        dialog.point_loads.cellWidget(0, 4).setValue(-10.)
+        dialog.point_loads.cellWidget(1, 0).setCurrentText("Live")
+        dialog.point_loads.cellWidget(1, 3).setCurrentText("MZ")
+        dialog.point_loads.cellWidget(1, 4).setValue(120.)
+        # Cannot delete Live while referenced by a point load.
+        dialog.cases.selectRow(1)
+        with patch("pynitegui.qt.plate_loads.QMessageBox.warning") as warning:
+            dialog.perform("cases", "delete")
+        warning.assert_called_once()
+        # Delete the second point load, then rename Dead -> Permanent.
+        dialog.point_loads.selectRow(1)
+        dialog.perform("point_loads", "delete")
+        self.assertEqual(dialog.point_loads.rowCount(), 1)
+        dialog.cases.selectRow(0)
+        with patch("pynitegui.qt.plate_loads.QInputDialog.getText", return_value=("Permanent", True)):
+            dialog.perform("cases", "edit")
+        dialog.accept()
+        with patch("pynitegui.qt.plate_loads.PlateLoadsDialog", return_value=dialog), \
+             patch.object(dialog, "exec", return_value=dialog.DialogCode.Accepted):
+            window.configure_loading()
+        self.assertEqual(len(window.definition.point_loads), 1)
+        self.assertEqual(window.definition.point_loads[0]["case"], "Permanent")
+        self.assertEqual(window.definition.point_loads[0]["magnitude"], -10.)
+        window.run_analysis()
+        self.wait_until(lambda: window.thread is None)
+        self.assertIsNotNone(window.result)
+        self.assertIn("Active soil springs", window.status.text())
+        window.component.setCurrentIndex(10)
+        window.canvas.draw()
+        artist = window.figure.axes[0].collections[0]
+        np.testing.assert_allclose(artist.get_array(), window.result["element_bearing_pressures"])
+        window.inspect_results()
+        inspector = window.inspector
+        self.assertIn("Soil bearing pressure", inspector.probe.text())
+        with tempfile.TemporaryDirectory() as directory:
+            nodes_csv = str(Path(directory)/"mat-nodes.csv")
+            probes_csv = str(Path(directory)/"mat-probes.csv")
+            with patch("pynitegui.qt.plate_workspace.QFileDialog.getSaveFileName", return_value=(nodes_csv, "")):
+                window.export_csv()
+            with open(nodes_csv, newline="") as stream:
+                node_rows = list(csv.DictReader(stream))
+            self.assertIn("Tributary area (in2)", node_rows[0])
+            self.assertIn("Soil bearing pressure (kip/in2)", node_rows[0])
+            self.assertIn("Soil spring active", node_rows[0])
+            with patch("pynitegui.qt.plate_inspection_dialog.QFileDialog.getSaveFileName", return_value=(probes_csv, "")):
+                inspector.export_csv(False)
+            with open(probes_csv, newline="") as stream:
+                probe_rows = list(csv.DictReader(stream))
+            self.assertIn("Soil bearing pressure (kip/in2)", probe_rows[0])
+        dialog.deleteLater()
+
 
 if __name__ == "__main__":
     unittest.main()

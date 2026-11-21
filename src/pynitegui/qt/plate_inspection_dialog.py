@@ -134,6 +134,8 @@ class PlateInspector(QDialog):
                     values.append(f"{label} {value*units.factor('intensity'):.7g} {units.intensity}" if value is not None else f"{label} unavailable ({data['shear_status'].replace('_',' ')})")
             values += [f"Applied element pressure {data['applied_pressure']*units.factor('pressure'):.7g} {units.pressure}",
                        f"Target profile pressure {data['target_pressure']*units.factor('pressure'):.7g} {units.pressure}"]
+            if self.result["definition"].get("subgrade_modulus", 0.) > 0:
+                values.append(f"Soil bearing pressure {data['soil_bearing_pressure']*units.factor('pressure'):.7g} {units.pressure}")
             self.probe.setText(f"{data['element']} | xi {data['xi']:g}, eta {data['eta']:g}\n"
                 + "Local x/y: "+", ".join(f"{v*units.length_factor:.7g}" for v in data["position"])+f" {units.length} | "
                 + "Global XYZ: "+", ".join(f"{v*units.length_factor:.7g}" for v in data["global_position"])+f" {units.length}\n"

@@ -37,11 +37,12 @@ def inspect_plate(result, element, xi=0., eta=0.):
     global_point[[u, v]] += point
     q,gx,gy=result['pressure_coefficients']
     applied,target=float(result['element_pressures'][index]),float(q+gx*point[0]+gy*point[1])
-    if not all(math.isfinite(value) for value in (applied,target)):
+    bearing=float(weights @ np.asarray(result['nodal_bearing_pressure'],dtype=float)[result['cells'][index]]) if 'nodal_bearing_pressure' in result else 0.
+    if not all(math.isfinite(value) for value in (applied,target,bearing)):
         raise ValueError('Plate pressure recovery returned nonfinite values.')
     from .quad_shear_snapshot import probe
     recovered=probe(result['recovered_shear'],index,xi,eta) if definition['element_type']=='Quad' else {}
-    return dict(**recovered,applied_pressure=applied,target_pressure=target,element=element, xi=float(xi), eta=float(eta), position=point.tolist(),
+    return dict(**recovered,applied_pressure=applied,target_pressure=target,soil_bearing_pressure=bearing,element=element, xi=float(xi), eta=float(eta), position=point.tolist(),
         global_position=global_point.tolist(), axes=axes.tolist(),
         **dict(zip(("Mx", "My", "Mxy"), moments.tolist())),
         **({} if shears is None else dict(zip(("Qx", "Qy"), shears.tolist()))))
@@ -51,6 +52,7 @@ def plate_probe_table(result, units, probes=None):
     """All element centres by default; explicit probes retain their own xi/eta."""
     probes = probes if probes is not None else [inspect_plate(result, name) for name in result["element_names"]]
     rect = result["definition"]["element_type"] == "Rect"
+    has_subgrade = result["definition"].get("subgrade_modulus", 0.) > 0
     headers = ["Element", "xi", "eta", *(f"Local {axis} ({units.length})" for axis in ("x", "y")),
         *(f"Global {axis} ({units.length})" for axis in "XYZ"),
         *(f"{key} ({units.moment}/{units.length})" for key in ("Mx", "My", "Mxy"))]
@@ -58,12 +60,15 @@ def plate_probe_table(result, units, probes=None):
         headers += [f"{key} ({units.intensity})" for key in ("Qx", "Qy")]
     if not rect:headers += [f'Recovered {key} ({units.intensity})' for key in ('Qx','Qy')]+['Recovered shear status','Recovered fit']
     headers += [f'Applied element pressure ({units.pressure})',f'Target profile pressure ({units.pressure})']
+    if has_subgrade:
+        headers += [f'Soil bearing pressure ({units.pressure})']
     rows = [[row["element"], row["xi"], row["eta"],
         *(value*units.length_factor for value in (*row["position"], *row["global_position"])),
         *(row[key]*units.force_factor for key in ("Mx", "My", "Mxy")),
         *([row[key]*units.factor("intensity") for key in ("Qx", "Qy")] if rect else []),
         *([None if row[key] is None else row[key]*units.factor('intensity') for key in ('recovered_Qx','recovered_Qy')] + [row['shear_status'],row['shear_fit_method']] if not rect else []),
-        *(row[key]*units.factor('pressure') for key in ('applied_pressure','target_pressure'))] for row in probes]
+        *(row[key]*units.factor('pressure') for key in ('applied_pressure','target_pressure')),
+        *([row['soil_bearing_pressure']*units.factor('pressure')] if has_subgrade else [])] for row in probes]
     return headers, rows
 
 
