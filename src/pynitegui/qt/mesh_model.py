@@ -12,7 +12,7 @@ from .model import Material, finite_number, unique_json_object
 from .units import UNIT_SYSTEMS
 
 
-MAX_MESH_ELEMENTS = 1024
+MAX_MESH_ELEMENTS = 1600
 # Rectangle recipe width, height and perpendicular global coordinate indices.
 # Upstream YZ rectangles use local x=global Z and local y=global Y.
 RECTANGLE_AXES = {"XY": (0, 1, 2), "XZ": (0, 2, 1), "YZ": (2, 1, 0)}

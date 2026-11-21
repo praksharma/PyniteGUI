@@ -196,5 +196,5 @@ def surface_reference(material_schema):
     return {"type":"object", "properties":properties, "additionalProperties":False, "required_on_create":[],
         "update":"put merges recipe fields; material merges nested fields; parameters, lists and openings replace whole values. delete needs explicit pressure-map cleanup. All final recipe and coupled interface checks are atomic.",
         "generator_parameters":{name:dict(parameters) for name,(_,parameters) in GENERATORS.items()},
-        "limits":"16 project meshes; 1024 elements/mesh; 4096 total before openings. Analysis supports rectangle/Quad only; other families are geometry-only.",
+        "limits":"16 project meshes; 1600 elements/mesh; 4096 total before openings. Analysis supports rectangle/Quad only; other families are geometry-only.",
         "positive_pressure_normal":{"XY":"+Z", "XZ":"-Y", "YZ":"+X"}}

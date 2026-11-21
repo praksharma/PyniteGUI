@@ -27,13 +27,15 @@ def triangular_navier(points,a,b,nu,q,D,terms=80):
 class PlatePressureTests(unittest.TestCase):
     def test_current_schema_old_uniform_migration_and_profile_validation(self):
         d=PlateDefinition(pressure_profiles={'Case 1':{'axis':'y','end_pressure':0.}})
-        self.assertEqual(d.to_dict()['version'],4);self.assertEqual(PlateDefinition.from_dict(d.to_dict()),d)
+        self.assertEqual(d.to_dict()['version'],5);self.assertEqual(PlateDefinition.from_dict(d.to_dict()),d)
         for bad in (None,[],{'Missing':{'axis':'y','end_pressure':0.}},
                     {'Case 1':{'axis':'z','end_pressure':0.}}, {'Case 1':{'axis':'y','end_pressure':True}},
                     {'Case 1':{'axis':'y','end_pressure':float('inf')}},{'Case 1':{'axis':'x','end_pressure':1e7}},
                     {'Case 1':{'axis':'y','end_pressure':0.,'nodes':['N1']}}):
             with self.subTest(bad=bad),self.assertRaises(ValueError):replace(d,pressure_profiles=bad).validate()
-        legacy=PlateDefinition().to_dict();legacy['version']=3;legacy.pop('pressure_profiles');before=deepcopy(legacy)
+        legacy=PlateDefinition().to_dict();legacy['version']=3
+        for k in ('pressure_profiles','subgrade_modulus','subgrade_mode','point_loads'):legacy.pop(k)
+        before=deepcopy(legacy)
         self.assertEqual(PlateDefinition.from_dict(legacy),PlateDefinition());self.assertEqual(legacy,before)
         with self.assertRaises(ValueError):PlateDefinition.from_dict({**d.to_dict(),'version':3})
         bad=d.to_dict();bad.pop('pressure_profiles')

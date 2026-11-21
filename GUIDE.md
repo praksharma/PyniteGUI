@@ -148,7 +148,7 @@ the previous recipe. Units affect inputs without changing physical dimensions.
 coordinates, named four-node connectivity, element family/properties and the
 recipe. It is not a frame project or an analyzed result file.
 
-The single-mesh workspace has a 1,024-element budget, checked before allocation
+The single-mesh workspace has a 1,600-element budget, checked before allocation
 (before removing rectangle openings). Generated meshes are checked for finite
 coordinates, nondegenerate/coplanar faces, positive Gauss-point Jacobians and
 edge-length ratios up to 20; these are basic safeguards, not a mesh-quality
@@ -236,7 +236,7 @@ surface pressures by load case. Version 19 geometry projects migrate with analys
 disabled and no pressures. Normal save/open,
 autosave/recovery, unit changes, model-table edits, undo/redo and MCP frame edits
 retain them. Projects are limited to 16 surface recipes and 4,096 pre-opening
-elements in total, in addition to the existing 1,024-element per-mesh limit and
+elements in total, in addition to the existing 1,600-element per-mesh limit and
 generation checks. The separate `.pynitemesh` recipe files remain available.
 
 **Coupled rectangular slabs (experimental):** select a surface and check
@@ -454,19 +454,21 @@ deformed 3D shell view. Export CSV contains local node coordinates, signed norma
 displacements/reactions, selected-combination factors and snapshot identity. The plot toolbar exports images.
 
 Save/Open uses separate `.pyniteplate` files with canonical inch-kip values and
-strict format/version validation. Version 4 adds geometry-owned linear pressure
-profiles; version 3 adds named loading/self-weight and version 2 advanced mesh
-options. Existing version 1/2/3 files migrate without changing their uniform
-pressures or enabling gravity. Undo/redo covers applied definitions, not
+strict format/version validation. Version 5 adds Winkler soil subgrade springs
+(`subgrade_modulus`, `subgrade_mode`) and concentrated transverse point forces/moments
+(`point_loads`); version 4 adds geometry-owned linear pressure profiles; version 3
+adds named loading/self-weight and version 2 advanced mesh options. Existing
+version 1/2/3/4 files migrate without changing their uniform pressures or enabling
+gravity or subgrade springs. Undo/redo covers applied definitions, not
 individual keystrokes. Engineering changes clear results; Apply validates before
 changing the definition. Display-unit changes convert inputs/plots/CSV while
 retaining the current solved combination and snapshot, including unit undo/redo.
 This workspace has its own unsaved-change prompt, not frame autosave/recovery.
 
 Pilot limits: one axis-aligned rectangular surface at a specified origin, up to
-1,024 elements, aspect ratios up to 20, linear small-displacement elastic bending,
-up to 32 uniform/linear pressure cases and 32 combinations (including the primary
-**Plate** combination). In-plane translations and the
+1,600 elements, aspect ratios up to 20, linear small-displacement elastic bending,
+up to 32 uniform/linear pressure cases, 64 concentrated point loads/moments and
+32 combinations (including the primary **Plate** combination). In-plane translations and the
 drilling rotation are explicitly restrained everywhere; this is **not** general
 membrane/shell analysis. A simply supported edge restrains normal translation;
 a clamped edge additionally restrains both bending rotations. Rigid transverse
@@ -557,6 +559,45 @@ Pressure endpoints remain assigned values when dimensions change; recompute them
 if changing the fluid problem.
 The model remains transverse elastic bending, with internal membrane/drilling
 coordinates restrained. It is not the separate in-plane shear-wall API.
+
+**Mat foundations, Winkler soil subgrade and concentrated point loads:** set
+**Subgrade modulus** ($k_s$, force per unit volume, e.g., `kip/in3`, `kip/ft3` or
+`kN/m3`) in the main plate controls and choose **Subgrade action**
+(**Compression only (-normal)** or **Bilateral**). Each generated node receives a
+transverse support spring of stiffness $k_i = k_s A_{\text{trib},i}$, where
+$A_{\text{trib},i}$ is the sum of one quarter of the area of each attached element
+(accounting for rectangular openings and control-line grading). In
+compression-only mode, every load combination is solved independently through an
+active-set iteration that deactivates tensile (uplifted) soil springs and rejects
+full-uplift or collinear-contact mechanisms leaving fewer than three non-collinear
+active transverse supports.
+
+Open **Load Cases / Combinations…** and select the **Point loads** tab to add up
+to 64 concentrated transverse forces (`FY` on `XZ`, `FZ` on `XY`, `FX` on `YZ`)
+and out-of-plane bending moments (`MX`/`MZ` on `XZ`, `MX`/`MY` on `XY`,
+`MY`/`MZ` on `YZ`) at local coordinates $(x, y)$ on or inside the rectangle and
+outside any opening. Interior point-load coordinates are automatically merged into
+the mesh generator's control lines so a mesh node is guaranteed at every point-load
+location without polluting the user's manual control-line table. After solving,
+choose **Soil bearing pressure** in the contour selector or open **Inspect
+Results…** to probe bilinearly interpolated bearing pressures $p(\xi, \eta)$
+(matching `MatFoundation.soil_pressure`), inspect active/uplift spring counts in
+the status bar, and export nodal tributary areas, bearing pressures and spring
+activity flags to CSV.
+
+**Official mat foundation:** choose **File > Examples > Plates (Experimental) >
+Official PyNite - Mat Foundation** (`official_mat_foundation`) or search for it
+in Browse Examples. This adapts `Examples/Mat Foundation.py` at the pinned
+revision: a 50 × 25 ft concrete mat foundation, 1 ft thick (`E = 0.35 × 57√4000 ksi`,
+`nu = 0.17`), meshed at 1 ft (`1,200` `Quad` elements, `1,290` nodes) with a
+5 × 10 ft rectangular opening `OPNG1` at `(5, 5)` to `(10, 15)` ft, supported on
+compression-only Winkler soil springs (`ks = 100 pci = 0.1 kip/in3 = 172.8 kcf`)
+with all outer edges free, and loaded at `(10, 10)` ft (`(120, 120)` in) by
+`FY = -10 kip` and `MZ = +15 kip-ft` (`+180 kip-in`) in case `D`. The solved
+snapshot matches upstream nodal displacements, soil spring reactions, element
+centre moments and bilinear soil pressures while passing independent six-component
+force/moment equilibrium about the origin (`FY = -10 kip`, `MX = +1,200 kip-in`,
+`MZ = -1,020 kip-in`).
 
 At the source mesh there are **375 Quads and 416 nodes**, total applied normal
 force **+245.7 kip**, normal reactions **−245.7 kip**, and maximum displacement

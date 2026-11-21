@@ -1,7 +1,8 @@
 """Official adaptations and custom benchmarks in the separate plate workspace.
 
-Source: PyNite Examples/Rectangular Plate Bending - Qauds.py at the revision
-in official_examples.SOURCE_COMMIT. MIT notice: licenses/pynite-examples.txt.
+Sources: PyNite Examples/Rectangular Plate Bending - Qauds.py,
+Examples/Hydrostatic Loads on a Wall.py and Examples/Mat Foundation.py at the
+revision in official_examples.SOURCE_COMMIT. MIT notice: licenses/pynite-examples.txt.
 """
 from .model import Material
 from .plate_model import PlateDefinition
@@ -9,6 +10,7 @@ from .plate_model import PlateDefinition
 
 PLATE_EXAMPLES = {"official_plate_quad": "Official PyNite - Clamped Rectangular Quad Plate",
                   "official_wall_hydrostatic": "Official PyNite - Hydrostatic Tank Wall",
+                  "official_mat_foundation": "Official PyNite - Mat Foundation",
                   "thin_plate_recovered_shear": "Thin Plate - Recovered Centre Shear",
                   "opening_plate_recovered_shear": "Thin Plate Opening - Masked Recovered Shear"}
 PLATE_CATEGORY = "Plates (Experimental)"
@@ -17,6 +19,9 @@ PLATE_NOTES = {
         'Choose Recovered Qx/Qy after analysis. Raw Quad shear stays unavailable. Compare refinement; centre tables/CSV show eligibility and fit provenance.'),
     'opening_plate_recovered_shear': ('Custom 120 in square thin plate with a centred 40 in free opening, nu=0.2, t=0.6 in and 5 in mesh. Pressure -1e-7 kip/in2.',
         'Recovered centre shear is masked near reentrant corners and when a stencil includes a corner. Blank values are unavailable. Refine to 4 in and compare; no corner-peak/design claim.'),
+    "official_mat_foundation": (
+        "Official PyNite adaptation: 50 × 25 ft concrete mat foundation, 1 ft thick, on compression-only Winkler soil springs (ks = 100 pci = 172.8 kcf) with a 5 × 10 ft opening and concentrated column force/moment at (10, 10) ft.",
+        "1,200 Quads (1,290 nodes); applied FY = -10 kip and MZ = +15 kip-ft (+180 kip-in) at (120, 120) in; compression-only soil reactions sum to +10 kip (normal reaction sum -10 kip) with global moment equilibrium about the origin."),
     "official_wall_hydrostatic": (
         "Official PyNite adaptation: 25 × 15 ft tank wall, 1 ft thick, with 15 ft of water. Quad mesh 1 ft, left/right/bottom clamped, top free. Linear transverse pressure follows height.",
         "375 Quads; 1.4F normal load +245.7 kip and reaction sum −245.7 kip. Compare mesh refinements. Quad shear remains unverified and disabled; this is transverse plate bending, not an in-plane shear wall."),
@@ -28,6 +33,22 @@ PLATE_NOTES = {
 def example_definition(key="official_plate_quad", unit_system="imperial"):
     if key not in PLATE_EXAMPLES:
         raise ValueError(f"Unknown official plate example: {key}")
+    if key == "official_mat_foundation":
+        definition = PlateDefinition(
+            width=600., height=300., thickness=12., mesh_size=12., plane="XZ",
+            material=Material("Concrete", E=0.35*57.*4000.**.5, nu=.17, rho=.150/12**3),
+            pressure=0., load_case="D", load_factor=1.,
+            edges=dict.fromkeys(("Left", "Right", "Bottom", "Top"), "Free"),
+            openings=[dict(name="OPNG1", x_left=60., y_bott=60., width=60., height=120.)],
+            subgrade_modulus=.1, subgrade_mode="compression_only",
+            point_loads=[
+                dict(case="D", x=120., y=120., direction="FY", magnitude=-10.),
+                dict(case="D", x=120., y=120., direction="MZ", magnitude=180.),
+            ],
+            combinations={"D": {"D": 1.}},
+            unit_system=unit_system, mesh_name="MAT1")
+        definition.validate()
+        return definition
     if key in ('thin_plate_recovered_shear','opening_plate_recovered_shear'):
         opening=key=='opening_plate_recovered_shear'
         definition=PlateDefinition(width=120.,height=120. if opening else 180.,thickness=.6,mesh_size=5. if opening else 7.5,
@@ -54,7 +75,7 @@ def preview_project(definition):
     """Geometry only; plate inputs remain owned by PlateDefinition."""
     from .spatial_model import SpatialProject
     project = SpatialProject(unit_system=definition.unit_system)
-    project.surfaces = {definition.mesh_name: definition.mesh_definition()}
+    project.surfaces = {definition.mesh_name: definition.mesh_definition(include_point_loads=True)}
     return project
 
 
@@ -66,13 +87,21 @@ def loading_summary(definition):
         text=f"{case}: {u.to_display(start,'pressure'):+.6g}"
         if profile:text+=f" → {u.to_display(profile['end_pressure'],'pressure'):+.6g} along local {profile['axis']}"
         pressures.append(text+' '+u.pressure)
+    for load in definition.point_loads:
+        quantity = "moment" if load["direction"].startswith("M") else "force"
+        unit = u.moment if quantity == "moment" else u.force
+        pressures.append(
+            f"{load['case']} · ({u.to_display(load['x'], 'length'):.6g}, {u.to_display(load['y'], 'length'):.6g}) {u.length} · "
+            f"{load['direction']}: {u.to_display(load['magnitude'], quantity):+.6g} {unit}")
+    subgrade = (f"\nSoil subgrade: ks = {u.to_display(definition.subgrade_modulus, 'density'):.6g} {u.density} ({definition.subgrade_mode})"
+                if definition.subgrade_modulus > 0 else "")
     combinations='; '.join(name+' = '+' + '.join(f'{factor:g}{case}' for case,factor in factors.items())
                            for name,factors in definition.load_combinations.items())
     return (f"Separate plate workspace · {u.summary}\n"
             f"Size: {u.to_display(definition.width, 'length'):.6g} × {u.to_display(definition.height, 'length'):.6g} {u.length}\n"
             f"Thickness: {u.to_display(definition.thickness, 'length'):.6g} {u.length}\n"
             f"Mesh: {u.to_display(definition.mesh_size, 'length'):.6g} {u.length} · {definition.element_type}\n"
-            +'; '.join(edge+': '+support for edge,support in definition.edges.items())+'\n'
+            +'; '.join(edge+': '+support for edge,support in definition.edges.items())+subgrade+'\n'
             +'\n'.join(pressures)+'\nCombinations: '+combinations+'\n'
             +'Centroid pressure per element; compare refinements. Linear elastic transverse bending; self-weight off.\n'
             +'The main frame model and unsaved inputs remain unchanged.')

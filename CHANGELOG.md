@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Add mat foundation Winkler soil subgrade springs (`subgrade_modulus` $k_s$ in
+  force/length³, `compression_only` and `bilateral` modes), concentrated
+  transverse point loads and out-of-plane bending moments (`point_loads` with
+  automatic interior control-line nodal placement), nodal tributary areas,
+  element-average **Soil bearing pressure** contours, bilinear natural-coordinate
+  $(\xi, \eta)$ bearing-pressure probes and CSV exports, active/uplift spring
+  status, `.pyniteplate` v5 migration, and the official PyNite
+  `Mat Foundation.py` adaptation (`official_mat_foundation`, 1,200 Quads,
+  1,290 nodes).
+
 - Add ten step-by-step authored tutorials under `docs/tutorials/` (`portal-frame.md`,
   `continuous-beams-and-releases.md`, `supports-settlements-and-springs.md`,
   `trusses-and-mixed-structures.md`, `geometry-transforms-and-connections.md`,

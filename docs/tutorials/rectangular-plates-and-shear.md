@@ -7,6 +7,7 @@ This tutorial walks through Brecon's standalone transverse rectangular plate wor
 2. **Linear / hydrostatic pressure profiles**, multiple pressure cases, named combinations, and horizontal `XZ` self-weight.
 3. **Rectangular openings, control-line mesh grading, and natural-coordinate probes** $(\xi, \eta)$.
 4. **Guarded Recovered Centre Shear** (`Recovered Qx (centre)` / `Recovered Qy (centre)`) and corner/stencil masking.
+5. **Mat Foundations, Winkler Soil Subgrade Springs & Concentrated Point Loads** (`Official PyNite - Mat Foundation`).
 
 ---
 
@@ -108,6 +109,39 @@ for key in ("thin_plate_recovered_shear", "opening_plate_recovered_shear"):
     result = analyze_plate(plate)
     rec = result["recovered_shear"]
     print(f"{key}: available={rec['available']}/{rec['total']} cells | reason={rec['reason']}")
+```
+
+---
+
+## 5. Mat Foundations, Winkler Soil Subgrade Springs & Concentrated Point Loads
+
+1. Choose **File > Examples > Plates (Experimental) > Official PyNite - Mat Foundation**
+   (`official_mat_foundation`).
+2. Inspect the mat foundation setup in the main controls:
+   - **Plane:** `XZ` (`600 × 300 in` = `50 × 25 ft`), **Thickness:** `12 in` (`1 ft`), **Mesh size:** `12 in` (`1,200` `Quad` elements, `1,290` nodes after removing the `60 × 120 in` opening `OPNG1`).
+   - **Edges:** `Left`, `Right`, `Bottom`, `Top` all set to `Free`.
+   - **Subgrade modulus:** `0.1 kip/in3` (`100 pci` = `172.8 kcf`), **Subgrade action:** `Compression only (-normal)` (or switch to `Bilateral` to compare linear bilateral soil springs).
+3. Click **Load Cases / Combinations…** and switch to the **Point loads** tab:
+   - Two concentrated loads in case `D` are applied at local `(120, 120) in` (`(10, 10) ft`):
+     downward column load `FY = -10 kip` and overturning moment `MZ = +180 kip-in` (`+15 kip-ft`).
+   - Any interior point-load coordinate is automatically merged into the mesh control lines so a mesh node is guaranteed at `(x, y)`.
+4. Click **Analyze**:
+   - In the **Component** selector, choose **Soil bearing pressure** to view the element-average compressive bearing pressure contour.
+   - Click **Inspect Results…** (or click any element on the plot) to probe the bilinearly interpolated soil bearing pressure $p(\xi, \eta)$ at any natural coordinate $(\xi, \eta) \in [-1, 1]^2$, and export nodal tributary areas, bearing pressures, and active spring flags via **Export CSV**.
+
+### Headless Python Snippet: Mat Foundation on Compression-Only Winkler Soil Springs
+```python
+from pynitegui.qt.official_plate import example_definition
+from pynitegui.qt.plate_inspection import inspect_plate
+from pynitegui.qt.plate_model import analyze_plate, select_plate_combination
+
+mat = example_definition("official_mat_foundation")
+result = select_plate_combination(analyze_plate(mat), "D")
+print("Active soil springs:", f"{result['active_soil_springs']}/{result['total_soil_springs']}")
+print("Uplifted nodes:", len(result["uplift_nodes"]))
+print("Peak nodal bearing pressure:", round(float(result["nodal_bearing_pressure"].max()), 6), "kip/in2")
+probe = inspect_plate(result, result["element_names"][0], xi=0.0, eta=0.0)
+print("Element 0 centre bearing pressure:", round(probe["soil_bearing_pressure"], 6), "kip/in2")
 ```
 
 See [Rectangular plate analysis](../surfaces/plates.md).

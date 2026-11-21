@@ -94,17 +94,24 @@ class PlateWorkspace(QDialog):
         form.addRow("Plane", self.plane)
         from .app import number
         self.fields = {}
-        for key in ("width", "height", "thickness", "mesh_size", "E", "nu", "rho", "pressure", "load_factor"):
+        for key in ("width", "height", "thickness", "mesh_size", "E", "nu", "rho", "pressure", "load_factor", "subgrade_modulus"):
             widget = number(0, -1e12, 1e12, 8)
             widget.setObjectName("plate_" + key)
             self.fields[key] = widget
             form.addRow(key, widget)
             widget.valueChanged.connect(self.mark_pending)
+        self.subgrade_mode = QComboBox()
+        self.subgrade_mode.setObjectName("plate_subgrade_mode")
+        self.subgrade_mode.addItem("Compression only (-normal)", "compression_only")
+        self.subgrade_mode.addItem("Bilateral", "bilateral")
+        self.subgrade_mode.currentIndexChanged.connect(self.mark_pending)
+        form.addRow("Subgrade action", self.subgrade_mode)
         self.case = QLineEdit()
         self.case.setToolTip("Primary pressure case. Renaming updates named combination and self-weight references.")
         self.fields["load_factor"].setToolTip("Factor for the primary-case Plate combination. Named combinations have their own factors.")
         self.fields["pressure"].setToolTip("Primary-case pressure at local coordinate zero; linear profiles and end pressures are edited in Load Cases / Combinations.")
         self.fields["rho"].setToolTip("Material weight per unit volume (force/length³). Enable horizontal plate self-weight in Load Cases / Combinations.")
+        self.fields["subgrade_modulus"].setToolTip("Winkler soil subgrade modulus ks (force/length³). Set > 0 for mat foundation / grade-supported plate analysis.")
         form.addRow("Load case", self.case)
         self.case.textChanged.connect(self.mark_pending)
         self.loading_summary = QLabel()
@@ -147,7 +154,8 @@ class PlateWorkspace(QDialog):
         self.component = QComboBox()
         self.component.addItems(["Mesh", "Normal displacement", "Mx (element centre)",
                                  "My (element centre)", "Mxy (element centre)",
-                                 "Qx (element centre)", "Qy (element centre)", "Applied pressure (element average)", "Recovered Qx (centre)", "Recovered Qy (centre)"])
+                                 "Qx (element centre)", "Qy (element centre)", "Applied pressure (element average)", "Recovered Qx (centre)", "Recovered Qy (centre)",
+                                 "Soil bearing pressure"])
         self.component.setToolTip("Resultants follow the local x/y axes shown on the plot. "
                                  "Positive bending moments oppose positive curvature. "
                                  "Contours use unsmoothed element-centre values; sharp opening-corner peaks are mesh-sensitive.")
@@ -186,7 +194,7 @@ class PlateWorkspace(QDialog):
         self.plane.setCurrentText(self.definition.plane)
         labels = {"width": "Width", "height": "Height", "thickness": "Thickness", "mesh_size": "Mesh size",
                   "E": "Elastic modulus", "nu": "Poisson ratio", "rho": "Weight density",
-                  "pressure": "Pressure at zero", "load_factor": "Plate factor"}
+                  "pressure": "Pressure at zero", "load_factor": "Plate factor", "subgrade_modulus": "Subgrade modulus"}
         for key, widget in self.fields.items():
             value = getattr(self.definition.material, key) if key in ("E", "nu", "rho") else getattr(self.definition, key)
             factor, label = self.quantity(key, units)
@@ -194,13 +202,14 @@ class PlateWorkspace(QDialog):
             widget.setProperty("canonical", value)
             widget.setProperty("initial", widget.value())
             self.form.labelForField(widget).setText(labels[key] + (f" ({label})" if label else ""))
+        self.subgrade_mode.setCurrentIndex(max(0, self.subgrade_mode.findData(self.definition.subgrade_mode)))
         self.case.setText(self.definition.load_case)
         for edge, box in self.supports.items():
             box.setCurrentText(self.definition.edges[edge])
         _, _, axis, sign = PLANES[self.definition.plane]
         self.normal_label.setText(("+" if sign > 0 else "-") + "XYZ"[axis])
         weight = self.definition.self_weight_case or "Off"
-        self.loading_summary.setText(f"{len(self.definition.load_cases)} pressure case(s), {len(self.definition.load_combinations)} combination(s)\nSelf-weight: {weight} | Linear profiles: {len(self.definition.pressure_profiles)}")
+        self.loading_summary.setText(f"{len(self.definition.load_cases)} pressure case(s), {len(self.definition.load_combinations)} combination(s)\nSelf-weight: {weight} | Linear profiles: {len(self.definition.pressure_profiles)} | Point loads: {len(self.definition.point_loads)}")
         self.pending, self.loading, self.result = False, False, previous if keep else None
         self.export_action.setEnabled(keep)
         self.update_combination_choices()
@@ -213,7 +222,7 @@ class PlateWorkspace(QDialog):
             return units.factor("length"), units.length
         if key == "E":
             return units.factor("stress"), units.stress
-        if key == "rho":
+        if key in ("rho", "subgrade_modulus"):
             return units.factor("density"), units.density
         if key == "pressure":
             return units.force_factor / units.length_factor**2, units.force + "/" + units.length + "2"
@@ -238,6 +247,7 @@ class PlateWorkspace(QDialog):
             if key in ("E", "nu", "rho") and value != getattr(definition.material, key):
                 definition.material.preset = None
             setattr(definition.material if key in ("E", "nu", "rho") else definition, key, value)
+        definition.subgrade_mode = self.subgrade_mode.currentData()
         definition.plane = self.plane.currentText()
         if self.case.text() != definition.load_case:
             definition.rename_case(definition.load_case, self.case.text())
@@ -301,6 +311,11 @@ class PlateWorkspace(QDialog):
         self.recovered_note.setText((f"Recovered centre shear: {recovered['available']}/{recovered['total']} cells. {recovered['reason']}" if recovered else ''))
         if self.component.currentIndex() in (8,9) and not enabled:
             self.component.blockSignals(True);self.component.setCurrentIndex(1 if self.result is not None else 0);self.component.blockSignals(False)
+        has_subgrade = self.definition.subgrade_modulus > 0
+        self.component.model().item(10).setEnabled(has_subgrade)
+        self.component.setItemData(10, "Element-average soil bearing pressure (positive in compression)" if has_subgrade else "Set a positive soil subgrade modulus ks to recover bearing pressure", Qt.ItemDataRole.ToolTipRole)
+        if self.component.currentIndex() == 10 and not has_subgrade:
+            self.component.blockSignals(True); self.component.setCurrentIndex(1 if self.result is not None else 0); self.component.blockSignals(False)
         model = build_plate(self.definition)
         _, points, cells = plate_geometry(model, self.definition)
         units = self.definition.units
@@ -326,6 +341,13 @@ class PlateWorkspace(QDialog):
             artist=PolyCollection(polygons,array=masked,cmap='coolwarm');ax.add_collection(artist)
             peak=max(float(np.max(abs(values[np.isfinite(values)]))),1e-15);artist.set_clim(-peak,peak)
             self.figure.colorbar(artist,ax=ax,label=units.intensity)
+        elif self.result is not None and index == 10:
+            values = self.result["element_bearing_pressures"] * units.factor("pressure")
+            artist = PolyCollection(polygons, array=values, cmap="coolwarm")
+            ax.add_collection(artist)
+            peak = max(float(np.max(np.abs(values))), 1e-15)
+            artist.set_clim(-peak, peak)
+            self.figure.colorbar(artist, ax=ax, label=units.pressure)
         elif self.result is not None and index:
             if index == 1:
                 values = self.result["displacement"] * units.length_factor
@@ -386,6 +408,9 @@ class PlateWorkspace(QDialog):
                                 + " | Force/moment equilibrium passed")
             if max(abs(self.result["displacement"])) > self.definition.thickness / 2:
                 self.status.setText(self.status.text() + " | Large deflection: linear plate assumptions may be invalid")
+            if self.definition.subgrade_modulus > 0:
+                bearing_peak = float(np.max(np.abs(self.result["nodal_bearing_pressure"]))) * units.factor("pressure")
+                self.status.setText(self.status.text() + f" | Max |bearing pressure| {bearing_peak:.6g} {units.pressure} | Active soil springs {self.result['active_soil_springs']}/{self.result['total_soil_springs']}")
 
     def inspect_results(self):
         if self.result is None:
@@ -576,16 +601,21 @@ class PlateWorkspace(QDialog):
                                  f"Normal displacement ({units.length})", f"Normal reaction ({units.force})",
                                  "Combination", "Case factors", "Snapshot", "Analyzed UTC", "Model signature",
                                  "Global normal", "Self-weight case", "Pressure profiles (canonical kip/in2)", "Pressure representation",
-                                 "Combined pressure at zero (kip/in2)", "dq/dlocal x (kip/in3)", "dq/dlocal y (kip/in3)"])
-                for name, point, displacement, reaction in zip(self.result["names"], self.result["points"],
-                        self.result["displacement"], self.result["reactions"]):
+                                 "Combined pressure at zero (kip/in2)", "dq/dlocal x (kip/in3)", "dq/dlocal y (kip/in3)",
+                                 f"Tributary area ({units.length}2)", f"Soil bearing pressure ({units.pressure})", "Soil spring active"])
+                for name, point, displacement, reaction, trib, bearing, active in zip(
+                        self.result["names"], self.result["points"],
+                        self.result["displacement"], self.result["reactions"],
+                        self.result["tributary_areas"], self.result["nodal_bearing_pressure"],
+                        self.result["soil_spring_active"]):
                     writer.writerow([name, *(point*units.length_factor), displacement*units.length_factor,
                                      reaction*units.force_factor, self.result["combination"],
                                      "; ".join(f"{case}: {factor:g}" for case, factor in self.result["factors"].items()),
                                      self.result["snapshot_id"], self.result["analyzed_at"], self.result["model_signature"],
                                      ", ".join(f"{v:g}" for v in self.definition.normal), self.definition.self_weight_case or "Off",
                                      json.dumps(self.definition.pressure_profiles,sort_keys=True),self.result["pressure_representation"],
-                                     *self.result["pressure_coefficients"]])
+                                     *self.result["pressure_coefficients"],
+                                     trib*units.length_factor**2, bearing*units.factor("pressure"), bool(active)])
         except OSError as error:
             QMessageBox.warning(self, "Export Plate", str(error))
 

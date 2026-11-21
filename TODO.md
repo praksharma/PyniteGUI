@@ -58,7 +58,7 @@ spatial translational/rotational-release scope rechecked 2026-10-29; unilateral 
 | Shape/opening meshing | Done | All seven concrete PyNite generators with shape-specific/common options, bounded checks, control lines/openings, offline 3D geometry preview, recipes/undo and connectivity export. Curved-shell analysis and frame assembly remain distinct pending capabilities. |
 | Support reactions | Done | Unit-aware reactions, exports and six spatial components, including bilateral springs and model-level imposed support motions in linear analysis and supported frame-only P-Delta. |
 | Geometry/load/deformation rendering | Done | Frame/truss loads, supports and deformed shapes; plate-only contours, seven mesh previews, plus experimental coupled rectangular slab pressures and deformed meshes. |
-| Shear walls and mats | Pending | Add dedicated wall/foundation definitions, meshing, openings, soil/support input and specialized results; verify the locked engine before exposing workflows. |
+| Shear walls and mats | Partial | Mat foundations on compression-only/bilateral Winkler soil springs with rectangular openings, concentrated column forces/moments, bearing-pressure contours/probes/CSV and the official Mat Foundation example are implemented in the transverse plate workspace. Dedicated in-plane shear wall definitions, story/pier/coupling-beam APIs and wall result recovery remain pending. |
 | Model/result PDF output | Done | Native printable model definitions/results with save-to-PDF; 2D diagrams and numerical envelopes; 3D six-component diagrams with selectable orthographic views and numerical envelopes. |
 
 ### Analysis Method Checklist
@@ -333,12 +333,12 @@ differences from upstream. New solver work is authorized; apply the analysis-met
 - [x] [Rectangular Wall - Linear Varying Load.py](https://github.com/JWock82/Pynite/blob/main/Examples/Rectangular%20Wall%20-%20Linear%20Varying%20Load.py)
 - [ ] [Shear Wall - Basic.py](https://github.com/JWock82/Pynite/blob/main/Examples/Shear%20Wall%20-%20Basic.py)
 - [ ] [Shear Wall - Advanced.py](https://github.com/JWock82/Pynite/blob/main/Examples/Shear%20Wall%20-%20Advanced.py)
-- [ ] [Mat Foundation.py](https://github.com/JWock82/Pynite/blob/main/Examples/Mat%20Foundation.py)
+- [x] [Mat Foundation.py](https://github.com/JWock82/Pynite/blob/main/Examples/Mat%20Foundation.py)
 - [ ] [Circular Bin with Conical Hopper.py](https://github.com/JWock82/Pynite/blob/main/Examples/Circular%20Bin%20with%20Conical%20Hopper.py)
 
 **Current-capability audit (2026-10-27, all 20 pinned scripts reviewed):**
 
-Fourteen official adaptations are now available. The hydrostatic tank wall now uses geometry-owned linear pressure in the transverse plate workspace, with all source nodal/moment parity, independent triangular-load continuum/refinement checks and explicit centroid-load first moments. Raw Quad shear remains disabled; the separate bounded thin-plate recovery is described below. The official modal column preserves the source inputs/gravity and opens the separate mode workspace, with pinned frequency/normalized-shape parity and independent dynamics checks. Three new Iterative elastic examples preserve the pinned source inputs: compression-only foundation, tension-only braced frame, and fixed-anchor spring-supported frame. The last condenses its fixed vertical spring anchors exactly into one-way ground springs; general node-to-node spring entities are now a separate implemented workflow. Pinned upstream result parity, independent uplift mechanics, persistence and worker/MCP checks cover this scope.
+Fifteen official adaptations are now available. The official mat foundation adapts `Examples/Mat Foundation.py` in the transverse plate workspace (50 × 25 ft concrete mat, 1 ft thick, 1,200 Quads and 1,290 nodes on compression-only Winkler soil springs with ks = 100 pci = 172.8 kcf, a 5 × 10 ft opening and concentrated column force/moment at (10, 10) ft), with pinned upstream nodal displacement, soil reaction, element centre moment and bilinear soil-pressure parity, independent uplift and six-component global equilibrium checks. The hydrostatic tank wall uses geometry-owned linear pressure in the transverse plate workspace, with all source nodal/moment parity, independent triangular-load continuum/refinement checks and explicit centroid-load first moments. Raw Quad shear remains disabled; the separate bounded thin-plate recovery is described below. The official modal column preserves the source inputs/gravity and opens the separate mode workspace, with pinned frequency/normalized-shape parity and independent dynamics checks. Three Iterative elastic examples preserve the pinned source inputs: compression-only foundation, tension-only braced frame, and fixed-anchor spring-supported frame. The last condenses its fixed vertical spring anchors exactly into one-way ground springs; general node-to-node spring entities are now a separate implemented workflow. Pinned upstream result parity, independent uplift mechanics, persistence and worker/MCP checks cover this scope.
 
 The rectangular Quad plate opens
 through **File > Examples > Plates (Experimental)** or Browse Examples in the
@@ -350,13 +350,11 @@ are covered. Existing MIT notice and pinned source revision apply. No solver
 features were added. See GUIDE for the plate-only constraint/combination-name
 adaptation and the complete dependency table.
 
-Remaining six scripts are unchecked:
+Remaining five scripts are unchecked:
 
 - Shear Wall - Basic/Advanced: validated in-plane membrane/drilling workflow,
   shell support/load assignment, wall result recovery; Advanced additionally
   needs shear-wall/story/pier/coupling-beam APIs and its stiffness modifiers.
-- Mat Foundation: mat API, compression-only soil springs and point load/moment
-  assignment to the foundation mesh with openings.
 - Circular Bin with Conical Hopper: curved shell assembly/merged interfaces,
   spatially varying pressure and shell supports/results. Its geometry generators
   being available does not establish analysis support.
@@ -507,6 +505,13 @@ Remaining six scripts are unchecked:
   resultants independently and compare triangular-load Navier refinement. Adapt
   the official hydrostatic tank wall with pinned source displacements/reactions/
   centre moments. Preserve disabled Quad shear and transverse-only scope.
+- [x] Add mat foundation Winkler soil subgrade springs (`subgrade_modulus`,
+  `compression_only` and `bilateral`), concentrated transverse point loads and
+  out-of-plane bending moments (`point_loads` with automatic control-line nodal
+  placement), nodal tributary areas, element and bilinear natural-coordinate soil
+  bearing-pressure contours/probes/CSV, active/uplift spring reporting, strict
+  plate v5 schema migration and the official `Mat Foundation.py` adaptation
+  (1,200 Quads, 1,290 nodes).
 - [ ] Extend the plate pilot to general membrane behaviour; validate new
   formulations before engineering claims. Combined face stresses remain deferred.
   Quad transverse shear recovery remains a separate open validation task above.
