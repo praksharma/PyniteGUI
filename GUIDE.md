@@ -455,8 +455,9 @@ displacements/reactions, selected-combination factors and snapshot identity. The
 
 Save/Open uses separate `.pyniteplate` files with canonical inch-kip values and
 strict format/version validation. Version 5 adds Winkler soil subgrade springs
-(`subgrade_modulus`, `subgrade_mode`) and concentrated transverse point forces/moments
-(`point_loads`); version 4 adds geometry-owned linear pressure profiles; version 3
+(`subgrade_modulus`, `subgrade_mode`), concentrated point forces/moments
+(`point_loads`) and in-plane shear wall definitions (`analysis_mode`,
+`wall_supports`, `wall_stories`, `wall_loads`); version 4 adds geometry-owned linear pressure profiles; version 3
 adds named loading/self-weight and version 2 advanced mesh options. Existing
 version 1/2/3/4 files migrate without changing their uniform pressures or enabling
 gravity or subgrade springs. Undo/redo covers applied definitions, not
@@ -598,6 +599,49 @@ snapshot matches upstream nodal displacements, soil spring reactions, element
 centre moments and bilinear soil pressures while passing independent six-component
 force/moment equilibrium about the origin (`FY = -10 kip`, `MX = +1,200 kip-in`,
 `MZ = -1,020 kip-in`).
+
+**In-plane shear walls, membrane stresses and pier / coupling-beam recovery:**
+switch **Mode** in the separate plate workspace to **In-plane shear wall
+(membrane)** (requires `Quad` elements; `Rect` elements and transverse soil
+subgrade/self-weight are disabled). Out-of-plane translation and all three nodal
+rotations are restrained everywhere, isolating pure planar membrane response with
+zero artificial drilling-torque leakage and exact six-component global force/moment
+equilibrium. Open **Load Cases / Combinations…** to define **Wall supports**
+(horizontal support segments pinning in-plane `u, v` translations), **Wall
+stories** (horizontal diaphragm lines at elevation `y` spanning `[x_start, x_end]`)
+and **Wall story loads** (`Shear (+local x)` or `Axial (-local y)` distributed
+evenly across all generated nodes along the named story line). All support and
+story coordinates are merged into the mesh control lines automatically.
+
+After solving, switch **Component** between lateral displacement (`u`),
+**In-plane vertical displacement** (`v`) and **Membrane Sx / Sy / Txy (element
+centre)**. The status bar reports base shear reaction sum, overall wall rigidity
+($|V| / d_{\max}$) and the counts of automatically identified **Piers** and
+**Coupling beams**. Open **Inspect Results…** to probe natural-coordinate
+$(\xi, \eta)$ membrane stresses (`Sx`, `Sy`, `Txy`) and review or export
+(**Export Piers / Beams CSV…**) the summed internal pier forces (`P`, `V`, `M`,
+`M/(VL)`) and coupling-beam forces (`P`, `V`, `M`, `M/(VH)`), matching PyNite's
+`ShearWall` pier and coupling-beam integration conventions.
+
+- **Official PyNite - Masonry Shear Wall with Openings** (`official_shear_wall_basic`):
+  adapts `Examples/Shear Wall - Basic.py` (`26 × 16 ft`, `8 in` thick masonry,
+  `E = 1,800 ksi`, `nu = 0.17`, `6 in` Quad mesh, `1,152` Quads / `1,315` nodes,
+  two `4 × 12 ft` doors and two `4 × 4 ft` windows, pinned base at `y = 0`, `100 kip`
+  top lateral shear in `Seismic`). Top lateral drift is `0.0860604 in`, wall rigidity
+  is `1,161.97 kip/in`, and base shear reaction sum is `-100 kip`.
+- **Official PyNite - Concrete Coupled Shear Wall** (`official_shear_wall_advanced`):
+  adapts `Examples/Shear Wall - Advanced.py` (`50 × 25 ft`, `1 ft` thick cracked
+  concrete with `f'c = 4,500 psi`, `ky_mod = 0.35`, `1 ft` Quad mesh, `450` Quads /
+  `546` nodes, `40 × 20 ft` opening `Opng 1`, `150 kip` roof shear under
+  `1.2D+1.0E`). Roof lateral stiffness is `291.171 kip/in` (`3,494.05 kip/ft`);
+  piers `P1`/`P3` carry `V = -75.0 kip`, `M = -888.753 kip-ft`, `P = ±43.833 kip`
+  (`M/(VL) = 2.370`), pier `P2` carries `V = -150.0 kip`, `M = -750.0 kip-ft`,
+  and coupling beam `B1` carries `V = -43.833 kip`, `M = -733.281 kip-ft`,
+  `P = +57.353 kip` (`M/(VH) = 3.346`). Note: out-of-plane perpendicular wall
+  flanges (`add_flange`) are intentionally excluded because a 3D perpendicular
+  flange couples its weak drilling DOF into bending and fails six-component
+  equilibrium; the upstream `Shear Wall - Advanced.py` script itself has
+  `add_flange` commented out and is planar.
 
 At the source mesh there are **375 Quads and 416 nodes**, total applied normal
 force **+245.7 kip**, normal reactions **−245.7 kip**, and maximum displacement
@@ -1988,15 +2032,12 @@ for an editable copy. Its clamped/thick geometry is outside recovered-shear scop
 also available in this category; its illustrated loading/bending walkthrough is
 in the rectangular plate section above.
 
-The official catalog audit covers all 20 scripts: fourteen are adapted; six
+The official catalog audit covers all 20 scripts: seventeen are adapted; three
 still depend on capabilities outside the current app. No substitute model is
 presented as a completed official adaptation.
 
 | Remaining official example | Required capability before adaptation |
 | --- | --- |
-| Shear Wall - Basic | Validated in-plane membrane/drilling supports, loads and wall result recovery. |
-| Shear Wall - Advanced | Shear-wall/story/pier/coupling-beam APIs and modifiers, plus validated membrane/drilling response. |
-| Mat Foundation | Mat/soil contact API, compression-only soil springs, foundation point force/moment assignment. |
 | Circular Bin with Conical Hopper | Curved-shell assembly, merged interfaces, varying pressure and shell support/results. |
 | Moment Frame - Pushover / Pushover Analysis | Combined P-Delta/plastic validation: both pinned scripts request P_Delta=True. The separate first-order steel workflow does not preserve that source assumption. |
 

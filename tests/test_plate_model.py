@@ -183,7 +183,8 @@ class PlateModelTests(unittest.TestCase):
         # Version 4 files migrate cleanly to version 5 defaults.
         v4 = base.to_dict()
         v4["version"] = 4
-        for key in ("subgrade_modulus", "subgrade_mode", "point_loads"):
+        for key in ("subgrade_modulus", "subgrade_mode", "point_loads",
+                    "analysis_mode", "wall_supports", "wall_stories", "wall_loads"):
             v4.pop(key)
         self.assertEqual(PlateDefinition.from_dict(v4), base)
         # Renaming a load case updates point_loads case references.
@@ -191,6 +192,78 @@ class PlateModelTests(unittest.TestCase):
         loaded.rename_case("Case 1", "Permanent")
         self.assertEqual(loaded.point_loads[0]["case"], "Permanent")
         loaded.validate()
+
+    def test_shear_wall_validation_instability_and_pier_beam_equilibrium(self):
+        from pynitegui.qt.plate_model import select_plate_combination
+        from pynitegui.qt.plate_inspection import inspect_plate
+        wall = PlateDefinition(
+            width=120., height=90., thickness=8., mesh_size=15., plane="XY",
+            pressure=0., load_case="E", additional_pressures={"D": 0.},
+            edges=dict.fromkeys(("Left", "Right", "Bottom", "Top"), "Free"),
+            openings=[dict(name="O1", x_left=30., y_bott=0., width=60., height=60.)],
+            analysis_mode="shear_wall",
+            wall_supports=[dict(elevation=0., x_start=0., x_end=120.)],
+            wall_stories=[dict(name="Roof", elevation=90., x_start=0., x_end=120.)],
+            wall_loads=[
+                dict(story="Roof", case="E", kind="shear", magnitude=60.),
+                dict(story="Roof", case="D", kind="axial", magnitude=40.),
+            ],
+            combinations={"Combo": {"D": 1.2, "E": 1.0}, "ReverseE": {"E": -2.0}, "Zero": {"E": 0.0}})
+        wall.validate()
+        for bad in (
+            {"analysis_mode": "unknown"},
+            {"element_type": "Rect"},
+            {"subgrade_modulus": 0.1},
+            {"self_weight_case": "D"},
+            {"wall_supports": []},
+            {"wall_supports": [dict(elevation=-1., x_start=0., x_end=120.)]},
+            {"wall_supports": [dict(elevation=0., x_start=60., x_end=60.)]},
+            {"wall_stories": [dict(name="", elevation=90., x_start=0., x_end=120.)]},
+            {"wall_stories": [
+                dict(name="Roof", elevation=90., x_start=0., x_end=60.),
+                dict(name="Roof", elevation=90., x_start=60., x_end=120.),
+            ]},
+            {"wall_loads": [dict(story="Missing", case="E", kind="shear", magnitude=10.)]},
+            {"wall_loads": [dict(story="Roof", case="Missing", kind="shear", magnitude=10.)]},
+            {"wall_loads": [dict(story="Roof", case="E", kind="torsion", magnitude=10.)]},
+            {"wall_loads": [dict(story="Roof", case="E", kind="shear", magnitude=float("nan"))]},
+        ):
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                replace(wall, **bad).validate()
+        with self.assertRaises(ValueError):
+            replace(PlateDefinition(), wall_supports=wall.wall_supports).validate()
+        # A support segment lying entirely inside the opening captures 0 nodes and fails closed.
+        unstable = replace(wall, wall_supports=[dict(elevation=30., x_start=45., x_end=75.)])
+        with self.assertRaisesRegex(ValueError, "Unstable shear wall supports"):
+            analyze_plate(unstable)
+        # Rename load case updates wall_loads references.
+        renamed = PlateDefinition.from_dict(wall.to_dict())
+        renamed.rename_case("E", "Seismic")
+        self.assertEqual(renamed.wall_loads[0]["case"], "Seismic")
+        renamed.validate()
+        # Solve across planes and verify combination linearity, equilibrium, piers/beams, and probes.
+        for plane in PLANES:
+            solved = analyze_plate(replace(wall, plane=plane))
+            e_only = select_plate_combination(solved, "Plate")
+            rev_e = select_plate_combination(solved, "ReverseE")
+            zero = select_plate_combination(solved, "Zero")
+            combo = select_plate_combination(solved, "Combo")
+            for key in ("displacement", "displacement_u", "displacement_v", "reactions",
+                        "reactions_u", "reactions_v", "membrane_stresses"):
+                np.testing.assert_allclose(rev_e[key], -2.0 * e_only[key], rtol=1e-9, atol=1e-12)
+                np.testing.assert_allclose(zero[key], 0.0, atol=1e-12)
+            self.assertAlmostEqual(e_only["applied"], 60.0, places=9)
+            self.assertAlmostEqual(e_only["reactions_u"].sum(), -60.0, places=8)
+            self.assertAlmostEqual(combo["reactions_v"].sum(), 48.0, places=8)
+            self.assertGreater(e_only["story_stiffnesses"]["Roof"], 0.0)
+            self.assertEqual([p["name"] for p in combo["piers"]], ["P1", "P2", "P3"])
+            self.assertEqual([b["name"] for b in combo["coupling_beams"]], ["B1"])
+            p1, p2, p3 = combo["piers"]
+            self.assertAlmostEqual(p1["V"] + p3["V"], -60.0, places=6)
+            self.assertAlmostEqual(p1["P"] + p3["P"], -48.0, places=6)
+            self.assertAlmostEqual(p2["V"], -60.0, places=6)
+            probe = inspect_plate(combo, combo["element_names"][0], 0.25, -0.5)
+            self.assertTrue(all(math.isfinite(probe[k]) for k in ("Sx", "Sy", "Txy", "displacement_u", "displacement_v")))
 
 
 if __name__ == "__main__":

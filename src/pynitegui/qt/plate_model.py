@@ -20,9 +20,11 @@ SUBGRADE_MODES = ("compression_only", "bilateral")
 MAX_ELEMENTS = 1600
 
 
-def plate_point_load_directions(plane):
+def plate_point_load_directions(plane, analysis_mode="transverse"):
     u, v, normal, _ = PLANES[plane]
     forces = ("FX", "FY", "FZ")
+    if analysis_mode == "shear_wall":
+        return (forces[u], forces[v])
     moments = ("MX", "MY", "MZ")
     return (forces[normal], *(moments[i] for i in sorted((u, v))))
 
@@ -58,6 +60,10 @@ class PlateDefinition:
     subgrade_modulus: float = 0.0
     subgrade_mode: str = "compression_only"
     point_loads: list = field(default_factory=list)
+    analysis_mode: str = "transverse"
+    wall_supports: list = field(default_factory=list)
+    wall_stories: list = field(default_factory=list)
+    wall_loads: list = field(default_factory=list)
 
     @property
     def case_pressures(self):
@@ -111,18 +117,30 @@ class PlateDefinition:
         for load in self.point_loads:
             if isinstance(load, dict) and load.get("case") == previous:
                 load["case"] = name
+        for load in self.wall_loads:
+            if isinstance(load, dict) and load.get("case") == previous:
+                load["case"] = name
 
     def mesh_definition(self, include_point_loads=False):
         x_control = list(self.x_control)
         y_control = list(self.y_control)
-        if include_point_loads and isinstance(self.point_loads, list):
-            for load in self.point_loads:
-                if isinstance(load, dict):
-                    x, y = load.get("x"), load.get("y")
-                    if finite_number(x) and 0. < x < self.width and not any(math.isclose(x, c, rel_tol=1e-9, abs_tol=1e-9) for c in x_control):
-                        x_control.append(float(x))
-                    if finite_number(y) and 0. < y < self.height and not any(math.isclose(y, c, rel_tol=1e-9, abs_tol=1e-9) for c in y_control):
-                        y_control.append(float(y))
+        if include_point_loads:
+            extra_x, extra_y = [], []
+            if isinstance(self.point_loads, list):
+                for load in self.point_loads:
+                    if isinstance(load, dict):
+                        extra_x.append(load.get("x"))
+                        extra_y.append(load.get("y"))
+            from .shear_wall_model import wall_control_coordinates
+            wx, wy = wall_control_coordinates(self)
+            extra_x.extend(wx)
+            extra_y.extend(wy)
+            for x in extra_x:
+                if finite_number(x) and 0. < x < self.width and not any(math.isclose(x, c, rel_tol=1e-9, abs_tol=1e-9) for c in x_control):
+                    x_control.append(float(x))
+            for y in extra_y:
+                if finite_number(y) and 0. < y < self.height and not any(math.isclose(y, c, rel_tol=1e-9, abs_tol=1e-9) for c in y_control):
+                    y_control.append(float(y))
         return MeshDefinition(name=self.mesh_name, parameters={"width": self.width, "height": self.height},
             mesh_size=self.mesh_size, thickness=self.thickness, material=self.material,
             element_type=self.element_type, origin=list(self.origin), plane=self.plane,
@@ -166,10 +184,12 @@ class PlateDefinition:
                 raise ValueError("Pressure cases need names up to 80 characters and finite pressures within +/-1e6 kip/in2.")
         if not isinstance(self.point_loads, list) or len(self.point_loads) > 64:
             raise ValueError("Use at most 64 concentrated plate point loads.")
+        from .shear_wall_model import validate_shear_wall_fields
+        validate_shear_wall_fields(self)
         count = self.mesh_definition().validate()
         if count > MAX_ELEMENTS or self.mesh_definition(include_point_loads=True).validate() > MAX_ELEMENTS:
             raise ValueError(f"Plate pilot is limited to {MAX_ELEMENTS} quads; increase the mesh size.")
-        allowed_directions = plate_point_load_directions(self.plane)
+        allowed_directions = plate_point_load_directions(self.plane, self.analysis_mode)
         for load in self.point_loads:
             if not isinstance(load, dict) or set(load) != {"case", "x", "y", "direction", "magnitude"}:
                 raise ValueError("Point load fields must be case, x, y, direction and magnitude.")
@@ -238,14 +258,15 @@ class PlateDefinition:
         values = {key: value for key, value in data.items() if key not in ("format", "version", "units")}
         added = {"element_type", "origin", "x_control", "y_control", "openings", "kx_mod", "ky_mod", "node_start", "element_start", "mesh_name"}
         loading = {"additional_pressures", "combinations", "self_weight_case", "self_weight_factor"}
-        subgrade = {"subgrade_modulus", "subgrade_mode", "point_loads"}
+        subgrade = {"subgrade_modulus", "subgrade_mode", "point_loads", "analysis_mode", "wall_supports", "wall_stories", "wall_loads"}
         expected = {item.name for item in fields(cls)} - (added if data["version"] == 1 else set()) - (loading if data["version"] < 3 else set()) - ({"pressure_profiles"} if data["version"] < 4 else set()) - (subgrade if data["version"] < 5 else set())
         if set(values) != expected:
             raise ValueError("Plate file fields do not match the declared version schema.")
         try:
             values["material"] = Material(**values["material"])
-            if "point_loads" in values and isinstance(values["point_loads"], list):
-                values["point_loads"] = [dict(item) if isinstance(item, dict) else item for item in values["point_loads"]]
+            for list_key in ("point_loads", "wall_supports", "wall_stories", "wall_loads"):
+                if list_key in values and isinstance(values[list_key], list):
+                    values[list_key] = [dict(item) if isinstance(item, dict) else item for item in values[list_key]]
             result = cls(**values)
             result.validate()
         except (TypeError, KeyError) as error:
@@ -273,8 +294,22 @@ def build_plate(definition):
     definition.validate()
     model = generate_mesh(definition.mesh_definition(include_point_loads=True))
     u, v, normal, _ = PLANES[definition.plane]
-    # This transverse plate pilot explicitly restrains all in-plane motions and
-    # drilling rotation. It does not model membrane loading or mixed frames.
+    tributary_areas = dict.fromkeys(model.nodes, 0.0)
+    for element in model.meshes[definition.mesh_name].elements.values():
+        corners = (element.i_node, element.j_node, element.m_node, element.n_node)
+        coords = [(n.X, n.Y, n.Z) for n in corners]
+        elem_area = abs(coords[0][u] - coords[2][u]) * abs(coords[0][v] - coords[2][v])
+        for corner in corners:
+            tributary_areas[corner.name] += elem_area / 4.0
+    model._pynitegui_tributary_areas = tributary_areas
+    if definition.analysis_mode == "shear_wall":
+        from .shear_wall_model import apply_shear_wall_supports_and_loads
+        apply_shear_wall_supports_and_loads(model, definition)
+        for name, factors in definition.load_combinations.items():
+            model.add_load_combo(name, dict(factors))
+        return model
+    # Transverse plate mode explicitly restrains all in-plane motions and
+    # drilling rotation.
     for node in model.nodes.values():
         coords = tuple(value-origin for value, origin in zip((node.X, node.Y, node.Z), definition.origin))
         on_edges = (math.isclose(coords[u], 0, abs_tol=1e-8),
@@ -289,18 +324,13 @@ def build_plate(definition):
             fixed[u + 3] = fixed[v + 3] = True
         model.def_support(node.name, **dict(zip(("support_DX", "support_DY", "support_DZ",
                                                "support_RX", "support_RY", "support_RZ"), fixed)))
-    tributary_areas = dict.fromkeys(model.nodes, 0.0)
     for element in model.meshes[definition.mesh_name].elements.values():
         corners = (element.i_node, element.j_node, element.m_node, element.n_node)
         coords = [(n.X, n.Y, n.Z) for n in corners]
-        elem_area = abs(coords[0][u] - coords[2][u]) * abs(coords[0][v] - coords[2][v])
-        for corner in corners:
-            tributary_areas[corner.name] += elem_area / 4.0
         add_pressure = model.add_plate_surface_pressure if definition.element_type == "Rect" else model.add_quad_surface_pressure
         for case in definition.load_cases:
             center=np.mean(coords,axis=0)-definition.origin
             add_pressure(element.name, definition.pressure_for_case(case,center[u],center[v]), case)
-    model._pynitegui_tributary_areas = tributary_areas
     if definition.subgrade_modulus > 0:
         normal_dof = ("DX", "DY", "DZ")[normal]
         spring_direction = "-" if definition.subgrade_mode == "compression_only" else None
@@ -337,6 +367,9 @@ def plate_signature(definition):
 
 def plate_equilibrium(model, definition, combination):
     """Integrate recipe loads independently of the element reaction recovery."""
+    if definition.analysis_mode == "shear_wall":
+        from .shear_wall_model import shear_wall_equilibrium
+        return shear_wall_equilibrium(model, definition, combination)
     from .equilibrium import FORCE_TOLERANCE, MOMENT_TOLERANCE, RELATIVE_TOLERANCE
     u, v, _, _ = PLANES[definition.plane]
     from .plate_pressure import pressure_resultants
@@ -478,30 +511,98 @@ def _solve_subgrade_plate(model, definition, names, points, normal_axis, phase):
     return spring_states, has_springs
 
 
+def _solve_shear_wall(model, definition, names, points, phase):
+    from Pynite import Analysis
+    from scipy.sparse.linalg import spsolve
+    from .shear_wall_model import recover_story_stiffnesses
+    u, v, _, _ = PLANES[definition.plane]
+    u_dof, v_dof = ("DX", "DY", "DZ")[u], ("DX", "DY", "DZ")[v]
+    supported = [point for name, point in zip(names, points)
+                 if getattr(model.nodes[name], f"support_{u_dof}") and getattr(model.nodes[name], f"support_{v_dof}")]
+    if len(supported) < 2:
+        raise ValueError("Unstable shear wall supports: restrain in-plane translations at two or more distinct nodes.")
+    Analysis._prepare_model(model)
+    for element in (*model.quads.values(), *model.plates.values()):
+        k_loc = element.ke()
+        element.ke = lambda k_loc=k_loc: k_loc
+        ke_glob = element.Ke()
+        element.Ke = lambda ke_glob=ke_glob: ke_glob
+    D1_indices, D2_indices, D2 = Analysis._partition_D(model)
+    K_elem = model.Ke(next(iter(model.load_combos)), False, False, True).tocsr()
+    K11, K12, _, _ = Analysis._partition(model, K_elem, D1_indices, D2_indices)
+    solved_by_factors = {}
+    for combination, factors in definition.load_combinations.items():
+        factor_key = tuple(sorted((case, float(val)) for case, val in factors.items() if val))
+        if factor_key in solved_by_factors:
+            prev = solved_by_factors[factor_key]
+            model._D[combination] = model._D[prev].copy()
+            for node in model.nodes.values():
+                for key in ("DX", "DY", "DZ", "RX", "RY", "RZ", "RxnFX", "RxnFY", "RxnFZ", "RxnMX", "RxnMY", "RxnMZ"):
+                    getattr(node, key)[combination] = getattr(node, key)[prev]
+            continue
+        phase(f"Solving shear wall combination {combination}")
+        P = model.P(combination)
+        FER = model.FER(combination)
+        P1, _ = Analysis._partition(model, P, D1_indices, D2_indices)
+        FER1, _ = Analysis._partition(model, FER, D1_indices, D2_indices)
+        if K11.shape == (0, 0):
+            D1 = np.empty((0, 1))
+        else:
+            D1 = spsolve(K11, (P1 - FER1) - K12 @ D2).reshape(len(D1_indices), 1)
+        if not np.isfinite(D1).all():
+            raise ValueError(f"Unstable shear wall supports in {combination}: singular stiffness matrix.")
+        Analysis._store_displacements(model, D1, D2, D1_indices, D2_indices, model.load_combos[combination])
+        D = model._D[combination]
+        R_elem = (K_elem @ D + FER - P).ravel()
+        for node in model.nodes.values():
+            for idx, (sup, rxn_key) in enumerate((
+                (node.support_DX, "RxnFX"),
+                (node.support_DY, "RxnFY"),
+                (node.support_DZ, "RxnFZ"),
+                (node.support_RX, "RxnMX"),
+                (node.support_RY, "RxnMY"),
+                (node.support_RZ, "RxnMZ"),
+            )):
+                m = node.ID * 6 + idx
+                getattr(node, rxn_key)[combination] = float(R_elem[m]) if sup else 0.0
+        solved_by_factors[factor_key] = combination
+    return recover_story_stiffnesses(model, definition, K11, D1_indices)
+
+
 def analyze_plate(definition, progress=None):
-    if definition.element_type == "Rect" and (definition.kx_mod != 1 or definition.ky_mod != 1):
+    if definition.analysis_mode == "transverse" and definition.element_type == "Rect" and (definition.kx_mod != 1 or definition.ky_mod != 1):
         raise ValueError("Rect transverse bending does not support stiffness modifiers; use unmodified Rect or Quad elements.")
     phase = progress or (lambda message: None)
     phase(f"Generating {definition.element_type} mesh")
     model = build_plate(definition)
     names, points, cells = plate_geometry(model, definition)
-    _, _, normal_axis, sign = PLANES[definition.plane]
+    u, v, normal_axis, sign = PLANES[definition.plane]
     normal_dof = ("DX", "DY", "DZ")[normal_axis]
-    constrained = [point for name, point in zip(names, points)
-                   if getattr(model.nodes[name], f"support_{normal_dof}")]
-    spring_points = [point for name, point in zip(names, points)
-                     if getattr(model.nodes[name], f"spring_{normal_dof}")[0] is not None]
-    # Transverse rigid motion w=a+b*u+c*v needs three independent constraints,
-    # unless a clamped edge additionally fixes its slope.
-    if not _transverse_stable(definition, constrained + spring_points):
-        raise ValueError("Unstable plate supports: restrain transverse translation and both rigid slopes.")
-    phase(f"Solving {len(cells)} plate elements in {len(definition.load_combinations)} combination(s)")
-    if definition.subgrade_modulus > 0:
-        spring_states, has_springs = _solve_subgrade_plate(model, definition, names, points, normal_axis, phase)
-    else:
-        model.analyze_linear(check_stability=True, check_statics=False)
+    u_dof, v_dof = ("DX", "DY", "DZ")[u], ("DX", "DY", "DZ")[v]
+    u_rxn, v_rxn = ("RxnFX", "RxnFY", "RxnFZ")[u], ("RxnFX", "RxnFY", "RxnFZ")[v]
+    is_wall = definition.analysis_mode == "shear_wall"
+    if is_wall:
+        phase(f"Solving {len(cells)} shear wall elements in {len(definition.load_combinations)} combination(s)")
+        story_stiffnesses = _solve_shear_wall(model, definition, names, points, phase)
         has_springs = np.zeros(len(names), dtype=bool)
         spring_states = {combination: np.zeros(len(names), dtype=bool) for combination in definition.load_combinations}
+    else:
+        constrained = [point for name, point in zip(names, points)
+                       if getattr(model.nodes[name], f"support_{normal_dof}")]
+        spring_points = [point for name, point in zip(names, points)
+                         if getattr(model.nodes[name], f"spring_{normal_dof}")[0] is not None]
+        # Transverse rigid motion w=a+b*u+c*v needs three independent constraints,
+        # unless a clamped edge additionally fixes its slope.
+        if not _transverse_stable(definition, constrained + spring_points):
+            raise ValueError("Unstable plate supports: restrain transverse translation and both rigid slopes.")
+        phase(f"Solving {len(cells)} plate elements in {len(definition.load_combinations)} combination(s)")
+        if definition.subgrade_modulus > 0:
+            spring_states, has_springs = _solve_subgrade_plate(model, definition, names, points, normal_axis, phase)
+        else:
+            model.analyze_linear(check_stability=True, check_statics=False)
+            has_springs = np.zeros(len(names), dtype=bool)
+            spring_states = {combination: np.zeros(len(names), dtype=bool) for combination in definition.load_combinations}
+        story_stiffnesses = {}
     phase("Sampling plate results")
     if any(not math.isfinite(value) for node in model.nodes.values()
            for key in ("DX", "DY", "DZ", "RX", "RY", "RZ", "RxnFX", "RxnFY", "RxnFZ", "RxnMX", "RxnMY", "RxnMZ")
@@ -513,8 +614,16 @@ def analyze_plate(definition, progress=None):
     solutions = {}
     for combination, factors in definition.load_combinations.items():
         phase(f"Recovering and checking plate combination {combination}")
-        displacement = np.array([getattr(model.nodes[name], normal_dof)[combination] * sign for name in names])
-        reactions = np.array([getattr(model.nodes[name], ("RxnFX", "RxnFY", "RxnFZ")[normal_axis])[combination] * sign for name in names])
+        displacement_u = np.array([getattr(model.nodes[name], u_dof)[combination] for name in names])
+        displacement_v = np.array([getattr(model.nodes[name], v_dof)[combination] for name in names])
+        reactions_u = np.array([getattr(model.nodes[name], u_rxn)[combination] for name in names])
+        reactions_v = np.array([getattr(model.nodes[name], v_rxn)[combination] for name in names])
+        if is_wall:
+            displacement = displacement_u
+            reactions = reactions_u
+        else:
+            displacement = np.array([getattr(model.nodes[name], normal_dof)[combination] * sign for name in names])
+            reactions = np.array([getattr(model.nodes[name], ("RxnFX", "RxnFY", "RxnFZ")[normal_axis])[combination] * sign for name in names])
         active_springs = spring_states[combination]
         if definition.subgrade_modulus > 0:
             nodal_bearing_pressure = np.array([
@@ -542,7 +651,20 @@ def analyze_plate(definition, progress=None):
             # without shipping a live solver or solving again on each probe.
             inspection = np.array([[element.moment(xi, eta, combo_name=combination).ravel()
                 for xi, eta in ((-1., -1.), (1., -1.), (1., 1.), (-1., 1.))] for element in elements])
-        if any(not np.isfinite(values).all() for values in (displacement, reactions, moments, shears, inspection, nodal_bearing_pressure, element_bearing_pressures) if values is not None):
+        if is_wall:
+            from .shear_wall_model import recover_piers_and_beams
+            membrane = np.array([element.membrane(*station, combo_name=combination).ravel() for element, station in zip(elements, stations)])
+            membrane_inspection = np.array([[
+                element.membrane(*(((xi + 1.) * element.width() / 2., (eta + 1.) * element.height() / 2.)
+                                   if definition.element_type == "Rect" else (xi, eta)), combo_name=combination).ravel()
+                for xi, eta in ((-1., -1.), (1., -1.), (1., 1.), (-1., 1.))
+            ] for element in elements])
+            piers, coupling_beams = recover_piers_and_beams(definition, elements, combination)
+        else:
+            membrane = np.zeros((len(elements), 3), dtype=float)
+            membrane_inspection = np.zeros((len(elements), 4, 3), dtype=float)
+            piers, coupling_beams = [], []
+        if any(not np.isfinite(values).all() for values in (displacement, reactions, moments, shears, inspection, nodal_bearing_pressure, element_bearing_pressures, membrane, membrane_inspection) if values is not None):
             raise ValueError(f"Plate analysis returned nonfinite results for {combination}.")
         from .plate_pressure import pressure_coefficients,element_pressures
         q,gx,gy=pressure_coefficients(definition,factors)
@@ -551,7 +673,13 @@ def analyze_plate(definition, progress=None):
         from .quad_shear_snapshot import plate_recovery
         recovered_shear=plate_recovery(definition,points,cells,moments,pressures)
         pressure=q if gx==0. and gy==0. else None
-        solutions[combination] = dict(displacement=displacement, reactions=reactions, moments=moments, shears=shears, recovered_shear=recovered_shear,
+        d_max = float(np.max(np.abs(displacement_u))) if len(displacement_u) else 0.
+        wall_rigidity = float(abs(applied) / d_max) if is_wall and abs(applied) > 0 and d_max > 1e-15 else 0.
+        solutions[combination] = dict(displacement=displacement, displacement_u=displacement_u, displacement_v=displacement_v,
+                                      reactions=reactions, reactions_u=reactions_u, reactions_v=reactions_v,
+                                      moments=moments, shears=shears, recovered_shear=recovered_shear,
+                                      membrane=membrane, membrane_stresses=membrane, membrane_inspection=membrane_inspection,
+                                      piers=piers, coupling_beams=coupling_beams, wall_rigidity=wall_rigidity,
                                       applied=applied, pressure=pressure, mean_pressure=applied/area, element_pressures=pressures, pressure_coefficients=np.array((q,gx,gy)),
                                       continuous_pressure_resultants=dict(zip(("normal_force_kip","first_moment_local_x_kip_in","first_moment_local_y_kip_in"),continuous.tolist())),
                                       pressure_representation='Uniform per element, sampled at its geometry centroid; refine varying profiles.',
@@ -562,6 +690,7 @@ def analyze_plate(definition, progress=None):
                                       factors=dict(factors), equilibrium=equilibrium,
                                       inspection=inspection)
     result = {"names": names, "points": points, "cells": cells, "tributary_areas": tributary_areas,
+              "story_stiffnesses": story_stiffnesses,
               "element_names": [element.name for element in elements], "solutions": solutions,
               "snapshot_id": uuid.uuid4().hex[:12], "analyzed_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
               "model_signature": plate_signature(definition), "definition": definition.to_dict()}

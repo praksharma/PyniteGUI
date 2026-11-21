@@ -100,7 +100,8 @@ class MeshModelTests(unittest.TestCase):
                     "additional_pressures", "combinations", "self_weight_case", "self_weight_factor"):
             old.pop(key)
         old["version"] = 1
-        for key in ("pressure_profiles", "subgrade_modulus", "subgrade_mode", "point_loads"):
+        for key in ("pressure_profiles", "subgrade_modulus", "subgrade_mode", "point_loads",
+                    "analysis_mode", "wall_supports", "wall_stories", "wall_loads"):
             old.pop(key)
         self.assertEqual(PlateDefinition.from_dict(old), definition)
         for key in ("version", "format", "width"):

@@ -81,6 +81,8 @@ def snapshot(definition,points,cells,moments,pressures,*,free_edges=(),blocked=N
 
 def plate_recovery(definition,points,cells,moments,pressures):
     count=len(cells);edges=definition.edges
+    if getattr(definition, 'analysis_mode', 'transverse') == 'shear_wall':
+        return unavailable(count,'In-plane shear wall mode recovers membrane stresses Sx/Sy/Txy and pier/coupling-beam forces')
     if definition.subgrade_modulus or definition.point_loads:
         return unavailable(count,'Recovered shear is verified for pressure-only plates without soil subgrade or point loads')
     simple=all(value=='Simply supported' for value in edges.values())

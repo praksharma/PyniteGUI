@@ -63,7 +63,7 @@ def rectangle_controls(width, height, mesh_size, x_control, y_control, openings)
         boxes.append((x, y, w, h))
         controls[0].extend((x, x+w))
         controls[1].extend((y, y+h))
-    divisions = []
+    ordered_axes, span_counts = [], []
     for values in controls:
         ordered = []
         for value in sorted(set(values)):
@@ -73,9 +73,18 @@ def rectangle_controls(width, height, mesh_size, x_control, y_control, openings)
         spans = np.diff(ordered)
         if any(span < 1e-6 for span in spans):
             raise ValueError("Control lines/opening boundaries are too closely spaced.")
-        divisions.append(sum(math.ceil(float(span)/mesh_size) for span in spans))
-    count = divisions[0]*divisions[1]
-    if count > MAX_MESH_ELEMENTS:
+        ordered_axes.append(ordered)
+        span_counts.append([math.ceil(float(span)/mesh_size) for span in spans])
+    pre_count = sum(span_counts[0])*sum(span_counts[1])
+    removed = 0
+    for x, y, w, h in boxes:
+        nx = sum(c for i, c in enumerate(span_counts[0])
+                 if ordered_axes[0][i] >= x - 1e-7 and ordered_axes[0][i + 1] <= x + w + 1e-7)
+        ny = sum(c for j, c in enumerate(span_counts[1])
+                 if ordered_axes[1][j] >= y - 1e-7 and ordered_axes[1][j + 1] <= y + h + 1e-7)
+        removed += nx*ny
+    count = pre_count - removed
+    if count <= 0 or count > MAX_MESH_ELEMENTS or pre_count > 2*MAX_MESH_ELEMENTS:
         raise ValueError(f"Pre-opening grid exceeds {MAX_MESH_ELEMENTS} elements; increase mesh size or simplify controls.")
     return count
 

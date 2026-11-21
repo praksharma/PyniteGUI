@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- Add in-plane shear wall membrane & pier/coupling-beam analysis to the separate
+  plate workspace (`analysis_mode="shear_wall"` on `Quad` elements): geometry-owned
+  wall support segments (`wall_supports`), story diaphragm lines (`wall_stories`),
+  distributed story shear and axial loads (`wall_loads`), membrane stress contours
+  (`Sx`, `Sy`, `Txy`), in-plane lateral (`u`) and vertical (`v`) displacements,
+  natural-coordinate $(\xi, \eta)$ membrane stress probes, story lateral stiffness,
+  wall rigidity, automatic pier and coupling-beam identification and force
+  summation (`P`, `V`, `M`, `M/(VL)`, `M/(VH)`) in `PlateInspector` with CSV
+  export, independent six-component global equilibrium verification, and both
+  official PyNite shear wall adaptations (`official_shear_wall_basic` from
+  `Examples/Shear Wall - Basic.py` and `official_shear_wall_advanced` from
+  `Examples/Shear Wall - Advanced.py`; seventeen of twenty official examples
+  adapted).
+
 - Add mat foundation Winkler soil subgrade springs (`subgrade_modulus` $k_s$ in
   force/length³, `compression_only` and `bilateral` modes), concentrated
   transverse point loads and out-of-plane bending moments (`point_loads` with

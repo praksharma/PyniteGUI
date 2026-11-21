@@ -459,6 +459,97 @@ class PlateWorkspaceTests(unittest.TestCase):
             self.assertIn("Soil bearing pressure (kip/in2)", probe_rows[0])
         dialog.deleteLater()
 
+    def test_shear_wall_mode_dialog_membrane_contours_piers_table_and_csv(self):
+        import numpy as np
+        from pynitegui.qt.plate_loads import PlateLoadsDialog
+        window = self.window
+        definition = PlateDefinition(
+            plane="XY", width=120., height=90., thickness=8., mesh_size=30.,
+            pressure=0., load_case="E", additional_pressures={"D": 0.},
+            edges=dict.fromkeys(("Left", "Right", "Bottom", "Top"), "Free"),
+            openings=[dict(name="O1", x_left=30., y_bott=0., width=60., height=60.)])
+        window.install(definition.to_dict())
+        window.analysis_mode.setCurrentIndex(window.analysis_mode.findData("shear_wall"))
+        self.assertTrue(window.apply())
+        self.assertEqual(window.definition.analysis_mode, "shear_wall")
+        self.assertEqual(len(window.definition.wall_supports), 1)
+        self.assertEqual(len(window.definition.wall_stories), 1)
+        self.assertEqual(len(window.definition.wall_loads), 1)
+        dialog = PlateLoadsDialog(window, window.definition)
+        self.assertEqual(dialog.wall_supports.rowCount(), 1)
+        self.assertEqual(dialog.wall_stories.rowCount(), 1)
+        self.assertEqual(dialog.wall_loads.rowCount(), 1)
+        # Rename Top -> Roof in wall_stories and check wall_loads story combo updates.
+        dialog.wall_stories.cellWidget(0, 0).setText("Roof")
+        dialog.wall_loads.cellWidget(0, 3).setValue(60.)
+        dialog.perform("wall_loads", "add")
+        dialog.wall_loads.cellWidget(1, 0).setCurrentText("Roof")
+        dialog.wall_loads.cellWidget(1, 1).setCurrentText("D")
+        kd_box = dialog.wall_loads.cellWidget(1, 2)
+        kd_box.setCurrentIndex(kd_box.findData("axial"))
+        dialog.wall_loads.cellWidget(1, 3).setValue(30.)
+        # Cannot delete Roof story while referenced by wall_loads.
+        dialog.wall_stories.selectRow(0)
+        with patch("pynitegui.qt.plate_loads.QMessageBox.warning") as warning:
+            dialog.perform("wall_stories", "delete")
+        warning.assert_called_once()
+        dialog.accept()
+        with patch("pynitegui.qt.plate_loads.PlateLoadsDialog", return_value=dialog), \
+             patch.object(dialog, "exec", return_value=dialog.DialogCode.Accepted):
+            window.configure_loading()
+        self.assertEqual(window.definition.wall_stories[0]["name"], "Roof")
+        self.assertEqual(len(window.definition.wall_loads), 2)
+        window.run_analysis()
+        self.wait_until(lambda: window.thread is None)
+        self.assertIsNotNone(window.result)
+        self.assertIn("Lateral reaction sum", window.status.text())
+        self.assertIn("3 pier(s), 1 coupling beam(s)", window.status.text())
+        for idx, arr in (
+            (11, window.result["membrane"][:, 0]),
+            (12, window.result["membrane"][:, 1]),
+            (13, window.result["membrane"][:, 2]),
+        ):
+            self.assertTrue(window.component.model().item(idx).isEnabled())
+            window.component.setCurrentIndex(idx)
+            window.canvas.draw()
+            artist = window.figure.axes[0].collections[0]
+            np.testing.assert_allclose(artist.get_array(), arr)
+        self.assertTrue(window.component.model().item(14).isEnabled())
+        window.component.setCurrentIndex(14)
+        window.canvas.draw()
+        self.assertEqual(len(window.figure.axes), 2)
+        window.inspect_results()
+        inspector = window.inspector
+        self.assertIn("Sx ", inspector.probe.text())
+        self.assertIn("Sy ", inspector.probe.text())
+        self.assertIn("Txy ", inspector.probe.text())
+        self.assertEqual(inspector.pier_table.rowCount(), 4)
+        self.assertTrue(inspector.export_piers.isEnabled())
+        with tempfile.TemporaryDirectory() as directory:
+            nodes_csv = str(Path(directory)/"wall-nodes.csv")
+            probes_csv = str(Path(directory)/"wall-probes.csv")
+            piers_csv = str(Path(directory)/"wall-piers.csv")
+            with patch("pynitegui.qt.plate_workspace.QFileDialog.getSaveFileName", return_value=(nodes_csv, "")):
+                window.export_csv()
+            with open(nodes_csv, newline="") as stream:
+                node_rows = list(csv.DictReader(stream))
+            self.assertIn("Lateral displacement u (in)", node_rows[0])
+            self.assertIn("Vertical displacement v (in)", node_rows[0])
+            self.assertIn("Horizontal reaction Rx (kip)", node_rows[0])
+            with patch("pynitegui.qt.plate_inspection_dialog.QFileDialog.getSaveFileName", return_value=(probes_csv, "")):
+                inspector.export_csv(False)
+            with open(probes_csv, newline="") as stream:
+                probe_rows = list(csv.DictReader(stream))
+            self.assertIn("Sx (kip/in2)", probe_rows[0])
+            self.assertIn("Sy (kip/in2)", probe_rows[0])
+            self.assertIn("Txy (kip/in2)", probe_rows[0])
+            with patch("pynitegui.qt.plate_inspection_dialog.QFileDialog.getSaveFileName", return_value=(piers_csv, "")):
+                inspector.export_pier_beam_csv()
+            with open(piers_csv, newline="") as stream:
+                pier_rows = list(csv.DictReader(stream))
+            self.assertEqual([row["ID"] for row in pier_rows], ["P1", "P2", "P3", "B1"])
+        dialog.deleteLater()
+
 
 if __name__ == "__main__":
     unittest.main()
