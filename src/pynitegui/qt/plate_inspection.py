@@ -38,13 +38,19 @@ def inspect_plate(result, element, xi=0., eta=0.):
     q,gx,gy=result['pressure_coefficients']
     applied,target=float(result['element_pressures'][index]),float(q+gx*point[0]+gy*point[1])
     bearing=float(weights @ np.asarray(result['nodal_bearing_pressure'],dtype=float)[result['cells'][index]]) if 'nodal_bearing_pressure' in result else 0.
-    if not all(math.isfinite(value) for value in (applied,target,bearing)):
+    disp_u=float(weights @ np.asarray(result['displacement_u'],dtype=float)[result['cells'][index]]) if 'displacement_u' in result else 0.
+    disp_v=float(weights @ np.asarray(result['displacement_v'],dtype=float)[result['cells'][index]]) if 'displacement_v' in result else 0.
+    membrane=weights @ np.asarray(result['membrane_inspection'][index],dtype=float) if 'membrane_inspection' in result else np.zeros(3)
+    if np.shape(membrane)!=(3,) or not np.isfinite(membrane).all() or not all(math.isfinite(value) for value in (applied,target,bearing,disp_u,disp_v)):
         raise ValueError('Plate pressure recovery returned nonfinite values.')
     from .quad_shear_snapshot import probe
     recovered=probe(result['recovered_shear'],index,xi,eta) if definition['element_type']=='Quad' else {}
-    return dict(**recovered,applied_pressure=applied,target_pressure=target,soil_bearing_pressure=bearing,element=element, xi=float(xi), eta=float(eta), position=point.tolist(),
+    return dict(**recovered,applied_pressure=applied,target_pressure=target,soil_bearing_pressure=bearing,
+        displacement_u=disp_u,displacement_v=disp_v,
+        element=element, xi=float(xi), eta=float(eta), position=point.tolist(),
         global_position=global_point.tolist(), axes=axes.tolist(),
         **dict(zip(("Mx", "My", "Mxy"), moments.tolist())),
+        **dict(zip(("Sx", "Sy", "Txy"), membrane.tolist())),
         **({} if shears is None else dict(zip(("Qx", "Qy"), shears.tolist()))))
 
 
@@ -53,6 +59,7 @@ def plate_probe_table(result, units, probes=None):
     probes = probes if probes is not None else [inspect_plate(result, name) for name in result["element_names"]]
     rect = result["definition"]["element_type"] == "Rect"
     has_subgrade = result["definition"].get("subgrade_modulus", 0.) > 0
+    is_wall = result["definition"].get("analysis_mode", "transverse") == "shear_wall"
     headers = ["Element", "xi", "eta", *(f"Local {axis} ({units.length})" for axis in ("x", "y")),
         *(f"Global {axis} ({units.length})" for axis in "XYZ"),
         *(f"{key} ({units.moment}/{units.length})" for key in ("Mx", "My", "Mxy"))]
@@ -62,13 +69,16 @@ def plate_probe_table(result, units, probes=None):
     headers += [f'Applied element pressure ({units.pressure})',f'Target profile pressure ({units.pressure})']
     if has_subgrade:
         headers += [f'Soil bearing pressure ({units.pressure})']
+    if is_wall:
+        headers += [f'{key} ({units.stress})' for key in ('Sx', 'Sy', 'Txy')]
     rows = [[row["element"], row["xi"], row["eta"],
         *(value*units.length_factor for value in (*row["position"], *row["global_position"])),
         *(row[key]*units.force_factor for key in ("Mx", "My", "Mxy")),
         *([row[key]*units.factor("intensity") for key in ("Qx", "Qy")] if rect else []),
         *([None if row[key] is None else row[key]*units.factor('intensity') for key in ('recovered_Qx','recovered_Qy')] + [row['shear_status'],row['shear_fit_method']] if not rect else []),
         *(row[key]*units.factor('pressure') for key in ('applied_pressure','target_pressure')),
-        *([row['soil_bearing_pressure']*units.factor('pressure')] if has_subgrade else [])] for row in probes]
+        *([row['soil_bearing_pressure']*units.factor('pressure')] if has_subgrade else []),
+        *([row[key]*units.factor('stress') for key in ('Sx', 'Sy', 'Txy')] if is_wall else [])] for row in probes]
     return headers, rows
 
 

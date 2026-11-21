@@ -1,7 +1,7 @@
 """Staged pressure-case, combination and horizontal self-weight editing."""
 from PySide6.QtWidgets import (QAbstractItemView, QComboBox, QDialog, QDialogButtonBox,
                               QFormLayout, QHBoxLayout, QInputDialog, QLabel,
-                              QMessageBox, QPushButton, QTableWidget,
+                              QLineEdit, QMessageBox, QPushButton, QTableWidget,
                               QTableWidgetItem, QTabWidget, QVBoxLayout, QWidget)
 
 from .plate_model import PlateDefinition, plate_point_load_directions
@@ -19,7 +19,10 @@ class PlateLoadsDialog(QDialog):
                                   additional_pressures=dict(definition.additional_pressures),
                                   combinations={k: dict(v) for k, v in definition.combinations.items()},
                                   pressure_profiles={k: dict(v) for k, v in definition.pressure_profiles.items()},
-                                  point_loads=[dict(item) for item in definition.point_loads])
+                                  point_loads=[dict(item) for item in definition.point_loads],
+                                  wall_supports=[dict(item) for item in definition.wall_supports],
+                                  wall_stories=[dict(item) for item in definition.wall_stories],
+                                  wall_loads=[dict(item) for item in definition.wall_loads])
         self.setWindowTitle("Plate Load Cases and Combinations")
         self.resize(1000, 650)
         layout = QVBoxLayout(self)
@@ -33,10 +36,14 @@ class PlateLoadsDialog(QDialog):
         self.tabs = QTabWidget()
         layout.addWidget(self.tabs)
         self.cases, self.combinations, self.point_loads = QTableWidget(), QTableWidget(), QTableWidget()
+        self.wall_stories, self.wall_loads, self.wall_supports = QTableWidget(), QTableWidget(), QTableWidget()
         self.buttons = {}
         for kind, table, title in (("cases", self.cases, "Pressure cases"),
                                    ("combinations", self.combinations, "Combinations"),
-                                   ("point_loads", self.point_loads, "Point loads")):
+                                   ("point_loads", self.point_loads, "Point loads"),
+                                   ("wall_stories", self.wall_stories, "Wall stories"),
+                                   ("wall_loads", self.wall_loads, "Wall story loads"),
+                                   ("wall_supports", self.wall_supports, "Wall supports")):
             page = QWidget()
             page_layout = QVBoxLayout(page)
             table.setObjectName("plate_load_"+kind)
@@ -45,7 +52,7 @@ class PlateLoadsDialog(QDialog):
             table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
             page_layout.addWidget(table)
             row = QHBoxLayout()
-            actions = (("add", "Add"), ("delete", "Delete")) if kind == "point_loads" else (
+            actions = (("add", "Add"), ("delete", "Delete")) if kind in ("point_loads", "wall_stories", "wall_loads", "wall_supports") else (
                 ("add", "Add…"), ("edit", "Rename…" if kind == "cases" else "Edit…"), ("delete", "Delete"))
             for action, text in actions:
                 button = QPushButton(text)
@@ -79,9 +86,10 @@ class PlateLoadsDialog(QDialog):
         self.refresh()
 
     def selected(self, kind):
-        if kind == "point_loads":
-            row = self.point_loads.currentRow()
-            return row if 0 <= row < self.point_loads.rowCount() else None
+        if kind in ("point_loads", "wall_stories", "wall_loads", "wall_supports"):
+            table = getattr(self, kind)
+            row = table.currentRow()
+            return row if 0 <= row < table.rowCount() else None
         table = self.cases if kind == "cases" else self.combinations
         item = table.item(table.currentRow(), 0)
         return item.text() if item else None
@@ -119,6 +127,49 @@ class PlateLoadsDialog(QDialog):
                 "magnitude": unit_value(mag_widget, self.definition.units, quantity),
             })
         self.definition.point_loads = point_loads
+        old_story_names = [s["name"] for s in self.definition.wall_stories]
+        wall_stories = []
+        story_rename = {}
+        for row in range(self.wall_stories.rowCount()):
+            name_edit = self.wall_stories.cellWidget(row, 0)
+            elev = self.wall_stories.cellWidget(row, 1); elev.interpretText()
+            x0 = self.wall_stories.cellWidget(row, 2); x0.interpretText()
+            x1 = self.wall_stories.cellWidget(row, 3); x1.interpretText()
+            new_name = name_edit.text().strip()
+            if row < len(old_story_names) and old_story_names[row] != new_name:
+                story_rename[old_story_names[row]] = new_name
+            wall_stories.append({
+                "name": new_name,
+                "elevation": unit_value(elev, self.definition.units, "length"),
+                "x_start": unit_value(x0, self.definition.units, "length"),
+                "x_end": unit_value(x1, self.definition.units, "length"),
+            })
+        self.definition.wall_stories = wall_stories
+        wall_loads = []
+        for row in range(self.wall_loads.rowCount()):
+            story_box = self.wall_loads.cellWidget(row, 0)
+            case_box = self.wall_loads.cellWidget(row, 1)
+            kind_box = self.wall_loads.cellWidget(row, 2)
+            mag = self.wall_loads.cellWidget(row, 3); mag.interpretText()
+            chosen_story = story_rename.get(story_box.currentText(), story_box.currentText())
+            wall_loads.append({
+                "story": chosen_story,
+                "case": case_box.currentText(),
+                "kind": kind_box.currentData(),
+                "magnitude": unit_value(mag, self.definition.units, "force"),
+            })
+        self.definition.wall_loads = wall_loads
+        wall_supports = []
+        for row in range(self.wall_supports.rowCount()):
+            elev = self.wall_supports.cellWidget(row, 0); elev.interpretText()
+            x0 = self.wall_supports.cellWidget(row, 1); x0.interpretText()
+            x1 = self.wall_supports.cellWidget(row, 2); x1.interpretText()
+            wall_supports.append({
+                "elevation": unit_value(elev, self.definition.units, "length"),
+                "x_start": unit_value(x0, self.definition.units, "length"),
+                "x_end": unit_value(x1, self.definition.units, "length"),
+            })
+        self.definition.wall_supports = wall_supports
         self.definition.self_weight_case = self.weight_case.currentData()
         self.weight_factor.interpretText()
         self.definition.self_weight_factor = (self.weight_factor.property("canonical")
@@ -169,7 +220,7 @@ class PlateLoadsDialog(QDialog):
             "Case", f"Local x ({self.definition.units.length})", f"Local y ({self.definition.units.length})",
             "Direction", f"Magnitude ({self.definition.units.force} or {self.definition.units.moment})"])
         self.point_loads.setRowCount(len(self.definition.point_loads))
-        directions = list(plate_point_load_directions(self.definition.plane))
+        directions = list(plate_point_load_directions(self.definition.plane, self.definition.analysis_mode))
         for row, load in enumerate(self.definition.point_loads):
             for col in range(5):
                 self.point_loads.setItem(row, col, QTableWidgetItem(""))
@@ -194,6 +245,66 @@ class PlateLoadsDialog(QDialog):
         self.point_loads.resizeColumnsToContents()
         self.point_loads.horizontalHeader().setStretchLastSection(True)
         self.point_loads.blockSignals(False)
+        st_row = selected if kind == "wall_stories" else self.selected("wall_stories")
+        self.wall_stories.blockSignals(True)
+        self.wall_stories.setColumnCount(4)
+        self.wall_stories.setHorizontalHeaderLabels([
+            "Story", f"Elevation y ({self.definition.units.length})",
+            f"Start x ({self.definition.units.length})", f"End x ({self.definition.units.length})"])
+        self.wall_stories.setRowCount(len(self.definition.wall_stories))
+        for row, story in enumerate(self.definition.wall_stories):
+            for col in range(4):
+                self.wall_stories.setItem(row, col, QTableWidgetItem(""))
+            self.wall_stories.setCellWidget(row, 0, QLineEdit(story["name"]))
+            self.wall_stories.setCellWidget(row, 1, unit_number(story["elevation"], self.definition.units, "length", decimals=8))
+            self.wall_stories.setCellWidget(row, 2, unit_number(story["x_start"], self.definition.units, "length", decimals=8))
+            self.wall_stories.setCellWidget(row, 3, unit_number(story["x_end"], self.definition.units, "length", decimals=8))
+            if row == st_row or (st_row is None and row == 0):
+                self.wall_stories.selectRow(row)
+        self.wall_stories.resizeColumnsToContents()
+        self.wall_stories.horizontalHeader().setStretchLastSection(True)
+        self.wall_stories.blockSignals(False)
+        wl_row = selected if kind == "wall_loads" else self.selected("wall_loads")
+        self.wall_loads.blockSignals(True)
+        self.wall_loads.setColumnCount(4)
+        self.wall_loads.setHorizontalHeaderLabels([
+            "Story", "Case", "Kind", f"Force ({self.definition.units.force})"])
+        self.wall_loads.setRowCount(len(self.definition.wall_loads))
+        story_names = [s["name"] for s in self.definition.wall_stories]
+        for row, load in enumerate(self.definition.wall_loads):
+            for col in range(4):
+                self.wall_loads.setItem(row, col, QTableWidgetItem(""))
+            st_box = QComboBox(); st_box.addItems(story_names or [load["story"]]); st_box.setCurrentText(load["story"])
+            cs_box = QComboBox(); cs_box.addItems(self.definition.load_cases); cs_box.setCurrentText(load["case"])
+            kd_box = QComboBox(); kd_box.addItem("Shear (+local x)", "shear"); kd_box.addItem("Axial (-local y)", "axial")
+            kd_box.setCurrentIndex(max(0, kd_box.findData(load["kind"])))
+            self.wall_loads.setCellWidget(row, 0, st_box)
+            self.wall_loads.setCellWidget(row, 1, cs_box)
+            self.wall_loads.setCellWidget(row, 2, kd_box)
+            self.wall_loads.setCellWidget(row, 3, unit_number(load["magnitude"], self.definition.units, "force", decimals=8))
+            if row == wl_row or (wl_row is None and row == 0):
+                self.wall_loads.selectRow(row)
+        self.wall_loads.resizeColumnsToContents()
+        self.wall_loads.horizontalHeader().setStretchLastSection(True)
+        self.wall_loads.blockSignals(False)
+        ws_row = selected if kind == "wall_supports" else self.selected("wall_supports")
+        self.wall_supports.blockSignals(True)
+        self.wall_supports.setColumnCount(3)
+        self.wall_supports.setHorizontalHeaderLabels([
+            f"Elevation y ({self.definition.units.length})",
+            f"Start x ({self.definition.units.length})", f"End x ({self.definition.units.length})"])
+        self.wall_supports.setRowCount(len(self.definition.wall_supports))
+        for row, sup in enumerate(self.definition.wall_supports):
+            for col in range(3):
+                self.wall_supports.setItem(row, col, QTableWidgetItem(""))
+            self.wall_supports.setCellWidget(row, 0, unit_number(sup["elevation"], self.definition.units, "length", decimals=8))
+            self.wall_supports.setCellWidget(row, 1, unit_number(sup["x_start"], self.definition.units, "length", decimals=8))
+            self.wall_supports.setCellWidget(row, 2, unit_number(sup["x_end"], self.definition.units, "length", decimals=8))
+            if row == ws_row or (ws_row is None and row == 0):
+                self.wall_supports.selectRow(row)
+        self.wall_supports.resizeColumnsToContents()
+        self.wall_supports.horizontalHeader().setStretchLastSection(True)
+        self.wall_supports.blockSignals(False)
         self.weight_case.blockSignals(True)
         self.weight_case.clear()
         self.weight_case.addItem("Off", None)
@@ -204,15 +315,16 @@ class PlateLoadsDialog(QDialog):
         self.update_buttons()
 
     def update_buttons(self):
-        if len(self.buttons) < 8:
+        if len(self.buttons) < 14:
             return
-        case, combination, pt_row = self.selected("cases"), self.selected("combinations"), self.selected("point_loads")
+        case, combination = self.selected("cases"), self.selected("combinations")
         self.buttons["cases", "edit"].setEnabled(case is not None)
         self.buttons["cases", "delete"].setEnabled(case is not None and case != self.definition.load_case)
         for action in ("edit", "delete"):
             self.buttons["combinations", action].setEnabled(combination is not None and combination != "Plate")
         self.buttons["combinations", "edit"].setToolTip("Plate uses the primary case/factor from the main controls; named combinations can mix all cases.")
-        self.buttons["point_loads", "delete"].setEnabled(pt_row is not None)
+        for key in ("point_loads", "wall_stories", "wall_loads", "wall_supports"):
+            self.buttons[key, "delete"].setEnabled(self.selected(key) is not None)
 
     def perform(self, kind, action):
         from .load_cases import CombinationEditor
@@ -225,7 +337,7 @@ class PlateLoadsDialog(QDialog):
                 if action == "add":
                     if len(self.definition.point_loads) >= 64:
                         raise ValueError("Use at most 64 concentrated plate point loads.")
-                    directions = plate_point_load_directions(self.definition.plane)
+                    directions = plate_point_load_directions(self.definition.plane, self.definition.analysis_mode)
                     self.definition.point_loads.append({
                         "case": self.definition.load_case,
                         "x": self.definition.width / 2.,
@@ -238,12 +350,60 @@ class PlateLoadsDialog(QDialog):
                     del self.definition.point_loads[previous]
                     self.refresh("point_loads", min(previous, len(self.definition.point_loads) - 1) if self.definition.point_loads else None)
                 return
+            if kind == "wall_stories":
+                if action == "add":
+                    if len(self.definition.wall_stories) >= 32:
+                        raise ValueError("Use at most 32 shear wall stories.")
+                    existing = {s["name"] for s in self.definition.wall_stories}
+                    name = next(f"Story_{i}" for i in range(1, 34) if f"Story_{i}" not in existing)
+                    self.definition.wall_stories.append({
+                        "name": name, "elevation": self.definition.height,
+                        "x_start": 0., "x_end": self.definition.width,
+                    })
+                    self.refresh("wall_stories", len(self.definition.wall_stories) - 1)
+                else:
+                    story_name = self.definition.wall_stories[previous]["name"]
+                    if any(load["story"] == story_name for load in self.definition.wall_loads):
+                        raise ValueError("Remove wall story loads referencing this story before deleting it.")
+                    del self.definition.wall_stories[previous]
+                    self.refresh("wall_stories", min(previous, len(self.definition.wall_stories) - 1) if self.definition.wall_stories else None)
+                return
+            if kind == "wall_loads":
+                if action == "add":
+                    if not self.definition.wall_stories:
+                        raise ValueError("Add at least one wall story before adding a story load.")
+                    if len(self.definition.wall_loads) >= 64:
+                        raise ValueError("Use at most 64 shear wall story loads.")
+                    self.definition.wall_loads.append({
+                        "story": self.definition.wall_stories[0]["name"],
+                        "case": self.definition.load_case,
+                        "kind": "shear",
+                        "magnitude": 10.,
+                    })
+                    self.refresh("wall_loads", len(self.definition.wall_loads) - 1)
+                else:
+                    del self.definition.wall_loads[previous]
+                    self.refresh("wall_loads", min(previous, len(self.definition.wall_loads) - 1) if self.definition.wall_loads else None)
+                return
+            if kind == "wall_supports":
+                if action == "add":
+                    if len(self.definition.wall_supports) >= 16:
+                        raise ValueError("Use at most 16 shear wall support segments.")
+                    self.definition.wall_supports.append({
+                        "elevation": 0., "x_start": 0., "x_end": self.definition.width,
+                    })
+                    self.refresh("wall_supports", len(self.definition.wall_supports) - 1)
+                else:
+                    del self.definition.wall_supports[previous]
+                    self.refresh("wall_supports", min(previous, len(self.definition.wall_supports) - 1) if self.definition.wall_supports else None)
+                return
             if kind == "cases":
                 if action == "delete":
                     if (previous == self.definition.load_case or previous == self.definition.self_weight_case or
                             any(previous in factors for factors in self.definition.combinations.values()) or
-                            any(load["case"] == previous for load in self.definition.point_loads)):
-                        raise ValueError("Remove combination/self-weight/point-load references before deleting an additional case; keep the primary case.")
+                            any(load["case"] == previous for load in self.definition.point_loads) or
+                            any(load["case"] == previous for load in self.definition.wall_loads)):
+                        raise ValueError("Remove combination/self-weight/point-load/wall-load references before deleting an additional case; keep the primary case.")
                     del self.definition.additional_pressures[previous]
                     self.definition.pressure_profiles.pop(previous,None)
                 else:

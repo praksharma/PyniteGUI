@@ -1,6 +1,7 @@
 """Pinned official Quad plate: upstream parity, reference checks and native entry."""
 import contextlib
 import io
+import math
 import os
 from pathlib import Path
 import tempfile
@@ -52,7 +53,8 @@ class OfficialPlateTests(unittest.TestCase):
         self.assertGreater(result["displacement"].max(), thin)  # Transverse shear retained.
 
     def test_all_unit_persistence_and_fresh_definitions(self):
-        for key in ("official_plate_quad", "official_mat_foundation"):
+        for key in ("official_plate_quad", "official_mat_foundation",
+                    "official_shear_wall_basic", "official_shear_wall_advanced"):
             for units in UNIT_SYSTEMS:
                 d = example_definition(key, unit_system=units)
                 with tempfile.TemporaryDirectory() as directory:
@@ -64,6 +66,108 @@ class OfficialPlateTests(unittest.TestCase):
                 self.assertNotEqual(example_definition(key, unit_system=units).edges["Left"], "Simply supported")
         with self.assertRaises(ValueError):
             example_definition("unknown")
+
+    def test_official_shear_walls_basic_and_advanced_upstream_parity(self):
+        # 1. Official Shear Wall - Basic.py (pinned upstream recipe)
+        basic_def = example_definition("official_shear_wall_basic")
+        with contextlib.redirect_stdout(io.StringIO()):
+            basic = select_plate_combination(analyze_plate(basic_def), "Seismic")
+            m_basic = FEModel3D()
+            E_m = 900.*2000./1000.
+            m_basic.add_material("Masonry", E_m, .4*E_m, .17, .0000710)
+            m_basic.add_rectangle_mesh("SW1", 6., 26.*12., 16.*12., 8., "Masonry", 1., 1., [0, 0, 0], "XY", element_type="Quad")
+            m_basic.meshes["SW1"].add_rect_opening("Door 1", 2.*12., 0.*12., 4.*12., 12.*12.)
+            m_basic.meshes["SW1"].add_rect_opening("Window 1", 8.*12., 8.*12., 4.*12., 4.*12.)
+            m_basic.meshes["SW1"].add_rect_opening("Window 2", 14.*12., 8.*12., 4.*12., 4.*12.)
+            m_basic.meshes["SW1"].add_rect_opening("Door 2", 20.*12., 0.*12., 4.*12., 12.*12.)
+            m_basic.meshes["SW1"].generate()
+            m_basic.meshes["SW1"].needs_update = False
+            for q in m_basic.quads.values():
+                k_loc = q.ke()
+                q.ke = lambda k_loc=k_loc: k_loc
+                ke_glob = q.Ke()
+                q.Ke = lambda ke_glob=ke_glob: ke_glob
+            for node in m_basic.nodes.values():
+                if math.isclose(node.Y, 16.*12.):
+                    m_basic.add_node_load(node.name, "FX", 100./53., case="E")
+                if math.isclose(node.Y, 0.):
+                    m_basic.def_support(node.name, True, True, True, False, False, False)
+            m_basic.add_load_combo("Seismic", {"E": 1.})
+            m_basic.analyze_linear(log=False, check_statics=False)
+        self.assertEqual(len(basic["cells"]), 1152)
+        self.assertEqual(len(basic["names"]), 1315)
+        up_basic_nodes = list(m_basic.nodes.values())
+        np.testing.assert_allclose(basic["points"], [(n.X, n.Y) for n in up_basic_nodes], atol=1e-10)
+        np.testing.assert_allclose(basic["displacement_u"], [n.DX["Seismic"] for n in up_basic_nodes], rtol=1e-9, atol=1e-12)
+        np.testing.assert_allclose(basic["displacement_v"], [n.DY["Seismic"] for n in up_basic_nodes], rtol=1e-9, atol=1e-12)
+        np.testing.assert_allclose(basic["reactions_u"], [n.RxnFX["Seismic"] for n in up_basic_nodes], atol=1e-10)
+        np.testing.assert_allclose(basic["reactions_v"], [n.RxnFY["Seismic"] for n in up_basic_nodes], atol=1e-10)
+        up_basic_membrane = np.array([q.membrane(0, 0, combo_name="Seismic").ravel() for q in m_basic.quads.values()])
+        np.testing.assert_allclose(basic["membrane_stresses"], up_basic_membrane, rtol=1e-9, atol=1e-10)
+        self.assertAlmostEqual(basic["displacement_u"].max(), 0.08606040631292898, places=11)
+        self.assertAlmostEqual(basic["wall_rigidity"], 1161.9745279424374, places=8)
+        self.assertAlmostEqual(basic["reactions_u"].sum(), -100., places=8)
+
+        # 2. Official Shear Wall - Advanced.py (pinned upstream Pynite.ShearWall recipe)
+        adv_def = example_definition("official_shear_wall_advanced")
+        with contextlib.redirect_stdout(io.StringIO()):
+            adv = select_plate_combination(analyze_plate(adv_def), "1.2D+1.0E")
+            m_adv = FEModel3D()
+            E_c = 57000.*(4500.)**0.5*12**2/1000.
+            m_adv.add_material("Concrete", E_c, .4*E_c, .17, .150)
+            m_adv.add_load_combo("1.2D+1.0E", {"D": 1.2, "E": 1.})
+            m_adv.add_shear_wall("Wall 1", 1, 50, 25, 1, "Concrete", ky_mod=.35)
+            m_adv.shear_walls["Wall 1"].add_opening("Opng 1", 5, 0, 40, 20)
+            m_adv.shear_walls["Wall 1"].add_support()
+            m_adv.shear_walls["Wall 1"].add_story("Roof", 25, 0, 50)
+            m_adv.shear_walls["Wall 1"].add_shear("Roof", 150, "E")
+            m_adv.shear_walls["Wall 1"].generate()
+            m_adv.shear_walls["Wall 1"].needs_update = False
+            for q in m_adv.quads.values():
+                k_loc = q.ke()
+                q.ke = lambda k_loc=k_loc: k_loc
+                ke_glob = q.Ke()
+                q.Ke = lambda ke_glob=ke_glob: ke_glob
+            m_adv.analyze_linear(log=False, check_statics=False)
+        self.assertEqual(len(adv["cells"]), 450)
+        self.assertEqual(len(adv["names"]), 546)
+        up_adv_nodes = list(m_adv.nodes.values())
+        np.testing.assert_allclose(adv["points"], [(n.X*12., n.Y*12.) for n in up_adv_nodes], atol=1e-10)
+        np.testing.assert_allclose(adv["displacement_u"], [n.DX["1.2D+1.0E"]*12. for n in up_adv_nodes], rtol=1e-9, atol=1e-12)
+        np.testing.assert_allclose(adv["displacement_v"], [n.DY["1.2D+1.0E"]*12. for n in up_adv_nodes], rtol=1e-9, atol=1e-12)
+        np.testing.assert_allclose(adv["reactions_u"], [n.RxnFX["1.2D+1.0E"] for n in up_adv_nodes], atol=1e-10)
+        np.testing.assert_allclose(adv["reactions_v"], [n.RxnFY["1.2D+1.0E"] for n in up_adv_nodes], atol=1e-10)
+        up_adv_membrane = np.array([q.membrane(0, 0, combo_name="1.2D+1.0E").ravel()/144. for q in m_adv.quads.values()])
+        np.testing.assert_allclose(adv["membrane_stresses"], up_adv_membrane, rtol=1e-9, atol=1e-10)
+        up_sw = m_adv.shear_walls["Wall 1"]
+        np.testing.assert_allclose(adv["story_stiffnesses"]["Roof"]*12., up_sw.stiffness("Roof"), rtol=1e-9)
+        self.assertEqual([p["name"] for p in adv["piers"]], list(up_sw.piers.keys()))
+        for pier in adv["piers"]:
+            up_pier = up_sw.piers[pier["name"]]
+            up_p, up_m, up_v, up_m_vl = up_pier.sum_forces("1.2D+1.0E")
+            self.assertAlmostEqual(pier["width"]/12., up_pier.width, places=9)
+            self.assertAlmostEqual(pier["height"]/12., up_pier.height, places=9)
+            self.assertAlmostEqual(pier["V"], up_v, places=8)
+            self.assertAlmostEqual(pier["M"]/12., up_m, places=7)
+            self.assertAlmostEqual(pier["P"], up_p, places=8)
+            self.assertAlmostEqual(pier["M_VL"], up_m_vl, places=8)
+        self.assertEqual([b["name"] for b in adv["coupling_beams"]], list(up_sw.coupling_beams.keys()))
+        for beam in adv["coupling_beams"]:
+            up_beam = up_sw.coupling_beams[beam["name"]]
+            up_p, up_m, up_v, up_m_vh = up_beam.sum_forces("1.2D+1.0E")
+            self.assertAlmostEqual(beam["length"]/12., up_beam.length, places=9)
+            self.assertAlmostEqual(beam["height"]/12., up_beam.height, places=9)
+            self.assertAlmostEqual(beam["V"], up_v, places=8)
+            self.assertAlmostEqual(beam["M"]/12., up_m, places=7)
+            self.assertAlmostEqual(beam["P"], up_p, places=8)
+            self.assertAlmostEqual(beam["M_VH"], up_m_vh, places=8)
+        up_adv_quads = list(m_adv.quads.values())
+        for idx in (0, 25, 180, 449):
+            ename = adv["element_names"][idx]
+            for xi, eta in ((0., 0.), (.35, -.45)):
+                probe = inspect_plate(adv, ename, xi, eta)
+                up_mem = up_adv_quads[idx].membrane(xi, eta, combo_name="1.2D+1.0E").ravel()/144.
+                np.testing.assert_allclose([probe["Sx"], probe["Sy"], probe["Txy"]], up_mem, rtol=1e-9, atol=1e-11)
 
     def test_official_mat_foundation_upstream_parity_soil_pressure_and_equilibrium(self):
         definition = example_definition("official_mat_foundation")

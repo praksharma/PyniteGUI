@@ -34,7 +34,8 @@ class PlatePressureTests(unittest.TestCase):
                     {'Case 1':{'axis':'y','end_pressure':0.,'nodes':['N1']}}):
             with self.subTest(bad=bad),self.assertRaises(ValueError):replace(d,pressure_profiles=bad).validate()
         legacy=PlateDefinition().to_dict();legacy['version']=3
-        for k in ('pressure_profiles','subgrade_modulus','subgrade_mode','point_loads'):legacy.pop(k)
+        for k in ('pressure_profiles','subgrade_modulus','subgrade_mode','point_loads',
+                  'analysis_mode','wall_supports','wall_stories','wall_loads'):legacy.pop(k)
         before=deepcopy(legacy)
         self.assertEqual(PlateDefinition.from_dict(legacy),PlateDefinition());self.assertEqual(legacy,before)
         with self.assertRaises(ValueError):PlateDefinition.from_dict({**d.to_dict(),'version':3})

@@ -1,7 +1,8 @@
 """Official adaptations and custom benchmarks in the separate plate workspace.
 
 Sources: PyNite Examples/Rectangular Plate Bending - Qauds.py,
-Examples/Hydrostatic Loads on a Wall.py and Examples/Mat Foundation.py at the
+Examples/Hydrostatic Loads on a Wall.py, Examples/Mat Foundation.py,
+Examples/Shear Wall - Basic.py and Examples/Shear Wall - Advanced.py at the
 revision in official_examples.SOURCE_COMMIT. MIT notice: licenses/pynite-examples.txt.
 """
 from .model import Material
@@ -11,6 +12,8 @@ from .plate_model import PlateDefinition
 PLATE_EXAMPLES = {"official_plate_quad": "Official PyNite - Clamped Rectangular Quad Plate",
                   "official_wall_hydrostatic": "Official PyNite - Hydrostatic Tank Wall",
                   "official_mat_foundation": "Official PyNite - Mat Foundation",
+                  "official_shear_wall_basic": "Official PyNite - Masonry Shear Wall with Openings",
+                  "official_shear_wall_advanced": "Official PyNite - Concrete Coupled Shear Wall",
                   "thin_plate_recovered_shear": "Thin Plate - Recovered Centre Shear",
                   "opening_plate_recovered_shear": "Thin Plate Opening - Masked Recovered Shear"}
 PLATE_CATEGORY = "Plates (Experimental)"
@@ -22,6 +25,12 @@ PLATE_NOTES = {
     "official_mat_foundation": (
         "Official PyNite adaptation: 50 × 25 ft concrete mat foundation, 1 ft thick, on compression-only Winkler soil springs (ks = 100 pci = 172.8 kcf) with a 5 × 10 ft opening and concentrated column force/moment at (10, 10) ft.",
         "1,200 Quads (1,290 nodes); applied FY = -10 kip and MZ = +15 kip-ft (+180 kip-in) at (120, 120) in; compression-only soil reactions sum to +10 kip (normal reaction sum -10 kip) with global moment equilibrium about the origin."),
+    "official_shear_wall_basic": (
+        "Official PyNite adaptation: 26 × 16 ft masonry shear wall, 8 in thick (E = 1,800 ksi, nu = 0.17), 6 in Quad mesh, pinned base at y = 0, two 4 × 12 ft doors and two 4 × 4 ft windows under 100 kip top lateral shear.",
+        "1,152 Quads (1,315 nodes); top story lateral drift 0.0860604 in and wall rigidity 1,161.97 kip/in; base shear reaction sum -100 kip with automatic pier/coupling-beam force summation and membrane stress contours (Sx, Sy, Txy)."),
+    "official_shear_wall_advanced": (
+        "Official PyNite adaptation: 50 × 25 ft cracked concrete coupled shear wall, 1 ft thick (f'c = 4,500 psi, ky_mod = 0.35), 1 ft Quad mesh, 40 × 20 ft opening and 150 kip roof seismic shear (1.2D+1.0E).",
+        "450 Quads (546 nodes); roof lateral stiffness 291.171 kip/in (3,494.05 kip/ft); piers P1/P3 carry V = -75 kip, M = -888.753 kip-ft, P = ±43.833 kip and coupling beam B1 carries V = -43.833 kip, M = -733.281 kip-ft, P = +57.353 kip."),
     "official_wall_hydrostatic": (
         "Official PyNite adaptation: 25 × 15 ft tank wall, 1 ft thick, with 15 ft of water. Quad mesh 1 ft, left/right/bottom clamped, top free. Linear transverse pressure follows height.",
         "375 Quads; 1.4F normal load +245.7 kip and reaction sum −245.7 kip. Compare mesh refinements. Quad shear remains unverified and disabled; this is transverse plate bending, not an in-plane shear wall."),
@@ -33,6 +42,43 @@ PLATE_NOTES = {
 def example_definition(key="official_plate_quad", unit_system="imperial"):
     if key not in PLATE_EXAMPLES:
         raise ValueError(f"Unknown official plate example: {key}")
+    if key == "official_shear_wall_basic":
+        definition = PlateDefinition(
+            width=312., height=192., thickness=8., mesh_size=6., plane="XY",
+            material=Material("Masonry", E=900.*2000./1000., nu=.17, rho=.0000710),
+            kx_mod=1., ky_mod=1.,
+            pressure=0., load_case="E", load_factor=1.,
+            edges=dict.fromkeys(("Left", "Right", "Bottom", "Top"), "Free"),
+            openings=[
+                dict(name="Door 1", x_left=24., y_bott=0., width=48., height=144.),
+                dict(name="Window 1", x_left=96., y_bott=96., width=48., height=48.),
+                dict(name="Window 2", x_left=168., y_bott=96., width=48., height=48.),
+                dict(name="Door 2", x_left=240., y_bott=0., width=48., height=144.),
+            ],
+            analysis_mode="shear_wall",
+            wall_supports=[dict(elevation=0., x_start=0., x_end=312.)],
+            wall_stories=[dict(name="Top", elevation=192., x_start=0., x_end=312.)],
+            wall_loads=[dict(story="Top", case="E", kind="shear", magnitude=100.)],
+            combinations={"Seismic": {"E": 1.}},
+            unit_system=unit_system, mesh_name="SW1")
+        definition.validate()
+        return definition
+    if key == "official_shear_wall_advanced":
+        definition = PlateDefinition(
+            width=600., height=300., thickness=12., mesh_size=12., plane="XY",
+            material=Material("Concrete", E=57000.*4500.**.5/1000., nu=.17, rho=.150/12**3),
+            kx_mod=1., ky_mod=.35,
+            pressure=0., load_case="E", additional_pressures={"D": 0.}, load_factor=1.,
+            edges=dict.fromkeys(("Left", "Right", "Bottom", "Top"), "Free"),
+            openings=[dict(name="Opng 1", x_left=60., y_bott=0., width=480., height=240.)],
+            analysis_mode="shear_wall",
+            wall_supports=[dict(elevation=0., x_start=0., x_end=600.)],
+            wall_stories=[dict(name="Roof", elevation=300., x_start=0., x_end=600.)],
+            wall_loads=[dict(story="Roof", case="E", kind="shear", magnitude=150.)],
+            combinations={"1.2D+1.0E": {"D": 1.2, "E": 1.}},
+            unit_system=unit_system, mesh_name="Wall 1")
+        definition.validate()
+        return definition
     if key == "official_mat_foundation":
         definition = PlateDefinition(
             width=600., height=300., thickness=12., mesh_size=12., plane="XZ",
@@ -93,15 +139,31 @@ def loading_summary(definition):
         pressures.append(
             f"{load['case']} · ({u.to_display(load['x'], 'length'):.6g}, {u.to_display(load['y'], 'length'):.6g}) {u.length} · "
             f"{load['direction']}: {u.to_display(load['magnitude'], quantity):+.6g} {unit}")
+    for load in definition.wall_loads:
+        pressures.append(
+            f"{load['case']} · Story {load['story']} · {load['kind']}: "
+            f"{u.to_display(load['magnitude'], 'force'):+.6g} {u.force}")
     subgrade = (f"\nSoil subgrade: ks = {u.to_display(definition.subgrade_modulus, 'density'):.6g} {u.density} ({definition.subgrade_mode})"
                 if definition.subgrade_modulus > 0 else "")
+    wall_lines = ""
+    if definition.analysis_mode == "shear_wall":
+        supports = "; ".join(
+            f"y={u.to_display(item['elevation'], 'length'):.6g} [{u.to_display(item['x_start'], 'length'):.6g}..{u.to_display(item['x_end'], 'length'):.6g}] {u.length}"
+            for item in definition.wall_supports)
+        stories = "; ".join(
+            f"{item['name']} y={u.to_display(item['elevation'], 'length'):.6g} [{u.to_display(item['x_start'], 'length'):.6g}..{u.to_display(item['x_end'], 'length'):.6g}] {u.length}"
+            for item in definition.wall_stories)
+        wall_lines = f"\nWall supports: {supports}\nStories: {stories}"
     combinations='; '.join(name+' = '+' + '.join(f'{factor:g}{case}' for case,factor in factors.items())
                            for name,factors in definition.load_combinations.items())
+    mode_note = ('In-plane shear wall membrane analysis with automatic pier & coupling-beam force summation; self-weight off.\n'
+                 if definition.analysis_mode == "shear_wall"
+                 else 'Centroid pressure per element; compare refinements. Linear elastic transverse bending; self-weight off.\n')
     return (f"Separate plate workspace · {u.summary}\n"
             f"Size: {u.to_display(definition.width, 'length'):.6g} × {u.to_display(definition.height, 'length'):.6g} {u.length}\n"
             f"Thickness: {u.to_display(definition.thickness, 'length'):.6g} {u.length}\n"
             f"Mesh: {u.to_display(definition.mesh_size, 'length'):.6g} {u.length} · {definition.element_type}\n"
-            +'; '.join(edge+': '+support for edge,support in definition.edges.items())+subgrade+'\n'
+            +'; '.join(edge+': '+support for edge,support in definition.edges.items())+subgrade+wall_lines+'\n'
             +'\n'.join(pressures)+'\nCombinations: '+combinations+'\n'
-            +'Centroid pressure per element; compare refinements. Linear elastic transverse bending; self-weight off.\n'
+            +mode_note
             +'The main frame model and unsaved inputs remain unchanged.')

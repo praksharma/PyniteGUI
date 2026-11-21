@@ -8,6 +8,7 @@ This tutorial walks through Brecon's standalone transverse rectangular plate wor
 3. **Rectangular openings, control-line mesh grading, and natural-coordinate probes** $(\xi, \eta)$.
 4. **Guarded Recovered Centre Shear** (`Recovered Qx (centre)` / `Recovered Qy (centre)`) and corner/stencil masking.
 5. **Mat Foundations, Winkler Soil Subgrade Springs & Concentrated Point Loads** (`Official PyNite - Mat Foundation`).
+6. **In-Plane Shear Walls, Membrane Stresses & Pier / Coupling-Beam Forces** (`Official PyNite - Masonry Shear Wall with Openings` and `Official PyNite - Concrete Coupled Shear Wall`).
 
 ---
 
@@ -142,6 +143,39 @@ print("Uplifted nodes:", len(result["uplift_nodes"]))
 print("Peak nodal bearing pressure:", round(float(result["nodal_bearing_pressure"].max()), 6), "kip/in2")
 probe = inspect_plate(result, result["element_names"][0], xi=0.0, eta=0.0)
 print("Element 0 centre bearing pressure:", round(probe["soil_bearing_pressure"], 6), "kip/in2")
+```
+
+---
+
+## 6. In-Plane Shear Walls, Membrane Stresses & Pier / Coupling-Beam Forces
+
+1. Choose **File > Examples > Plates (Experimental) > Official PyNite - Masonry Shear Wall with Openings**
+   (`official_shear_wall_basic`) or **Official PyNite - Concrete Coupled Shear Wall**
+   (`official_shear_wall_advanced`).
+2. Inspect the shear wall configuration:
+   - **Mode:** `In-plane shear wall (membrane)` on `Quad` elements (out-of-plane translation and all three nodal rotations are restrained everywhere; support segments pin in-plane `u, v` translations).
+   - **Load Cases / Combinations…** exposes dedicated **Wall stories**, **Wall story loads** (`Shear (+local x)` and `Axial (-local y)` distributed evenly to all generated nodes on the story line), and **Wall supports** tabs.
+   - On `official_shear_wall_advanced` (`50 × 25 ft` concrete wall, `1 ft` thick, `ky_mod = 0.35`, `40 × 20 ft` opening `Opng 1`, `150 kip` roof seismic shear in `1.2D+1.0E`):
+     - Roof story lateral stiffness is `291.171 kip/in` (`3,494.05 kip/ft`).
+     - Piers `P1` and `P3` each carry `V = -75.0 kip`, `M = -888.753 kip-ft` (`-10,665.0 kip-in`), and overturning axial force `P = ±43.833 kip` (`M/(VL) = 2.370`).
+     - Coupling beam `B1` carries `V = -43.833 kip`, `M = -733.281 kip-ft` (`-8,799.38 kip-in`), and `P = +57.353 kip` (`M/(VH) = 3.346`).
+3. Click **Analyze**, switch **Component** between **Normal displacement** (lateral `u` in shear-wall mode), **In-plane vertical displacement**, and **Membrane Sx / Sy / Txy (element centre)**, then open **Inspect Results…** to view the **Wall Piers & Coupling Beams** table, probe $(\xi, \eta)$ membrane stresses, and export **Export Piers / Beams CSV…**.
+
+### Headless Python Snippet: Coupled Concrete Shear Wall Analysis
+```python
+from pynitegui.qt.official_plate import example_definition
+from pynitegui.qt.plate_inspection import inspect_plate
+from pynitegui.qt.plate_model import analyze_plate, select_plate_combination
+
+wall = example_definition("official_shear_wall_advanced")
+res = select_plate_combination(analyze_plate(wall), "1.2D+1.0E")
+print("Roof stiffness:", round(res["story_stiffnesses"]["Roof"], 3), "kip/in")
+for pier in res["piers"]:
+    print(f"Pier {pier['name']}: V={pier['V']:.2f} kip, M={pier['M']/12:.2f} kip-ft, P={pier['P']:.2f} kip, M/(VL)={pier['M_VL']:.3f}")
+for beam in res["coupling_beams"]:
+    print(f"Beam {beam['name']}: V={beam['V']:.2f} kip, M={beam['M']/12:.2f} kip-ft, P={beam['P']:.2f} kip, M/(VH)={beam['M_VH']:.3f}")
+probe = inspect_plate(res, res["element_names"][0], xi=0.0, eta=0.0)
+print("Element 0 membrane stress (Sx, Sy, Txy):", round(probe["Sx"], 5), round(probe["Sy"], 5), round(probe["Txy"], 5), "ksi")
 ```
 
 See [Rectangular plate analysis](../surfaces/plates.md).

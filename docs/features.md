@@ -17,7 +17,7 @@ when comparing with the published RC4 wheel.
 | [Geometry Transforms, Arrays, Merging & Connections](tutorials/geometry-transforms-and-connections.md) | Move/copy, linear repeat arrays, rotate/mirror, two-node merging, member splitting/subdivision, intersections and perpendicular/midpoint connections |
 | [3D Space Frame, Coupled Slab & Joint Springs](tutorials/spatial-slab-frame.md) | 3D frame bays, fitting and coupling rectangular Quad floor slabs, probing local slab moments and animating 3D joint-spring networks |
 | [Iterative Elastic, Vibration Modes & Steel Pushover](tutorials/nonlinear-and-modal.md) | Tension-only bracing, compression-only foundations, physical mass-source modal analysis and first-order steel plastic capacity histories |
-| [Rectangular Plates & Guarded Recovered Shear](tutorials/rectangular-plates-and-shear.md) | Standalone Quad/Rect plates, hydrostatic/linear pressure profiles, mat foundation Winkler soil springs, concentrated point loads/moments, rectangular openings, natural-coordinate probes and masked recovered centre shear |
+| [Rectangular Plates & Guarded Recovered Shear](tutorials/rectangular-plates-and-shear.md) | Standalone Quad/Rect plates, hydrostatic/linear pressure profiles, mat foundation Winkler soil springs, concentrated point loads/moments, in-plane shear walls (membrane stresses, story stiffness, piers & coupling beams), rectangular openings, natural-coordinate probes and masked recovered centre shear |
 | [Surface Mesh Generators Catalog](tutorials/surface-meshing-catalog.md) | All seven PyNite mesh generators (Rectangle, Annulus, Cylinder, Frustum, rings), quality checks, `.pynitemesh` recipes and neutral JSON connectivity exports |
 | [MCP Automation & Headless Scripting Cookbook](tutorials/mcp-recipes.md) | Copy-pasteable MCP `apply_batch` / solver JSON payloads and headless Python scripts |
 
@@ -118,8 +118,8 @@ RC/surface plasticity remain outside this workflow.
 | Snapshot-bound local moment/membrane-stress contours, natural-coordinate probes, CSV and MCP; Quad shear withheld pending validation | [Slab results](surfaces/main-model.md) |
 | Affine/nonuniform applied-traction membrane convergence and strain energy, coincident beam/slab strip refinement and quantified rejected drilling cases; corrected non-square YZ edge/probe axes | [Bounded coupled verification](surfaces/main-model.md) |
 | Rectangle fitting to selected corners/perimeters or complete frame levels | [Slab placement](surfaces/main-model.md) |
-| Separate Quad/Rect plate bending, multiple uniform/linear cases/combinations, horizontal self-weight, edge supports, Winkler soil subgrade springs, concentrated point loads/moments, bearing-pressure contours and provenance CSV | [Experimental plate-only analysis](surfaces/plates.md) |
-| Separate-plate element picking, local bending/bearing-pressure probes, linked marker, centre table and unit/snapshot-labelled centre/probe CSV; corrected Rect shear and guarded recovered Quad centre shear | [Local plate inspection](surfaces/plates.md) |
+| Separate Quad/Rect plate bending & in-plane shear wall analysis: multiple uniform/linear cases/combinations, horizontal self-weight, edge supports, Winkler soil subgrade springs, concentrated point loads/moments, bearing-pressure contours, wall stories/supports/loads, membrane stress contours (`Sx/Sy/Txy`), story stiffness, automatic pier/coupling-beam forces and provenance CSV | [Experimental plate-only analysis](surfaces/plates.md) |
+| Separate-plate element picking, local bending/bearing-pressure/membrane-stress probes, linked marker, centre table, wall pier & coupling-beam table and unit/snapshot-labelled CSV; corrected Rect shear and guarded recovered Quad centre shear | [Local plate inspection](surfaces/plates.md) |
 | Independent centred-opening/Rect recovery benchmarks; corrected Rect resultants in post-RC4 development, with explicit limits | [Plate verification and RC4 limitation](surfaces/plates.md) |
 | Guarded standalone thin-Quad recovered centre shear, explicit corner/stencil masks, centre-only probes, provenance CSV and two custom examples; raw/coupled shear unavailable | [Quad shear feasibility](surfaces/plates.md) |
 | Four display-unit presets and canonical inch/kip storage | [Units](reference/units.md) |
@@ -128,14 +128,14 @@ RC/surface plasticity remain outside this workflow.
 | Selection/finding-focused camera navigation in 2D/3D; Shift+F and full-model Fit | [Help and workspace](start/help.md), [model findings](modeling/topology.md) |
 | Optional Model/Results workspaces and collapsible command toolbars, preserving draft inputs and view framing | [Workspaces](start/help.md) |
 | Help menu, website/F1, searchable shortcuts, About/version details and default-layout recovery | [Help and workspace](start/help.md) |
-| Searchable native example browser with geometry/loading/check previews; categorized menus, Gerber/three-hinged arch, fifteen official examples, coupled slabs and P-Delta | [Examples and preferences](start/examples.md), [hinge walkthrough](start/first-model.md#try-an-internal-hinge-or-three-hinged-arch) |
-| Official clamped Quad plate, hydrostatic wall and mat foundation in the separate workspace; fifteen of twenty upstream examples adapted | [Examples and limits](start/examples.md), [plate workspace](surfaces/plates.md) |
+| Searchable native example browser with geometry/loading/check previews; categorized menus, Gerber/three-hinged arch, seventeen official examples, coupled slabs and P-Delta | [Examples and preferences](start/examples.md), [hinge walkthrough](start/first-model.md#try-an-internal-hinge-or-three-hinged-arch) |
+| Official clamped Quad plate, hydrostatic wall, mat foundation and basic/advanced shear walls in the separate workspace; seventeen of twenty upstream examples adapted | [Examples and limits](start/examples.md), [plate workspace](surfaces/plates.md) |
 | Light/dark themes and scrollable properties | [Examples and preferences](start/examples.md) |
 | Software-rendering recovery, observed renderer diagnostics, NVIDIA/Wayland profiles | [Graphics](start/graphics.md), [Linux NVIDIA](start/nvidia.md) |
 | Optional localhost MCP server, frame/surface/pressure batch edits, coupling opt-in, permission groups and background solve lifecycle | [MCP server](automation/mcp.md) |
 
-General curved-shell analysis, combined shell face stresses, arbitrary CAD meshing,
-shear-wall/mat workflows remain pending. A touching
+General curved-shell analysis, combined shell face stresses and arbitrary CAD meshing
+remain pending. A touching
 surface is not connected unless coupled analysis is enabled and the mesh passes
 the shared-node/interface checks.
 

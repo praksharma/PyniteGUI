@@ -75,7 +75,8 @@ class PlateLoadTests(unittest.TestCase):
         geometry = ("element_type", "origin", "x_control", "y_control", "openings", "kx_mod", "ky_mod", "node_start", "element_start", "mesh_name")
         for version in (1, 2):
             data = definition.to_dict()
-            for key in (*loading, "pressure_profiles", "subgrade_modulus", "subgrade_mode", "point_loads", *(geometry if version == 1 else ())):
+            for key in (*loading, "pressure_profiles", "subgrade_modulus", "subgrade_mode", "point_loads",
+                        "analysis_mode", "wall_supports", "wall_stories", "wall_loads", *(geometry if version == 1 else ())):
                 data.pop(key)
             data["version"] = version
             before = deepcopy(data)

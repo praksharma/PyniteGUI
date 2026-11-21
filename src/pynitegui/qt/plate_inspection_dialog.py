@@ -62,15 +62,28 @@ class PlateInspector(QDialog):
         self.table.setSortingEnabled(True)
         self.table.itemSelectionChanged.connect(self.choose_row)
         layout.addWidget(self.table, 1)
+        self.pier_table = QTableWidget()
+        self.pier_table.setObjectName("plate_pier_results")
+        self.pier_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.pier_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.pier_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.pier_table.setItemDelegate(ResultDelegate(self.pier_table))
+        self.pier_table.setSortingEnabled(True)
+        self.pier_table.setVisible(False)
+        layout.addWidget(self.pier_table)
         row = QHBoxLayout()
         self.export_centres = QPushButton("Export Element Centres CSV…")
         self.export_probe = QPushButton("Export Probe CSV…")
-        for button in (self.export_centres, self.export_probe):
+        self.export_piers = QPushButton("Export Piers / Beams CSV…")
+        self.export_piers.setVisible(False)
+        for button in (self.export_centres, self.export_probe, self.export_piers):
             button.setAutoDefault(False)
         self.export_centres.clicked.connect(lambda: self.export_csv(False))
         self.export_probe.clicked.connect(lambda: self.export_csv(True))
+        self.export_piers.clicked.connect(self.export_pier_csv)
         row.addWidget(self.export_centres)
         row.addWidget(self.export_probe)
+        row.addWidget(self.export_piers)
         row.addStretch()
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
         for button in buttons.buttons():
@@ -93,9 +106,14 @@ class PlateInspector(QDialog):
         self.export_probe.setEnabled(False)
         if result is None:
             self.table.setRowCount(0)
+            self.pier_table.setRowCount(0)
+            self.pier_table.setVisible(False)
+            self.export_piers.setVisible(False)
+            self.export_piers.setEnabled(False)
             self.context.setText("Run plate analysis to inspect results.")
             self.probe.setText("No current plate snapshot.")
         else:
+            is_wall = result["definition"].get("analysis_mode", "transverse") == "shear_wall"
             self.context.setText(f"{result['combination']} | Snapshot {result['snapshot_id']} | {result['analyzed_at']}\n"
                 + "; ".join(f"{case} × {factor:g}" for case, factor in result["factors"].items()))
             try:
@@ -103,6 +121,15 @@ class PlateInspector(QDialog):
                 ResultsPanel.populate(self.table, headers, [["unavailable" if value is None else value for value in row] for row in rows])
                 for column in (1, 2, 5, 6, 7):
                     self.table.setColumnHidden(column, True)
+                if is_wall:
+                    from .shear_wall_model import pier_beam_table
+                    p_headers, p_rows = pier_beam_table(result, units)
+                    ResultsPanel.populate(self.pier_table, p_headers, p_rows)
+                else:
+                    self.pier_table.setRowCount(0)
+                self.pier_table.setVisible(is_wall)
+                self.export_piers.setVisible(is_wall)
+                self.export_piers.setEnabled(is_wall and self.pier_table.rowCount() > 0)
                 self.element.addItems(result["element_names"])
                 self.element.setCurrentIndex(max(0, self.element.findText(old_element)))
                 if not old_element:
@@ -111,6 +138,10 @@ class PlateInspector(QDialog):
             except ValueError as error:
                 self.result, self.key = None, object()
                 self.table.setRowCount(0)
+                self.pier_table.setRowCount(0)
+                self.pier_table.setVisible(False)
+                self.export_piers.setVisible(False)
+                self.export_piers.setEnabled(False)
                 self.tools.setEnabled(False)
                 self.export_centres.setEnabled(False)
                 self.probe.setText(f"Plate inspection unavailable: {error}")
@@ -136,6 +167,8 @@ class PlateInspector(QDialog):
                        f"Target profile pressure {data['target_pressure']*units.factor('pressure'):.7g} {units.pressure}"]
             if self.result["definition"].get("subgrade_modulus", 0.) > 0:
                 values.append(f"Soil bearing pressure {data['soil_bearing_pressure']*units.factor('pressure'):.7g} {units.pressure}")
+            if self.result["definition"].get("analysis_mode", "transverse") == "shear_wall":
+                values += [f"{key} {data[key]*units.factor('stress'):.7g} {units.stress}" for key in ("Sx", "Sy", "Txy")]
             self.probe.setText(f"{data['element']} | xi {data['xi']:g}, eta {data['eta']:g}\n"
                 + "Local x/y: "+", ".join(f"{v*units.length_factor:.7g}" for v in data["position"])+f" {units.length} | "
                 + "Global XYZ: "+", ".join(f"{v*units.length_factor:.7g}" for v in data["global_position"])+f" {units.length}\n"
@@ -174,3 +207,17 @@ class PlateInspector(QDialog):
                 write_plate_probes(path, self.result, self.units, [self.probe_data] if single else None)
             except (ValueError, OSError) as error:
                 QMessageBox.warning(self, "Export Plate Results", str(error))
+
+    def export_pier_csv(self):
+        if self.result is None or self.pier_table.rowCount() == 0:
+            return
+        from .shear_wall_model import write_pier_beam_csv
+        path, _ = QFileDialog.getSaveFileName(self, "Export Wall Piers and Coupling Beams",
+            "wall-piers-beams.csv", "CSV (*.csv)")
+        if path:
+            try:
+                write_pier_beam_csv(path, self.result, self.units)
+            except (ValueError, OSError) as error:
+                QMessageBox.warning(self, "Export Wall Piers and Coupling Beams", str(error))
+
+    export_pier_beam_csv = export_pier_csv
